@@ -1,0 +1,6 @@
+<use name=root>
+
+<export>
+  <lib name=JetMETAnalysisJetUtilities>
+  <use name=root>
+</export>
