@@ -1,4 +1,4 @@
-<library file="MatchRecToGen.cc,MatchBackToBack.cc,JetViewCleaner.cc" name=JetMETAnalysisJetAnalyzersPlugins>
+<library file="MatchRecToGen.cc,MatchBackToBack.cc,JetViewCleaner.cc" name=JetMETAnalysisJetUtilitiesPlugins>
   <flags EDM_PLUGIN=1>
   <use name=FWCore/Framework>
   <use name=FWCore/PluginManager>
