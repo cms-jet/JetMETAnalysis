@@ -1,14 +1,28 @@
 import FWCore.ParameterSet.Config as cms
 
+################################################################################
+#
+# JetResponseAnalyzer parameters for 'doTree' mode
+# ------------------------------------------------
+#
+#            https://twiki.cern.ch/twiki/bin/view/CMS/SWGuideJetResponseAnalyzer
+################################################################################
+
+
 JetResponseParameters = cms.PSet(
-    doFlavor = cms.bool(False),
-    doRefPt = cms.bool(True),
-    nBinsRelRsp = cms.uint32(0),
-    doJetPt = cms.bool(True),
-    deltaRMax = cms.double(0.3),
-    nBinsAbsRsp = cms.uint32(0),
+    # write tree, no histograms
     doHistos = cms.bool(False),
-    doTree = cms.bool(True),
-    nRefMax = cms.uint32(0)
+    doTree   = cms.bool(True),
+    # don't record flavor information, consider both RefPt and JetPt
+    doFlavor = cms.bool(False),
+    doRefPt  = cms.bool(True),
+    doJetPt  = cms.bool(True),
+    # MATCHING MODE: deltaR(ref,jet)
+    deltaRMax = cms.double(0.3),
+    # consider all matched references
+    nRefMax = cms.uint32(0)#,
+    # don't record relative / absolute response histograms
+    #nBinsRelRsp = cms.uint32(0),
+    #nBinsAbsRsp = cms.uint32(0)
 )
 

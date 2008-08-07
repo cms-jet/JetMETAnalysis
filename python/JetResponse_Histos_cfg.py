@@ -1,22 +1,22 @@
 import FWCore.ParameterSet.Config as cms
 
 #!
-#! ADJUST PT/ETA PRESELECTION AND CALIBRATION PARAMETERS
+#! ADJUST JET & REFERENCE PRESELECTION, RESPONSE ANALYSIS PARAMETERS
 #!
-import JetMETAnalysis.JetAnalyzers.JetResponse_cff
-import JetMETAnalysis.JetAnalyzers.JetRspParams_Histos_cff
+import JetMETAnalysis.JetAnalyzers.Defaults_cff as Defaults;
+import JetMETAnalysis.JetAnalyzers.JetRspParams_Histos_cff as Histos;
 
-JetMETAnalysis.JetAnalyzers.JetResponse_cff.JetPtEta = cms.PSet(
+Defaults.JetPtEta = cms.PSet(
     etaMin = cms.double(-5.0),
     etaMax = cms.double(5.0),
     ptMin  = cms.double(1.0)
 )
-JetMETAnalysis.JetAnalyzers.JetResponse_cff.RefPtEta = cms.PSet(
+Defaults.RefPtEta = cms.PSet(
     etaMin = cms.double(-5.0),
     etaMax = cms.double(5.0),
     ptMin = cms.double(1.0)
 )
-JetMETAnalysis.JetAnalyzers.JetResponse_cff.JetResponseParameters = JetMETAnalysis.JetAnalyzers.JetRspParams_Histos_cff.JetResponseParameters
+Defaults.JetResponseParameters = Histos.JetResponseParameters
 
 
 #!
@@ -32,24 +32,24 @@ process.load("JetMETAnalysis.JetAnalyzers.JetResponse_cff")
 #! INPUT
 #!
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
-process.source = cms.Source(
-    "PoolSource",
-    fileNames = cms.untracked.vstring('rfio:/castor/cern.ch/user/s/schiefer/JetAlgs/21X/QCD_80_120.root')
+process.source = cms.Source("PoolSource",
+    fileNames = cms.untracked.vstring(
+    'rfio:/castor/cern.ch/user/s/schiefer/JetAlgs/21X/QCD_80_120.root'
+    )
 )
 
 
 #!
 #! SERVICES
 #!
-process.MessageLogger = cms.Service(
-    "MessageLogger",
-    cout = cms.untracked.PSet(threshold = cms.untracked.string('WARNING')),
-    destinations = cms.untracked.vstring('cout')
+process.MessageLogger = cms.Service("MessageLogger",
+    destinations = cms.untracked.vstring('cout'),
+    cout         = cms.untracked.PSet(threshold = cms.untracked.string('WARNING'))
+
 )
-process.TFileService = cms.Service(
-    "TFileService",
-    closeFileFast = cms.untracked.bool(True),
-    fileName = cms.string('JRAh.root')
+process.TFileService = cms.Service("TFileService",
+    fileName      = cms.string('JRAh.root'),
+    closeFileFast = cms.untracked.bool(True)
 )
 
 
@@ -58,21 +58,20 @@ process.TFileService = cms.Service(
 #! SCHEDULE
 #!
 process.schedule = cms.Schedule(
-    process.rsp_kt4calo,
-    process.rsp_kt6calo,
-    process.rsp_sc5calo,
-    process.rsp_sc7calo,
-    process.rsp_ic5calo,
-    process.rsp_kt4pflow,
-    process.rsp_kt6pflow,
-    process.rsp_sc5pflow,
-    process.rsp_sc7pflow,
-    process.rsp_ic5pflow,
-    process.rsp_kt4track,
-    process.rsp_kt6track,
-    process.rsp_sc5track,
-    process.rsp_sc7track,
-    process.rsp_ic5track
-    )
-
+    process.kt4caloJRA,
+    process.kt6caloJRA,
+    process.sc5caloJRA,
+    process.sc7caloJRA,
+    process.ic5caloJRA,
+    process.kt4pfJRA,
+    process.kt6pfJRA,
+    process.sc5pfJRA,
+    process.sc7pfJRA,
+    process.ic5pfJRA,
+    process.kt4trkJRA,
+    process.kt6trkJRA,
+    process.sc5trkJRA,
+    process.sc7trkJRA,
+    process.ic5trkJRA
+)
 
