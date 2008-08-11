@@ -47,24 +47,24 @@ int main(int argc,char** argv)
   TDirectory* dir =(TDirectory*)file->Get(algorithm.c_str());
   if (0==dir) { cout<<"No dir "<<algorithm<<" found"<<endl; return 0; }
 
-  HistogramLoader histos;
-  histos.loadHistograms(dir,variable);
+  HistogramLoader hl;
+  hl.load_histograms(dir,variable);
   
   argc=1;
   TApplication* app=new TApplication("inspect_calib_histos",&argc,argv);
   
   set_root_style();
 
-  if (npercanvas==0) npercanvas=histos.nhistograms(histos.nvariables()-1);
+  if (npercanvas==0) npercanvas=hl.nhistograms(hl.nvariables()-1);
   int nx=(int)std::sqrt((float)npercanvas);
   int ny=nx;
   if (nx*ny<npercanvas) nx++;
   if (nx*ny<npercanvas) ny++;
   
   vector<TCanvas*> cvec;
-  histos.begin_loop();
+  hl.begin_loop();
   vector<unsigned int> indices; TH1F* h(0); unsigned int ihisto(0);
-  while ((h=histos.next_histogram(indices))) {
+  while ((h=hl.next_histogram(indices))) {
     
     if (cvec.size()==0||ihisto%npercanvas==0) {
       stringstream ss;ss<<"c"<<cvec.size();

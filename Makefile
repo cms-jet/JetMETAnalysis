@@ -28,11 +28,28 @@ setup:
 	mkdir -p $(LIBDIR)
 	mkdir -p $(BINDIR)
 
-bin:  jet_response_analyzer jet_inspect_jra_histos
+bin:  jet_response_analyzer jet_response_fitter jet_response_plotter \
+      jet_l2_correction jet_l3_correction jet_inspect_jra_histos
 
 jet_response_analyzer:
 	$(CXX) $(CXXFLAGS) bin/jet_response_analyzer_x.cc $(LIBS) $(ROOTLIBS) \
         -o $(BINDIR)/jet_response_analyzer_x
+
+jet_response_fitter:
+	$(CXX) $(CXXFLAGS) bin/jet_response_fitter_x.cc $(LIBS) $(ROOTLIBS) \
+        -o $(BINDIR)/jet_response_fitter_x
+
+jet_response_plotter:
+	$(CXX) $(CXXFLAGS) bin/jet_response_plotter_x.cc $(LIBS) $(ROOTLIBS) \
+        -o $(BINDIR)/jet_response_plotter_x
+
+jet_l2_correction:
+	$(CXX) $(CXXFLAGS) bin/jet_l2_correction_x.cc $(LIBS) $(ROOTLIBS) \
+        -o $(BINDIR)/jet_l2_correction_x
+
+jet_l3_correction:
+	$(CXX) $(CXXFLAGS) bin/jet_l3_correction_x.cc $(LIBS) $(ROOTLIBS) \
+        -o $(BINDIR)/jet_l3_correction_x
 
 jet_inspect_jra_histos:
 	$(CXX) $(CXXFLAGS) bin/jet_inspect_jra_histos_x.cc $(LIBS) $(ROOTLIBS) \
@@ -41,4 +58,8 @@ jet_inspect_jra_histos:
 clean:
 	rm -rf JetMETAnalysis \
 	       $(BINDIR)/jet_response_analyzer_x \
+	       $(BINDIR)/jet_response_fitter_x \
+	       $(BINDIR)/jet_response_plotter_x \
+	       $(BINDIR)/jet_response_l2_correction_x \
+	       $(BINDIR)/jet_response_l3_correction_x \
                $(BINDIR)/jet_inspect_jra_histos_x

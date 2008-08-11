@@ -6,6 +6,18 @@
 <bin name=jet_response_analyzer_x file=jet_response_analyzer_x.cc>
 </bin>
 
+<bin name=jet_response_fitter_x file=jet_response_fitter_x.cc>
+</bin>
+
+<bin name=jet_response_plotter_x file=jet_response_plotter_x.cc>
+</bin>
+
+<bin name=jet_l2_correction_x file=jet_l2_correction_x.cc>
+</bin>
+
+<bin name=jet_l3_correction_x file=jet_l3_correction_x.cc>
+</bin>
+
 <bin name=jet_inspect_jra_histos_x file=jet_inspect_jra_histos_x.cc>
 </bin>
 
