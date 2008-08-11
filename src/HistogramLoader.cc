@@ -52,7 +52,7 @@ HistogramLoader::~HistogramLoader()
 ////////////////////////////////////////////////////////////////////////////////
 
 //______________________________________________________________________________
-bool HistogramLoader::loadHistograms(TDirectory* d,const string& expression)
+bool HistogramLoader::load_histograms(TDirectory* d,const string& expression)
 {
   string tmp=expression;
   unsigned int pos=tmp.find(':');

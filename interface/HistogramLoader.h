@@ -22,7 +22,7 @@ public:
   //
   // member functions
   //
-  bool loadHistograms(TDirectory* d,const std::string& expression);
+  bool         load_histograms(TDirectory* d,const std::string& expression);
   
   std::string  quantity()                      const { return quantity_; }
   unsigned int nvariables()                    const { return variables_.size(); }
