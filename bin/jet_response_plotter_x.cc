@@ -144,10 +144,10 @@ int main(int argc,char**argv)
 	double valabsrsp=(valrsp+valvar)/valvar;
 	double errabsrsp=std::abs(valabsrsp-1.)*std::sqrt(errrsp*errrsp/valrsp/valrsp+
 							  errvar*errvar/valvar/valvar);
-	double valabsres=;
-	double errabsres=;
-	valrsp = valabs;
-	errrsp = errabs;
+	//double valabsres=;
+	//double errabsres=;
+	//valrsp = valabs;
+	//errrsp = errabs;
       }
 
       int n = grsp->GetN();

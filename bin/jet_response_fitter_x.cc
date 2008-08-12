@@ -65,7 +65,9 @@ int main(int argc,char**argv)
   while ((dirKey=(TKey*)nextDir())) {
 
     if (strcmp(dirKey->GetClassName(),"TDirectoryFile")!=0) continue;
-    TDirectoryFile* idir = (TDirectoryFile*)dirKey->ReadObj();
+    ifile->cd(dirKey->GetName());
+    //TDirectoryFile* idir = (TDirectoryFile*)dirKey->ReadObj();
+    TDirectoryFile* idir = (TDirectoryFile*)gDirectory;
     string alg(idir->GetName());
     if (algs.size()>0&&!contains(algs,alg)) continue;
     
