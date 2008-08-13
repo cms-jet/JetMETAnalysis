@@ -15,11 +15,13 @@
 #include <TStyle.h>
 #include <TFile.h>
 #include <TCanvas.h>
+#include <TLatex.h>
 #include <TH1F.h>
 #include <TF1.h>
 #include <TText.h>
 
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -34,6 +36,8 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 void set_xaxis_range(TH1* h);
 void set_draw_attributes(TH1* h);
+void draw_stats(TH1* h);
+void draw_range(const HistogramLoader& hl,const vector<unsigned int>& indices);
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -46,12 +50,14 @@ int main(int argc,char** argv)
   CommandLine cl;
   if (!cl.parse(argc,argv)) return 0
 			      ;
-  string input      = cl.getValue<string>("input");
-  string algorithm  = cl.getValue<string>("algorithm",    "kt4calo");
-  string variable   = cl.getValue<string>("variable","AbsRsp:RefPt");
-  int    npercanvas = cl.getValue<int>   ("npercanvas",           0);
-  bool   logx       = cl.getValue<bool>  ("logx",             false);
-  bool   logy       = cl.getValue<bool>  ("logy",             false);
+  string         input      = cl.getValue<string> ("input");
+  vector<string> formats    = cl.getVector<string>("formats",             "");
+  string         algorithm  = cl.getValue<string> ("algorithm",    "kt4calo");
+  string         variable   = cl.getValue<string> ("variable","AbsRsp:RefPt");
+  int            npercanvas = cl.getValue<int>    ("npercanvas",           0);
+  bool           logx       = cl.getValue<bool>   ("logx",             false);
+  bool           logy       = cl.getValue<bool>   ("logy",             false);
+  bool           batch      = cl.getValue<bool>   ("batch",            false);
 
   if (!cl.check()) return 0;
   cl.print();
@@ -65,13 +71,15 @@ int main(int argc,char** argv)
   HistogramLoader hl;
   hl.load_histograms(dir,variable);
   
-  argc=1;
-  TApplication* app=new TApplication("inspect_calib_histos",&argc,argv);
+  argc = (batch) ? 2 : 1; if (batch) argv[1] = "-b";
+  TApplication* app=new TApplication("jet_inspect_jra_histos",&argc,argv);
   
   set_root_style();
   gStyle->SetOptStat(0);
-  
+
+  bool put_range = (npercanvas!=0);
   if (npercanvas==0) npercanvas=hl.nhistograms(hl.nvariables()-1);
+  
   int nx=(int)std::sqrt((float)npercanvas);
   int ny=nx;
   if (nx*ny<npercanvas) nx++;
@@ -81,23 +89,41 @@ int main(int argc,char** argv)
   hl.begin_loop();
   vector<unsigned int> indices; TH1F* h(0); unsigned int ihisto(0);
   while ((h=hl.next_histogram(indices))) {
-    
     if (cvec.size()==0||ihisto%npercanvas==0) {
-      stringstream ss;ss<<algorithm<<"_"<<cvec.size();
-      cvec.push_back(new TCanvas(ss.str().c_str(),ss.str().c_str()));
+      stringstream sscname;sscname<<algorithm<<"_"<<hl.quantity()<<"_VS";
+      for (unsigned int i=0;i<hl.nvariables();i++) {
+	sscname<<"_"<<hl.variable(i);
+	if (i<hl.nvariables()-1||put_range)
+	  sscname<<hl.minimum(i,indices[i])<<"to"<<hl.maximum(i,indices[i]);
+      }
+      cvec.push_back(new TCanvas(sscname.str().c_str(),sscname.str().c_str()));
       cvec.back()->Divide(nx,ny,1e-04,1e-04);
     }
     
-    cvec.back()->cd(ihisto%npercanvas+1);
+    int ipad = ihisto%npercanvas+1;
+    cvec.back()->cd(ipad);
+
     if (logx) gPad->SetLogx();
     if (logy) gPad->SetLogy();
+    gPad->SetLeftMargin(0.18);
+    gPad->SetRightMargin(0.05);
+    gPad->SetTopMargin(0.12);
+    gPad->SetBottomMargin(0.15);
     set_xaxis_range(h);
     set_draw_attributes(h);
     h->Draw("EH");
+    draw_stats(h);
+    draw_range(hl,indices);
+    
     ihisto++;
   }
 
-  app->Run();
+  for (unsigned int icanvas=0;icanvas<cvec.size();icanvas++)
+    for (unsigned int iformat=0;iformat<formats.size();iformat++)
+      cvec[icanvas]->Print((string(cvec[icanvas]->GetName())+
+			    "."+formats[iformat]).c_str());
+  
+  if (!batch) app->Run();
   
   return 0;
 }
@@ -110,7 +136,7 @@ int main(int argc,char** argv)
 //______________________________________________________________________________
 void set_xaxis_range(TH1* h)
 {
-  if (h->GetNbinsX()<=100) return;
+  if (/* h->GetNbinsX()<=100|| */ h->GetEntries()==0) return;
   int imin=-1; int imax=-1;
   for (int i=1;i<h->GetNbinsX();i++) {
     double bc = h->GetBinContent(i);
@@ -130,4 +156,78 @@ void set_draw_attributes(TH1* h)
   if (0==fitfnc) return;
   fitfnc->SetLineWidth(2);
   fitfnc->SetLineColor(kRed);
+}
+
+
+//______________________________________________________________________________
+void draw_stats(TH1* h)
+{
+  TF1* fitfnc = h->GetFunction("fit");
+  stringstream ssentries;
+  ssentries<<setw(6) <<setiosflags(ios::left)<<"N:"
+	   <<setw(10)<<resetiosflags(ios::left)<<setprecision(4)<<h->GetEntries();
+  
+  stringstream ssmean;
+  ssmean<<setw(6)<<setiosflags(ios::left)<<"Mean:"
+	<<setw(9)<<resetiosflags(ios::left)<<setprecision(4)<<h->GetMean();
+
+  stringstream ssrms;
+  ssrms<<setw(6)<<setiosflags(ios::left)<<"RMS:"
+       <<setw(9)<<resetiosflags(ios::left)<<setprecision(4)<<h->GetRMS();
+
+  stringstream sspeak;
+  if (0!=fitfnc)
+    sspeak<<setw(6)<<setiosflags(ios::left)<<"Peak: "
+	  <<setw(10)<<resetiosflags(ios::left)<<setprecision(4)
+	  <<fitfnc->GetParameter(1);
+
+  stringstream sssgma;
+  if (0!=fitfnc)
+    sssgma<<setw(6)<<setiosflags(ios::left)<<"Sigma:"
+	  <<setw(9)<<resetiosflags(ios::left)<<setprecision(4)
+	  <<fitfnc->GetParameter(2);
+  
+  TLatex stats;
+  stats.SetNDC(true);
+  stats.SetTextAlign(12);
+  stats.SetTextFont(22);
+  stats.SetTextSize(0.045);
+
+  stats.DrawLatex(0.7,0.80,ssentries.str().c_str());
+  stats.DrawLatex(0.7,0.75,ssmean.str().c_str());
+  stats.DrawLatex(0.7,0.70,ssrms.str().c_str());
+  if (0!=fitfnc) {
+    stats.SetTextColor(kRed);
+    stats.DrawLatex(0.7,0.65,sspeak.str().c_str());
+    stats.DrawLatex(0.7,0.60,sssgma.str().c_str());
+  }
+}
+
+
+//______________________________________________________________________________
+void draw_range(const HistogramLoader& hl,const vector<unsigned int>& indices)
+{
+  TLatex range;
+  range.SetNDC(true);
+  range.SetTextAlign(13);
+  range.SetTextSize(0.055);
+  range.SetTextFont(22);
+
+  stringstream ssrange;
+
+  for (unsigned int i=0;i<hl.nvariables();i++) {
+    string varname = hl.variable(i);
+    string unit    = "";
+    double varmin  = hl.minimum(i,indices[i]);
+    double varmax  = hl.maximum(i,indices[i]);
+    
+    if (varname=="RefPt")  { varname = "p_{T}^{REF}"; unit = " GeV"; }
+    if (varname=="JetPt")  { varname = "p_{T}";       unit = " GeV"; }
+    if (varname=="JetEta") { varname = "#eta";        unit =     ""; }
+    if (varname=="JetPhi") { varname = "#phi";        unit =     ""; }
+
+    ssrange<<varmin<<" < "<<varname<<" < "<<varmax<<unit<<"     ";
+  }
+  
+  range.DrawLatex(0.19,0.95,ssrange.str().c_str());
 }

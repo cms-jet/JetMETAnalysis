@@ -23,7 +23,7 @@ LIBS         = -L$(LIBDIR) -lJetUtilities
 all:  setup bin
 
 setup:
-	rm -f SchieferD; ln -fs ../ JetMETAnalysis
+	rm -f JetMETAnalysis; ln -fs ../ JetMETAnalysis
 	mkdir -p $(TMPDIR)
 	mkdir -p $(LIBDIR)
 	mkdir -p $(BINDIR)
