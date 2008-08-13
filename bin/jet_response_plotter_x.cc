@@ -9,6 +9,7 @@
 
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 #include "JetMETAnalysis/JetUtilities/interface/HistogramLoader.h"
+#include "JetMETAnalysis/JetUtilities/interface/RootStyle.h"
 
 
 #include <iostream>
@@ -17,11 +18,15 @@
 #include <vector>
 #include <cmath>
 
+#include <TApplication.h>
 #include <TROOT.h>
 #include <TFile.h>
 #include <TKey.h>
 #include <TH1F.h>
 #include <TF1.h>
+#include <TCanvas.h>
+#include <TLegend.h>
+#include <TMultiGraph.h>
 #include <TGraphErrors.h>
 
 
@@ -51,9 +56,11 @@ int main(int argc,char**argv)
 
   string         input    = cl.getValue<string> ("input");
   string         output   = cl.getValue<string> ("output",      "jrp.root");
+  vector<string> formats  = cl.getVector<string>("formats",             "");
   string         variable = cl.getValue<string> ("variable","AbsRsp:RefPt");
   vector<string> algs     = cl.getVector<string>("algs",                "");
-  
+  bool           batch    = cl.getValue<bool>   ("batch",            false);
+
   if (!cl.check()) return 0;
   cl.print();
 
@@ -65,6 +72,11 @@ int main(int argc,char**argv)
   if (!ofile->IsOpen()) { cout<<"Can't create "<<output<<endl; return 0; }
   vector<TGraphErrors*> vrsp;
   vector<TGraphErrors*> vres;
+
+  vector<TMultiGraph*>  vrsp_mg; vrsp_mg.push_back(new TMultiGraph());
+  vector<TMultiGraph*>  vres_mg; vres_mg.push_back(new TMultiGraph());
+
+  set_root_style();
   
   
   //
@@ -93,7 +105,7 @@ int main(int argc,char**argv)
     
     TDirectoryFile* odir = (TDirectoryFile*)ofile->mkdir(alg.c_str());
     odir->cd();
-
+    
     HistogramLoader hlrsp;
     hlrsp.load_histograms(idir,variable);
     
@@ -110,7 +122,7 @@ int main(int argc,char**argv)
       
       // create new graphs for response & resolution
       if (indices[0]==0) {
-	grsp = new TGraphErrors(); vres.push_back(grsp);
+	grsp = new TGraphErrors(); vrsp.push_back(grsp);
 	gres = new TGraphErrors(); vres.push_back(gres);
 	string grsp_name = "RspVs"+hlrsp.variable(hlrsp.nvariables()-1);
 	string gres_name = "ResVs"+hlrsp.variable(hlrsp.nvariables()-1);
@@ -125,53 +137,78 @@ int main(int argc,char**argv)
 	}
 	grsp->SetName(grsp_name.c_str());
 	gres->SetName(gres_name.c_str());
+
+	vrsp_mg.back()->Add(grsp);
+	vres_mg.back()->Add(gres);
       }
       
       // add new points to current response & resolution graphs
       if (hrsp->Integral()==0) continue;
+      
       TF1*   frsp = hrsp->GetFunction("fit");
       TH1F*  hvar = hlvar.histogram(indices);
+
+      assert(hvar->GetEntries()>0);
       
-      double valvar = (hvar->GetEntries()==0) ? 0      : hvar->GetMean();
-      double errvar = (hvar->GetEntries()==0) ? 0      : hvar->GetMeanError();
-      double valrsp = (frsp==0) ? hrsp->GetMean()      : frsp->GetParameter(1);
-      double errrsp = (frsp==0) ? hrsp->GetMeanError() : frsp->GetParError(1);
-      double valres = (frsp==0) ? hrsp->GetRMS()       : frsp->GetParameter(2);
-      double errres = (frsp==0) ? hrsp->GetRMSError()  : frsp->GetParError(2);
+      double x  = hvar->GetMean();
+      double ex = hvar->GetMeanError();
+      double y  = (frsp==0) ? hrsp->GetMean()      : frsp->GetParameter(1);
+      double ey = (frsp==0) ? hrsp->GetMeanError() : frsp->GetParError(1);
+      double e  = (frsp==0) ? hrsp->GetRMS()       : frsp->GetParameter(2);
+      double ee = (frsp==0) ? hrsp->GetRMSError()  : frsp->GetParError(2);
       
       if (hlrsp.quantity().find("AbsRsp")==0) {
 	
-	double valabsrsp=(valrsp+valvar)/valvar;
-	double errabsrsp=std::abs(valabsrsp-1.)*std::sqrt(errrsp*errrsp/valrsp/valrsp+
-							  errvar*errvar/valvar/valvar);
-	//double valabsres=;
-	//double errabsres=;
-	//valrsp = valabs;
-	//errrsp = errabs;
+	double yabs  = (x+y)/x;
+	double eyabs = std::abs(yabs-1)*std::sqrt(ey*ey/y/y+ex*ex/x/x);
+	double eabs  = e/x;
+	double eeabs = eabs*std::sqrt(ee*ee/e/e+ex*ex/x/x);
+	
+	y  = yabs;
+	ey = eyabs;
+	e  = eabs;
+	ee = eeabs;
       }
-
+      
       int n = grsp->GetN();
-      grsp->SetPoint(n,valvar,valrsp);
-      grsp->SetPointError(n,errvar,errrsp);
-      gres->SetPoint(n,valvar,valres);
-      gres->SetPointError(n,errvar,errres);
-
-      grsp->Write();
-      gres->Write();
+      grsp->SetPoint(n,x,y);
+      grsp->SetPointError(n,ex,ey);
+      gres->SetPoint(n,x,e);
+      gres->SetPointError(n,ex,ee);
     }
     
+    for (unsigned int igraph=0;igraph<vrsp.size();igraph++) vrsp[igraph]->Write();
+    for (unsigned int igraph=0;igraph<vres.size();igraph++) vres[igraph]->Write();
+
     cout<<" DONE."<<endl;
   }
   
+  
+  //
+  // run application if not in batch mode
+  //
+  argc = (batch) ? 2 : 1; if (batch) argv[1] = "-b";
+  TApplication* app = new TApplication("jet_response_plotter_x",&argc,argv);
+
+  TCanvas* crsp = new TCanvas("crsp","crsp"); crsp->cd();
+  for (unsigned int img=0;img<vrsp_mg.size();img++) vrsp_mg[img]->Draw("AP");
+  
+  TCanvas* cres = new TCanvas("cres","cres"); cres->cd();
+  for (unsigned int img=0;img<vres_mg.size();img++) vres_mg[img]->Draw("AP");
+  
+  
+
   //
   // close input & output files
   //
   ifile->Close();
   delete ifile;
 
-  //ofile->Write();
   ofile->Close();
   delete ofile;
+  
+
+  if (!batch) app->Run();
   
   return 0;
 }
