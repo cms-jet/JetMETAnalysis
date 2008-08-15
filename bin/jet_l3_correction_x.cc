@@ -20,9 +20,11 @@
 #include <TF1.h>
 #include <TGraphErrors.h>
 #include <TCanvas.h>
+#include <TLatex.h>
 
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <sstream>
 #include <string>
@@ -40,6 +42,8 @@ using namespace std;
 /// check if a vector of strings contains a certain element
 bool   contains(const vector<string>& collection,const string& element);
 
+/// transform the alg label into a title, e.g.: kt4calo -> k_{T}, D=0.4 (Calo)
+string get_legend_title(const string& alg);
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -55,22 +59,32 @@ int main(int argc,char**argv)
   if (!cl.parse(argc,argv)) return 0;
 
   string         input   = cl.getValue<string> ("input");
-  vector<string> formats = cl.getVector<string>("formats", "");
-  vector<string> algs    = cl.getVector<string>("algs",    "");
-  bool           batch   = cl.getValue<bool>   ("batch",false);
-
+  string         output  = cl.getValue<string> ("output","l3.root");
+  vector<string> formats = cl.getVector<string>("formats",      "");
+  vector<string> algs    = cl.getVector<string>("algs",         "");
+  bool           batch   = cl.getValue<bool>   ("batch",     false);
+  bool           logx    = cl.getValue<bool>   ("logx",      false);
+  bool           logy    = cl.getValue<bool>   ("logy",      false);
+  
   if (!cl.check()) return 0;
   cl.print();
   
 
   //
-  // run a tapp if not in batch mode
+  // run a tapplication if not in batch mode
   //
   argc = (batch) ? 2 : 1; if (batch) argv[1] = "-b";
   TApplication* app = new TApplication("jet_l3_correction_x",&argc,argv);
   set_root_style();
 
   
+  //
+  // open output file
+  //
+  TFile* ofile = new TFile(output.c_str(),"RECREATE");
+  if (!ofile->IsOpen()) { cout<<"Can't create "<<output<<endl; return 0; }
+  
+
   //
   // open input file and loop over directories (algorithms)
   //
@@ -94,6 +108,9 @@ int main(int argc,char**argv)
     string alg(idir->GetName()); if (!contains(algs,alg)) continue;
     
     cout<<alg<<" ... "<<flush;
+  
+    TDirectoryFile* odir = (TDirectoryFile*)ofile->mkdir(alg.c_str());
+    odir->cd();
     
     TGraphErrors* grsp = new TGraphErrors();
     TGraphErrors* gcor = new TGraphErrors();
@@ -150,25 +167,113 @@ int main(int argc,char**argv)
       gcor->SetPointError(n,ejetpt,ecor);
     }
 
+    
+    TLatex tex;
+    tex.SetNDC(true);
+    tex.SetTextAlign(12);
+    tex.SetTextFont(22);
+    tex.SetTextSize(0.06);
+    
+
     // response
-    TCanvas* crsp = new TCanvas("crsp","crsp",0,0,700,600); crsp->cd();
+    TF1* fitrsp = new TF1("fitrsp","[0]-[1]/(pow(log10(x),[2])+[3])+[4]/x",
+			  1.0,grsp->GetX()[grsp->GetN()-1]);
+    fitrsp->SetParameter(0,1.0);
+    fitrsp->SetParameter(1,1.0);
+    fitrsp->SetParameter(2,1.0);
+    fitrsp->SetParameter(3,1.0);
+    fitrsp->SetParameter(4,1.0);
+    fitrsp->SetLineWidth(2);
+    grsp->Fit(fitrsp,"QR");
+    
+    string cname_rsp = string(grsp->GetName())+"_"+alg;
+    TCanvas* crsp = new TCanvas(cname_rsp.c_str(),cname_rsp.c_str(),0,0,700,600);
+    crsp->cd();
+    gPad->SetLeftMargin(0.2);
+    gPad->SetRightMargin(0.05);
+    gPad->SetTopMargin(0.05);
+    gPad->SetBottomMargin(0.15);
+    if (logx) gPad->SetLogx();
+    if (logy) gPad->SetLogy();
+    
     grsp->Draw("AP");
     TH1F* hrsp = grsp->GetHistogram();
     hrsp->SetXTitle("p_{T}^{REF}");
     hrsp->SetYTitle("p_{T}/p_{T}^{REF}");
+    grsp->SetLineWidth(2);
+    grsp->SetMarkerStyle(kFullCircle);
+
+    tex.DrawLatex(0.6,0.3,get_legend_title(alg).c_str());
+    
+    grsp->Write();
+
+    ofstream fout(("l3_"+alg).c_str());
+    fout.setf(ios::left);
+    fout<<setw(12)<<-5.191                  // eta_min
+	<<setw(12)<<+5.191                  // eta_max
+	<<setw(12)<<6                       // number of parameters + 2
+	<<setw(12)<<4                       // minimum pT
+	<<setw(12)<<5000                    // maximum pT
+	<<setw(12)<<fitrsp->GetParameter(0) // p0
+	<<setw(12)<<fitrsp->GetParameter(1) // p1
+	<<setw(12)<<fitrsp->GetParameter(2) // p2
+	<<setw(12)<<fitrsp->GetParameter(3);// p3
+    fout.close();
+    
+    for (unsigned int iformat=0;iformat<formats.size();iformat++)
+      crsp->Print((string(crsp->GetName())+"."+formats[iformat]).c_str());
     
     
     // correction
-    TCanvas* ccor = new TCanvas("ccor","ccor",715,0,700,600); ccor->cd();
+    TF1* fitcor = new TF1("fitcor","[0]+[1]/(pow(log10(x),[2])+[3])",
+			  1.0,gcor->GetX()[gcor->GetN()-1]);
+    fitcor->SetParameter(0,1.0);
+    fitcor->SetParameter(1,7.0);
+    fitcor->SetParameter(2,4.0);
+    fitcor->SetParameter(3,4.0);
+    fitcor->SetLineWidth(2);
+    gcor->Fit(fitcor,"QR");
+    
+    string cname_cor = string(gcor->GetName())+"_"+alg;
+    TCanvas* ccor = new TCanvas(cname_cor.c_str(),cname_cor.c_str(),715,0,700,600);
+    ccor->cd();
+    gPad->SetLeftMargin(0.2);
+    gPad->SetRightMargin(0.05);
+    gPad->SetTopMargin(0.05);
+    gPad->SetBottomMargin(0.15);
+    if (logx) gPad->SetLogx();
+    if (logy) gPad->SetLogy();
+    
     gcor->Draw("AP");
     TH1F* hcor = gcor->GetHistogram();
     hcor->SetXTitle("p_{T}");
     hcor->SetYTitle("L3 correction");
+    gcor->SetLineWidth(2);
+    gcor->SetMarkerStyle(kFullCircle);
     
+    tex.DrawLatex(0.6,0.8,get_legend_title(alg).c_str());
+
+    gcor->Write();
+
+    for (unsigned int iformat=0;iformat<formats.size();iformat++)
+      ccor->Print((string(ccor->GetName())+"."+formats[iformat]).c_str());
+    
+
     cout<<"DONE"<<endl;
   }
   
+
+  //
+  // close output file
+  //
+  cout<<"Write "<<output<<" ... "<<flush;
+  ofile->Close();
+  delete ofile;
+  ifile->Close();
+  delete ifile;
+  cout<<"DONE"<<endl;
   
+
   if (!batch) app->Run();
 
   return 0;
@@ -186,4 +291,33 @@ bool contains(const vector<string>& collection,const string& element)
   for (it=collection.begin();it!=collection.end();++it)
     if ((*it)==element) return true;
   return false;
+}
+
+
+//______________________________________________________________________________
+string get_legend_title(const string& alg)
+{
+  string title;
+  string tmp(alg);
+  if      (alg.find("kt")==0) { title = "k_{T}, D=";      tmp = tmp.substr(2); }
+  else if (alg.find("sc")==0) { title = "SISCone, R=";    tmp = tmp.substr(2); }
+  else if (alg.find("ic")==0) { title = "ItCone, R=";     tmp = tmp.substr(2); }
+  else if (alg.find("mc")==0) { title = "MidCone. R=";    tmp = tmp.substr(2); }
+  else if (alg.find("ca")==0) { title = "Cam/Aachen, D="; tmp = tmp.substr(2); }
+  else if (alg.find("ak")==0) { title = "Anti k_{T}, D="; tmp = tmp.substr(2); }
+  
+  assert(!title.empty());
+  
+  string            reco[4] = { "calo","pf","trk","jpt" };
+  string            RECO[4] = { "(Calo)", "(PFlow)", "(Tracks)", "(Jet+Tracks)" };
+
+  string::size_type pos=string::npos; int ireco=-1;
+  while (pos==string::npos&&ireco<3) { pos = tmp.find(reco[++ireco]); }
+  assert(pos!=string::npos);
+  
+  double jet_size; stringstream ss1; ss1<<tmp.substr(0,pos); ss1>>jet_size;
+  jet_size/=10.0;  stringstream ss2; ss2<<jet_size;
+  title += ss2.str() + " " + RECO[ireco];
+
+  return title;
 }
