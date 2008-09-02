@@ -45,6 +45,7 @@ bool   contains(const vector<string>& collection,const string& element);
 /// transform the alg label into a title, e.g.: kt4calo -> k_{T}, D=0.4 (Calo)
 string get_legend_title(const string& alg);
 
+
 ////////////////////////////////////////////////////////////////////////////////
 // main
 ////////////////////////////////////////////////////////////////////////////////
@@ -168,7 +169,7 @@ int main(int argc,char**argv)
     }
 
     
-    TLatex tex;
+    Tlatex tex;
     tex.SetNDC(true);
     tex.SetTextAlign(12);
     tex.SetTextFont(22);
