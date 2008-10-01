@@ -169,7 +169,7 @@ int main(int argc,char**argv)
     }
 
     
-    Tlatex tex;
+    TLatex tex;
     tex.SetNDC(true);
     tex.SetTextAlign(12);
     tex.SetTextFont(22);
@@ -208,7 +208,7 @@ int main(int argc,char**argv)
     
     grsp->Write();
 
-    ofstream fout(("l3_"+alg).c_str());
+    ofstream fout(("l3_"+alg+".jer").c_str());
     fout.setf(ios::left);
     fout<<setw(12)<<-5.191                  // eta_min
 	<<setw(12)<<+5.191                  // eta_max

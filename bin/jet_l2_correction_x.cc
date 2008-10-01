@@ -65,8 +65,6 @@ int main(int argc,char**argv)
   vector<string> formats = cl.getVector<string>("formats",       "");
   vector<string> algs    = cl.getVector<string>("algs",          "");
   bool           batch   = cl.getValue<bool>   ("batch",      false);
-  bool           logx    = cl.getValue<bool>   ("logx",       false);
-  bool           logy    = cl.getValue<bool>   ("logy",       false);
 
   if (!cl.check()) return 0;
   cl.print();
@@ -114,14 +112,14 @@ int main(int argc,char**argv)
     
     cout<<alg<<" ... "<<flush;
   
-    TDirectoryFile* l3dir = (TDirectoryFile)l3file->Get(alg.c_str());
+    TDirectoryFile* l3dir = (TDirectoryFile*)l3file->Get(alg.c_str());
     if (l3dir==0) {
       cout<<"Failed to rerieve L3 correction for "<<alg<<", skip"<<endl;
       continue;
     }
     
     TGraphErrors* gl3rsp = (TGraphErrors*)l3dir->Get("L3RspVsRefPt");
-    TF1*          fl3rsp = l3dir->GetListOfFunctions()->First();
+    TF1*          fl3rsp = (TF1*)gl3rsp->GetListOfFunctions()->First();
     if (0==fl3rsp) {
       cout<<"Failed to retrieve L3 correction for "<<alg<<", skip"<<endl;
       continue;
@@ -139,134 +137,216 @@ int main(int argc,char**argv)
     HistogramLoader hl_jetpt;
     hl_jetpt.load_histograms(idir,"JetPt:JetEta:RefPt");
 
+    
     //
     // absolute response/correction as a function of pT for each eta bin
     //
     vector<TGraphErrors*> vabsrsp_eta;
     vector<TGraphErrors*> vabscor_eta;
     
-    vector<unsigned int> indices; TH1F* absrsp(0);
-    hl_absrsp->begin_loop();
+    vector<unsigned int> indices; TH1F* habsrsp(0);
+    hl_absrsp.begin_loop();
     while ((habsrsp=hl_absrsp.next_histogram(indices))) {
-      if (habsrsp->Integral()==0) continue;
+
+      unsigned int ieta=indices[0];
+      unsigned int ipt =indices[1];
       
-      TF1*  fabsrsp = habsrsp->GetFunction("fit");
-      TH1F* hrefpt  = hl_refpt.histogram(indices);
-      TH1F* hjetpt  = hl_jetpt.histogram(indices);
-
-      assert(hrefpt->GetEntries()>0&&hjetpt->GetEntries()>0);
-
-      double refpt   =hrefpt->GetMean();
-      double erefpt  =hrefpt->GetMeanError();
-      double jetpt   =hjetpt->GetMean();
-      double ejetpt  =hjetpt->GetMeanError();
-
-      Double peak    =(fabsrsp==0)?habsrsp->GetMean():fabsrsp->GetParameter(1);
-      double epeak   =(fabsrsp==0)?habsrsp->GetMeanError():fabsrsp->GetParError(1);
-      
-      double refptsq =refpt*refpt;
-      double erefptsq=erefpt*erefpt;
-      double peaksq  =peak*peak;
-      double epeaksq =epeak*epeak;
-
-      double absrsp  =(refpt+peak)/refpt;
-      double eabsrsp =std::abs(rsp-1.)*std::sqrt(epeaksq/peaksq+erefptsq/refptsq);
-      double abscor  =1.0/rsp;
-      double eabscor =std::abs(refpt*peak)/(refpt+peak)/(refpt+peak)*
-	              std::sqrt(epeaksq/peaksq+erefptsq/refptsq);
-
-      double l3jetpt =jetpt*fl3cor->Eval(jetpt);
-      double         = 
-      double relrsp = 
-
-      if (indices[0]==0) {
+      // create new graphs if a new eta bin comes around
+      if (ipt==0) {
 	vabsrsp_eta.push_back(new TGraphErrors());
 	vabscor_eta.push_back(new TGraphErrors());
+	stringstream ss;
+	ss<<hl_absrsp.minimum(0,ieta)<<"to"<<hl_absrsp.maximum(0,ieta);
+	vabsrsp_eta.back()->SetName(("AbsRspVsRefPt_JetEta"+ss.str()).c_str());
+	vabscor_eta.back()->SetName(("AbsCorVsJetPt_JetEta"+ss.str()).c_str());
+      }
+      
+      // only add points to the graphs if the current histo is not empty
+      if (habsrsp->Integral()!=0) {
 	
-	stringstream ss_suffix;
-	ss_suffix<<hl_absrsp.minimum(0,indices[0])<<"to"
-		 <<hl_absrsp.maximum(0,indices[0]);
+	TF1*  fabsrsp = habsrsp->GetFunction("fit");
+	TH1F* hrefpt  = hl_refpt.histogram(indices);
+	TH1F* hjetpt  = hl_jetpt.histogram(indices);
 	
-	vabsrsp_eta.back()->SetName(("AbsRspVsRefPt_JetEta"+
-				     ss_suffix.str()).c_str());
-	vabscor_eta.back()->SetName(("AbsCorVsJetPt_JetEta"+
-				     ss_suffix.str()).c_str());
+	assert(hrefpt->GetEntries()>0&&hjetpt->GetEntries()>0);
+	
+	double refpt  =hrefpt->GetMean();
+	double erefpt =hrefpt->GetMeanError();
+	double jetpt  =hjetpt->GetMean();
+	double ejetpt =hjetpt->GetMeanError();
+	
+	double peak   =(fabsrsp==0)?habsrsp->GetMean():fabsrsp->GetParameter(1);
+	double epeak  =(fabsrsp==0)?habsrsp->GetMeanError():fabsrsp->GetParError(1);
+	
+	double refptsq =refpt*refpt;
+	double erefptsq=erefpt*erefpt;
+	double peaksq  =peak*peak;
+	double epeaksq =epeak*epeak;
+	
+	double absrsp =(refpt+peak)/refpt;
+	double eabsrsp=std::abs(absrsp-1.)*std::sqrt(epeaksq/peaksq+erefptsq/refptsq);
+	double abscor  =1.0/absrsp;
+	double eabscor =
+	  std::abs(refpt*peak)/(refpt+peak)/(refpt+peak)*
+	  std::sqrt(epeaksq/peaksq+erefptsq/refptsq);
+	
+	int n = vabsrsp_eta.back()->GetN();
+	vabsrsp_eta.back()->SetPoint     (n,refpt, absrsp);
+	vabsrsp_eta.back()->SetPointError(n,erefpt,eabsrsp);
+	vabscor_eta.back()->SetPoint     (n,jetpt, abscor);
+	vabscor_eta.back()->SetPointError(n,ejetpt,eabscor);      
       }
-      
-      assert(vabsrsp_eta.back()->GetN()==vabscor_eta.back()->GetN());
 
-      int n = vabsrsp_eta.back()->GetN();
-      vabsrsp_eta.back()->SetPoint     (n,refpt, absrsp);
-      vabsrsp_eta.back()->SetPointError(n,erefpt,eabsrsp);
-      vabscor_eta.back()->SetPoint     (n,jetpt, abscor);
-      vabscor_eta.back()->SetPointError(n,ejetpt,eabscor);      
+      // fit graphs if last pt of the current eta bin comes around
+      if (ipt==hl_jetpt.nhistograms(1)-1) {
+	TGraphErrors* gabsrsp = vabsrsp_eta.back();
+	TGraphErrors* gabscor = vabscor_eta.back();
+	TF1*          fabscor(0);
+	
+	double xmin = gabscor->GetX()[0];
+	double xmax = gabscor->GetX()[gabscor->GetN()-1];
+      
+	if (gabscor->GetN()==0) {
+	  gabscor->SetPoint     (0, 10.0,1.0);
+	  gabscor->SetPointError(0,  0.0,0.0);
+	  gabscor->SetPoint     (1,100.0,1.0);
+	  gabscor->SetPointError(1,  0.0,0.0);
+	  fabscor = new TF1("fit","[0]",10.0,100.0);
+	}
+	else if (gabscor->GetN()<10) {
+	  fabscor=new TF1("fit","[0]+[1]*log10(x)+[2]*pow(log10(x),2)",xmin,xmax);
+	  fabscor->SetParameter(0,0.0);
+	  fabscor->SetParameter(1,0.0);
+	  fabscor->SetParameter(2,0.0);
+	}
+	else {
+	  fabscor=new TF1("fit","[0]-[1]/(pow(log10(x),[2])+[3])+[4]/x",xmin,xmax);
+	  fabscor->SetParameter(0,0.0);
+	  fabscor->SetParameter(1,0.0);
+	  fabscor->SetParameter(2,0.0);
+	  fabscor->SetParameter(3,0.0);
+	  fabscor->SetParameter(4,0.0);
+	}
+	
+	gabscor->Fit(fabscor,"QR0");
+	gabscor->GetListOfFunctions()->First()->ResetBit(TF1::kNotDraw);
+
+	gabsrsp->Write();
+	gabscor->Write();
+      }
+
     }
-    
-    
-    //
-    // fit absolute correction as a function of pT in each eta bin
-    //
-    for (unsigned int ieta=0;ieta<vcor_eta.size();ieta++) {
-      TGraphErrors* gabscor = vabscor_eta[ieta];
-      TF1*          fabscor(0);
 
-      double xmin = gabscor->GetX()[0];
-      double xmax = gabscor->GetX()[gabscor->GetN()-1];
-      
-      if (gabscor->GetN()==0) {
-	gabscor->SetPoint     (0, 10.0,1.0);
-	gabscor->SetPointError(0,  0.0,0.0);
-	gabscor->SetPoint     (1,100.0,1.0);
-	gabscor->SetPointError(1,  0.0,0.0);
-	fabscor = new TF1("fit","[0]",10.0,100.0);
-      }
-      else if (gabscor->GetN()<10) {
-	fabscor = new TF1("fit","[0]+[1]*log10(x)+[2]*pow(log10(x),2)",xmin,xmax);
-	fabscor->SetParameter(0,0.0);
-	fabscor->SetParameter(1,0.0);
-	fabscor->SetParameter(2,0.0);
-
-      }
-      else {
-	fabscor = new TF1("fit","[0]-[1]/(pow(log10(x),[2])+[3])+[4]/x",xmin,xmax);
-	fabscor->SetParameter(0,0.0);
-	fabscor->SetParameter(1,0.0);
-	fabscor->SetParameter(2,0.0);
-	fabscor->SetParameter(3,0.0);
-	fabscor->SetParameter(4,0.0);
-      }
-      
-      gabscor->Fit(fabscor,"QR0");
-      gabscor->GetListOfFunctions()->First()->ResetBit(kNotDraw);
-    }
     
-
     //
     // relative (L2) response/correction as a function of pT for each eta bin
     //
-    vector<TGraphErrors*> vabsrsp_eta;
-    vector<TGraphErrors*> vabscor_eta;
-
-    HistogramLoader hl_jetpt;
-    hl_jetpt.load_histograms(idir,"JetPt:RefPt");
-    
+    vector<TGraph*> vrelcor_eta;
     TH1F* hjetpt(0);
     hl_jetpt.begin_loop();
     while ((hjetpt=hl_jetpt.next_histogram(indices))) {
-      if (hjetpt->Integral()==0) continue;
       
       unsigned int ieta = indices[0];
+      unsigned int ipt  = indices[1];
       
-      double jetpt   =hjetpt->GetMean();
-      double ejetpt  =hjetpt->GetMeanError();
+      // create a new graph if a new eta bin comes around
+      if (ipt==0) {
+	vrelcor_eta.push_back(new TGraphErrors());
+	stringstream ss;
+	ss<<hl_jetpt.minimum(0,ieta)<<"to"<<hl_jetpt.maximum(0,ieta);
+	vrelcor_eta.back()->SetName(("RelCorVsJetPt_JetEta"+ss.str()).c_str());
+      }
       
-      double l3jetpt = 
+      // only add a point to the graph if the current histo is not empty
+      if (hjetpt->Integral()!=0) {
+	TF1*   fabscor  =vabscor_eta[ieta]->GetFunction("fit");
+	double jetpt    =hjetpt->GetMean();
+	double refpt    =jetpt*fabscor->Eval(jetpt);
+	double controlpt=refpt*fl3rsp->Eval(refpt);
+	double relcor   =controlpt/jetpt;
+	int n=vrelcor_eta.back()->GetN();
+	vrelcor_eta.back()->SetPoint(n,jetpt,relcor);
+      }
+      
+      // fit the graph if the last pt of the current eta bin comes around
+      if (ipt==hl_jetpt.nhistograms(1)-1) {
+	TGraph* grelcor = vrelcor_eta.back();
+	TF1*    frelcor(0);
+
+	double xmin = grelcor->GetX()[0];
+	double xmax = grelcor->GetX()[grelcor->GetN()-1];
+      
+	if (grelcor->GetN()<2) {
+	  grelcor->SetPoint(0,10,1.0);
+	  grelcor->SetPoint(1,100,1.0);
+	  frelcor=new TF1("fit","[0]",10,100);
+	}
+	else if (grelcor->GetN()==2) {
+	  frelcor=new TF1("fit","[0]+[1]*log10(x)",xmin,xmax);
+	}
+	else {
+	  frelcor=new TF1("fit","[0]+[1]*log10(x)+[2]*pow(log10(x),2)+[3]*pow(log10(x),3)+[4]*pow(log10(x),4)+[5]*pow(log10(x),5)",xmin,xmax);
+	}
+	
+	frelcor->SetParameter(0,0.0);
+	frelcor->SetParameter(1,0.0);
+	frelcor->SetParameter(2,0.0);
+	frelcor->SetParameter(3,0.0);
+	frelcor->SetParameter(4,0.0);
+	frelcor->SetParameter(5,0.0);
+	
+	grelcor->Fit(frelcor,"QR0");
+	grelcor->GetListOfFunctions()->First()->ResetBit(TF1::kNotDraw);
+
+	grelcor->Write();
+      }
     }
     
-
+    
+    //
+    // write the L2 correction text file for the current algorithm
+    //
+    ofstream fout(("l2_"+alg+".jec").c_str());
+    fout.setf(ios::right);
+    for (unsigned int ieta=0;ieta<vrelcor_eta.size();ieta++) {
+      TGraph* grelcor = vrelcor_eta[ieta];
+      TF1*    frelcor = (TF1*)grelcor->GetListOfFunctions()->First();
+      double  etamin  = hl_jetpt.minimum(0,ieta);
+      double  etamax  = hl_jetpt.maximum(0,ieta);
+      double  ptmin   = frelcor->GetMinimumX();
+      double  ptmax   = frelcor->GetMaximumX();
+      fout<<setw(11)<<etamin
+	  <<setw(11)<<etamax
+	  <<setw(11)<<(int)8
+	  <<setw(12)<<ptmin
+	  <<setw(12)<<ptmax
+	  <<setw(13)<<frelcor->GetParameter(0)
+	  <<setw(13)<<frelcor->GetParameter(1)
+	  <<setw(13)<<frelcor->GetParameter(2)
+	  <<setw(13)<<frelcor->GetParameter(3)
+	  <<setw(13)<<frelcor->GetParameter(4)
+	  <<setw(13)<<frelcor->GetParameter(5)
+	  <<endl;
+    }
+    fout.close();
+    
+    
     cout<<"DONE"<<endl;
   }
 
+
+  //
+  // close output file
+  //
+  cout<<"Write "<<output<<" ... "<<flush;
+  ofile->Close();
+  delete ofile;
+  ifile->Close();
+  delete ifile;
+  cout<<"DONE"<<endl;
+  
+  
+  if (!batch) app->Run();
   
   return 0;
 }
@@ -300,8 +380,8 @@ string get_legend_title(const string& alg)
   
   assert(!title.empty());
   
-  string            reco[4] = { "calo","pf","trk","jpt" };
-  string            RECO[4] = { "(Calo)", "(PFlow)", "(Tracks)", "(Jet+Tracks)" };
+  string reco[4] = { "calo",   "pf",      "trk",      "jpt" };
+  string RECO[4] = { "(Calo)", "(PFlow)", "(Tracks)", "(Jet+Tracks)" };
 
   string::size_type pos=string::npos; int ireco=-1;
   while (pos==string::npos&&ireco<3) { pos = tmp.find(reco[++ireco]); }
