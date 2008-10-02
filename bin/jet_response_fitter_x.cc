@@ -61,7 +61,7 @@ int main(int argc,char**argv)
   //
   // open input file and loop over input directories (=algorithms)
   //
-  TFile* ifile = new TFile(input.c_str(),"UPDATE");
+  TFile* ifile = new TFile(input.c_str(),"READ");
   if (!ifile->IsOpen()) { cout<<"Can't open "<<input<<endl; return 0; }
 
   TFile* ofile = new TFile("tmp.root","RECREATE");
@@ -123,16 +123,17 @@ int main(int argc,char**argv)
 	  sigma = fitfnc->GetParameter(2);
 	}
 	if (0!=fitfnc&&fitfnc->GetNDF()<=5) {
-	  cout<<"NDOF(FITFNC)="<<fitfnc->GetNDF()<<" FOR "<<hrsp->GetName()<<endl;
+	  cout<<"NDOF(FITFNC)="<<fitfnc->GetNDF()
+	      <<" FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
 	  hrsp->GetListOfFunctions()->Delete();
 	}
       }
       else {
-	cout<<"NOT ENOUGH ENTRIES FOR "<<hrsp->GetName()<<endl;
+	cout<<"NOT ENOUGH ENTRIES FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
       }
     }
     
-    cout<<"response fits for *"+alg+"* completed!"<<endl;
+    cout<<"response fits for *"+alg+"* completed!\n"<<endl;
   }
   
   
