@@ -208,19 +208,6 @@ int main(int argc,char**argv)
     
     grsp->Write();
 
-    ofstream fout(("l3_"+alg+".jer").c_str());
-    fout.setf(ios::left);
-    fout<<setw(12)<<-5.191                  // eta_min
-	<<setw(12)<<+5.191                  // eta_max
-	<<setw(12)<<6                       // number of parameters + 2
-	<<setw(12)<<4                       // minimum pT
-	<<setw(12)<<5000                    // maximum pT
-	<<setw(12)<<fitrsp->GetParameter(0) // p0
-	<<setw(12)<<fitrsp->GetParameter(1) // p1
-	<<setw(12)<<fitrsp->GetParameter(2) // p2
-	<<setw(12)<<fitrsp->GetParameter(3);// p3
-    fout.close();
-    
     for (unsigned int iformat=0;iformat<formats.size();iformat++)
       crsp->Print((string(crsp->GetName())+"."+formats[iformat]).c_str());
     
@@ -256,6 +243,19 @@ int main(int argc,char**argv)
 
     gcor->Write();
 
+    ofstream fout(("l3_"+alg+".jec").c_str());
+    fout.setf(ios::left);
+    fout<<setw(12)<<-5.191                  // eta_min
+	<<setw(12)<<+5.191                  // eta_max
+	<<setw(12)<<6                       // number of parameters + 2
+	<<setw(12)<<4.0                     // minimum pT
+	<<setw(12)<<5000.0                  // maximum pT
+	<<setw(12)<<fitcor->GetParameter(0) // p0
+	<<setw(12)<<fitcor->GetParameter(1) // p1
+	<<setw(12)<<fitcor->GetParameter(2) // p2
+	<<setw(12)<<fitcor->GetParameter(3);// p3
+    fout.close();
+    
     for (unsigned int iformat=0;iformat<formats.size();iformat++)
       ccor->Print((string(ccor->GetName())+"."+formats[iformat]).c_str());
     

@@ -145,6 +145,8 @@ int main(int argc,char**argv)
     odir->Write();
     odir->DeleteAll();
     delete odir;
+    idir->DeleteAll();
+    delete idir;
     cout<<" and saved!\n"<<endl;
   }
   
