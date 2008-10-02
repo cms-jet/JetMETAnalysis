@@ -50,9 +50,10 @@ int main(int argc,char**argv)
   if (!cl.parse(argc,argv)) return 0;
   
   string         input  = cl.getValue<string> ("input");
-  double         nsigma = cl.getValue<double> ("nsigma",1.5);
-  int            niter  = cl.getValue<int>    ("niter",   3);
-  vector<string> algs   = cl.getVector<string>("algs",   "");
+  string         output = cl.getValue<string> ("output","jrf.root");
+  double         nsigma = cl.getValue<double> ("nsigma",       1.5);
+  int            niter  = cl.getValue<int>    ("niter",          3);
+  vector<string> algs   = cl.getVector<string>("algs",          "");
 
   if (!cl.check()) return 0;
   cl.print();
@@ -64,8 +65,8 @@ int main(int argc,char**argv)
   TFile* ifile = new TFile(input.c_str(),"READ");
   if (!ifile->IsOpen()) { cout<<"Can't open "<<input<<endl; return 0; }
 
-  TFile* ofile = new TFile("tmp.root","RECREATE");
-  if (!ofile->IsOpen()) { cout<<"Can't create tmp.root"<<endl; return 0; }
+  TFile* ofile = new TFile(output.c_str(),"UPDATE");
+  if (!ofile->IsOpen()) { cout<<"Can't create "<<output<<endl; return 0; }
 
   TIter nextDir(ifile->GetListOfKeys());
   TKey* dirKey(0);
@@ -76,6 +77,13 @@ int main(int argc,char**argv)
     TDirectoryFile* idir = (TDirectoryFile*)dirKey->ReadObj();
     string alg(idir->GetName());
     
+    if (algs.size()>0&&!contains(algs,alg)) continue;
+
+    if (0!=ofile->Get(idir->GetName())) {
+      cout<<"directory '"<<alg<<"' exists already in "<<output<<", skip!"<<endl;
+      continue;
+    }
+
     TDirectoryFile* odir = (TDirectoryFile*)ofile->mkdir(idir->GetName());
     odir->cd();
     
@@ -94,7 +102,7 @@ int main(int argc,char**argv)
       string histname(hrsp->GetName());
       
       if (histname.find("RelRsp")!=0&&histname.find("AbsRsp")!=0) continue;
-      if (algs.size()>0&&!contains(algs,alg)) continue;
+      //if (algs.size()>0&&!contains(algs,alg)) continue;
 
       double integral = hrsp->Integral();
       double mean     = hrsp->GetMean();
@@ -133,7 +141,11 @@ int main(int argc,char**argv)
       }
     }
     
-    cout<<"response fits for *"+alg+"* completed!\n"<<endl;
+    cout<<"response fits for *"+alg+"* completed ..."<<flush;
+    odir->Write();
+    odir->DeleteAll();
+    delete odir;
+    cout<<" and saved!\n"<<endl;
   }
   
   
@@ -141,14 +153,14 @@ int main(int argc,char**argv)
   // update the input file
   //
   cout<<"update input file "<<input<<" ..."<<flush;
-  ofile->Write();
+  //ofile->Write();
   gROOT->GetListOfFiles()->Remove(ofile);
   ofile->Close();
   delete ofile;
   gROOT->GetListOfFiles()->Remove(ifile);
   ifile->Close();
   delete ifile;
-  gSystem->Exec(("mv tmp.root "+input).c_str());
+  //gSystem->Exec(("mv tmp.root "+input).c_str());
   cout<<" DONE."<<endl;
   
   

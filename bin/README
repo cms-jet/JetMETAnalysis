@@ -45,15 +45,18 @@ directly from JetResponseAnalyzer, or processing the output *tree*
 format from JetResponseAnalyzer with jet_response_analyzer_x (see
 above). The response histograms in the input file are fitted with a
 Gaussian applying an iterative procedure developed by Kostas
-Kousouris. The resulting fits are stored with the histograms in the
-same file.
+Kousouris. The resulting fits are stored in the output file. Only
+those jet algorithms considered for fitting (option -algs) are
+transferred to the output. Algorithms which are omitted can be added
+later. Algorithms which are fitter already can not be overwritten for
+now, but are skipped.
 
 EXAMPLE:
 jet_response_fitter_x -input jra.root
 
 STEP-BY_STEP:
 
-* open input (read) and temporary output (recreate) file 'tmp.root'.
+* open input (read) and output (update!) files
 
 * loop over directories found in the input file
 
@@ -70,8 +73,7 @@ name, which must either begin with 'RelRsp' or 'AbsRsp'
   to consider mean and rms instead of the fit parameters of the
   Gaussian
 
-* 'update' the input file, by saving tmp.root and overwriting the
-  input file with it
+* save output, close input & output files
 
 
 
