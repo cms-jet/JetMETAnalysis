@@ -50,6 +50,23 @@ kt4calo = cms.EDAnalyzer("JetResponseAnalyzer",
     srcRef = cms.InputTag("kt4genPtEta")
 )
 
+# kt4calol2l3
+kt4calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+    Defaults.JetPtEta,
+    src = cms.InputTag("L2L3CorJetKt4")
+)
+
+kt4calol2l3JetToRef = cms.EDFilter("MatchRecToGen",
+    srcGen = cms.InputTag("kt4genPtEta"),
+    srcRec = cms.InputTag("kt4calol2l3PtEta")
+)
+
+kt4calol2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
+    Defaults.JetResponseParameters,
+    srcRefToJetMap = cms.InputTag("kt4calol2l3JetToRef","gen2rec"),
+    srcRef = cms.InputTag("kt4genPtEta")
+)
+
 #kt6calo
 kt6caloPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
     Defaults.JetPtEta,
@@ -64,6 +81,23 @@ kt6caloJetToRef = cms.EDFilter("MatchRecToGen",
 kt6calo = cms.EDAnalyzer("JetResponseAnalyzer",
     Defaults.JetResponseParameters,
     srcRefToJetMap = cms.InputTag("kt6caloJetToRef","gen2rec"),
+    srcRef = cms.InputTag("kt6genPtEta")
+)
+
+#kt6calol2l3
+kt6calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+    Defaults.JetPtEta,
+    src = cms.InputTag("L2L3CorJetKt6")
+)
+
+kt6calol2l3JetToRef = cms.EDFilter("MatchRecToGen",
+    srcGen = cms.InputTag("kt6genPtEta"),
+    srcRec = cms.InputTag("kt6calol2l3PtEta")
+)
+
+kt6calol2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
+    Defaults.JetResponseParameters,
+    srcRefToJetMap = cms.InputTag("kt6calol2l3JetToRef","gen2rec"),
     srcRef = cms.InputTag("kt6genPtEta")
 )
 
@@ -84,6 +118,23 @@ sc5calo = cms.EDAnalyzer("JetResponseAnalyzer",
     srcRef = cms.InputTag("sc5genPtEta")
 )
 
+# sc5calol2l3
+sc5calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+    Defaults.JetPtEta,
+    src = cms.InputTag("L2L3CorJetScone5")
+)
+
+sc5calol2l3JetToRef = cms.EDFilter("MatchRecToGen",
+    srcGen = cms.InputTag("sc5genPtEta"),
+    srcRec = cms.InputTag("sc5calol2l3PtEta")
+)
+
+sc5calol2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
+    Defaults.JetResponseParameters,
+    srcRefToJetMap = cms.InputTag("sc5calol2l3JetToRef","gen2rec"),
+    srcRef = cms.InputTag("sc5genPtEta")
+)
+
 # sc7calo
 sc7caloPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
     Defaults.JetPtEta,
@@ -101,6 +152,23 @@ sc7calo = cms.EDAnalyzer("JetResponseAnalyzer",
     srcRef = cms.InputTag("sc7genPtEta")
 )
 
+# sc7calol2l3
+sc7calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+    Defaults.JetPtEta,
+    src = cms.InputTag("L2L3CorJetScone7")
+)
+
+sc7calol2l3JetToRef = cms.EDFilter("MatchRecToGen",
+    srcGen = cms.InputTag("sc7genPtEta"),
+    srcRec = cms.InputTag("sc7calol2l3PtEta")
+)
+
+sc7calol2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
+    Defaults.JetResponseParameters,
+    srcRefToJetMap = cms.InputTag("sc7calol2l3JetToRef","gen2rec"),
+    srcRef = cms.InputTag("sc7genPtEta")
+)
+
 # ic5calo
 ic5caloPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
     Defaults.JetPtEta,
@@ -115,6 +183,23 @@ ic5caloJetToRef = cms.EDFilter("MatchRecToGen",
 ic5calo = cms.EDAnalyzer("JetResponseAnalyzer",
     Defaults.JetResponseParameters,
     srcRefToJetMap = cms.InputTag("ic5caloJetToRef","gen2rec"),
+    srcRef = cms.InputTag("ic5genPtEta")
+)
+
+# ic5calol2l3
+ic5calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+    Defaults.JetPtEta,
+    src = cms.InputTag("L2L3CorJetIcone5")
+)
+
+ic5calol2l3JetToRef = cms.EDFilter("MatchRecToGen",
+    srcGen = cms.InputTag("ic5genPtEta"),
+    srcRec = cms.InputTag("ic5calol2l3PtEta")
+)
+
+ic5calol2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
+    Defaults.JetResponseParameters,
+    srcRefToJetMap = cms.InputTag("ic5calol2l3JetToRef","gen2rec"),
     srcRef = cms.InputTag("ic5genPtEta")
 )
 
@@ -200,6 +285,23 @@ ic5pfJetToRef = cms.EDFilter("MatchRecToGen",
 ic5pf = cms.EDAnalyzer("JetResponseAnalyzer",
     Defaults.JetResponseParameters,
     srcRefToJetMap = cms.InputTag("ic5pfJetToRef","gen2rec"),
+    srcRef = cms.InputTag("ic5genPtEta")
+)
+
+#ic5pflowl2l3
+ic5pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+    Defaults.JetPtEta,
+    src = cms.InputTag("L2L3CorJetPFIcone5")
+)
+
+ic5pfl2l3JetToRef = cms.EDFilter("MatchRecToGen",
+    srcGen = cms.InputTag("ic5genPtEta"),
+    srcRec = cms.InputTag("ic5pfl2l3PtEta")
+)
+
+ic5pfl2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
+    Defaults.JetResponseParameters,
+    srcRefToJetMap = cms.InputTag("ic5pfl2l3JetToRef","gen2rec"),
     srcRef = cms.InputTag("ic5genPtEta")
 )
 
@@ -307,4 +409,11 @@ kt6trkJRA  = cms.Path(kt6trkPtEta  + kt6genPtEta + kt6trkJetToRef  + kt6trk)
 sc5trkJRA  = cms.Path(sc5trkPtEta  + sc5genPtEta + sc5trkJetToRef  + sc5trk)
 sc7trkJRA  = cms.Path(sc7trkPtEta  + sc7genPtEta + sc7trkJetToRef  + sc7trk)
 ic5trkJRA  = cms.Path(ic5trkPtEta  + ic5genPtEta + ic5trkJetToRef  + ic5trk)
+
+kt4calol2l3JRA=cms.Path(kt4calol2l3PtEta+kt4genPtEta+kt4calol2l3JetToRef+kt4calol2l3)
+kt6calol2l3JRA=cms.Path(kt6calol2l3PtEta+kt6genPtEta+kt6calol2l3JetToRef+kt6calol2l3)
+sc5calol2l3JRA=cms.Path(sc5calol2l3PtEta+sc5genPtEta+sc5calol2l3JetToRef+sc5calol2l3)
+sc7calol2l3JRA=cms.Path(sc7calol2l3PtEta+sc7genPtEta+sc7calol2l3JetToRef+sc7calol2l3)
+ic5calol2l3JRA=cms.Path(ic5calol2l3PtEta+ic5genPtEta+ic5calol2l3JetToRef+ic5calol2l3)
+ic5pfl2l3JRA  =cms.Path(ic5pfl2l3PtEta  +ic5genPtEta+ic5pfl2l3JetToRef  +ic5pfl2l3)
 
