@@ -4,7 +4,7 @@ import FWCore.ParameterSet.Config as cms
 #! ADJUST JET & REFERENCE PRESELECTION, RESPONSE ANALYSIS PARAMETERS
 #!
 import JetMETAnalysis.JetAnalyzers.JRA_Defaults_cff as Defaults;
-import JetMETAnalysis.JetAnalyzers.JRA_HistoDEfaults_cff as Histos;
+import JetMETAnalysis.JetAnalyzers.JRA_HistoDefaults_cff as Histos;
 
 Defaults.JetPtEta = cms.PSet(
     etaMin = cms.double(-5.0),
