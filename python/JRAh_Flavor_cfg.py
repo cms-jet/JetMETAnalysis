@@ -4,7 +4,7 @@ import FWCore.ParameterSet.Config as cms
 #!
 #! ADJUST PT/ETA PRESELECTION AND RESPONSE ANALYSIS PARAMETERS
 #!
-import JetMETAnalysis.JetAnalyzers.Defaults_cff as Defaults;
+import JetMETAnalysis.JetAnalyzers.JRA_Defaults_cff as Defaults;
 
 Defaults.JetPtEta = cms.PSet(
     etaMin = cms.double(-5.0),
@@ -61,7 +61,7 @@ Defaults.JetResponseParameters = cms.PSet(
 #!
 #! PROCESS
 #!
-process = cms.Process("JETCALIB")
+process = cms.Process("JRA")
 
 
 #!
@@ -70,10 +70,7 @@ process = cms.Process("JETCALIB")
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
-    # 21X:
-    '/store/relval/CMSSW_2_1_0_pre9/RelValQCD_Pt_80_120/GEN-SIM-DIGI-RAW-HLTDEBUG-RECO/IDEAL_V5_IdealGeometry_v3/0001/00A2383F-DB58-DD11-8DE6-001617C3B6E2.root'
-    # 20X:
-    # '/store/relvall/2008/5/4/RelVal-RelValQCD_Pt_80_120-1209247429-IDEAL_V1-2nd/0000/0CA5A748-651A-DD11-BD7B-000423D992A4.root'
+    '/store/relval/CMSSW_2_1_10/RelValQCD_Pt_80_120/GEN-SIM-DIGI-RAW-HLTDEBUG-RECO/IDEAL_V9_v2/0000/046AC296-EC99-DD11-9691-000423D6A6F4.root'
     )
 )
 
