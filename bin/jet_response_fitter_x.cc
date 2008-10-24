@@ -49,12 +49,13 @@ int main(int argc,char**argv)
   CommandLine cl;
   if (!cl.parse(argc,argv)) return 0;
   
-  string         input  = cl.getValue<string> ("input");
-  string         output = cl.getValue<string> ("output","jrf.root");
-  double         nsigma = cl.getValue<double> ("nsigma",       1.5);
-  int            niter  = cl.getValue<int>    ("niter",          3);
-  vector<string> algs   = cl.getVector<string>("algs",          "");
-
+  string         input   = cl.getValue<string> ("input");
+  string         output  = cl.getValue<string> ("output","jrf.root");
+  double         nsigma  = cl.getValue<double> ("nsigma",       1.5);
+  int            niter   = cl.getValue<int>    ("niter",          3);
+  vector<string> algs    = cl.getVector<string>("algs",          "");
+  int            verbose = cl.getValue<int>    ("verbose",        0);
+  
   if (!cl.check()) return 0;
   cl.print();
   
@@ -102,7 +103,6 @@ int main(int argc,char**argv)
       string histname(hrsp->GetName());
       
       if (histname.find("RelRsp")!=0&&histname.find("AbsRsp")!=0) continue;
-      //if (algs.size()>0&&!contains(algs,alg)) continue;
 
       double integral = hrsp->Integral();
       double mean     = hrsp->GetMean();
@@ -123,21 +123,23 @@ int main(int argc,char**argv)
 	  fitfnc->SetParameter(0,norm);
 	  fitfnc->SetParameter(1,peak);
 	  fitfnc->SetParameter(2,sigma);
-	  hrsp->GetListOfFunctions()->Delete();
 	  hrsp->Fit(fitfnc,"RQ0");
-	  hrsp->GetFunction("fit")->ResetBit(TF1::kNotDraw);
+	  delete fitfnc;
+	  fitfnc = hrsp->GetFunction("fit");
+	  fitfnc->ResetBit(TF1::kNotDraw);
 	  norm  = fitfnc->GetParameter(0);
 	  peak  = fitfnc->GetParameter(1);
 	  sigma = fitfnc->GetParameter(2);
 	}
 	if (0!=fitfnc&&fitfnc->GetNDF()<=5) {
-	  cout<<"NDOF(FITFNC)="<<fitfnc->GetNDF()
-	      <<" FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
+	  if (verbose>0) cout<<"NDOF(FITFNC)="<<fitfnc->GetNDF()
+			     <<" FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
 	  hrsp->GetListOfFunctions()->Delete();
 	}
       }
       else {
-	cout<<"NOT ENOUGH ENTRIES FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
+	if (verbose>0)
+	  cout<<"NOT ENOUGH ENTRIES FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
       }
     }
     
@@ -145,8 +147,6 @@ int main(int argc,char**argv)
     odir->Write();
     odir->DeleteAll();
     delete odir;
-    idir->DeleteAll();
-    delete idir;
     cout<<" and saved!\n"<<endl;
   }
   
@@ -154,15 +154,13 @@ int main(int argc,char**argv)
   //
   // update the input file
   //
-  cout<<"update input file "<<input<<" ..."<<flush;
-  //ofile->Write();
+  cout<<"update output file "<<output<<" ..."<<flush;
   gROOT->GetListOfFiles()->Remove(ofile);
   ofile->Close();
   delete ofile;
   gROOT->GetListOfFiles()->Remove(ifile);
   ifile->Close();
   delete ifile;
-  //gSystem->Exec(("mv tmp.root "+input).c_str());
   cout<<" DONE."<<endl;
   
   
