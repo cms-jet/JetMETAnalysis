@@ -31,11 +31,9 @@ process.load("JetMETAnalysis.JetAnalyzers.JRA_PathsAndModules_cff")
 #!
 #! INPUT
 #!
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(100))
 process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring(
-    '/store/relval/CMSSW_2_1_10/RelValQCD_Pt_80_120/GEN-SIM-DIGI-RAW-HLTDEBUG-RECO/IDEAL_V9_v2/0000/046AC296-EC99-DD11-9691-000423D6A6F4.root'
-    )
+    fileNames = cms.untracked.vstring('file:/data/Summer08/QCDDijet30to50.root')
 )
 
 
@@ -53,18 +51,42 @@ process.TFileService = cms.Service("TFileService",
 )
 
 
+#!
+#! EVENT SETUP
+#!
+process.load("Configuration.StandardSequences.Geometry_cff")
+process.load("Configuration.StandardSequences.FakeConditions_cff")
+process.load("Configuration.StandardSequences.MagneticField_cff")
+process.load("RecoJets.Configuration.CaloTowersES_cfi")
+
 
 #!
 #! PATHS
 #!
+
+# track reconstruction (needed by pflow, NOT track-jet reconstruction!)
+process.load("RecoLocalTracker.SiPixelRecHits.SiPixelRecHits_cfi")
+process.load("RecoLocalTracker.SiStripRecHitConverter.SiStripRecHitConverter_cfi")
+process.load("RecoTracker.Configuration.RecoTracker_cff")
+process.recoTracks = cms.Path(process.siPixelRecHits*
+                              process.siStripMatchedRecHits*
+                              process.ckftracks)
+
+
+# pflow reconstruction
+process.load("RecoEgamma.EgammaElectronProducers.electronSequence_cff")
+process.load("RecoParticleFlow.Configuration.RecoParticleFlow_cff")
+process.recoPF = cms.Path(process.electronSequence*
+                          process.particleFlowReco)
+
+# jet reconstruction
 process.load("RecoJets.Configuration.GenJetParticles_cff")
 process.load("SchieferD.Configuration.RecoGenJets_cff")
-process.load("Configuration.StandardSequences.Geometry_cff")
 process.load("SchieferD.Configuration.RecoCaloJets_cff")
 process.load("SchieferD.Configuration.RecoPFJets_cff")
 process.load("SchieferD.Configuration.RecoTrackJets_cff")
 
-process.load("Configuration.StandardSequences.MagneticField_cff")
+# jpt
 process.load("JetMETCorrections.Configuration.JetPlusTrackCorrections_cff")
 process.load("JetMETCorrections.Configuration.ZSPJetCorrections152_cff")
 
@@ -76,15 +98,21 @@ process.recoJets = cms.Path(process.genJetParticles+
                             process.ZSPJetCorrections+
                             process.JetPlusTrackCorrections)
 
-process.load("JetMETCorrections.Configuration.L2L3Corrections_iCSA08_S156_cff")
-process.prefer("L2L3JetCorrectorIcone5") 
 
-process.correctJets = cms.Path(process.L2L3CorJetKt4+
-                               process.L2L3CorJetKt6+
-                               process.L2L3CorJetScone5+
-                               process.L2L3CorJetScone7+
-                               process.L2L3CorJetIcone5+
-                               process.L2L3CorJetPFIcone5
+# jet correction
+process.load("JetMETCorrections.Configuration.L2L3Corrections_Summer08_cff")
+process.prefer("L2L3JetCorrectorSC5Calo") 
+
+process.correctJets = cms.Path(process.L2L3CorJetKT4Calo+
+                               process.L2L3CorJetKT6Calo+
+                               process.L2L3CorJetSC5Calo+
+                               process.L2L3CorJetSC7Calo+
+                               process.L2L3CorJetIC5Calo+
+                               process.L2L3CorJetKT4PF+
+                               process.L2L3CorJetKT6PF+
+                               process.L2L3CorJetSC5PF+
+                               process.L2L3CorJetSC7PF+
+                               process.L2L3CorJetIC5PF
                                )
 
 
@@ -92,13 +120,19 @@ process.correctJets = cms.Path(process.L2L3CorJetKt4+
 #! SCHEDULE
 #!
 process.schedule = cms.Schedule(
-    # uncorrected jets
+    # track reco
+    process.recoTracks,
+    # pflow reco
+    process.recoPF,
+    # jet reco
     process.recoJets,
+    # uncorrected jets
     process.kt4caloJRA,
     process.kt6caloJRA,
     process.sc5caloJRA,
     process.sc7caloJRA,
     process.ic5caloJRA,
+#    process.ak5caloJRA, # NEW
     process.kt4pfJRA,
     process.kt6pfJRA,
     process.sc5pfJRA,
@@ -110,13 +144,18 @@ process.schedule = cms.Schedule(
     process.sc7trkJRA,
     process.ic5trkJRA,
     process.ic5jptJRA,
-    # corrected jets
+    # correct jets
     process.correctJets,
+    # corrected jets
     process.kt4calol2l3JRA,
     process.kt6calol2l3JRA,
     process.sc5calol2l3JRA,
     process.sc7calol2l3JRA,
     process.ic5calol2l3JRA,
-    process.ic5pfl2l3JRA
+    process.ic5pfl2l3JRA,
+    process.kt4pfl2l3JRA,
+    process.kt6pfl2l3JRA,
+    process.sc5pfl2l3JRA,
+    process.sc7pfl2l3JRA
 )
 
