@@ -1,3 +1,10 @@
+2008-11-26  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-00-01
+	* tested with 30X tags on top of 220
+	* SchieferD/Configuration V00-00-00
+	* includes new algorithms ak5, ak7, ca4, ca6 for all reco types
+
 2008-07-30  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-00-00
