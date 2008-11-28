@@ -43,10 +43,10 @@ Defaults.JetResponseParameters.absRspMax   = cms.double(100);
 #!
 #! PROCESS
 #!
-process = cms.Process("JETCALIB")
+process = cms.Process("JRA")
 
 process.load("JetMETAnalysis.JetAnalyzers.JRA_TreeDefaults_cff")
-process.load("JetMETAnalysis.JetAnalyzers.JRA_PathsAndModules_cff")
+process.load("JetMETAnalysis.JetAnalyzers.JRA_Paths_cff")
 
 
 #!
@@ -64,94 +64,33 @@ process.source = cms.Source("PoolSource",
 process.MessageLogger = cms.Service("MessageLogger",
     destinations = cms.untracked.vstring('cout'),
     cout         = cms.untracked.PSet(threshold = cms.untracked.string('WARNING'))
-
 )
 process.TFileService = cms.Service("TFileService",
-    fileName      = cms.string('JRAt.root'),
+    fileName      = cms.string('JRAh.root'),
     closeFileFast = cms.untracked.bool(True)
 )
 
 
 #!
-#! EVENT SETUP
-#!
-process.load("Configuration.StandardSequences.Geometry_cff")
-process.load("Configuration.StandardSequences.FakeConditions_cff")
-process.load("Configuration.StandardSequences.MagneticField_cff")
-process.load("RecoJets.Configuration.CaloTowersES_cfi")
-
-
-#!
-#! PATHS
+#! RECONSTRUCTION
 #!
 
-# track reconstruction (needed by pflow, NOT track-jet reconstruction!)
-process.load("RecoLocalTracker.SiPixelRecHits.SiPixelRecHits_cfi")
-process.load("RecoLocalTracker.SiStripRecHitConverter.SiStripRecHitConverter_cfi")
-process.load("RecoTracker.Configuration.RecoTracker_cff")
-process.recoTracks = cms.Path(process.siPixelRecHits*
-                              process.siStripMatchedRecHits*
-                              process.ckftracks)
-
-
-# pflow reconstruction
-process.load("RecoEgamma.EgammaElectronProducers.electronSequence_cff")
-process.load("RecoParticleFlow.Configuration.RecoParticleFlow_cff")
-process.recoPF = cms.Path(process.electronSequence*
-                          process.particleFlowReco)
+# particle flow reconstruction
+process.load("SchieferD.Configuration.PFReconstruction_cff")
 
 # jet reconstruction
-process.load("RecoJets.Configuration.GenJetParticles_cff")
-process.load("SchieferD.Configuration.RecoGenJets_cff")
-process.load("SchieferD.Configuration.RecoCaloJets_cff")
-process.load("SchieferD.Configuration.RecoPFJets_cff")
-process.load("SchieferD.Configuration.RecoTrackJets_cff")
-
-# jpt
-process.load("JetMETCorrections.Configuration.JetPlusTrackCorrections_cff")
-process.load("JetMETCorrections.Configuration.ZSPJetCorrections152_cff")
-
-process.recoJets = cms.Path(process.genJetParticles+
-                            process.recoGenJets+
-                            process.recoCaloJets+
-                            process.recoPFJets+
-                            process.recoTrackJets+
-                            process.ZSPJetCorrections+
-                            process.JetPlusTrackCorrections)
-
+process.load("SchieferD.Configuration.JetReconstruction_cff")
 
 # jet correction
-process.load("JetMETCorrections.Configuration.L2L3Corrections_Summer08_cff")
-process.load("SchieferD.Configuration.L2L3Corrections_Summer08_cff")
+process.load("SchieferD.Configuration.JetCorrection_cff")
 process.prefer("L2L3JetCorrectorSC5Calo") 
 
-process.correctJets = cms.Path(process.L2L3CorJetKT4Calo+
-                               process.L2L3CorJetKT6Calo+
-                               process.L2L3CorJetSC5Calo+
-                               process.L2L3CorJetSC7Calo+
-                               process.L2L3CorJetIC5Calo+
-                               process.L2L3CorJetAK5Calo+
-                               process.L2L3CorJetAK7Calo+
-                               process.L2L3CorJetCA4Calo+
-                               process.L2L3CorJetCA6Calo+
-                               process.L2L3CorJetKT4PF+
-                               process.L2L3CorJetKT6PF+
-                               process.L2L3CorJetSC5PF+
-                               process.L2L3CorJetSC7PF+
-                               process.L2L3CorJetIC5PF+
-                               process.L2L3CorJetAK5PF+
-                               process.L2L3CorJetAK7PF+
-                               process.L2L3CorJetCA4PF+
-                               process.L2L3CorJetCA6PF
-                               )
 
 
 #!
 #! SCHEDULE
 #!
 process.schedule = cms.Schedule(
-    # track reco
-    process.recoTracks,
     # pflow reco
     process.recoPF,
     # jet reco

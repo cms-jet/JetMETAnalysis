@@ -13,7 +13,7 @@ JetResponseParameters = cms.PSet(
     # write tree, no histograms
     doHistos = cms.bool(False),
     doTree   = cms.bool(True),
-    # don't record flavor information, consider both RefPt and JetPt
+    # DON'T record flavor information, consider both RefPt and JetPt
     doFlavor = cms.bool(False),
     doRefPt  = cms.bool(True),
     doJetPt  = cms.bool(True),
@@ -25,4 +25,3 @@ JetResponseParameters = cms.PSet(
     #nBinsRelRsp = cms.uint32(0),
     #nBinsAbsRsp = cms.uint32(0)
 )
-
