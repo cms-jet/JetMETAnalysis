@@ -1,3 +1,8 @@
+2008-12-03  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-00-04
+	* add calo-tower fix to test/JRAt_WithFlavor_cfg.py
+
 2008-11-28  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-00-03

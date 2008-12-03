@@ -31,7 +31,7 @@ process.load("JetMETAnalysis.JetAnalyzers.JRA_PathsWithFlavor_cff")
 #!
 #! INPUT
 #!
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(100))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring('file:/data/Summer08/QCDDijet30to50.root')
 )
@@ -54,6 +54,9 @@ process.TFileService = cms.Service("TFileService",
 #! RECONSTRUCTION
 #!
 
+# calo tower reconstruction (preliminary ecal bug fix)
+process.load("SchieferD.Configuration.CaloTowerReconstruction_cff")
+
 # particle flow reconstruction
 process.load("SchieferD.Configuration.PFReconstruction_cff")
 
@@ -69,6 +72,8 @@ process.prefer("L2L3JetCorrectorSC5Calo")
 #! SCHEDULE
 #!
 process.schedule = cms.Schedule(
+    # calorimeter tower reco
+    process.recoCaloTowers,
     # pflow reco
     process.recoPF,
     # jet reco
