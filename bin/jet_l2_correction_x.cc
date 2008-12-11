@@ -220,12 +220,11 @@ int main(int argc,char**argv)
 	  fabscor->SetParameter(2,0.0);
 	}
 	else {
-	  fabscor=new TF1("fit","[0]-[1]/(pow(log10(x),[2])+[3])+[4]/x",xmin,xmax);
-	  fabscor->SetParameter(0,0.0);
-	  fabscor->SetParameter(1,0.0);
-	  fabscor->SetParameter(2,0.0);
-	  fabscor->SetParameter(3,0.0);
-	  fabscor->SetParameter(4,0.0);
+	  fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),[2])+[3])",xmin,xmax);
+	  fabscor->SetParameter(0,1.0);
+	  fabscor->SetParameter(1,1.0);
+	  fabscor->SetParameter(2,1.0);
+	  fabscor->SetParameter(3,1.0);
 	}
 	
 	gabscor->Fit(fabscor,"QR0");
@@ -285,7 +284,7 @@ int main(int argc,char**argv)
 	  frelcor=new TF1("fit","[0]+[1]*log10(x)",xmin,xmax);
 	}
 	else {
-	  frelcor=new TF1("fit","[0]+[1]*log10(x)+[2]*pow(log10(x),2)+[3]*pow(log10(x),3)+[4]*pow(log10(x),4)+[5]*pow(log10(x),5)",xmin,xmax);
+	  frelcor=new TF1("fit","[0]+[1]*log10(x)+[2]*pow(log10(x),2)",xmin,xmax);
 	}
 	
 	frelcor->SetParameter(0,0.0);
