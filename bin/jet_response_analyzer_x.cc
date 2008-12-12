@@ -82,6 +82,7 @@ int main(int argc,char**argv)
   vector<float>  binsphi      = cl.getVector<float> ("binsphi",       "");
   string         treename     = cl.getValue<string> ("treename",     "t");
   string         output       = cl.getValue<string> ("output","jra.root");
+  int            nrefmax      = cl.getValue<int>    ("nrefmax",        0);
   int            nbinspt      = cl.getValue<int>    ("nbinspt",       50);
   int            nbinseta     = cl.getValue<int>    ("nbinseta",      25);
   int            nbinsphi     = cl.getValue<int>    ("nbinsphi",      25);
@@ -538,6 +539,7 @@ int main(int argc,char**argv)
     unsigned int nevt = (unsigned int)tree->GetEntries();
     for (unsigned int ievt=0;ievt<nevt;ievt++) {
       tree->GetEntry(ievt);
+      if (nrefmax>0) nref = std::min((int)nref,nrefmax);
       for (unsigned char iref=0;iref<nref;iref++) {
 	if (( dobalance&&refdphijt[iref]<dphimin)||
 	    (!dobalance&&refdrjt[iref]>drmax)) continue;
