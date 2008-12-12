@@ -214,7 +214,7 @@ int main(int argc,char**argv)
     
     // correction
     TF1* fitcor = new TF1("fitcor","[0]+[1]/(pow(log10(x),[2])+[3])",
-			  1.0,gcor->GetX()[gcor->GetN()-1]);
+			  5.0/* KK */,gcor->GetX()[gcor->GetN()-1]);
     fitcor->SetParameter(0,1.0);
     fitcor->SetParameter(1,7.0);
     fitcor->SetParameter(2,4.0);

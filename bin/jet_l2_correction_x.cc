@@ -203,7 +203,7 @@ int main(int argc,char**argv)
 	TGraphErrors* gabscor = vabscor_eta.back();
 	TF1*          fabscor(0);
 	
-	double xmin = gabscor->GetX()[0];
+	double xmin = 8.; //KK gabscor->GetX()[0];
 	double xmax = gabscor->GetX()[gabscor->GetN()-1];
       
 	if (gabscor->GetN()==0) {
@@ -272,7 +272,7 @@ int main(int argc,char**argv)
 	TGraph* grelcor = vrelcor_eta.back();
 	TF1*    frelcor(0);
 
-	double xmin = grelcor->GetX()[0];
+	double xmin = 8.; //KK grelcor->GetX()[0];
 	double xmax = grelcor->GetX()[grelcor->GetN()-1];
       
 	if (grelcor->GetN()<2) {
