@@ -1,3 +1,9 @@
+2008-12-12  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-00-05
+	* add nrefmax parameter to jet_response_analyzer_x: only the
+	nrefmax leading references are considered if set to >0.
+
 2008-12-03  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-00-04
