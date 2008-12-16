@@ -1,3 +1,10 @@
+2008-12-16  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-01-00
+	* remove HistogramLoader class
+	* add ObjectLoader class (templated); ObjectLoader<TH1F> replaces
+	HistogramLoader
+
 2008-12-03  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-00-01

@@ -1,13 +1,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-// HistogramLoader
-// ---------------
+// ObjectLoader
+// ------------
 //
-//            07/07/2008 Philipp Schieferdecker <philipp.schieferdecker@cern.ch>
+//            12/15/2008 Philipp Schieferdecker <philipp.schieferdecker@cern.ch>
 ////////////////////////////////////////////////////////////////////////////////
 
-
-#include "JetMETAnalysis/JetUtilities/interface/HistogramLoader.h"
 
 #include <TKey.h>
 
@@ -21,19 +19,12 @@ using namespace std;
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// declaration of local functions
-////////////////////////////////////////////////////////////////////////////////
-
-//______________________________________________________________________________
-vector<string> split(const string& str,const string& delim);
-
-
-////////////////////////////////////////////////////////////////////////////////
 // construction/destruction
 ////////////////////////////////////////////////////////////////////////////////
 
 //______________________________________________________________________________
-HistogramLoader::HistogramLoader()
+template <class T>
+ObjectLoader<T>::ObjectLoader()
   : iloop_(0)
 {
   
@@ -41,18 +32,19 @@ HistogramLoader::HistogramLoader()
 
 
 //______________________________________________________________________________
-HistogramLoader::~HistogramLoader()
+template <class T>
+ObjectLoader<T>::~ObjectLoader()
 {
   
 }
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // implementation of member functions
 ////////////////////////////////////////////////////////////////////////////////
 
 //______________________________________________________________________________
-bool HistogramLoader::load_histograms(TDirectory* d,const string& expression)
+template<class T>
+bool ObjectLoader<T>::load_objects(TDirectory* d,const string& expression)
 {
   string tmp=expression;
   unsigned int pos=tmp.find(':');
@@ -70,14 +62,14 @@ bool HistogramLoader::load_histograms(TDirectory* d,const string& expression)
     fixed_values[i]=value;
   }
 
-  nhistograms_.clear();
-  for (unsigned int i=0;i<variables_.size();i++) nhistograms_.push_back(0);
-  bounds_.resize(nhistograms_.size());
+  nobjects_.clear();
+  for (unsigned int i=0;i<variables_.size();i++) nobjects_.push_back(0);
+  bounds_.resize(nobjects_.size());
   
   TIter next(d->GetListOfKeys());
   TKey* key(0);
   while ((key=(TKey*)next())) {
-    if (strcmp(key->GetClassName(),"TH1F")!=0) continue;
+    if (strcmp(key->GetClassName(),T::Class_Name())!=0) continue;
     string histname(key->GetName());
     if (histname.find(quantity_)!=0) continue;
     vector<string> histo_variables;
@@ -105,8 +97,8 @@ bool HistogramLoader::load_histograms(TDirectory* d,const string& expression)
       if (varbounds.size()==0||bounds[ivar].first>=varbounds.back().second) {
 	varbounds.push_back(bounds[ivar]);
 	bounds_[ivar]=varbounds;
-	indices.push_back(nhistograms_[ivar]);
-	nhistograms_[ivar]++;
+	indices.push_back(nobjects_[ivar]);
+	nobjects_[ivar]++;
       }
       else {
 	int i(0);
@@ -120,7 +112,7 @@ bool HistogramLoader::load_histograms(TDirectory* d,const string& expression)
 	    vector< std::pair<double,double> >::iterator last=it;last--;
 	    varbounds.insert(last,bounds[ivar]);
 	    bounds_[ivar]=varbounds;
-	    nhistograms_[ivar]++;
+	    nobjects_[ivar]++;
 	    indices.push_back(i);
 	    break;
 	  }
@@ -130,22 +122,22 @@ bool HistogramLoader::load_histograms(TDirectory* d,const string& expression)
       }
     }
     compute_offset();
-    set_histogram(indices,(TH1F*)key->ReadObj());
+    set_object(indices,(T*)key->ReadObj());
   }
 
   
   // DEBUG
   /*
     for (unsigned int ivar=0;ivar<variables_.size();ivar++) {
-    for (unsigned int ih=0;ih<nhistograms_[ivar];ih++) {
+    for (unsigned int ih=0;ih<nobjects_[ivar];ih++) {
     cout<<ivar<<" "<<ih
     <<" minimum="<<minimum(ivar,ih)
     <<" maximum="<<maximum(ivar,ih)<<endl;
     }
     }
-    vector<unsigned int> indices; TH1F* h;
+    vector<unsigned int> indices; T* h;
     begin_loop();
-    while ((h=next_histogram(indices))) {
+    while ((h=next_object(indices))) {
     for (unsigned int i=0;i<indices.size();i++) cout<<indices[i]<<" ";
     cout<<h->GetName()<<endl;  }
   */
@@ -155,64 +147,70 @@ bool HistogramLoader::load_histograms(TDirectory* d,const string& expression)
 
 
 //______________________________________________________________________________
-TH1F* HistogramLoader::histogram(unsigned int i) const
+template <class T>
+T* ObjectLoader<T>::object(unsigned int i) const
 {
   vector<unsigned int> indices;
   indices.push_back(i);
-  return histogram(indices);
+  return object(indices);
 }
 
 
 //______________________________________________________________________________
-TH1F* HistogramLoader::histogram(unsigned int i,unsigned int j) const
+template <class T>
+T* ObjectLoader<T>::object(unsigned int i,unsigned int j) const
 {
   vector<unsigned int> indices;
   indices.push_back(i);
   indices.push_back(j);
-  return histogram(indices);
+  return object(indices);
 }
 
 
 //______________________________________________________________________________
-TH1F* HistogramLoader::histogram(unsigned int i,unsigned int j,unsigned int k) const
+template <class T>
+T* ObjectLoader<T>::object(unsigned int i,unsigned int j,unsigned int k) const
 {
   vector<unsigned int> indices;
   indices.push_back(i);
   indices.push_back(j);
   indices.push_back(k);
-  return histogram(indices);
+  return object(indices);
 }
 
 
 //______________________________________________________________________________
-TH1F* HistogramLoader::histogram(const std::vector<unsigned int>& indices) const
+template <class T>
+T* ObjectLoader<T>::object(const std::vector<unsigned int>& indices) const
 {
-  if (indices.size()!=nhistograms_.size())
-    throw std::runtime_error("HistogramLoader::histogram: indices.size()");
-  for (unsigned int i=0;i<nhistograms_.size();i++)
-    if (indices[i]>=nhistograms_[i])
-      throw std::runtime_error("HistogramLoader::histogram: index out of range");
+  if (indices.size()!=nobjects_.size())
+    throw std::runtime_error("ObjectLoader<T>::object: indices.size()");
+  for (unsigned int i=0;i<nobjects_.size();i++)
+    if (indices[i]>=nobjects_[i])
+      throw std::runtime_error("ObjectLoader<T>::object: index out of range");
   unsigned int index(0);
   for (unsigned int i=0;i<indices.size();i++) index+=indices[i]*offset_[i];
-  return histograms_[index];
+  return objects_[index];
 }
 
 
 //______________________________________________________________________________
-TH1F* HistogramLoader::next_histogram(unsigned int& i) const
+template <class T>
+T* ObjectLoader<T>::next_object(unsigned int& i) const
 {
   vector<unsigned int> indices;
-  TH1F* result=next_histogram(indices);
+  T* result=next_object(indices);
   i=indices.front();
   return result;
 }
 
 
 //______________________________________________________________________________
-TH1F* HistogramLoader::next_histogram(unsigned int& i,unsigned int& j) const
+template <class T>
+T* ObjectLoader<T>::next_object(unsigned int& i,unsigned int& j) const
 {
   vector<unsigned int> indices;
-  TH1F* result=next_histogram(indices);
+  T* result=next_object(indices);
   i=indices.front();
   j=indices.front();
   return result;
@@ -220,11 +218,12 @@ TH1F* HistogramLoader::next_histogram(unsigned int& i,unsigned int& j) const
 
 
 //______________________________________________________________________________
-TH1F* HistogramLoader::next_histogram(unsigned int& i,unsigned int& j,
+template <class T>
+T* ObjectLoader<T>::next_object(unsigned int& i,unsigned int& j,
 				      unsigned int& k) const
 {
   vector<unsigned int> indices;
-  TH1F* result=next_histogram(indices);
+  T* result=next_object(indices);
   i=indices[0];
   j=indices[1];
   k=indices[2];
@@ -233,68 +232,40 @@ TH1F* HistogramLoader::next_histogram(unsigned int& i,unsigned int& j,
 
 
 //______________________________________________________________________________
-TH1F* HistogramLoader::next_histogram(vector<unsigned int>& indices) const
+template <class T>
+T* ObjectLoader<T>::next_object(vector<unsigned int>& indices) const
 {
   indices.clear();
-  if (iloop_==histograms_.size()) return 0;
-  for (unsigned int i=0;i<nhistograms_.size();i++) {
+  if (iloop_==objects_.size()) return 0;
+  for (unsigned int i=0;i<nobjects_.size();i++) {
     indices.push_back(iloop_);
     for (unsigned int j=0;j<i;j++) indices[i]-=indices[j]*offset_[j];
     indices[i]/=offset_[i];
   }
-  TH1F* result=histograms_[iloop_];
+  T* result=objects_[iloop_];
   iloop_++;
   return result;
 }
 
 
 //______________________________________________________________________________
-double HistogramLoader::minimum(unsigned int ivar,unsigned int ihistogram) const
-{
-  return bounds_[ivar][ihistogram].first;
-}
-
-
-//______________________________________________________________________________
-double HistogramLoader::maximum(unsigned int ivar,unsigned int ihistogram) const
-{
-  return bounds_[ivar][ihistogram].second;
-}
-
-
-//______________________________________________________________________________
-void HistogramLoader::compute_offset()
-{
-  offset_.clear();
-  for (unsigned int i=1;i<nhistograms_.size();i++) {
-    unsigned int tmp=nhistograms_[i];
-    for (unsigned int j=i+1;j<nhistograms_.size();j++) tmp*=nhistograms_[j];
-    offset_.push_back(tmp);
-  }
-  offset_.push_back(1);
-}
-
-
-//______________________________________________________________________________
-void HistogramLoader::set_histogram(const vector<unsigned int>& indices,TH1F* h)
+template <class T>
+void ObjectLoader<T>::set_object(const vector<unsigned int>& indices,T* obj)
 {
   unsigned int index(0);
-  for (unsigned int i=0;i<nhistograms_.size();i++) {
-    if (indices[i]>=nhistograms_[i]) throw std::runtime_error("index out of range");
+  for (unsigned int i=0;i<nobjects_.size();i++) {
+    if (indices[i]>=nobjects_[i]) throw std::runtime_error("index out of range");
     index+=indices[i]*offset_[i];
   }
-  vector<TH1F*>::iterator it=histograms_.begin();
+  typename std::vector<T*>::iterator it=objects_.begin();
   for (unsigned int i=0;i<index;i++) ++it;
-  histograms_.insert(it,h);
+  objects_.insert(it,obj);
 }
-  
 
-//////////////////////////////////////////////////////////////////////////////////
-// implementation of local functions
-//////////////////////////////////////////////////////////////////////////////////
 
 //______________________________________________________________________________
-vector<string> split(const string& str,const string& delim)
+template <class T>
+vector<string> ObjectLoader<T>::split(const string& str,const string& delim)
 {
   vector<string> result;
   string tmp=str;
@@ -310,4 +281,34 @@ vector<string> split(const string& str,const string& delim)
     }
   }
   return result;
+}
+
+
+//______________________________________________________________________________
+template <class T>
+double ObjectLoader<T>::minimum(unsigned int ivar,unsigned int iobject) const
+{
+  return bounds_[ivar][iobject].first;
+}
+
+
+//______________________________________________________________________________
+template <class T>
+double ObjectLoader<T>::maximum(unsigned int ivar,unsigned int iobject) const
+{
+  return bounds_[ivar][iobject].second;
+}
+
+
+//______________________________________________________________________________
+template <class T>
+void ObjectLoader<T>::compute_offset()
+{
+  offset_.clear();
+  for (unsigned int i=1;i<nobjects_.size();i++) {
+    unsigned int tmp=nobjects_[i];
+    for (unsigned int j=i+1;j<nobjects_.size();j++) tmp*=nobjects_[j];
+    offset_.push_back(tmp);
+  }
+  offset_.push_back(1);
 }
