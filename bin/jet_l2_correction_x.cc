@@ -9,7 +9,7 @@
 
 
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
-#include "JetMETAnalysis/JetUtilities/interface/HistogramLoader.h"
+#include "JetMETAnalysis/JetUtilities/interface/ObjectLoader.h"
 #include "JetMETAnalysis/JetUtilities/interface/RootStyle.h"
 
 
@@ -128,14 +128,14 @@ int main(int argc,char**argv)
     TDirectoryFile* odir = (TDirectoryFile*)ofile->mkdir(alg.c_str());
     odir->cd();
     
-    HistogramLoader hl_absrsp;
-    hl_absrsp.load_histograms(idir,"AbsRsp:JetEta:RefPt");
+    ObjectLoader<TH1F> hl_absrsp;
+    hl_absrsp.load_objects(idir,"AbsRsp:JetEta:RefPt");
 
-    HistogramLoader hl_refpt;
-    hl_refpt.load_histograms(idir,"RefPt:JetEta:RefPt");
+    ObjectLoader<TH1F> hl_refpt;
+    hl_refpt.load_objects(idir,"RefPt:JetEta:RefPt");
 
-    HistogramLoader hl_jetpt;
-    hl_jetpt.load_histograms(idir,"JetPt:JetEta:RefPt");
+    ObjectLoader<TH1F> hl_jetpt;
+    hl_jetpt.load_objects(idir,"JetPt:JetEta:RefPt");
 
     
     //
@@ -146,7 +146,7 @@ int main(int argc,char**argv)
     
     vector<unsigned int> indices; TH1F* habsrsp(0);
     hl_absrsp.begin_loop();
-    while ((habsrsp=hl_absrsp.next_histogram(indices))) {
+    while ((habsrsp=hl_absrsp.next_object(indices))) {
 
       unsigned int ieta=indices[0];
       unsigned int ipt =indices[1];
@@ -165,8 +165,8 @@ int main(int argc,char**argv)
       if (habsrsp->Integral()!=0) {
 	
 	TF1*  fabsrsp = habsrsp->GetFunction("fit");
-	TH1F* hrefpt  = hl_refpt.histogram(indices);
-	TH1F* hjetpt  = hl_jetpt.histogram(indices);
+	TH1F* hrefpt  = hl_refpt.object(indices);
+	TH1F* hjetpt  = hl_jetpt.object(indices);
 	
 	assert(hrefpt->GetEntries()>0&&hjetpt->GetEntries()>0);
 	
@@ -198,7 +198,7 @@ int main(int argc,char**argv)
       }
 
       // fit graphs if last pt of the current eta bin comes around
-      if (ipt==hl_jetpt.nhistograms(1)-1) {
+      if (ipt==hl_jetpt.nobjects(1)-1) {
 	TGraphErrors* gabsrsp = vabsrsp_eta.back();
 	TGraphErrors* gabscor = vabscor_eta.back();
 	TF1*          fabscor(0);
@@ -243,7 +243,7 @@ int main(int argc,char**argv)
     vector<TGraph*> vrelcor_eta;
     TH1F* hjetpt(0);
     hl_jetpt.begin_loop();
-    while ((hjetpt=hl_jetpt.next_histogram(indices))) {
+    while ((hjetpt=hl_jetpt.next_object(indices))) {
       
       unsigned int ieta = indices[0];
       unsigned int ipt  = indices[1];
@@ -268,7 +268,7 @@ int main(int argc,char**argv)
       }
       
       // fit the graph if the last pt of the current eta bin comes around
-      if (ipt==hl_jetpt.nhistograms(1)-1) {
+      if (ipt==hl_jetpt.nobjects(1)-1) {
 	TGraph* grelcor = vrelcor_eta.back();
 	TF1*    frelcor(0);
 

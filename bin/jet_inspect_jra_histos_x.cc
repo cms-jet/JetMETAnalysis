@@ -8,7 +8,7 @@
 
 
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
-#include "JetMETAnalysis/JetUtilities/interface/HistogramLoader.h"
+#include "JetMETAnalysis/JetUtilities/interface/ObjectLoader.h"
 #include "JetMETAnalysis/JetUtilities/interface/RootStyle.h"
 
 #include <TApplication.h>
@@ -37,7 +37,7 @@ using namespace std;
 void set_xaxis_range(TH1* h);
 void set_draw_attributes(TH1* h);
 void draw_stats(TH1* h);
-void draw_range(const HistogramLoader& hl,const vector<unsigned int>& indices);
+void draw_range(const ObjectLoader<TH1F>& hl,const vector<unsigned int>& indices);
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -68,8 +68,8 @@ int main(int argc,char** argv)
   TDirectory* dir =(TDirectory*)file->Get(algorithm.c_str());
   if (0==dir) { cout<<"No dir "<<algorithm<<" found"<<endl; return 0; }
 
-  HistogramLoader hl;
-  hl.load_histograms(dir,variable);
+  ObjectLoader<TH1F> hl;
+  hl.load_objects(dir,variable);
   
   argc = (batch) ? 2 : 1; if (batch) argv[1] = "-b";
   TApplication* app=new TApplication("jet_inspect_jra_histos",&argc,argv);
@@ -78,7 +78,7 @@ int main(int argc,char** argv)
   gStyle->SetOptStat(0);
 
   bool put_range = (npercanvas!=0);
-  if (npercanvas==0) npercanvas=hl.nhistograms(hl.nvariables()-1);
+  if (npercanvas==0) npercanvas=hl.nobjects(hl.nvariables()-1);
   
   int nx=(int)std::sqrt((float)npercanvas);
   int ny=nx;
@@ -88,7 +88,7 @@ int main(int argc,char** argv)
   vector<TCanvas*> cvec;
   hl.begin_loop();
   vector<unsigned int> indices; TH1F* h(0); unsigned int ihisto(0);
-  while ((h=hl.next_histogram(indices))) {
+  while ((h=hl.next_object(indices))) {
     if (cvec.size()==0||ihisto%npercanvas==0) {
       stringstream sscname;sscname<<algorithm<<"_"<<hl.quantity()<<"_VS";
       for (unsigned int i=0;i<hl.nvariables();i++) {
@@ -205,7 +205,7 @@ void draw_stats(TH1* h)
 
 
 //______________________________________________________________________________
-void draw_range(const HistogramLoader& hl,const vector<unsigned int>& indices)
+void draw_range(const ObjectLoader<TH1F>& hl,const vector<unsigned int>& indices)
 {
   TLatex range;
   range.SetNDC(true);

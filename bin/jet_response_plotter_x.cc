@@ -8,7 +8,7 @@
 
 
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
-#include "JetMETAnalysis/JetUtilities/interface/HistogramLoader.h"
+#include "JetMETAnalysis/JetUtilities/interface/ObjectLoader.h"
 #include "JetMETAnalysis/JetUtilities/interface/RootStyle.h"
 
 
@@ -44,7 +44,7 @@ using namespace std;
 bool   contains(const vector<string>& collection,const string& element);
 
 /// set the xtitle of a graph
-void   set_xtitle(string& xtitle, const HistogramLoader& hl);
+void   set_xtitle(string& xtitle, const ObjectLoader<TH1F>& hl);
 
 /// set the draw attributes of a graph
 void   set_color_and_style(TGraph* g,const string& alg);
@@ -143,21 +143,21 @@ int main(int argc,char**argv)
     TDirectoryFile* odir = (TDirectoryFile*)ofile->mkdir(alg.c_str());
     odir->cd();
     
-    HistogramLoader hlrsp;
-    hlrsp.load_histograms(idir,variable);
+    ObjectLoader<TH1F> hlrsp;
+    hlrsp.load_objects(idir,variable);
 
     string varexp=hlrsp.variable(hlrsp.nvariables()-1);
     for (unsigned int i=0;i<hlrsp.nvariables();i++) varexp+=":"+hlrsp.variable(i);
 
-    HistogramLoader hlvar;
-    hlvar.load_histograms(idir,varexp);
+    ObjectLoader<TH1F> hlvar;
+    hlvar.load_objects(idir,varexp);
     
     set_xtitle(xtitle,hlvar);
     
     vector<unsigned int> indices;
     TH1F* hrsp(0); TGraphErrors* grsp(0); TGraphErrors* gres(0);
     hlrsp.begin_loop();
-    while ((hrsp=hlrsp.next_histogram(indices))) {
+    while ((hrsp=hlrsp.next_object(indices))) {
       
       // create new graphs for response & resolution
       if (indices.back()==0) {
@@ -197,7 +197,7 @@ int main(int argc,char**argv)
       if (hrsp->Integral()==0) continue;
       
       TF1*   frsp = hrsp->GetFunction("fit");
-      TH1F*  hvar = hlvar.histogram(indices);
+      TH1F*  hvar = hlvar.object(indices);
 
       assert(hvar->GetEntries()>0);
       
@@ -343,7 +343,7 @@ bool contains(const vector<string>& collection,const string& element)
 
 
 //______________________________________________________________________________
-void set_xtitle(string& xtitle, const HistogramLoader& hl)
+void set_xtitle(string& xtitle, const ObjectLoader<TH1F>& hl)
 {
   if (!xtitle.empty()) return;
   xtitle = hl.quantity();

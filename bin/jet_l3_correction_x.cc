@@ -9,7 +9,7 @@
 
 
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
-#include "JetMETAnalysis/JetUtilities/interface/HistogramLoader.h"
+#include "JetMETAnalysis/JetUtilities/interface/ObjectLoader.h"
 #include "JetMETAnalysis/JetUtilities/interface/RootStyle.h"
 
 
@@ -119,23 +119,23 @@ int main(int argc,char**argv)
     grsp->SetName("L3RspVsRefPt");
     gcor->SetName("L3CorVsJetPt");
     
-    HistogramLoader hl_absrsp;
-    hl_absrsp.load_histograms(idir,"AbsRsp_Barrel:RefPt");
+    ObjectLoader<TH1F> hl_absrsp;
+    hl_absrsp.load_objects(idir,"AbsRsp_Barrel:RefPt");
     
-    HistogramLoader hl_refpt;
-    hl_refpt.load_histograms(idir,"RefPt_Barrel:RefPt");
+    ObjectLoader<TH1F> hl_refpt;
+    hl_refpt.load_objects(idir,"RefPt_Barrel:RefPt");
     
-    HistogramLoader hl_jetpt;
-    hl_jetpt.load_histograms(idir,"JetPt_Barrel:RefPt");
+    ObjectLoader<TH1F> hl_jetpt;
+    hl_jetpt.load_objects(idir,"JetPt_Barrel:RefPt");
         
     vector<unsigned int> indices; TH1F* habsrsp(0);
     hl_absrsp.begin_loop();
-    while ((habsrsp=hl_absrsp.next_histogram(indices))) {
+    while ((habsrsp=hl_absrsp.next_object(indices))) {
       if (habsrsp->Integral()==0) continue;
       
       TF1*  fabsrsp = habsrsp->GetFunction("fit");
-      TH1F* hrefpt  = hl_refpt.histogram(indices);
-      TH1F* hjetpt  = hl_jetpt.histogram(indices);
+      TH1F* hrefpt  = hl_refpt.object(indices);
+      TH1F* hjetpt  = hl_jetpt.object(indices);
 
       assert(hrefpt->GetEntries()>0);
       assert(hjetpt->GetEntries()>0);

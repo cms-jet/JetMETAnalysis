@@ -1,3 +1,10 @@
+2008-12-16  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-01-00
+	* requires JetMETAnalysis/JetUtilities V00-01-00
+	* replace HistogramLoader with ObjectLoader<TH1F> in all relevant
+	binaries in /bin
+
 2008-12-12  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-00-05
