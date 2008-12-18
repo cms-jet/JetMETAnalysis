@@ -203,7 +203,7 @@ int main(int argc,char**argv)
 	TGraphErrors* gabscor = vabscor_eta.back();
 	TF1*          fabscor(0);
 	
-	double xmin = 8.; //KK gabscor->GetX()[0];
+	double xmin = 5.; //KK gabscor->GetX()[0];
 	double xmax = gabscor->GetX()[gabscor->GetN()-1];
       
 	if (gabscor->GetN()==0) {
@@ -222,9 +222,9 @@ int main(int argc,char**argv)
 	else {
 	  fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),[2])+[3])",xmin,xmax);
 	  fabscor->SetParameter(0,1.0);
-	  fabscor->SetParameter(1,1.0);
-	  fabscor->SetParameter(2,1.0);
-	  fabscor->SetParameter(3,1.0);
+	  fabscor->SetParameter(1,5.0);
+	  fabscor->SetParameter(2,3.0);
+	  fabscor->SetParameter(3,3.0);
 	}
 	
 	gabscor->Fit(fabscor,"QR0");
@@ -272,7 +272,7 @@ int main(int argc,char**argv)
 	TGraph* grelcor = vrelcor_eta.back();
 	TF1*    frelcor(0);
 
-	double xmin = 8.; //KK grelcor->GetX()[0];
+	double xmin = grelcor->GetX()[0];
 	double xmax = grelcor->GetX()[grelcor->GetN()-1];
       
 	if (grelcor->GetN()<2) {
@@ -312,8 +312,9 @@ int main(int argc,char**argv)
       TF1*    frelcor = (TF1*)grelcor->GetListOfFunctions()->First();
       double  etamin  = hl_jetpt.minimum(0,ieta);
       double  etamax  = hl_jetpt.maximum(0,ieta);
-      double  ptmin   = frelcor->GetMinimumX();
-      double  ptmax   = frelcor->GetMaximumX();
+      double  ptmin = grelcor->GetX()[0];
+      double  ptmax = grelcor->GetX()[grelcor->GetN()-1];
+      //frelcor()->GetRange(ptmin,ptmax); 
       fout<<setw(11)<<etamin
 	  <<setw(11)<<etamax
 	  <<setw(11)<<(int)8
