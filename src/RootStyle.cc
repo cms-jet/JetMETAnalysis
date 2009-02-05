@@ -29,10 +29,10 @@ void set_root_style()
   gStyle->SetPadColor       (0);
   gStyle->SetPadBorderSize  (10);
   gStyle->SetPadBorderMode  (0);
-  gStyle->SetPadBottomMargin(0.16);
-  gStyle->SetPadTopMargin   (0.12);
-  gStyle->SetPadLeftMargin  (0.2);
-  gStyle->SetPadRightMargin (0.1);
+  gStyle->SetPadBottomMargin(0.15);
+  gStyle->SetPadTopMargin   (0.05);
+  gStyle->SetPadLeftMargin  (0.15);
+  gStyle->SetPadRightMargin (0.07);
   gStyle->SetPadGridX       (0);
   gStyle->SetPadGridY       (0);
   gStyle->SetPadTickX       (1);
@@ -66,7 +66,7 @@ void set_root_style()
   
   // Various
   gStyle->SetTickLength (0.03 ,"XYZ");
-  gStyle->SetTitleSize  (0.060,"XYZ");
+  gStyle->SetTitleSize  (0.055,"XYZ");
   gStyle->SetTitleFont  (52   ,"XYZ");
   gStyle->SetLabelFont  (52   ,"XYZ");
   gStyle->SetNdivisions (405  ,"XYZ");
@@ -79,9 +79,9 @@ void set_root_style()
   gStyle->SetLabelOffset(0.015,"Y");
   gStyle->SetLabelOffset(0.015,"Z");
   
-  gStyle->SetLabelSize  (0.060,"X");
-  gStyle->SetLabelSize  (0.06 ,"Y");
-  gStyle->SetLabelSize  (0.060,"Z");
+  gStyle->SetLabelSize  (0.055,"X");
+  gStyle->SetLabelSize  (0.055,"Y");
+  gStyle->SetLabelSize  (0.055,"Z");
   
   gStyle->SetStatFont   (52);
   gStyle->SetTitleFont  (52);
