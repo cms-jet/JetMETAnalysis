@@ -37,8 +37,6 @@ Defaults.JetResponseParameters.binsEta = cms.vdouble(
 Defaults.JetResponseParameters.nBinsAbsRsp = cms.uint32(200);
 Defaults.JetResponseParameters.absRspMin   = cms.double(-300);
 Defaults.JetResponseParameters.absRspMax   = cms.double(100);
-#Defaults.JetResponseParameters.absRspMin   = cms.double(0); # ROOT automatically
-#Defaults.JetResponseParameters.absRspMax   = cms.double(1); # determines binning
 
 
 #!
@@ -55,7 +53,8 @@ process.load("JetMETAnalysis.JetAnalyzers.JRA_PathsWithFlavor_cff")
 #!
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring('file:/data/Summer08/QCDDijet30to50.root')
+    fileNames = cms.untracked.vstring(
+    '/store/relval/CMSSW_2_2_4/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/IDEAL_V11_v1/0000/08877E4B-B5F3-DD11-8131-000423D94A04.root')
 )
 
 
@@ -77,7 +76,7 @@ process.TFileService = cms.Service("TFileService",
 #!
 
 # particle flow reconstruction
-process.load("SchieferD.Configuration.PFReconstruction_cff")
+#process.load("SchieferD.Configuration.PFReconstruction_cff")
 
 # jet reconstruction
 process.load("SchieferD.Configuration.JetReconstruction_cff")
@@ -93,7 +92,7 @@ process.prefer("L2L3JetCorrectorSC5Calo")
 #!
 process.schedule = cms.Schedule(
     # pflow reco
-    process.recoPF,
+    #process.recoPF,
     # jet reco
     process.recoJets,
     # uncorrected jets
@@ -102,28 +101,28 @@ process.schedule = cms.Schedule(
     process.sc5caloJRA,
     process.sc7caloJRA,
     process.ic5caloJRA,
-    process.ak5caloJRA,
-    process.ak7caloJRA,
-    process.ca4caloJRA,
-    process.ca6caloJRA,
+    #process.ak5caloJRA,
+    #process.ak7caloJRA,
+    #process.ca4caloJRA,
+    #process.ca6caloJRA,
     process.kt4pfJRA,
     process.kt6pfJRA,
     process.sc5pfJRA,
     process.sc7pfJRA,
     process.ic5pfJRA,
-    process.ak5pfJRA,
-    process.ak7pfJRA,
-    process.ca4pfJRA,
-    process.ca6pfJRA,
-    process.kt4trkJRA,
-    process.kt6trkJRA,
-    process.sc5trkJRA,
-    process.sc7trkJRA,
-    process.ic5trkJRA,
-    process.ak5trkJRA,
-    process.ak7trkJRA,
-    process.ca4trkJRA,
-    process.ca6trkJRA,
+    #process.ak5pfJRA,
+    #process.ak7pfJRA,
+    #process.ca4pfJRA,
+    #process.ca6pfJRA,
+    #process.kt4trkJRA,
+    #process.kt6trkJRA,
+    #process.sc5trkJRA,
+    #process.sc7trkJRA,
+    #process.ic5trkJRA,
+    #process.ak5trkJRA,
+    #process.ak7trkJRA,
+    #process.ca4trkJRA,
+    #process.ca6trkJRA,
     process.ic5jptJRA,
     # correct jets
     process.correctJets,
@@ -133,18 +132,18 @@ process.schedule = cms.Schedule(
     process.sc5calol2l3JRA,
     process.sc7calol2l3JRA,
     process.ic5calol2l3JRA,
-    process.ak5calol2l3JRA,
-    process.ak7calol2l3JRA,
-    process.ca4calol2l3JRA,
-    process.ca6calol2l3JRA,
+    #process.ak5calol2l3JRA,
+    #process.ak7calol2l3JRA,
+    #process.ca4calol2l3JRA,
+    #process.ca6calol2l3JRA,
     process.kt4pfl2l3JRA,
     process.kt6pfl2l3JRA,
     process.sc5pfl2l3JRA,
     process.sc7pfl2l3JRA,
     process.ic5pfl2l3JRA,
-    process.ak5pfl2l3JRA,
-    process.ak7pfl2l3JRA,
-    process.ca4pfl2l3JRA,
-    process.ca6pfl2l3JRA
+    #process.ak5pfl2l3JRA,
+    #process.ak7pfl2l3JRA,
+    #process.ca4pfl2l3JRA,
+    #process.ca6pfl2l3JRA
 )
 

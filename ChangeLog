@@ -1,3 +1,10 @@
+2009-02-27  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-01-01
+	* remove features not necessary/supported on CMSSW_2_2_4: pflow
+	re-reconstruction, track-jet reconstruction, anti-kt &
+	cambridge/aachen, etc.
+
 2008-12-16  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-01-00
