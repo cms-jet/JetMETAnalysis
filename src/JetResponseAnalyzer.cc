@@ -717,23 +717,27 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
 	  fillHisto(refpdgid_[nref_],jet->pt(), ref->pt(), binsPt_, jetPtVsRefPt_);
 	}
       }
-
-      fillHisto(jet->eta(),jet->eta(),binsEta_,jetEtaVsJetEta_);
-      if (doFlavor_) fillHisto(refpdgid_[nref_],
-			       jet->eta(),jet->eta(),binsEta_,jetEtaVsJetEta_);
-
-      fillHisto(jet->phi(),jet->phi(),binsPhi_,jetPhiVsJetPhi_);
-      if (doFlavor_) fillHisto(refpdgid_[nref_],
-			       jet->phi(),jet->phi(),binsPhi_,jetPhiVsJetPhi_);
       
-      if (doJetPt_) {
+      if (binsEta_.size()>=2) {
+	fillHisto(jet->eta(),jet->eta(),binsEta_,jetEtaVsJetEta_);
+	if (doFlavor_) fillHisto(refpdgid_[nref_],
+				 jet->eta(),jet->eta(),binsEta_,jetEtaVsJetEta_);
+      }
+      
+      if (binsPhi_.size()>=2) {
+	fillHisto(jet->phi(),jet->phi(),binsPhi_,jetPhiVsJetPhi_);
+	if (doFlavor_) fillHisto(refpdgid_[nref_],
+				 jet->phi(),jet->phi(),binsPhi_,jetPhiVsJetPhi_);
+      }
+      
+      if (doJetPt_&&binsEta_.size()>=2) {
 	fillHisto(jet->pt(), jet->eta(),jet->pt(),
 		  binsEta_,binsPt_,jetPtVsJetEtaJetPt_);
 	if (doFlavor_) fillHisto(refpdgid_[nref_],
 				 jet->pt(), jet->eta(),jet->pt(),
 				 binsEta_,binsPt_,jetPtVsJetEtaJetPt_);
       }
-      if (doRefPt_) {
+      if (doRefPt_&&binsEta_.size()>=2) {
 	fillHisto(ref->pt(), jet->eta(),ref->pt(),
 		  binsEta_,binsPt_,refPtVsJetEtaRefPt_);
 	fillHisto(jet->pt(), jet->eta(),ref->pt(),
@@ -758,21 +762,25 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
 				   relRsp,ref->pt(), binsPt_, relRspVsRefPt_);
 	}
 	
-	fillHisto(relRsp,jet->eta(),binsEta_,relRspVsJetEta_);
-	if (doFlavor_) fillHisto(refpdgid_[nref_],
-				 relRsp,jet->eta(),binsEta_,relRspVsJetEta_);
+	if (binsEta_.size()>=2) {
+	  fillHisto(relRsp,jet->eta(),binsEta_,relRspVsJetEta_);
+	  if (doFlavor_) fillHisto(refpdgid_[nref_],
+				   relRsp,jet->eta(),binsEta_,relRspVsJetEta_);
+	}
 	
-	fillHisto(relRsp,jet->phi(),binsPhi_,relRspVsJetPhi_);
-	if (doFlavor_) fillHisto(refpdgid_[nref_],
-				 relRsp,jet->phi(),binsPhi_,relRspVsJetPhi_);
+	if (binsPhi_.size()>=2) {
+	  fillHisto(relRsp,jet->phi(),binsPhi_,relRspVsJetPhi_);
+	  if (doFlavor_) fillHisto(refpdgid_[nref_],
+				   relRsp,jet->phi(),binsPhi_,relRspVsJetPhi_);
+	}
 	
-	if (doJetPt_) {
+	if (doJetPt_&&binsEta_.size()>=2) {
 	  fillHisto(relRsp,jet->eta(),jet->pt(),
 		    binsEta_,binsPt_,relRspVsJetEtaJetPt_);
 	  if (doFlavor_) fillHisto(refpdgid_[nref_],relRsp,jet->eta(),jet->pt(),
 				   binsEta_,binsPt_,relRspVsJetEtaJetPt_);
 	}
-	if (doRefPt_) {
+	if (doRefPt_&&binsEta_.size()>=2) {
 	  fillHisto(relRsp,jet->eta(),ref->pt(),
 		    binsEta_,binsPt_,relRspVsJetEtaRefPt_);
 	  if (doFlavor_) fillHisto(refpdgid_[nref_],relRsp,jet->eta(),ref->pt(),
@@ -791,22 +799,26 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
 	  if (doFlavor_) fillHisto(refpdgid_[nref_],
 				   absRsp,ref->pt(), binsPt_, absRspVsRefPt_);
 	}
-
-	fillHisto(absRsp,jet->eta(),binsEta_,absRspVsJetEta_);
-	if (doFlavor_) fillHisto(refpdgid_[nref_],
-				 absRsp,jet->eta(),binsEta_,absRspVsJetEta_);
-
-	fillHisto(absRsp,jet->phi(),binsPhi_,absRspVsJetPhi_);
-	if (doFlavor_) fillHisto(refpdgid_[nref_],
-				 absRsp,jet->phi(),binsPhi_,absRspVsJetPhi_);
 	
-	if (doJetPt_) {
+	if (binsEta_.size()>=2) {
+	  fillHisto(absRsp,jet->eta(),binsEta_,absRspVsJetEta_);
+	  if (doFlavor_) fillHisto(refpdgid_[nref_],
+				   absRsp,jet->eta(),binsEta_,absRspVsJetEta_);
+	}
+	
+	if (binsPhi_.size()>=2) {
+	  fillHisto(absRsp,jet->phi(),binsPhi_,absRspVsJetPhi_);
+	  if (doFlavor_) fillHisto(refpdgid_[nref_],
+				   absRsp,jet->phi(),binsPhi_,absRspVsJetPhi_);
+	}
+	
+	if (doJetPt_&&binsEta_.size()>=2) {
 	  fillHisto(absRsp,jet->eta(),jet->pt(),
 		    binsEta_,binsPt_,absRspVsJetEtaJetPt_);
 	  if (doFlavor_) fillHisto(refpdgid_[nref_],absRsp,jet->eta(),jet->pt(),
 				   binsEta_,binsPt_,absRspVsJetEtaJetPt_);
 	}
-	if (doRefPt_) {
+	if (doRefPt_&&binsEta_.size()>=2) {
 	  fillHisto(absRsp,jet->eta(),ref->pt(),
 		    binsEta_,binsPt_,absRspVsJetEtaRefPt_);
 	  if (doFlavor_) fillHisto(refpdgid_[nref_],absRsp,jet->eta(),ref->pt(),
