@@ -1,3 +1,9 @@
+2009-03-12  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-01-03
+	* protect histgram filling against empty vectors binsEta_ and
+	binsPhi_
+
 2009-02-27  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-01-02
