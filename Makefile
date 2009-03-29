@@ -10,17 +10,17 @@
 
 CXX          = g++
 
-TMPDIR       = ../tmp
-LIBDIR       = ../lib
-BINDIR       = ../bin
+TMPDIR       = $(STANDALONE_DIR)/tmp
+LIBDIR       = $(STANDALONE_DIR)/lib
+BINDIR       = $(STANDALONE_DIR)/bin
 
 # maxosx
-#CXX_SHRD     = -dynamiclib
-#LIB_SUFX     = dylib
+CXX_SHRD     = -dynamiclib
+LIB_SUFX     = dylib
 
 # linux
-CXX_SHRD     = -shared
-LIB_SUFX     = so
+#CXX_SHRD     = -shared
+#LIB_SUFX     = so
 
 
 ROOTCXXFLAGS = $(shell $(ROOTSYS)/bin/root-config --cflags)
@@ -28,8 +28,7 @@ CXXFLAGS     = -O3 -Wall -fPIC -I. $(ROOTCXXFLAGS)
 
 ROOTLIBS     = $(shell $(ROOTSYS)/bin/root-config --libs)
 
-OBJS         = $(TMPDIR)/CommandLine.o $(TMPDIR)/RootStyle.o \
-	       $(TMPDIR)/HistogramLoader.o
+OBJS         = $(TMPDIR)/CommandLine.o $(TMPDIR)/RootStyle.o
 
 LIB          = libJetUtilities.$(LIB_SUFX)
 LIBS         = -L$(LIBDIR) -lJetUtilities
@@ -56,9 +55,6 @@ clean:
 
 $(TMPDIR)/CommandLine.o: interface/CommandLine.h src/CommandLine.cc
 	$(CXX) $(CXXFLAGS) -c -o $(TMPDIR)/CommandLine.o src/CommandLine.cc
-
-$(TMPDIR)/HistogramLoader.o: interface/HistogramLoader.h src/HistogramLoader.cc
-	$(CXX) $(CXXFLAGS) -c -o $(TMPDIR)/HistogramLoader.o src/HistogramLoader.cc
 
 $(TMPDIR)/RootStyle.o: interface/RootStyle.h src/RootStyle.cc
 	$(CXX) $(CXXFLAGS) -c -o $(TMPDIR)/RootStyle.o src/RootStyle.cc
