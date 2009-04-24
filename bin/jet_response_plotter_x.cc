@@ -146,9 +146,9 @@ int main(int argc,char**argv)
     ObjectLoader<TH1F> hlrsp;
     hlrsp.load_objects(idir,variable);
 
-    string varexp=hlrsp.variable(hlrsp.nvariables()-1);
-    for (unsigned int i=0;i<hlrsp.nvariables();i++) varexp+=":"+hlrsp.variable(i);
-
+    string varexp=hlrsp.variable(hlrsp.nvariables()-1)+
+                  variable.substr(variable.find(':'));
+    
     ObjectLoader<TH1F> hlvar;
     hlvar.load_objects(idir,varexp);
     
@@ -235,7 +235,7 @@ int main(int argc,char**argv)
 	double xmax(-1e100);
 	for (int ipoint=0;ipoint<g->GetN();ipoint++)
 	  if (g->GetX()[ipoint]>xmax) xmax = g->GetX()[ipoint];
-	TF1* fitfnc = new TF1("fit","sqrt(([0]/x)**2+[1]**2/x+[2]**2)",1.0,xmax);
+	TF1* fitfnc = new TF1("fit","sqrt(([0]/x)**2+[1]**2/x+[2]**2)",10.0,xmax);
 	fitfnc->SetLineWidth(2);
 	fitfnc->SetLineColor(g->GetLineColor());
 	fitfnc->SetParameter(0,0.5);
@@ -274,7 +274,7 @@ int main(int argc,char**argv)
     if (logy) gPad->SetLogy();
 
     vrsp_mg[img]->Draw("AP");
-    vrsp_mg[img]->SetMinimum(0.0);
+    vrsp_mg[img]->SetMinimum(0.01);
     vrsp_mg[img]->SetMaximum(1.1);
     TH1* h = vrsp_mg[img]->GetHistogram();
     h->SetXTitle(xtitle.c_str());
@@ -297,7 +297,7 @@ int main(int argc,char**argv)
     gPad->SetBottomMargin(0.15);
     
     vres_mg[img]->Draw("AP");
-    vres_mg[img]->SetMinimum(0.0);
+    vres_mg[img]->SetMinimum(0.01);
     vres_mg[img]->SetMaximum(0.5);
     TH1* h = vres_mg[img]->GetHistogram();
     h->SetXTitle(xtitle.c_str());
@@ -440,7 +440,7 @@ string get_legend_title(const string& alg)
   assert(!title.empty());
   
   string            reco[4] = { "calo","pf","trk","jpt" };
-  string            RECO[4] = { "(Calo)", "(PFlow)", "(Tracks)", "(Jet+Tracks)" };
+  string            RECO[4] = { "(Calo)", "(PFlow)", "(Tracks)", "(JPT)" };
 
   string::size_type pos=string::npos; int ireco=-1;
   while (pos==string::npos&&ireco<3) { pos = tmp.find(reco[++ireco]); }

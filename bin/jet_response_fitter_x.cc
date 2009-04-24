@@ -102,11 +102,15 @@ int main(int argc,char**argv)
       TH1F* hrsp = (TH1F*)histKey->ReadObj();
       string histname(hrsp->GetName());
       
-      if (histname.find("RelRsp")!=0&&histname.find("AbsRsp")!=0) continue;
-
+      if (histname.find("RelRsp")!=0&&histname.find("AbsRsp")!=0) {
+	hrsp->Write();
+	continue;
+      }
+      
       double integral = hrsp->Integral();
       double mean     = hrsp->GetMean();
       double rms      = hrsp->GetRMS();
+      
       if (integral>0.0) {
 	double norm  = hrsp->GetMaximumStored();
 	double peak  = mean;
@@ -141,6 +145,7 @@ int main(int argc,char**argv)
 	if (verbose>0)
 	  cout<<"NOT ENOUGH ENTRIES FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
       }
+      hrsp->Write();
     }
     
     cout<<"response fits for *"+alg+"* completed ..."<<flush;

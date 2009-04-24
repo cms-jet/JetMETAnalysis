@@ -35,8 +35,8 @@ using namespace std;
 // declare local functions
 ////////////////////////////////////////////////////////////////////////////////
 void set_xaxis_range(TH1* h);
-void set_draw_attributes(TH1* h);
-void draw_stats(TH1* h);
+void set_draw_attributes(TH1* h,Color_t fitColor=kRed);
+void draw_stats(TH1* h,double xoffset=0.65,Color_t color=kBlack,Color_t fitColor=kRed);
 void draw_range(const ObjectLoader<TH1F>& hl,const vector<unsigned int>& indices);
 
 
@@ -50,9 +50,9 @@ int main(int argc,char** argv)
   CommandLine cl;
   if (!cl.parse(argc,argv)) return 0
 			      ;
-  string         input      = cl.getValue<string> ("input");
+  vector<string> inputs     = cl.getVector<string>("inputs");
   vector<string> formats    = cl.getVector<string>("formats",             "");
-  string         algorithm  = cl.getValue<string> ("algorithm",    "kt4calo");
+  vector<string> algs       = cl.getVector<string>("algs",         "kt4calo");
   string         variable   = cl.getValue<string> ("variable","AbsRsp:RefPt");
   int            npercanvas = cl.getValue<int>    ("npercanvas",           0);
   bool           logx       = cl.getValue<bool>   ("logx",             false);
@@ -61,67 +61,89 @@ int main(int argc,char** argv)
 
   if (!cl.check()) return 0;
   cl.print();
-  
-  TFile* file=new TFile(input.c_str(),"READ");
-  if (!file->IsOpen()) { cout<<"Can't open "<<input<<endl; return 0; }
 
-  TDirectory* dir =(TDirectory*)file->Get(algorithm.c_str());
-  if (0==dir) { cout<<"No dir "<<algorithm<<" found"<<endl; return 0; }
-
-  ObjectLoader<TH1F> hl;
-  hl.load_objects(dir,variable);
+  bool put_range = (npercanvas!=0);
   
   argc = (batch) ? 2 : 1; if (batch) argv[1] = "-b";
   TApplication* app=new TApplication("jet_inspect_jra_histos",&argc,argv);
   
   set_root_style();
   gStyle->SetOptStat(0);
+  
+  vector<TCanvas*> c; int nx(1),ny(1);
+  
+  for (unsigned int ifile=0;ifile<inputs.size();ifile++) {
 
-  bool put_range = (npercanvas!=0);
-  if (npercanvas==0) npercanvas=hl.nobjects(hl.nvariables()-1);
-  
-  int nx=(int)std::sqrt((float)npercanvas);
-  int ny=nx;
-  if (nx*ny<npercanvas) nx++;
-  if (nx*ny<npercanvas) ny++;
-  
-  vector<TCanvas*> cvec;
-  hl.begin_loop();
-  vector<unsigned int> indices; TH1F* h(0); unsigned int ihisto(0);
-  while ((h=hl.next_object(indices))) {
-    if (cvec.size()==0||ihisto%npercanvas==0) {
-      stringstream sscname;sscname<<algorithm<<"_"<<hl.quantity()<<"_VS";
-      for (unsigned int i=0;i<hl.nvariables();i++) {
-	sscname<<"_"<<hl.variable(i);
-	if (i<hl.nvariables()-1||put_range)
-	  sscname<<hl.minimum(i,indices[i])<<"to"<<hl.maximum(i,indices[i]);
+    string input = inputs[ifile];
+    TFile* file=new TFile(input.c_str(),"READ");
+    if (!file->IsOpen()) { cout<<"Can't open "<<file->GetName()<<endl; return 0; }
+    
+    for (unsigned int ialg=0;ialg<algs.size();ialg++) {
+
+      string alg = algs[ialg];
+      TDirectory* dir =(TDirectory*)file->Get(alg.c_str());
+      if (0==dir) { cout<<"No dir "<<algs[ialg]<<" found"<<endl; return 0; }
+
+      ObjectLoader<TH1F> hl;
+      hl.load_objects(dir,variable);
+      
+      if (ifile==0&&ialg==0) {
+	if (npercanvas==0) npercanvas=hl.nobjects(hl.nvariables()-1);
+	nx=(int)std::sqrt((float)npercanvas);
+	ny=nx;
+	if (nx*ny<npercanvas) nx++;
+	if (nx*ny<npercanvas) ny++;
       }
-      cvec.push_back(new TCanvas(sscname.str().c_str(),sscname.str().c_str()));
-      cvec.back()->Divide(nx,ny,1e-04,1e-04);
-    }
-    
-    int ipad = ihisto%npercanvas+1;
-    cvec.back()->cd(ipad);
+      
+      hl.begin_loop();
+      vector<unsigned int> indices; TH1F* h(0); unsigned int ihisto(0);
+      while ((h=hl.next_object(indices))) {
+	if (ifile==0&&ialg==0&&(c.size()==0||ihisto%npercanvas==0)) {
+	  stringstream sscname;sscname<<alg<<"_"<<hl.quantity()<<"_VS";
+	  for (unsigned int i=0;i<hl.nvariables();i++) {
+	    sscname<<"_"<<hl.variable(i);
+	    if (i<hl.nvariables()-1||put_range)
+	      sscname<<hl.minimum(i,indices[i])<<"to"<<hl.maximum(i,indices[i]);
+	  }
+	  c.push_back(new TCanvas(sscname.str().c_str(),sscname.str().c_str()));
+	  c.back()->Divide(nx,ny,1e-04,1e-04);
+	}
+	
+	int icnv = ihisto/npercanvas;
+	int ipad = ihisto%npercanvas+1;
+	c[icnv]->cd(ipad);
+	
+	if (ifile==0&&ialg==0) {
+	  if (logx) gPad->SetLogx();
+	  if (logy) gPad->SetLogy();
+	  gPad->SetLeftMargin(0.18);
+	  gPad->SetRightMargin(0.05);
+	  gPad->SetTopMargin(0.12);
+	  gPad->SetBottomMargin(0.15);
+	  set_xaxis_range(h);
+	  set_draw_attributes(h,kRed);
+	  h->Draw("EH");
+	  h->SetMaximum(1.5*h->GetMaximum());
+	  if (logy) h->SetMaximum(10.*h->GetMaximum());
+	  draw_stats(h,0.65,kBlack,kRed);
+	  draw_range(hl,indices);
+	}
+	else {
+	  h->SetLineColor(kBlue);
+	  set_draw_attributes(h,kMagenta);
+	  h->Draw("ESAME");
+	  draw_stats(h,0.225,kBlue,kMagenta);
+	}
+	
+	ihisto++;
+	
+      } // histos
+    } // algs
+  } // inputs
 
-    if (logx) gPad->SetLogx();
-    if (logy) gPad->SetLogy();
-    gPad->SetLeftMargin(0.18);
-    gPad->SetRightMargin(0.05);
-    gPad->SetTopMargin(0.12);
-    gPad->SetBottomMargin(0.15);
-    set_xaxis_range(h);
-    set_draw_attributes(h);
-    h->Draw("EH");
-    draw_stats(h);
-    draw_range(hl,indices);
-    
-    ihisto++;
-  }
-
-  for (unsigned int icanvas=0;icanvas<cvec.size();icanvas++)
+  for (unsigned int icanvas=0;icanvas<c.size();icanvas++)
     for (unsigned int iformat=0;iformat<formats.size();iformat++)
-      cvec[icanvas]->Print((string(cvec[icanvas]->GetName())+
-			    "."+formats[iformat]).c_str());
+      c[icanvas]->Print((string(c[icanvas]->GetName())+"."+formats[iformat]).c_str());
   
   if (!batch) app->Run();
   
@@ -150,17 +172,17 @@ void set_xaxis_range(TH1* h)
 
 
 //______________________________________________________________________________
-void set_draw_attributes(TH1* h)
+void set_draw_attributes(TH1* h,Color_t color)
 {
   TF1* fitfnc = h->GetFunction("fit");
   if (0==fitfnc) return;
   fitfnc->SetLineWidth(2);
-  fitfnc->SetLineColor(kRed);
+  fitfnc->SetLineColor(color);
 }
 
 
 //______________________________________________________________________________
-void draw_stats(TH1* h)
+void draw_stats(TH1* h,double xoffset,Color_t color,Color_t fitColor)
 {
   TF1* fitfnc = h->GetFunction("fit");
   stringstream ssentries;
@@ -192,14 +214,15 @@ void draw_stats(TH1* h)
   stats.SetTextAlign(12);
   stats.SetTextFont(22);
   stats.SetTextSize(0.045);
-
-  stats.DrawLatex(0.7,0.80,ssentries.str().c_str());
-  stats.DrawLatex(0.7,0.75,ssmean.str().c_str());
-  stats.DrawLatex(0.7,0.70,ssrms.str().c_str());
+  stats.SetTextColor(color);
+  
+  stats.DrawLatex(xoffset,0.84,ssentries.str().c_str());
+  stats.DrawLatex(xoffset,0.805,ssmean.str().c_str());
+  stats.DrawLatex(xoffset,0.77,ssrms.str().c_str());
   if (0!=fitfnc) {
-    stats.SetTextColor(kRed);
-    stats.DrawLatex(0.7,0.65,sspeak.str().c_str());
-    stats.DrawLatex(0.7,0.60,sssgma.str().c_str());
+    stats.SetTextColor(fitColor);
+    stats.DrawLatex(xoffset,0.735,sspeak.str().c_str());
+    stats.DrawLatex(xoffset,0.70,sssgma.str().c_str());
   }
 }
 

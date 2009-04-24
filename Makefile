@@ -10,9 +10,9 @@
 
 CXX          = g++
 
-TMPDIR       = ../tmp
-LIBDIR       = ../lib
-BINDIR       = ../bin
+TMPDIR       = $(STANDALONE_DIR)/tmp
+LIBDIR       = $(STANDALONE_DIR)/lib
+BINDIR       = $(STANDALONE_DIR)/bin
 
 ROOTCXXFLAGS = $(shell $(ROOTSYS)/bin/root-config --cflags)
 CXXFLAGS     = -O3 -Wall -fPIC -I. $(ROOTCXXFLAGS)

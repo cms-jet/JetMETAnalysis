@@ -86,20 +86,20 @@ int main(int argc,char**argv)
   int            nbinspt      = cl.getValue<int>    ("nbinspt",       50);
   int            nbinseta     = cl.getValue<int>    ("nbinseta",      25);
   int            nbinsphi     = cl.getValue<int>    ("nbinsphi",      25);
-  float          etabarrelmin = cl.getValue<float>  ("etabarrelmin",-1.0);
-  float          etabarrelmax = cl.getValue<float>  ("etabarrelmax",+1.0);
+  float          etabarrelmin = cl.getValue<float>  ("etabarrelmin",-1.3);
+  float          etabarrelmax = cl.getValue<float>  ("etabarrelmax",+1.3);
   bool           dobalance    = cl.getValue<bool>   ("dobalance",  false);
   bool           doflavor     = cl.getValue<bool>   ("doflavor",   false);
   float          drmax        = cl.getValue<float>  ("drmax",        0.3);
   float          dphimin      = cl.getValue<float>  ("dphimin",      2.7);
-  bool           dojetpt      = cl.getValue<bool>   ("dojetpt",     true);
+  bool           dojetpt      = cl.getValue<bool>   ("dojetpt",    false);
   bool           dorefpt      = cl.getValue<bool>   ("dorefpt",     true);
-  int            nbinsrelrsp  = cl.getValue<int>    ("nbinsrelrsp",  100);
+  int            nbinsrelrsp  = cl.getValue<int>    ("nbinsrelrsp",   50);
   float          relrspmin    = cl.getValue<float>  ("relrspmin",    0.0);
   float          relrspmax    = cl.getValue<float>  ("relrspmax",    2.0);
-  int            nbinsabsrsp  = cl.getValue<int>    ("nbinsabsrsp",  600);
-  float          absrspmin    = cl.getValue<float>  ("absrspmin",-1000.0);
-  float          absrspmax    = cl.getValue<float>  ("absrspmax",  200.0);
+  int            nbinsabsrsp  = cl.getValue<int>    ("nbinsabsrsp",  150);
+  float          absrspmin    = cl.getValue<float>  ("absrspmin", -250.0);
+  float          absrspmax    = cl.getValue<float>  ("absrspmax",  100.0);
   vector<string> algs         = cl.getVector<string>("algs",          "");
   
   if (!cl.check()) return 0;
@@ -342,7 +342,7 @@ int main(int argc,char**argv)
       for (unsigned int ieta=0;ieta<binseta.size()-1;++ieta) {
 
 	string hname; float etamin=binseta[ieta]; float etamax=binseta[ieta+1];
-
+	
 	if (1) {
 	  jetEtaVsJetEta.push_back(new TH1F*[flavor.size()]);
 	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
@@ -731,6 +731,7 @@ int get_index(float x,const vector<float>& binsx)
 void fill_histo(float value,float x,
 		const vector<float>& binsx,const vector<TH1F**>& histos)
 {
+  if (binsx.size()==0) return;
   int ix=get_index(x,binsx);
   if (ix>=0) histos[ix][0]->Fill(value);
 }
@@ -740,6 +741,7 @@ void fill_histo(float value,float x,
 void fill_histo(int pdgid,float value,float x,
 		const vector<float>& binsx,const vector<TH1F**>& histos)
 {
+  if (binsx.size()==0) return;
   int abspdgid=std::abs(pdgid);
   int iflv(-1);
   if (abspdgid>=1&&abspdgid<=3) iflv=1;
@@ -758,6 +760,7 @@ void fill_histo(float value,float x,float y,
 		const vector<float>& binsx,const vector<float>& binsy,
 		const vector<TH1F***>& histos)
 {
+  if (binsx.size()==0||binsy.size()==0) return;
   int ix=get_index(x,binsx);
   int iy=get_index(y,binsy);
   if (ix>=0&&iy>=0) histos[ix][iy][0]->Fill(value);
@@ -769,6 +772,7 @@ void fill_histo(int pdgid,float value,float x,float y,
 		const vector<float>& binsx,const vector<float>& binsy,
 		const vector<TH1F***>& histos)
 {
+  if (binsx.size()==0||binsy.size()==0) return;
   int abspdgid=std::abs(pdgid);
   int iflv(-1);
   if (abspdgid>=1&&abspdgid<=3) iflv=1;
