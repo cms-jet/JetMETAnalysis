@@ -1,3 +1,11 @@
+2009-04-24  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-01-04
+	* fix jet_response_fitter_x to work correctly with ROOT >5.18
+	* allow response comparisons in jet_inspect_jra_histos_x
+	* add parameter xsection to jet_response_analyyzer_x: if set >0.0,
+	histogram entries will be weighted by xsection/tree->GetEntries()
+
 2009-03-12  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-01-03
