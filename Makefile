@@ -29,7 +29,8 @@ setup:
 	mkdir -p $(BINDIR)
 
 bin:  jet_response_analyzer jet_response_fitter jet_response_plotter \
-      jet_l2_correction jet_l3_correction jet_inspect_jra_histos
+      jet_l2_correction jet_l3_correction jet_inspect_jra_histos \
+      jet_weighted_spectrum
 
 jet_response_analyzer:
 	$(CXX) $(CXXFLAGS) bin/jet_response_analyzer_x.cc $(LIBS) $(ROOTLIBS) \
@@ -55,6 +56,10 @@ jet_inspect_jra_histos:
 	$(CXX) $(CXXFLAGS) bin/jet_inspect_jra_histos_x.cc $(LIBS) $(ROOTLIBS) \
         -o $(BINDIR)/jet_inspect_jra_histos_x
 
+jet_weighted_spectrum:
+	$(CXX) $(CXXFLAGS) bin/jet_weighted_spectrum_x.cc $(LIBS) $(ROOTLIBS) \
+        -o $(BINDIR)/jet_weighted_spectrum_x
+
 clean:
 	rm -rf JetMETAnalysis \
 	       $(BINDIR)/jet_response_analyzer_x \
@@ -62,4 +67,5 @@ clean:
 	       $(BINDIR)/jet_response_plotter_x \
 	       $(BINDIR)/jet_response_l2_correction_x \
 	       $(BINDIR)/jet_response_l3_correction_x \
-               $(BINDIR)/jet_inspect_jra_histos_x
+               $(BINDIR)/jet_inspect_jra_histos_x \
+               $(BINDIR)/jet_weighted_spectrum_x

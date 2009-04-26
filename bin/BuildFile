@@ -21,3 +21,5 @@
 <bin name=jet_inspect_jra_histos_x file=jet_inspect_jra_histos_x.cc>
 </bin>
 
+<bin name=jet_weighted_spectrum_x file=jet_weighted_spectrum_x.cc>
+</bin>
