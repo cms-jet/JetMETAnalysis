@@ -1,3 +1,8 @@
+2009-04-26  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-01-05
+	* add bin/weighted_spectrum_x and config/weighted_spectrum.config
+
 2009-04-24  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-01-04
