@@ -79,7 +79,7 @@ int main(int argc,char**argv)
     if (pos!=string::npos){stringstream ss;ss<<inputs[i].substr(pos+1);ss>>weight;}
 
     // DEBUG
-    //cout<<"filename="<<filename<<", weight="<<weight<<endl;
+    cout<<"filename="<<filename<<", weight="<<weight<<endl;
     
     TFile* file = new TFile((datapath+"/"+filename).c_str(),"READ");
     if (!file->IsOpen()) {
@@ -109,7 +109,7 @@ int main(int argc,char**argv)
     tree->Project("RefPtW","refpt",wsel.str().c_str());
     
     float cfraction = i*(1./(float)inputs.size());
-    Color_t color = TColor::GetColor(0.0,0.0,cfraction);
+    Color_t color = TColor::GetColor(0.1,0.1,cfraction);
 
     hRefPt->SetLineWidth(1);
     hRefPt->SetFillColor(color);
@@ -141,7 +141,7 @@ int main(int argc,char**argv)
   gPad->SetRightMargin(0.17);
   stRefPtW->Draw();
   stRefPtW->GetXaxis()->SetTitle("p_{T}^{GEN} [GeV]");
-  stRefPtW->SetMinimum(9E-09);
+  stRefPtW->SetMinimum(9E-11);
   stRefPtW->SetMaximum(5.E09);
   if (logx) gPad->SetLogx();
   if (logy) gPad->SetLogy();

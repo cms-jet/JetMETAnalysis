@@ -109,7 +109,9 @@ int main(int argc,char**argv)
   bool dorelrsp=(nbinsrelrsp>0);
   bool doabsrsp=(nbinsabsrsp>0);
 
+  if (xsection>0.0) TH1::SetDefaultSumw2(true);
   
+
   //
   // open input/output files and loop over input directories/trees (=algorithms!)
   //
@@ -135,7 +137,7 @@ int main(int argc,char**argv)
   
     float weight = (xsection>0.0) ? xsection/tree->GetEntries() : 1.0;
     
-    
+
     //
     // setup the tree for reading
     //
