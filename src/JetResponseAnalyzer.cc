@@ -65,7 +65,9 @@ private:
   bool            doRefPt_;
   bool            doRelRsp_;
   bool            doAbsRsp_;
-  
+  bool            doEtaRsp_;
+  bool            doPhiRsp_;
+
   bool            doBalancing_;
   double          deltaRMax_;
   double          deltaPhiMin_;
@@ -79,6 +81,8 @@ private:
   unsigned int    nRefMax_;
   unsigned int    nBinsRelRsp_;
   unsigned int    nBinsAbsRsp_;
+  unsigned int    nBinsEtaRsp_;
+  unsigned int    nBinsPhiRsp_;
   unsigned int    nBinsPt_;
   unsigned int    nBinsEta_;
   unsigned int    nBinsPhi_;
@@ -90,6 +94,10 @@ private:
   double          relRspMax_;
   double          absRspMin_;
   double          absRspMax_;
+  double          etaRspMin_;
+  double          etaRspMax_;
+  double          phiRspMin_;
+  double          phiRspMax_;
 
   vector<double>  binsPt_;
   vector<double>  binsEta_;
@@ -121,6 +129,17 @@ private:
   vector<TH1F**>  absRspVsJetPhi_;
   vector<TH1F***> absRspVsJetEtaJetPt_;
   vector<TH1F***> absRspVsJetEtaRefPt_;
+
+  vector<TH1F**>  etaRspVsJetPt_;
+  vector<TH1F**>  etaRspVsRefPt_;
+  vector<TH1F**>  etaRspVsJetEta_;
+  vector<TH1F**>  etaRspVsJetPhi_;
+
+  vector<TH1F**>  phiRspVsJetPt_;
+  vector<TH1F**>  phiRspVsRefPt_;
+  vector<TH1F**>  phiRspVsJetEta_;
+  vector<TH1F**>  phiRspVsJetPhi_;
+  
 
   TTree*          tree_;
   unsigned char   nref_;
@@ -220,6 +239,8 @@ JetResponseAnalyzer::JetResponseAnalyzer(const edm::ParameterSet& iConfig)
     
     nBinsRelRsp_ =iConfig.getParameter<unsigned int>    ("nBinsRelRsp");
     nBinsAbsRsp_ =iConfig.getParameter<unsigned int>    ("nBinsAbsRsp");
+    nBinsEtaRsp_ =iConfig.getParameter<unsigned int>    ("nBinsEtaRsp");
+    nBinsPhiRsp_ =iConfig.getParameter<unsigned int>    ("nBinsPhiRsp");
     
     doRelRsp_=(nBinsRelRsp_>0);
     if (doRelRsp_) {
@@ -230,6 +251,16 @@ JetResponseAnalyzer::JetResponseAnalyzer(const edm::ParameterSet& iConfig)
     if (doAbsRsp_) {
       absRspMin_=iConfig.getParameter<double>("absRspMin");
       absRspMax_=iConfig.getParameter<double>("absRspMax");
+    }
+    doEtaRsp_=(nBinsEtaRsp_>0);
+    if (doEtaRsp_) {
+      etaRspMin_=iConfig.getParameter<double>("etaRspMin");
+      etaRspMax_=iConfig.getParameter<double>("etaRspMax");
+    }
+    doPhiRsp_=(nBinsPhiRsp_>0);
+    if (doPhiRsp_) {
+      phiRspMin_=iConfig.getParameter<double>("phiRspMin");
+      phiRspMax_=iConfig.getParameter<double>("phiRspMax");
     }
   }
 }
@@ -390,6 +421,50 @@ void JetResponseAnalyzer::beginJob(const edm::EventSetup& iSetup)
 			     nBinsAbsRsp_,absRspMin_,absRspMax_);
 	  }
 	}
+
+	if (doEtaRsp_&&doJetPt_) {
+	  etaRspVsJetPt_.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iFlv=0;iFlv<flavor.size();iFlv++) {
+	    hname=flavor[iFlv]+"EtaRsp_"+getSuffix("JetPt",iPt,binsPt_);
+	    etaRspVsJetPt_.back()[iFlv]=fs->make<TH1F>(hname.c_str(),
+						       ";|#eta|-|#eta^{ref}|",
+						       nBinsEtaRsp_,
+						       etaRspMin_,etaRspMax_);
+	  }
+	}
+	
+	if (doEtaRsp_&&doRefPt_) {
+	  etaRspVsRefPt_.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iFlv=0;iFlv<flavor.size();iFlv++) {
+	    hname=flavor[iFlv]+"EtaRsp_"+getSuffix("RefPt",iPt,binsPt_);
+	    etaRspVsRefPt_.back()[iFlv]=fs->make<TH1F>(hname.c_str(),
+						       ";|#eta|-|#eta^{ref}|",
+						       nBinsEtaRsp_,
+						       etaRspMin_,etaRspMax_);
+	  }
+	}
+	
+	if (doPhiRsp_&&doJetPt_) {
+	  phiRspVsJetPt_.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iFlv=0;iFlv<flavor.size();iFlv++) {
+	    hname=flavor[iFlv]+"PhiRsp_"+getSuffix("JetPt",iPt,binsPt_);
+	    phiRspVsJetPt_.back()[iFlv]=fs->make<TH1F>(hname.c_str(),
+						       ";#phi-#phi^{ref}",
+						       nBinsPhiRsp_,
+						       phiRspMin_,phiRspMax_);
+	  }
+	}
+	
+	if (doPhiRsp_&&doRefPt_) {
+	  phiRspVsRefPt_.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iFlv=0;iFlv<flavor.size();iFlv++) {
+	    hname=flavor[iFlv]+"PhiRsp_"+getSuffix("RefPt",iPt,binsPt_);
+	    phiRspVsRefPt_.back()[iFlv]=fs->make<TH1F>(hname.c_str(),
+						       ";#phi-#phi^{ref}",
+						       nBinsPhiRsp_,
+						       phiRspMin_,phiRspMax_);
+	  }
+	}
 	
       }
     }
@@ -431,6 +506,28 @@ void JetResponseAnalyzer::beginJob(const edm::EventSetup& iSetup)
 	  }
 	}
 	
+	if (doEtaRsp_) {
+	  etaRspVsJetEta_.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iFlv=0;iFlv<flavor.size();iFlv++) {
+	    hname=flavor[iFlv]+"EtaRsp_"+getSuffix("JetEta",iEta,binsEta_);
+	    etaRspVsJetEta_.back()[iFlv]=fs->make<TH1F>(hname.c_str(),
+							";|#eta|-|#eta^{ref}|",
+							nBinsEtaRsp_,
+							etaRspMin_,etaRspMax_);
+	  }
+	}
+	
+	if (doPhiRsp_) {
+	  phiRspVsJetEta_.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iFlv=0;iFlv<flavor.size();iFlv++) {
+	    hname=flavor[iFlv]+"PhiRsp_"+getSuffix("JetEta",iEta,binsEta_);
+	    phiRspVsJetEta_.back()[iFlv]=fs->make<TH1F>(hname.c_str(),
+							";#phi-#phi^{ref}",
+							nBinsPhiRsp_,
+							phiRspMin_,phiRspMax_);
+	  }
+	}
+	
       }
     }
     
@@ -468,6 +565,28 @@ void JetResponseAnalyzer::beginJob(const edm::EventSetup& iSetup)
 							";p_{T}-p_{T}^{ref} [GeV]",
 							nBinsAbsRsp_,
 							absRspMin_,absRspMax_);
+	  }
+	}
+	
+	if (doEtaRsp_) {
+	  etaRspVsJetPhi_.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iFlv=0;iFlv<flavor.size();iFlv++) {
+	    hname=flavor[iFlv]+"EtaRsp_"+getSuffix("JetPhi",iPhi,binsPhi_);
+	    etaRspVsJetPhi_.back()[iFlv]=fs->make<TH1F>(hname.c_str(),
+							";|#eta|-|#eta^{ref}|",
+							nBinsEtaRsp_,
+							etaRspMin_,etaRspMax_);
+	  }
+	}
+	
+	if (doPhiRsp_) {
+	  phiRspVsJetPhi_.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iFlv=0;iFlv<flavor.size();iFlv++) {
+	    hname=flavor[iFlv]+"PhiRsp_"+getSuffix("JetPhi",iPhi,binsPhi_);
+	    phiRspVsJetPhi_.back()[iFlv]=fs->make<TH1F>(hname.c_str(),
+							";#phi-#phi^{ref}",
+							nBinsPhiRsp_,
+							phiRspMin_,phiRspMax_);
 	  }
 	}
 	
@@ -667,162 +786,215 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
       refpdgid_[nref_]=ref->pdgId();
     }
     
-    refpt_[nref_]   =ref->pt();
-    refeta_[nref_]  =ref->eta();
-    refphi_[nref_]  =ref->phi();
-    jtpt_[nref_]    =jet->pt();
-    jteta_[nref_]   =jet->eta();
-    jtphi_[nref_]   =jet->phi();
+    refpt_[nref_]   = ref->pt();
+    refeta_[nref_]  = ref->eta();
+    refphi_[nref_]  = ref->phi();
+    jtpt_[nref_]    = jet->pt();
+    jteta_[nref_]   = jet->eta();
+    jtphi_[nref_]   = jet->phi();
     nref_++;
-    
-    double absRsp=jet->pt()-ref->pt();
-    double relRsp=jet->pt()/ref->pt();
-    
+
+    double jetPt  =jet->pt();    
+    double jetEta =
+      (binsEta_.size()&&binsEta_.front()>=0.0) ? std::abs(jet->eta()) : jet->eta();
+    double jetPhi = jet->phi();
+    double refPt  = ref->pt();
+    double absRsp = jetPt-refPt;
+    double relRsp = jetPt/refPt;
+    double etaRsp = std::abs(jet->eta()) - std::abs(ref->eta());
+    double phiRsp = jet->phi() - ref->phi();
+
     if (doHistos_) {
-      if (jet->eta()>=etaBarrelMin_&&jet->eta()<=etaBarrelMax_) {
+      if (jetEta>=etaBarrelMin_&&jetEta<=etaBarrelMax_) {
 	if (doRefPt_) {
-	  fillHisto(ref->pt(),ref->pt(),binsPt_,refPtVsRefPtBarrel_);
-	  fillHisto(jet->pt(),ref->pt(),binsPt_,jetPtVsRefPtBarrel_);
+	  fillHisto(refPt,refPt,binsPt_,refPtVsRefPtBarrel_);
+	  fillHisto(jetPt,refPt,binsPt_,jetPtVsRefPtBarrel_);
 	  if (doFlavor_) {
 	    fillHisto(refpdgid_[nref_],
-		      ref->pt(),ref->pt(),binsPt_,refPtVsRefPtBarrel_);
+		      refPt,refPt,binsPt_,refPtVsRefPtBarrel_);
 	    fillHisto(refpdgid_[nref_],
-		      jet->pt(),ref->pt(),binsPt_,jetPtVsRefPtBarrel_);
+		      jetPt,refPt,binsPt_,jetPtVsRefPtBarrel_);
 	  }
 	}
 	if (doRelRsp_&&doRefPt_) {
-	  fillHisto(relRsp,ref->pt(),binsPt_,relRspVsRefPtBarrel_);
+	  fillHisto(relRsp,refPt,binsPt_,relRspVsRefPtBarrel_);
 	  if (doFlavor_)
 	    fillHisto(refpdgid_[nref_],
-		      relRsp,ref->pt(),binsPt_,relRspVsRefPtBarrel_);
+		      relRsp,refPt,binsPt_,relRspVsRefPtBarrel_);
 	}
 	if (doAbsRsp_&&doRefPt_) {
-	  fillHisto(absRsp,ref->pt(),binsPt_,absRspVsRefPtBarrel_);
+	  fillHisto(absRsp,refPt,binsPt_,absRspVsRefPtBarrel_);
 	  if (doFlavor_)
 	    fillHisto(refpdgid_[nref_],
-		      absRsp,ref->pt(),binsPt_,absRspVsRefPtBarrel_);
+		      absRsp,refPt,binsPt_,absRspVsRefPtBarrel_);
 	}
       }
       
       if (doJetPt_) {
-	fillHisto(jet->pt(), jet->pt(), binsPt_, jetPtVsJetPt_);
+	fillHisto(jetPt, jetPt, binsPt_, jetPtVsJetPt_);
 	if (doFlavor_) fillHisto(refpdgid_[nref_],
-				 jet->pt(), jet->pt(), binsPt_, jetPtVsJetPt_);
+				 jetPt, jetPt, binsPt_, jetPtVsJetPt_);
       }
       if (doRefPt_) {
-	fillHisto(ref->pt(), ref->pt(), binsPt_, refPtVsRefPt_);
-	fillHisto(jet->pt(), ref->pt(), binsPt_, jetPtVsRefPt_);
+	fillHisto(refPt, refPt, binsPt_, refPtVsRefPt_);
+	fillHisto(jetPt, refPt, binsPt_, jetPtVsRefPt_);
 	if (doFlavor_) {
-	  fillHisto(refpdgid_[nref_],ref->pt(), ref->pt(), binsPt_, refPtVsRefPt_);
-	  fillHisto(refpdgid_[nref_],jet->pt(), ref->pt(), binsPt_, jetPtVsRefPt_);
+	  fillHisto(refpdgid_[nref_],refPt, refPt, binsPt_, refPtVsRefPt_);
+	  fillHisto(refpdgid_[nref_],jetPt, refPt, binsPt_, jetPtVsRefPt_);
 	}
       }
       
       if (binsEta_.size()>=2) {
-	fillHisto(jet->eta(),jet->eta(),binsEta_,jetEtaVsJetEta_);
+	fillHisto(jetEta,jetEta,binsEta_,jetEtaVsJetEta_);
 	if (doFlavor_) fillHisto(refpdgid_[nref_],
-				 jet->eta(),jet->eta(),binsEta_,jetEtaVsJetEta_);
+				 jetEta,jetEta,binsEta_,jetEtaVsJetEta_);
       }
       
       if (binsPhi_.size()>=2) {
-	fillHisto(jet->phi(),jet->phi(),binsPhi_,jetPhiVsJetPhi_);
+	fillHisto(jetPhi,jetPhi,binsPhi_,jetPhiVsJetPhi_);
 	if (doFlavor_) fillHisto(refpdgid_[nref_],
-				 jet->phi(),jet->phi(),binsPhi_,jetPhiVsJetPhi_);
+				 jetPhi,jetPhi,binsPhi_,jetPhiVsJetPhi_);
       }
       
       if (doJetPt_&&binsEta_.size()>=2) {
-	fillHisto(jet->pt(), jet->eta(),jet->pt(),
+	fillHisto(jetPt, jetEta,jetPt,
 		  binsEta_,binsPt_,jetPtVsJetEtaJetPt_);
 	if (doFlavor_) fillHisto(refpdgid_[nref_],
-				 jet->pt(), jet->eta(),jet->pt(),
+				 jetPt, jetEta,jetPt,
 				 binsEta_,binsPt_,jetPtVsJetEtaJetPt_);
       }
       if (doRefPt_&&binsEta_.size()>=2) {
-	fillHisto(ref->pt(), jet->eta(),ref->pt(),
+	fillHisto(refPt, jetEta,refPt,
 		  binsEta_,binsPt_,refPtVsJetEtaRefPt_);
-	fillHisto(jet->pt(), jet->eta(),ref->pt(),
+	fillHisto(jetPt, jetEta,refPt,
 		  binsEta_,binsPt_,jetPtVsJetEtaRefPt_);
 	if (doFlavor_) {
-	  fillHisto(refpdgid_[nref_],ref->pt(), jet->eta(),ref->pt(),
+	  fillHisto(refpdgid_[nref_],refPt, jetEta,refPt,
 		    binsEta_,binsPt_,refPtVsJetEtaRefPt_);
-	  fillHisto(refpdgid_[nref_],jet->pt(), jet->eta(),ref->pt(),
+	  fillHisto(refpdgid_[nref_],jetPt, jetEta,refPt,
 		    binsEta_,binsPt_,jetPtVsJetEtaRefPt_);
 	}
       }
       
       if (doRelRsp_) {
 	if (doJetPt_) {
-	  fillHisto(relRsp,jet->pt(), binsPt_, relRspVsJetPt_);
+	  fillHisto(relRsp,jetPt, binsPt_, relRspVsJetPt_);
 	  if (doFlavor_) fillHisto(refpdgid_[nref_],
-				   relRsp,jet->pt(), binsPt_, relRspVsJetPt_);
+				   relRsp,jetPt, binsPt_, relRspVsJetPt_);
 	}
 	if (doRefPt_) {
-	  fillHisto(relRsp,ref->pt(), binsPt_, relRspVsRefPt_);
+	  fillHisto(relRsp,refPt, binsPt_, relRspVsRefPt_);
 	  if (doFlavor_) fillHisto(refpdgid_[nref_],
-				   relRsp,ref->pt(), binsPt_, relRspVsRefPt_);
+				   relRsp,refPt, binsPt_, relRspVsRefPt_);
 	}
 	
 	if (binsEta_.size()>=2) {
-	  fillHisto(relRsp,jet->eta(),binsEta_,relRspVsJetEta_);
+	  fillHisto(relRsp,jetEta,binsEta_,relRspVsJetEta_);
 	  if (doFlavor_) fillHisto(refpdgid_[nref_],
-				   relRsp,jet->eta(),binsEta_,relRspVsJetEta_);
+				   relRsp,jetEta,binsEta_,relRspVsJetEta_);
 	}
 	
 	if (binsPhi_.size()>=2) {
-	  fillHisto(relRsp,jet->phi(),binsPhi_,relRspVsJetPhi_);
+	  fillHisto(relRsp,jetPhi,binsPhi_,relRspVsJetPhi_);
 	  if (doFlavor_) fillHisto(refpdgid_[nref_],
-				   relRsp,jet->phi(),binsPhi_,relRspVsJetPhi_);
+				   relRsp,jetPhi,binsPhi_,relRspVsJetPhi_);
 	}
 	
 	if (doJetPt_&&binsEta_.size()>=2) {
-	  fillHisto(relRsp,jet->eta(),jet->pt(),
+	  fillHisto(relRsp,jetEta,jetPt,
 		    binsEta_,binsPt_,relRspVsJetEtaJetPt_);
-	  if (doFlavor_) fillHisto(refpdgid_[nref_],relRsp,jet->eta(),jet->pt(),
+	  if (doFlavor_) fillHisto(refpdgid_[nref_],relRsp,jetEta,jetPt,
 				   binsEta_,binsPt_,relRspVsJetEtaJetPt_);
 	}
 	if (doRefPt_&&binsEta_.size()>=2) {
-	  fillHisto(relRsp,jet->eta(),ref->pt(),
+	  fillHisto(relRsp,jetEta,refPt,
 		    binsEta_,binsPt_,relRspVsJetEtaRefPt_);
-	  if (doFlavor_) fillHisto(refpdgid_[nref_],relRsp,jet->eta(),ref->pt(),
+	  if (doFlavor_) fillHisto(refpdgid_[nref_],relRsp,jetEta,refPt,
 				   binsEta_,binsPt_,relRspVsJetEtaRefPt_);
 	}
       }
       
       if (doAbsRsp_) {
 	if (doJetPt_) {
-	  fillHisto(absRsp,jet->pt(), binsPt_, absRspVsJetPt_);
+	  fillHisto(absRsp,jetPt, binsPt_, absRspVsJetPt_);
 	  if (doFlavor_) fillHisto(refpdgid_[nref_],
-				   absRsp,jet->pt(), binsPt_, absRspVsJetPt_);
+				   absRsp,jetPt, binsPt_, absRspVsJetPt_);
 	}
 	if (doRefPt_) {
-	  fillHisto(absRsp,ref->pt(), binsPt_, absRspVsRefPt_);
+	  fillHisto(absRsp,refPt, binsPt_, absRspVsRefPt_);
 	  if (doFlavor_) fillHisto(refpdgid_[nref_],
-				   absRsp,ref->pt(), binsPt_, absRspVsRefPt_);
+				   absRsp,refPt, binsPt_, absRspVsRefPt_);
 	}
 	
 	if (binsEta_.size()>=2) {
-	  fillHisto(absRsp,jet->eta(),binsEta_,absRspVsJetEta_);
+	  fillHisto(absRsp,jetEta,binsEta_,absRspVsJetEta_);
 	  if (doFlavor_) fillHisto(refpdgid_[nref_],
-				   absRsp,jet->eta(),binsEta_,absRspVsJetEta_);
+				   absRsp,jetEta,binsEta_,absRspVsJetEta_);
 	}
 	
 	if (binsPhi_.size()>=2) {
-	  fillHisto(absRsp,jet->phi(),binsPhi_,absRspVsJetPhi_);
+	  fillHisto(absRsp,jetPhi,binsPhi_,absRspVsJetPhi_);
 	  if (doFlavor_) fillHisto(refpdgid_[nref_],
-				   absRsp,jet->phi(),binsPhi_,absRspVsJetPhi_);
+				   absRsp,jetPhi,binsPhi_,absRspVsJetPhi_);
 	}
 	
 	if (doJetPt_&&binsEta_.size()>=2) {
-	  fillHisto(absRsp,jet->eta(),jet->pt(),
+	  fillHisto(absRsp,jetEta,jetPt,
 		    binsEta_,binsPt_,absRspVsJetEtaJetPt_);
-	  if (doFlavor_) fillHisto(refpdgid_[nref_],absRsp,jet->eta(),jet->pt(),
+	  if (doFlavor_) fillHisto(refpdgid_[nref_],absRsp,jetEta,jetPt,
 				   binsEta_,binsPt_,absRspVsJetEtaJetPt_);
 	}
 	if (doRefPt_&&binsEta_.size()>=2) {
-	  fillHisto(absRsp,jet->eta(),ref->pt(),
+	  fillHisto(absRsp,jetEta,refPt,
 		    binsEta_,binsPt_,absRspVsJetEtaRefPt_);
-	  if (doFlavor_) fillHisto(refpdgid_[nref_],absRsp,jet->eta(),ref->pt(),
+	  if (doFlavor_) fillHisto(refpdgid_[nref_],absRsp,jetEta,refPt,
 				   binsEta_,binsPt_,absRspVsJetEtaRefPt_);
+	}
+      }
+      
+      if (doEtaRsp_) {
+	if (doJetPt_) {
+	  fillHisto(etaRsp,jetPt, binsPt_, etaRspVsJetPt_);
+	  if (doFlavor_) fillHisto(refpdgid_[nref_],
+				   etaRsp,jetPt, binsPt_, etaRspVsJetPt_);
+	}
+	if (doRefPt_) {
+	  fillHisto(etaRsp,refPt, binsPt_, etaRspVsRefPt_);
+	  if (doFlavor_) fillHisto(refpdgid_[nref_],
+				   etaRsp,refPt, binsPt_, etaRspVsRefPt_);
+	}
+	if (binsEta_.size()>=2) {
+	  fillHisto(etaRsp,jetEta,binsEta_,etaRspVsJetEta_);
+	  if (doFlavor_) fillHisto(refpdgid_[nref_],
+				   etaRsp,jetEta,binsEta_,etaRspVsJetEta_);
+	}
+	if (binsPhi_.size()>=2) {
+	  fillHisto(etaRsp,jetPhi,binsPhi_,etaRspVsJetPhi_);
+	  if (doFlavor_) fillHisto(refpdgid_[nref_],
+				   etaRsp,jetPhi,binsPhi_,etaRspVsJetPhi_);
+	}
+      }
+      
+      if (doPhiRsp_) {
+	if (doJetPt_) {
+	  fillHisto(phiRsp,jetPt, binsPt_, phiRspVsJetPt_);
+	  if (doFlavor_) fillHisto(refpdgid_[nref_],
+				   phiRsp,jetPt, binsPt_, phiRspVsJetPt_);
+	}
+	if (doRefPt_) {
+	  fillHisto(phiRsp,refPt, binsPt_, phiRspVsRefPt_);
+	  if (doFlavor_) fillHisto(refpdgid_[nref_],
+				   phiRsp,refPt, binsPt_, phiRspVsRefPt_);
+	}
+	if (binsEta_.size()>=2) {
+	  fillHisto(phiRsp,jetEta,binsEta_,phiRspVsJetEta_);
+	  if (doFlavor_) fillHisto(refpdgid_[nref_],
+				   phiRsp,jetEta,binsEta_,phiRspVsJetEta_);
+	}
+	if (binsPhi_.size()>=2) {
+	  fillHisto(phiRsp,jetPhi,binsPhi_,phiRspVsJetPhi_);
+	  if (doFlavor_) fillHisto(refpdgid_[nref_],
+				   phiRsp,jetPhi,binsPhi_,phiRspVsJetPhi_);
 	}
       }
       

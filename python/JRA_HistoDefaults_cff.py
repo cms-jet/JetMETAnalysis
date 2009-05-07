@@ -21,8 +21,8 @@ JetResponseParameters = cms.PSet(
     # consider all matched references
     nRefMax = cms.uint32(0),
     # define the barrel calorimeter region
-    etaBarrelMin = cms.double(-1.0),
-    etaBarrelMax = cms.double(1.0),
+    etaBarrelMin = cms.double(-1.3),
+    etaBarrelMax = cms.double(1.3),
     # record relative response jtpt/refpt, set histogram x-axis range
     nBinsRelRsp = cms.uint32(100),
     relRspMin   = cms.double(0.0),
@@ -31,6 +31,14 @@ JetResponseParameters = cms.PSet(
     nBinsAbsRsp = cms.uint32(600),
     absRspMin   = cms.double(-1000.0),
     absRspMax   = cms.double(200.0),
+    # record eta response |jteta|-|refpt|, set histogram x-axis range
+    nBinsEtaRsp = cms.uint32(100),
+    etaRspMin   = cms.double(-1.0),
+    etaRspMax   = cms.double(+1.0),
+    # record phi response jtphi-refphi, set histogram x-axis range
+    nBinsPhiRsp = cms.uint32(100),
+    phiRspMin   = cms.double(-1.0),
+    phiRspMax   = cms.double(+1.0),
     # set number of bins for pT, eta, and phi distributions
     nBinsPt  = cms.uint32(50),
     nBinsEta = cms.uint32(25),
@@ -57,7 +65,7 @@ JetResponseParameters = cms.PSet(
     ),
     # phi binning
     binsPhi = cms.vdouble(
-    -3.141, -2.7, -2.1, -1.5, -0.9,-0.3, 0.3, 0.9, 1.5, 2.1,2.7, 3.141
+    -3.141, -2.7, -2.1, -1.5, -0.9,-0.3, 0.0, 0.3, 0.9, 1.5, 2.1,2.7, 3.141
     )
 )
 

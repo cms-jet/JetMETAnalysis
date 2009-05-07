@@ -1,3 +1,12 @@
+2009-05-07  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-02-00
+	* add ability to consider |eta|: if the lowest bound binseta[0]
+	is>=0, eta is interpreted as |eta|
+	* add eta- and phi- response to JetResponseAnalyzer and
+	jet_response_analyzer_x
+	* update histogram mode defaults
+
 2009-04-26  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-01-05

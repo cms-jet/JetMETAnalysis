@@ -101,6 +101,12 @@ int main(int argc,char**argv)
   int            nbinsabsrsp  = cl.getValue<int>    ("nbinsabsrsp",  150);
   float          absrspmin    = cl.getValue<float>  ("absrspmin", -250.0);
   float          absrspmax    = cl.getValue<float>  ("absrspmax",  100.0);
+  int            nbinsetarsp  = cl.getValue<int>    ("nbinsetarsp",  100);
+  float          etarspmin    = cl.getValue<float>  ("etarspmin",   -1.0);
+  float          etarspmax    = cl.getValue<float>  ("etarspmax",    1.0);
+  int            nbinsphirsp  = cl.getValue<int>    ("nbinsphirsp",  100);
+  float          phirspmin    = cl.getValue<float>  ("phirspmin",   -1.0);
+  float          phirspmax    = cl.getValue<float>  ("phirspmax",    1.0);
   vector<string> algs         = cl.getVector<string>("algs",          "");
   
   if (!cl.check()) return 0;
@@ -108,6 +114,8 @@ int main(int argc,char**argv)
 
   bool dorelrsp=(nbinsrelrsp>0);
   bool doabsrsp=(nbinsabsrsp>0);
+  bool doetarsp=(nbinsetarsp>0);
+  bool dophirsp=(nbinsphirsp>0);
 
   if (xsection>0.0) TH1::SetDefaultSumw2(true);
   
@@ -211,6 +219,17 @@ int main(int argc,char**argv)
     vector<TH1F**>  absRspVsJetPhi;
     vector<TH1F***> absRspVsJetEtaJetPt;
     vector<TH1F***> absRspVsJetEtaRefPt;
+
+    vector<TH1F**>  etaRspVsJetPt;
+    vector<TH1F**>  etaRspVsRefPt;
+    vector<TH1F**>  etaRspVsJetEta;
+    vector<TH1F**>  etaRspVsJetPhi;
+
+    vector<TH1F**>  phiRspVsJetPt;
+    vector<TH1F**>  phiRspVsRefPt;
+    vector<TH1F**>  phiRspVsJetEta;
+    vector<TH1F**>  phiRspVsJetPhi;
+
 
     // define flavors
     vector<string> flavor;
@@ -338,6 +357,47 @@ int main(int argc,char**argv)
 						      absrspmin,absrspmax);
 	  }
 	}
+
+	if (doetarsp&&dojetpt) {
+	  etaRspVsJetPt.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"EtaRsp_"+get_suffix("JetPt",ipt,binspt);
+	    etaRspVsJetPt.back()[iflv]=new TH1F(hname.c_str(),
+						";|#eta|-|#eta^{ref}|",
+						nbinsetarsp,etarspmin,etarspmax);
+	  }
+	}
+	
+	if (doetarsp&&dorefpt) {
+	  etaRspVsRefPt.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"EtaRsp_"+get_suffix("RefPt",ipt,binspt);
+	    etaRspVsRefPt.back()[iflv]=new TH1F(hname.c_str(),
+						";|#eta|-|#eta^{ref}|",
+						nbinsetarsp,etarspmin,etarspmax);
+	  }
+	}
+	
+	if (dophirsp&&dojetpt) {
+	  phiRspVsJetPt.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"PhiRsp_"+get_suffix("JetPt",ipt,binspt);
+	    phiRspVsJetPt.back()[iflv]=new TH1F(hname.c_str(),
+						";#phi-#phi^{ref}",
+						nbinsphirsp,phirspmin,phirspmax);
+	  }
+	}
+	
+	if (dophirsp&&dorefpt) {
+	  phiRspVsRefPt.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"PhiRsp_"+get_suffix("RefPt",ipt,binspt);
+	    phiRspVsRefPt.back()[iflv]=new TH1F(hname.c_str(),
+						";#phi-#phi^{ref}",
+						nbinsphirsp,phirspmin,phirspmax);
+	  }
+	}
+	
 	
       }
     }
@@ -375,6 +435,26 @@ int main(int argc,char**argv)
 						 nbinsabsrsp,absrspmin,absrspmax);
 	  }
 	}
+	
+	if (doetarsp) {
+	  etaRspVsJetEta.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"EtaRsp_"+get_suffix("JetEta",ieta,binseta);
+	    etaRspVsJetEta.back()[iflv]=new TH1F(hname.c_str(),
+						 ";|#eta|-|#eta^{ref}|",
+						 nbinsetarsp,etarspmin,etarspmax);
+	  }
+	}
+	
+	if (dophirsp) {
+	  phiRspVsJetEta.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"PhiRsp_"+get_suffix("JetEta",ieta,binseta);
+	    phiRspVsJetEta.back()[iflv]=new TH1F(hname.c_str(),
+						 ";#phi-#phi^{ref}",
+						 nbinsphirsp,phirspmin,phirspmax);
+	  }
+	}
 
       }
     }
@@ -410,6 +490,26 @@ int main(int argc,char**argv)
 	    absRspVsJetPhi.back()[iflv]=new TH1F(hname.c_str(),
 						 ";p_{T}-p_{T}^{ref} [GeV]",
 						 nbinsabsrsp,absrspmin,absrspmax);
+	  }
+	}
+	
+	if (doetarsp) {
+	  etaRspVsJetPhi.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"EtaRsp_"+get_suffix("JetPhi",iphi,binsphi);
+	    etaRspVsJetPhi.back()[iflv]=new TH1F(hname.c_str(),
+						 ";|#eta|-|#eta^{ref}|",
+						 nbinsetarsp,etarspmin,etarspmax);
+	  }
+	}
+	
+	if (dophirsp) {
+	  phiRspVsJetPhi.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"PhiRsp_"+get_suffix("JetPhi",iphi,binsphi);
+	    phiRspVsJetPhi.back()[iflv]=new TH1F(hname.c_str(),
+						 ";#phi-#phi^{ref}",
+						 nbinsphirsp,phirspmin,phirspmax);
 	  }
 	}
 	
@@ -549,10 +649,14 @@ int main(int argc,char**argv)
 	if (( dobalance&&refdphijt[iref]<dphimin)||
 	    (!dobalance&&refdrjt[iref]>drmax)) continue;
 	
+	float eta    =
+	  (binseta.size()&&binseta.front()>=0.)?std::abs(jteta[iref]):jteta[iref];
 	float absrsp = jtpt[iref]-refpt[iref];
 	float relrsp = jtpt[iref]/refpt[iref];
+	float etarsp = std::abs(jteta[iref])-std::abs(refeta[iref]);
+	float phirsp = jtphi[iref]-refphi[iref];
 	
-	if (jteta[iref]>=etabarrelmin&&jteta[iref]<=etabarrelmax) {
+	if (eta>=etabarrelmin&&eta<=etabarrelmax) {
 	  if (dorefpt) {
 	    fill_histo(refpt[iref],weight,refpt[iref],binspt,refPtVsRefPtBarrel);
 	    fill_histo(jtpt [iref],weight,refpt[iref],binspt,jetPtVsRefPtBarrel);
@@ -592,32 +696,32 @@ int main(int argc,char**argv)
 	  }
 	}
 	
-	fill_histo(jteta[iref],weight,jteta[iref],binseta,jetEtaVsJetEta);
-	if (doflavor) fill_histo(refpdgid[iref],jteta[iref],weight,
-				 jteta[iref],binseta,jetEtaVsJetEta);
+	fill_histo(eta,weight,eta,binseta,jetEtaVsJetEta);
+	if (doflavor) fill_histo(refpdgid[iref],eta,weight,
+				 eta,binseta,jetEtaVsJetEta);
 	
 	fill_histo(jtphi[iref],weight,jtphi[iref],binsphi,jetPhiVsJetPhi);
 	if (doflavor) fill_histo(refpdgid[iref],jtphi[iref],weight,
 				 jtphi[iref],binsphi,jetPhiVsJetPhi);
  
 	if (dojetpt) {
-	  fill_histo(jtpt[iref],weight,jteta[iref],jtpt[iref],
+	  fill_histo(jtpt[iref],weight,eta,jtpt[iref],
 		     binseta,binspt,jetPtVsJetEtaJetPt);
 	  if (doflavor)
 	    fill_histo(refpdgid[iref],jtpt[iref],weight,
-		       jteta[iref],jtpt[iref],binseta,binspt,jetPtVsJetEtaJetPt);
+		       eta,jtpt[iref],binseta,binspt,jetPtVsJetEtaJetPt);
 	}
 
 	if (dorefpt) {
-	  fill_histo(refpt[iref],weight,jteta[iref],refpt[iref],
+	  fill_histo(refpt[iref],weight,eta,refpt[iref],
 		     binseta,binspt,refPtVsJetEtaRefPt);
-	  fill_histo(jtpt [iref],weight,jteta[iref],refpt[iref],
+	  fill_histo(jtpt [iref],weight,eta,refpt[iref],
 		     binseta,binspt,jetPtVsJetEtaRefPt);
 	  if (doflavor) {
 	    fill_histo(refpdgid[iref],refpt[iref],weight,
-		       jteta[iref],refpt[iref],binseta,binspt,refPtVsJetEtaRefPt);
+		       eta,refpt[iref],binseta,binspt,refPtVsJetEtaRefPt);
 	    fill_histo(refpdgid[iref],jtpt[iref],weight,
-		       jteta[iref],refpt[iref],binseta,binspt,jetPtVsJetEtaRefPt);
+		       eta,refpt[iref],binseta,binspt,jetPtVsJetEtaRefPt);
 	  }
 	}
 	
@@ -633,26 +737,26 @@ int main(int argc,char**argv)
 				     refpt[iref],binspt,relRspVsRefPt);
 	  }
 
-	  fill_histo(relrsp,weight,jteta[iref],binseta,relRspVsJetEta);
+	  fill_histo(relrsp,weight,eta,binseta,relRspVsJetEta);
 	  if (doflavor) fill_histo(refpdgid[iref],relrsp,weight,
-				   jteta[iref],binseta,relRspVsJetEta);
+				   eta,binseta,relRspVsJetEta);
 	  
 	  fill_histo(relrsp,weight,jtphi[iref],binsphi,relRspVsJetPhi);
 	  if (doflavor) fill_histo(refpdgid[iref],relrsp,weight,
 				   jtphi[iref],binsphi,relRspVsJetPhi);
 	  
 	  if (dojetpt) {
-	    fill_histo(relrsp,weight,jteta[iref],jtpt[iref],
+	    fill_histo(relrsp,weight,eta,jtpt[iref],
 		       binseta,binspt,relRspVsJetEtaJetPt);
 	    if (doflavor) fill_histo(refpdgid[iref],relrsp,weight,
-				     jteta[iref],jtpt[iref],
+				     eta,jtpt[iref],
 				     binseta,binspt,relRspVsJetEtaJetPt);
 	  }
 	  if (dorefpt) {
-	    fill_histo(relrsp,weight,jteta[iref],refpt[iref],
+	    fill_histo(relrsp,weight,eta,refpt[iref],
 		       binseta,binspt,relRspVsJetEtaRefPt);
 	    if (doflavor) fill_histo(refpdgid[iref],relrsp,weight,
-				     jteta[iref],refpt[iref],
+				     eta,refpt[iref],
 				     binseta,binspt,relRspVsJetEtaRefPt);
 	  }
 	}
@@ -669,28 +773,72 @@ int main(int argc,char**argv)
 				     refpt[iref],binspt,absRspVsRefPt);
 	  }
 	  
-	  fill_histo(absrsp,weight,jteta[iref],binseta,absRspVsJetEta);
+	  fill_histo(absrsp,weight,eta,binseta,absRspVsJetEta);
 	  if (doflavor) fill_histo(refpdgid[iref],absrsp,weight,
-				   jteta[iref],binseta,absRspVsJetEta);
+				   eta,binseta,absRspVsJetEta);
 
 	  fill_histo(absrsp,weight,jtphi[iref],binsphi,absRspVsJetPhi);
 	  if (doflavor) fill_histo(refpdgid[iref],absrsp,weight,
 				   jtphi[iref],binsphi,absRspVsJetPhi);
 	  
 	  if (dojetpt) {
-	    fill_histo(absrsp,weight,jteta[iref],jtpt[iref],
+	    fill_histo(absrsp,weight,eta,jtpt[iref],
 		       binseta,binspt,absRspVsJetEtaJetPt);
 	    if (doflavor) fill_histo(refpdgid[iref],absrsp,weight,
-				     jteta[iref],jtpt[iref],
+				     eta,jtpt[iref],
 				     binseta,binspt,absRspVsJetEtaJetPt);
 	  }
 	  if (dorefpt) {
-	    fill_histo(absrsp,weight,jteta[iref],refpt[iref],
+	    fill_histo(absrsp,weight,eta,refpt[iref],
 		       binseta,binspt,absRspVsJetEtaRefPt);
 	    if (doflavor) fill_histo(refpdgid[iref],absrsp,weight,
-				     jteta[iref],refpt[iref],
+				     eta,refpt[iref],
 				     binseta,binspt,absRspVsJetEtaRefPt);
 	  }
+	}
+	
+	if (doetarsp) {
+	  if (dojetpt) {
+	    fill_histo(etarsp,weight,jtpt[iref], binspt,etaRspVsJetPt);
+	    if (doflavor) fill_histo(refpdgid[iref],etarsp,weight,
+				     jtpt[iref],binspt,etaRspVsJetPt);
+	  }
+	  if (dorefpt) {
+	    fill_histo(etarsp,weight,refpt[iref],binspt,etaRspVsRefPt);
+	    if (doflavor) fill_histo(refpdgid[iref],etarsp,weight,
+				     refpt[iref],binspt,etaRspVsRefPt);
+	  }
+	  
+	  fill_histo(etarsp,weight,eta,binseta,etaRspVsJetEta);
+	  if (doflavor) fill_histo(refpdgid[iref],etarsp,weight,
+				   eta,binseta,etaRspVsJetEta);
+	  
+	  fill_histo(etarsp,weight,jtphi[iref],binsphi,etaRspVsJetPhi);
+	  if (doflavor) fill_histo(refpdgid[iref],etarsp,weight,
+				   jtphi[iref],binsphi,etaRspVsJetPhi);
+	  
+	}
+	
+	if (dophirsp) {
+	  if (dojetpt) {
+	    fill_histo(phirsp,weight,jtpt[iref], binspt,phiRspVsJetPt);
+	    if (doflavor) fill_histo(refpdgid[iref],phirsp,weight,
+				     jtpt[iref],binspt,phiRspVsJetPt);
+	  }
+	  if (dorefpt) {
+	    fill_histo(phirsp,weight,refpt[iref],binspt,phiRspVsRefPt);
+	    if (doflavor) fill_histo(refpdgid[iref],phirsp,weight,
+				     refpt[iref],binspt,phiRspVsRefPt);
+	  }
+	  
+	  fill_histo(phirsp,weight,eta,binseta,phiRspVsJetEta);
+	  if (doflavor) fill_histo(refpdgid[iref],phirsp,weight,
+				   eta,binseta,phiRspVsJetEta);
+	  
+	  fill_histo(phirsp,weight,jtphi[iref],binsphi,phiRspVsJetPhi);
+	  if (doflavor) fill_histo(refpdgid[iref],phirsp,weight,
+				   jtphi[iref],binsphi,phiRspVsJetPhi);
+	  
 	}
 	
       }

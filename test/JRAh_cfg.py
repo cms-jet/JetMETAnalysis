@@ -29,7 +29,7 @@ Defaults.JetResponseParameters.binsPt = cms.vdouble(
 
 # eta binning
 Defaults.JetResponseParameters.binsEta = cms.vdouble(
-    0.0,1.4,3.2,5.0
+    0.0,1.4,2.6,3.2,4.7
     )
 
 # absolute response histogram parameters
