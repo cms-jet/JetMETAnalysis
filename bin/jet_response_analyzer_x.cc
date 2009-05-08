@@ -13,7 +13,7 @@
 // lot more disk space ...
 //
 //            07/23/2008 Kostas Kousouris                    <kkousour@fnal.gov>
-//                       Roger Wolf                         <roger.wolf@cern.ch>
+//                       Vasundhara Chetluru                 <vasurang@fnal.gov>
 //                       Philipp Schieferdecker <philipp.schieferdecker@cern.ch>
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -224,12 +224,16 @@ int main(int argc,char**argv)
     vector<TH1F**>  etaRspVsRefPt;
     vector<TH1F**>  etaRspVsJetEta;
     vector<TH1F**>  etaRspVsJetPhi;
+    vector<TH1F***> etaRspVsJetEtaJetPt;
+    vector<TH1F***> etaRspVsJetEtaRefPt;
 
     vector<TH1F**>  phiRspVsJetPt;
     vector<TH1F**>  phiRspVsRefPt;
     vector<TH1F**>  phiRspVsJetEta;
     vector<TH1F**>  phiRspVsJetPhi;
-
+    vector<TH1F***> phiRspVsJetEtaJetPt;
+    vector<TH1F***> phiRspVsJetEtaRefPt;
+    
 
     // define flavors
     vector<string> flavor;
@@ -527,6 +531,10 @@ int main(int argc,char**argv)
 	TH1F*** relRspRefPt(0);
 	TH1F*** absRspJetPt(0);
 	TH1F*** absRspRefPt(0);
+	TH1F*** etaRspJetPt(0);
+	TH1F*** etaRspRefPt(0);	
+	TH1F*** phiRspJetPt(0);
+	TH1F*** phiRspRefPt(0);
 	
 	if (dojetpt) {
 	  jetPtJetPt=new TH1F**[binspt.size()-1];
@@ -568,6 +576,30 @@ int main(int argc,char**argv)
 	  absRspRefPt=new TH1F**[binspt.size()-1];
 	  for (unsigned int ipt=0;ipt<binspt.size()-1;ipt++)
 	    absRspRefPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	if (doetarsp&&dojetpt) {
+	  etaRspJetPt=new TH1F**[binspt.size()-1];
+	  for (unsigned int ipt=0;ipt<binspt.size()-1;ipt++)
+	    etaRspJetPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	if (doetarsp&&dorefpt) {
+	  etaRspRefPt=new TH1F**[binspt.size()-1];
+	  for (unsigned int ipt=0;ipt<binspt.size()-1;ipt++)
+	    etaRspRefPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	if (dophirsp&&dojetpt) {
+	  phiRspJetPt=new TH1F**[binspt.size()-1];
+	  for (unsigned int ipt=0;ipt<binspt.size()-1;ipt++)
+	    phiRspJetPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	if (dophirsp&&dorefpt) {
+	  phiRspRefPt=new TH1F**[binspt.size()-1];
+	  for (unsigned int ipt=0;ipt<binspt.size()-1;ipt++)
+	    phiRspRefPt[ipt]=new TH1F*[flavor.size()];
 	}
 	
 	string jetEtaSuffix=get_suffix("JetEta",ieta,binseta);
@@ -626,6 +658,33 @@ int main(int argc,char**argv)
 					      ";p_{T}-p_{T}^{ref} [GeV]",
 					      nbinsabsrsp,absrspmin,absrspmax);
 	    }
+	    if (doabsrsp&&dojetpt) {
+	      hname=flavor[iflv]+"AbsRsp_"+jetEtaSuffix+"_"+jetPtSuffix;
+	      absRspJetPt[ipt][iflv]=new TH1F(hname.c_str(),
+					      ";|#eta|-|#eta^{ref}|",
+					      nbinsabsrsp,absrspmin,absrspmax);
+	    }
+	    
+	    if (doetarsp&&dorefpt) {
+	      hname=flavor[iflv]+"EtaRsp_"+jetEtaSuffix+"_"+refPtSuffix;
+	      etaRspRefPt[ipt][iflv]=new TH1F(hname.c_str(),
+					      ";|#eta|-|#eta^{ref}|",
+					      nbinsetarsp,etarspmin,etarspmax);
+	    }
+
+	    if (doetarsp&&dojetpt) {
+	      hname=flavor[iflv]+"EtaRsp_"+jetEtaSuffix+"_"+jetPtSuffix;
+	      etaRspJetPt[ipt][iflv]=new TH1F(hname.c_str(),
+					      ";#phi-#phi^{ref}",
+					      nbinsetarsp,etarspmin,etarspmax);
+	    }
+	    
+	    if (dophirsp&&dorefpt) {
+	      hname=flavor[iflv]+"PhiRsp_"+jetEtaSuffix+"_"+refPtSuffix;
+	      phiRspRefPt[ipt][iflv]=new TH1F(hname.c_str(),
+					      ";#phi-#phi^{ref}",
+					      nbinsphirsp,phirspmin,phirspmax);
+	    }
 	  }
 	}
 	if (dojetpt)           jetPtVsJetEtaJetPt .push_back(jetPtJetPt);
@@ -635,6 +694,10 @@ int main(int argc,char**argv)
 	if (dorelrsp&&dorefpt) relRspVsJetEtaRefPt.push_back(relRspRefPt);
 	if (doabsrsp&&dojetpt) absRspVsJetEtaJetPt.push_back(absRspJetPt);
 	if (doabsrsp&&dorefpt) absRspVsJetEtaRefPt.push_back(absRspRefPt);
+	if (doetarsp&&dojetpt) etaRspVsJetEtaJetPt.push_back(etaRspJetPt);
+	if (doetarsp&&dorefpt) etaRspVsJetEtaRefPt.push_back(etaRspRefPt);
+	if (dophirsp&&dojetpt) phiRspVsJetEtaJetPt.push_back(phiRspJetPt);
+	if (dophirsp&&dorefpt) phiRspVsJetEtaRefPt.push_back(phiRspRefPt);
       }
     }
     
@@ -817,6 +880,20 @@ int main(int argc,char**argv)
 	  if (doflavor) fill_histo(refpdgid[iref],etarsp,weight,
 				   jtphi[iref],binsphi,etaRspVsJetPhi);
 	  
+	  if (dojetpt) {
+	    fill_histo(etarsp,weight,eta,jtpt[iref],
+		       binseta,binspt,etaRspVsJetEtaJetPt);
+	    if (doflavor) fill_histo(refpdgid[iref],etarsp,weight,
+				     eta,jtpt[iref],
+				     binseta,binspt,etaRspVsJetEtaJetPt);
+	  }
+	  if (dorefpt) {
+	    fill_histo(etarsp,weight,eta,refpt[iref],
+		       binseta,binspt,etaRspVsJetEtaRefPt);
+	    if (doflavor) fill_histo(refpdgid[iref],etarsp,weight,
+				     eta,refpt[iref],
+				     binseta,binspt,etaRspVsJetEtaRefPt);
+	  }
 	}
 	
 	if (dophirsp) {
@@ -839,6 +916,20 @@ int main(int argc,char**argv)
 	  if (doflavor) fill_histo(refpdgid[iref],phirsp,weight,
 				   jtphi[iref],binsphi,phiRspVsJetPhi);
 	  
+	  if (dojetpt) {
+	    fill_histo(phirsp,weight,eta,jtpt[iref],
+		       binseta,binspt,phiRspVsJetEtaJetPt);
+	    if (doflavor) fill_histo(refpdgid[iref],phirsp,weight,
+				     eta,jtpt[iref],
+				     binseta,binspt,phiRspVsJetEtaJetPt);
+	  }
+	  if (dorefpt) {
+	    fill_histo(phirsp,weight,eta,refpt[iref],
+		       binseta,binspt,phiRspVsJetEtaRefPt);
+	    if (doflavor) fill_histo(refpdgid[iref],phirsp,weight,
+				     eta,refpt[iref],
+				     binseta,binspt,phiRspVsJetEtaRefPt);
+	  }
 	}
 	
       }

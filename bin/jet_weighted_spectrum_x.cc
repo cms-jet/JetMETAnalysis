@@ -58,6 +58,7 @@ int main(int argc,char**argv)
 
   set_root_style();
   gStyle->SetOptStat(0);
+  TColor::SetPalette(1,0);
 
   TCanvas* cRefPt  = new TCanvas("RefPt" ,"RefPt",   0,0,790,600);
   TCanvas* cRefPtW = new TCanvas("RefPtW","RefPtW",800,0,790,600);
@@ -108,8 +109,7 @@ int main(int argc,char**argv)
     tree->Project("RefPt", "refpt");
     tree->Project("RefPtW","refpt",wsel.str().c_str());
     
-    float cfraction = i*(1./(float)inputs.size());
-    Color_t color = TColor::GetColor(0.1,0.1,cfraction);
+    Color_t color = TColor::GetColorPalette(i);
 
     hRefPt->SetLineWidth(1);
     hRefPt->SetFillColor(color);

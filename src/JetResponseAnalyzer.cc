@@ -134,11 +134,15 @@ private:
   vector<TH1F**>  etaRspVsRefPt_;
   vector<TH1F**>  etaRspVsJetEta_;
   vector<TH1F**>  etaRspVsJetPhi_;
-
+  vector<TH1F***> etaRspVsJetEtaJetPt_;
+  vector<TH1F***> etaRspVsJetEtaRefPt_;
+  
   vector<TH1F**>  phiRspVsJetPt_;
   vector<TH1F**>  phiRspVsRefPt_;
   vector<TH1F**>  phiRspVsJetEta_;
   vector<TH1F**>  phiRspVsJetPhi_;
+  vector<TH1F***> phiRspVsJetEtaJetPt_;
+  vector<TH1F***> phiRspVsJetEtaRefPt_;
   
 
   TTree*          tree_;
@@ -604,6 +608,10 @@ void JetResponseAnalyzer::beginJob(const edm::EventSetup& iSetup)
 	TH1F*** relRspRefPt(0);
 	TH1F*** absRspJetPt(0);
 	TH1F*** absRspRefPt(0);
+	TH1F*** etaRspJetPt(0);
+	TH1F*** etaRspRefPt(0);
+	TH1F*** phiRspJetPt(0);
+	TH1F*** phiRspRefPt(0);
 	
 	if (doJetPt_) {
 	  jetPtJetPt=new TH1F**[binsPt_.size()-1];
@@ -645,6 +653,30 @@ void JetResponseAnalyzer::beginJob(const edm::EventSetup& iSetup)
 	  absRspRefPt=new TH1F**[binsPt_.size()-1];
 	  for (unsigned int iPt=0;iPt<binsPt_.size()-1;iPt++)
 	    absRspRefPt[iPt]=new TH1F*[flavor.size()];
+	}
+	
+	if (doEtaRsp_&&doJetPt_) {
+	  etaRspJetPt=new TH1F**[binsPt_.size()-1];
+	  for (unsigned int iPt=0;iPt<binsPt_.size()-1;iPt++)
+	    etaRspJetPt[iPt]=new TH1F*[flavor.size()];
+	}
+	
+	if (doEtaRsp_&&doRefPt_) {
+	  etaRspRefPt=new TH1F**[binsPt_.size()-1];
+	  for (unsigned int iPt=0;iPt<binsPt_.size()-1;iPt++)
+	    etaRspRefPt[iPt]=new TH1F*[flavor.size()];
+	}
+	
+	if (doPhiRsp_&&doJetPt_) {
+	  phiRspJetPt=new TH1F**[binsPt_.size()-1];
+	  for (unsigned int iPt=0;iPt<binsPt_.size()-1;iPt++)
+	    phiRspJetPt[iPt]=new TH1F*[flavor.size()];
+	}
+	
+	if (doPhiRsp_&&doRefPt_) {
+	  phiRspRefPt=new TH1F**[binsPt_.size()-1];
+	  for (unsigned int iPt=0;iPt<binsPt_.size()-1;iPt++)
+	    phiRspRefPt[iPt]=new TH1F*[flavor.size()];
 	}
 	
 	string jetEtaSuffix=getSuffix("JetEta",iEta,binsEta_);
@@ -710,8 +742,40 @@ void JetResponseAnalyzer::beginJob(const edm::EventSetup& iSetup)
 						    absRspMin_,absRspMax_);
 	    }
 	    
+	    if (doEtaRsp_&&doJetPt_) {
+	      hname=flavor[iFlv]+"EtaRsp_"+jetEtaSuffix+"_"+jetPtSuffix;
+	      etaRspJetPt[iPt][iFlv]=fs->make<TH1F>(hname.c_str(),
+						    ";|#eta|-|#eta^{ref}|",
+						    nBinsEtaRsp_,
+						    etaRspMin_,etaRspMax_);
+	    }
+	    
+	    if (doEtaRsp_&&doRefPt_) {
+	      hname=flavor[iFlv]+"EtaRsp_"+jetEtaSuffix+"_"+refPtSuffix;
+	      etaRspRefPt[iPt][iFlv]=fs->make<TH1F>(hname.c_str(),
+						    ";|#eta|-|#eta^{ref}|",
+						    nBinsEtaRsp_,
+						    etaRspMin_,etaRspMax_);
+	    }
+	    
+	    if (doPhiRsp_&&doJetPt_) {
+	      hname=flavor[iFlv]+"PhiRsp_"+jetEtaSuffix+"_"+jetPtSuffix;
+	      phiRspJetPt[iPt][iFlv]=fs->make<TH1F>(hname.c_str(),
+						    ";#phi-#phi^{ref}",
+						    nBinsPhiRsp_,
+						    phiRspMin_,phiRspMax_);
+	    }
+	    
+	    if (doPhiRsp_&&doRefPt_) {
+	      hname=flavor[iFlv]+"PhiRsp_"+jetEtaSuffix+"_"+refPtSuffix;
+	      phiRspRefPt[iPt][iFlv]=fs->make<TH1F>(hname.c_str(),
+						    ";#phi-#phi^{ref}",
+						    nBinsPhiRsp_,
+						    phiRspMin_,phiRspMax_);
+	    }
+	    
 	  }
-
+	  
 	}
 	
 	if (doJetPt_)            jetPtVsJetEtaJetPt_ .push_back(jetPtJetPt);
@@ -721,6 +785,10 @@ void JetResponseAnalyzer::beginJob(const edm::EventSetup& iSetup)
 	if (doRelRsp_&&doRefPt_) relRspVsJetEtaRefPt_.push_back(relRspRefPt);
 	if (doAbsRsp_&&doJetPt_) absRspVsJetEtaJetPt_.push_back(absRspJetPt);
 	if (doAbsRsp_&&doRefPt_) absRspVsJetEtaRefPt_.push_back(absRspRefPt);
+	if (doEtaRsp_&&doJetPt_) etaRspVsJetEtaJetPt_.push_back(etaRspJetPt);
+	if (doEtaRsp_&&doRefPt_) etaRspVsJetEtaRefPt_.push_back(etaRspRefPt);
+	if (doPhiRsp_&&doJetPt_) phiRspVsJetEtaJetPt_.push_back(phiRspJetPt);
+	if (doPhiRsp_&&doRefPt_) phiRspVsJetEtaRefPt_.push_back(phiRspRefPt);
       }
     }
   } // doHistos_
@@ -973,6 +1041,18 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
 	  if (doFlavor_) fillHisto(refpdgid_[nref_],
 				   etaRsp,jetPhi,binsPhi_,etaRspVsJetPhi_);
 	}
+	if (doJetPt_&&binsEta_.size()>=2) {
+	  fillHisto(etaRsp,jetEta,jetPt,
+		    binsEta_,binsPt_,etaRspVsJetEtaJetPt_);
+	  if (doFlavor_) fillHisto(refpdgid_[nref_],etaRsp,jetEta,jetPt,
+				   binsEta_,binsPt_,etaRspVsJetEtaJetPt_);
+	}
+	if (doRefPt_&&binsEta_.size()>=2) {
+	  fillHisto(etaRsp,jetEta,refPt,
+		    binsEta_,binsPt_,etaRspVsJetEtaRefPt_);
+	  if (doFlavor_) fillHisto(refpdgid_[nref_],etaRsp,jetEta,refPt,
+				   binsEta_,binsPt_,etaRspVsJetEtaRefPt_);
+	}
       }
       
       if (doPhiRsp_) {
@@ -995,6 +1075,18 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
 	  fillHisto(phiRsp,jetPhi,binsPhi_,phiRspVsJetPhi_);
 	  if (doFlavor_) fillHisto(refpdgid_[nref_],
 				   phiRsp,jetPhi,binsPhi_,phiRspVsJetPhi_);
+	}
+	if (doJetPt_&&binsEta_.size()>=2) {
+	  fillHisto(phiRsp,jetEta,jetPt,
+		    binsEta_,binsPt_,phiRspVsJetEtaJetPt_);
+	  if (doFlavor_) fillHisto(refpdgid_[nref_],phiRsp,jetEta,jetPt,
+				   binsEta_,binsPt_,phiRspVsJetEtaJetPt_);
+	}
+	if (doRefPt_&&binsEta_.size()>=2) {
+	  fillHisto(phiRsp,jetEta,refPt,
+		    binsEta_,binsPt_,phiRspVsJetEtaRefPt_);
+	  if (doFlavor_) fillHisto(refpdgid_[nref_],phiRsp,jetEta,refPt,
+				   binsEta_,binsPt_,phiRspVsJetEtaRefPt_);
 	}
       }
       
