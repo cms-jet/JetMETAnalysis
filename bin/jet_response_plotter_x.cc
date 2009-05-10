@@ -161,8 +161,8 @@ int main(int argc,char**argv)
       
       // create new graphs for response & resolution
       if (indices.back()==0) {
-	grsp = new TGraphErrors(); vrsp.push_back(grsp);
-	gres = new TGraphErrors(); vres.push_back(gres);
+	grsp = new TGraphErrors(0); vrsp.push_back(grsp);
+	gres = new TGraphErrors(0); vres.push_back(gres);
 	string grsp_name = "RspVs"+hlrsp.variable(hlrsp.nvariables()-1);
 	string gres_name = "ResVs"+hlrsp.variable(hlrsp.nvariables()-1);
 	if (hlrsp.nvariables()>1) {
@@ -220,6 +220,13 @@ int main(int argc,char**argv)
 	e  = eabs;
 	ee = eeabs;
       }
+      else if (hlrsp.quantity().find("RelRsp")==0) {
+	double erel  = e/y;
+	double eerel = erel*std::sqrt(ee*ee/e/e+ey*ey/y/y);
+	
+	e  = erel;
+	ee = eerel;
+      }
       
       int n = grsp->GetN();
       grsp->SetPoint(n,x,y);
@@ -232,10 +239,11 @@ int main(int argc,char**argv)
     if (fitres) {
       for (unsigned int igraph=0;igraph<vres.size();igraph++) {
 	TGraphErrors* g = vres[igraph];
+	double xmin(g->GetX()[0]);
 	double xmax(-1e100);
 	for (int ipoint=0;ipoint<g->GetN();ipoint++)
 	  if (g->GetX()[ipoint]>xmax) xmax = g->GetX()[ipoint];
-	TF1* fitfnc = new TF1("fit","sqrt(([0]/x)**2+[1]**2/x+[2]**2)",10.0,xmax);
+	TF1* fitfnc = new TF1("fit","sqrt(([0]/x)**2+[1]**2/x+[2]**2)",xmin,xmax);
 	fitfnc->SetLineWidth(2);
 	fitfnc->SetLineColor(g->GetLineColor());
 	fitfnc->SetParameter(0,0.5);
@@ -246,10 +254,10 @@ int main(int argc,char**argv)
     }
 
 
-      // write response & resolution graphs to output root file
+    // write response & resolution graphs to output root file
     for (unsigned int igraph=0;igraph<vrsp.size();igraph++) vrsp[igraph]->Write();
     for (unsigned int igraph=0;igraph<vres.size();igraph++) vres[igraph]->Write();
-
+    
     ialg++;
     
     cout<<" DONE."<<endl;
@@ -275,11 +283,11 @@ int main(int argc,char**argv)
 
     vrsp_mg[img]->Draw("AP");
     vrsp_mg[img]->SetMinimum(0.01);
-    vrsp_mg[img]->SetMaximum(1.1);
+    vrsp_mg[img]->SetMaximum(1.2);
     TH1* h = vrsp_mg[img]->GetHistogram();
     h->SetXTitle(xtitle.c_str());
     h->SetYTitle("p_{T}/p_{T}^{REF}");
-    h->GetXaxis()->SetTitleOffset(1.0);
+    h->GetXaxis()->SetTitleOffset(1.3);
     h->GetYaxis()->SetTitleOffset(1.6);
     leg_rsp->Clone()->Draw();
 
@@ -295,14 +303,16 @@ int main(int argc,char**argv)
     gPad->SetRightMargin(0.05);
     gPad->SetTopMargin(0.05);
     gPad->SetBottomMargin(0.15);
-    
+    if (logx) gPad->SetLogx();
+    if (logy) gPad->SetLogy();
+
     vres_mg[img]->Draw("AP");
     vres_mg[img]->SetMinimum(0.01);
     vres_mg[img]->SetMaximum(0.5);
     TH1* h = vres_mg[img]->GetHistogram();
     h->SetXTitle(xtitle.c_str());
-    h->SetYTitle("#sigma(p_{T}/p_{T}^{REF})/(p_{T}/p_{T}^{REF})");
-    h->GetXaxis()->SetTitleOffset(1.0);
+    h->SetYTitle("#sigma(p_{T}/p_{T}^{REF})/<p_{T}/p_{T}^{REF}>");
+    h->GetXaxis()->SetTitleOffset(1.3);
     h->GetYaxis()->SetTitleOffset(1.6);
     leg_res->Clone()->Draw();
 
@@ -372,13 +382,17 @@ void set_color_and_style(TGraph* g,const string& alg)
   }
   
   if (markers.size()==0) {
-    markers.push(kFullCircle);
-    markers.push(kFullSquare);
-    markers.push(kFullTriangleUp);
-    markers.push(kFullTriangleDown);
     markers.push(kOpenCircle);
     markers.push(kOpenSquare);
     markers.push(kOpenTriangleUp);
+    markers.push(27);
+    markers.push(28);
+    markers.push(30);
+    markers.push(kFullTriangleUp);
+    markers.push(kFullTriangleDown);
+    markers.push(kFullCircle);
+    markers.push(kFullSquare);
+
   }
   
   g->SetLineWidth(2);
