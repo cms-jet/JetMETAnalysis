@@ -56,10 +56,11 @@ int main(int argc,char**argv)
   argc = (batch) ? 2 : 1; if (batch) argv[1] = "-b";
   TApplication* app = new TApplication("jet_weighted_spectrum_x",&argc,argv);
 
+  //TH1::SetDefaultSumw2();
   set_root_style();
   gStyle->SetOptStat(0);
   TColor::SetPalette(1,0);
-
+  
   TCanvas* cRefPt  = new TCanvas("RefPt" ,"RefPt",   0,0,790,600);
   TCanvas* cRefPtW = new TCanvas("RefPtW","RefPtW",800,0,790,600);
 
