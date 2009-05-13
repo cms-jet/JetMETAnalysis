@@ -37,8 +37,8 @@ using namespace std;
 /// set binomial errors for efficiency from two historgrams
 void setBinomialErrors(TH1F* hEff,const TH1F* hEnum, const TH1F* hDenom);
 
-/// check if a vector of strings contains a certain element
-bool contains(const vector<string>& collection,const string& element);
+/// transform the alg label into a title, e.g.: kt4calo -> k_{T}, D=0.4 (Calo)
+string get_legend_title(const string& alg);
 
 
 //______________________________________________________________________________
@@ -73,7 +73,8 @@ int main(int argc,char**argv)
     
     unsigned pos    = inputs[ifile].find(":");
     string sample   = inputs[ifile].substr(0,pos);
-    string filename = sample + ".root";
+    string filename = datapath+"/"+sample;
+    if (filename.find(".root")==string::npos) filename += ".root";
     float  weight   = 1.0;
     if (pos!=string::npos){
       stringstream ss;
@@ -85,9 +86,9 @@ int main(int argc,char**argv)
     cout<<"filename="<<filename<<", weight="<<weight<<endl;
     
     
-    TFile* file = new TFile((datapath+"/"+filename).c_str(),"READ");
+    TFile* file = new TFile(filename.c_str(),"READ");
     if (!file->IsOpen()) {
-      cout<<"Can't open "<<datapath<<"/"<<filename<<endl;
+      cout<<"Can't open "<<filename<<endl;
       continue;
     }
     
@@ -152,15 +153,15 @@ int main(int argc,char**argv)
   Color_t colors[7] = {kRed,kBlue,kMagenta,kCyan,kGreen+1,kBlue+4,kRed+4};
   
   // draw results
-  TCanvas* cDeltaR = new TCanvas("DeltaR","DeltaR",800,800);
+  TCanvas* cDeltaR = new TCanvas("DeltaR","DeltaR",0,0,700,700);
   cDeltaR->cd();
   if (logy) gPad->SetLogy();
-  TLegend* legDeltaR = new TLegend(0.7,0.92,0.9,0.92-algs.size()*0.065);
+  TLegend* legDeltaR = new TLegend(0.6,0.92,0.9,0.92-algs.size()*0.065);
   legDeltaR->SetLineColor(10);
   legDeltaR->SetFillColor(10);
   legDeltaR->SetShadowColor(10);
   for (unsigned int i=0;i<algs.size();i++) {
-    legDeltaR->AddEntry(hDeltaR[i],algs[i].c_str(),"l");
+    legDeltaR->AddEntry(hDeltaR[i],get_legend_title(algs[i]).c_str(),"l");
     string drawopt = (i==0) ? "H" : "HSAME";
     hDeltaR[i]->SetLineColor(colors[i]);
     hDeltaR[i]->Draw(drawopt.c_str());
@@ -168,11 +169,11 @@ int main(int argc,char**argv)
   legDeltaR->Draw();
 
 
-  TCanvas* cEffVsDeltaR = new TCanvas("EffVsDeltaR","EffVsDeltaR",800,0,800,800);
+  TCanvas* cEffVsDeltaR = new TCanvas("EffVsDeltaR","EffVsDeltaR",700,0,700,700);
   cEffVsDeltaR->cd();
   if (logy) gPad->SetLogy();
   gPad->SetLeftMargin(0.2);
-  TLegend* legEffVsDeltaR = new TLegend(0.7,0.2,0.9,0.2+algs.size()*0.065);
+  TLegend* legEffVsDeltaR = new TLegend(0.6,0.2,0.9,0.2+algs.size()*0.065);
   legEffVsDeltaR->SetLineColor(10);
   legEffVsDeltaR->SetFillColor(10);
   legEffVsDeltaR->SetShadowColor(10);
@@ -183,8 +184,9 @@ int main(int argc,char**argv)
     setBinomialErrors(hEffVsDeltaR,hDeltaRSel[i],hDeltaRAll[i]);
     hEffVsDeltaR->SetXTitle("#Delta R_{max}");
     hEffVsDeltaR->SetYTitle("Matching Efficiency");
+    hEffVsDeltaR->GetYaxis()->CenterTitle();
     
-    legEffVsDeltaR->AddEntry(hEffVsDeltaR,algs[i].c_str(),"l");
+    legEffVsDeltaR->AddEntry(hEffVsDeltaR,get_legend_title(algs[i]).c_str(),"l");
     
     string drawopt = (i==0) ? "E" : "ESAME";
     hEffVsDeltaR->SetLineColor(colors[i]);
@@ -218,10 +220,29 @@ void setBinomialErrors(TH1F* hEff,const TH1F* hEnum, const TH1F* hDenom)
 
 
 //______________________________________________________________________________
-bool contains(const vector<string>& collection,const string& element)
+string get_legend_title(const string& alg)
 {
-  vector<string>::const_iterator it;
-  for (it=collection.begin();it!=collection.end();++it)
-    if ((*it)==element) return true;
-  return false;
+  string title;
+  string tmp(alg);
+  if      (alg.find("kt")==0) { title = "k_{T}, D=";      tmp = tmp.substr(2); }
+  else if (alg.find("sc")==0) { title = "SISCone, R=";    tmp = tmp.substr(2); }
+  else if (alg.find("ic")==0) { title = "ItCone, R=";     tmp = tmp.substr(2); }
+  else if (alg.find("mc")==0) { title = "MidCone. R=";    tmp = tmp.substr(2); }
+  else if (alg.find("ca")==0) { title = "Cam/Aachen, D="; tmp = tmp.substr(2); }
+  else if (alg.find("ak")==0) { title = "Anti k_{T}, D="; tmp = tmp.substr(2); }
+  
+  assert(!title.empty());
+  
+  string            reco[4] = { "calo","pf","trk","jpt" };
+  string            RECO[4] = { "(Calo)", "(PFlow)", "(Tracks)", "(JPT)" };
+
+  string::size_type pos=string::npos; int ireco=-1;
+  while (pos==string::npos&&ireco<3) { pos = tmp.find(reco[++ireco]); }
+  assert(pos!=string::npos);
+  
+  double jet_size; stringstream ss1; ss1<<tmp.substr(0,pos); ss1>>jet_size;
+  jet_size/=10.0;  stringstream ss2; ss2<<jet_size;
+  title += ss2.str() + " " + RECO[ireco];
+
+  return title;
 }
