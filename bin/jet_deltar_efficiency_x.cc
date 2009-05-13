@@ -54,7 +54,9 @@ int main(int argc,char**argv)
   vector<string> algs     = cl.getVector<string>("algs", "kt4calo");
   string         datapath = cl.getValue<string> ("datapath",    "");
   bool           logy     = cl.getValue<bool>   ("logy",      true);
-
+  bool           batch    = cl.getValue<bool>   ("batch",    false);
+  vector<string> formats  = cl.getVector<string>("formats",     "");
+  
   if (!cl.check()) return 0;
   cl.print();
   
@@ -145,7 +147,7 @@ int main(int argc,char**argv)
   }
   
   
-  argc=1;
+  argc= (batch) ? 2 : 1; if (batch) argv[1] = "-b";
   TApplication* app = new TApplication("jet_deltar_efficiency_x",&argc,argv);
 
   gStyle->SetOptStat(0);
@@ -193,10 +195,15 @@ int main(int argc,char**argv)
     hEffVsDeltaR->Draw(drawopt.c_str());
   }
   legEffVsDeltaR->Draw();
-  
 
+  for (unsigned int i=0;i<formats.size();i++) {
+    cDeltaR->Print((string(cDeltaR->GetName())+"."+formats[i]).c_str());
+    cEffVsDeltaR->Print((string(cEffVsDeltaR->GetName())+"."+formats[i]).c_str());
+  }
+  
+  
   // run application
-  app->Run();
+  if (!batch) app->Run();
 
   return 0;
 }
