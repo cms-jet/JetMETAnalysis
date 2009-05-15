@@ -30,7 +30,8 @@ setup:
 
 bin:  jet_response_analyzer jet_response_fitter jet_response_plotter \
       jet_l2_correction jet_l3_correction jet_inspect_jra_histos \
-      jet_weighted_spectrum jet_matching_efficiency jet_deltar_efficiency
+      jet_weighted_spectrum jet_matching_efficiency jet_deltar_efficiency \
+      jet_response_vs_deltar
 
 jet_response_analyzer:
 	$(CXX) $(CXXFLAGS) bin/jet_response_analyzer_x.cc $(LIBS) $(ROOTLIBS) \
@@ -68,6 +69,10 @@ jet_deltar_efficiency:
 	$(CXX) $(CXXFLAGS) bin/jet_deltar_efficiency_x.cc $(LIBS) $(ROOTLIBS) \
         -o $(BINDIR)/jet_deltar_efficiency_x
 
+jet_response_vs_deltar:
+	$(CXX) $(CXXFLAGS) bin/jet_response_vsdeltar_x.cc $(LIBS) $(ROOTLIBS) \
+        -o $(BINDIR)/jet_response_vs_deltar_x
+
 clean:
 	rm -rf JetMETAnalysis \
 	       $(BINDIR)/jet_response_analyzer_x \
@@ -78,4 +83,5 @@ clean:
                $(BINDIR)/jet_inspect_jra_histos_x \
                $(BINDIR)/jet_weighted_spectrum_x \
                $(BINDIR)/jet_matching_efficiency_x \
-               $(BINDIR)/jet_deltar_efficiency_x
+               $(BINDIR)/jet_deltar_efficiency_x \
+               $(BINDIR)/jet_response_vs_deltar_x
