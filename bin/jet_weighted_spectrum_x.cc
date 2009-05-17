@@ -113,10 +113,12 @@ int main(int argc,char**argv)
     Color_t color = TColor::GetColorPalette(i);
 
     hRefPt->SetLineWidth(1);
+    hRefPt->SetLineColor(color);
     hRefPt->SetFillColor(color);
     hRefPt->SetFillStyle(1001);
 
     hRefPtW->SetLineWidth(1);
+    hRefPtW->SetLineColor(color);
     hRefPtW->SetFillColor(color);
     hRefPtW->SetFillStyle(1001);
     
