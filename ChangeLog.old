@@ -1,3 +1,9 @@
+2009-07-01  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-02-00
+	* tested to work with both 2213 and 310
+	* add EtaPtMinCandViewRefSelector
+
 2008-12-16  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-01-00
