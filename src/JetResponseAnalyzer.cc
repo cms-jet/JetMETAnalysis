@@ -21,10 +21,12 @@
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Candidate/interface/CandidateFwd.h"
 #include "DataFormats/Candidate/interface/CandMatchMap.h"
+//#include "DataFormats/Math/interface/deltaR.h"       // 31X+
+//#include "DataFormats/Math/interface/deltaPhi.h"     // 31X+
 
+#include "PhysicsTools/Utilities/interface/deltaR.h"   // 22X & 31X
+#include "PhysicsTools/Utilities/interface/deltaPhi.h" // 22X & 31X
 #include "PhysicsTools/UtilAlgos/interface/TFileService.h"
-#include "PhysicsTools/Utilities/interface/deltaR.h"
-#include "PhysicsTools/Utilities/interface/deltaPhi.h"
 
 #include <TH1F.h>
 #include <TH2F.h>
@@ -835,8 +837,10 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
     if (itMatch==refToJetMap->end()) continue;
     reco::CandidateBaseRef jet=itMatch->val;
     
-    refdrjt_[nref_]  =reco::deltaR(*jet,*ref);
-    refdphijt_[nref_]=reco::deltaPhi(*jet,*ref);
+    //refdrjt_[nref_]  =reco::deltaR(*jet,*ref);
+    //refdphijt_[nref_]=reco::deltaPhi(*jet,*ref);
+    refdrjt_[nref_]  =reco::deltaR(jet->eta(),jet->phi(),ref->eta(),ref->phi());
+    refdphijt_[nref_]=reco::deltaPhi(jet->phi(),ref->phi());
     
     if ((!doBalancing_&&refdrjt_[nref_]>deltaRMax_)||
 	(doBalancing_&&std::abs(refdphijt_[nref_])<deltaPhiMin_)) continue;

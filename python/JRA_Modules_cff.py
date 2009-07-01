@@ -16,50 +16,20 @@ partons = cms.EDFilter("PdgIdAndStatusCandViewSelector",
 #
 # GenJets
 #
-kt4genPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+kt4genPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.RefPtEta,
     src = cms.InputTag("kt4GenJets")
 )
-
-kt6genPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
-    Defaults.RefPtEta,
-    src = cms.InputTag("kt6GenJets")
-)
-
-sc5genPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
-    Defaults.RefPtEta,
-    src = cms.InputTag("sisCone5GenJets")
-)
-
-sc7genPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
-    Defaults.RefPtEta,
-    src = cms.InputTag("sisCone7GenJets")
-)
-
-ic5genPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
-    Defaults.RefPtEta,
-    src = cms.InputTag("iterativeCone5GenJets")
-)
-
-ak5genPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
-    Defaults.RefPtEta,
-    src = cms.InputTag("ak5GenJets")
-)
-
-ak7genPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
-    Defaults.RefPtEta,
-    src = cms.InputTag("ak7GenJets")
-)
-
-ca4genPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
-    Defaults.RefPtEta,
-    src = cms.InputTag("ca4GenJets")
-)
-
-ca6genPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
-    Defaults.RefPtEta,
-    src = cms.InputTag("ca6GenJets")
-)
+kt6genPtEta = kt4genPtEta.clone( src = cms.InputTag("kt6GenJets") )
+sc5genPtEta = kt4genPtEta.clone( src = cms.InputTag("sisCone5GenJets") )
+sc7genPtEta = kt4genPtEta.clone( src = cms.InputTag("sisCone7GenJets") )
+ic5genPtEta = kt4genPtEta.clone( src = cms.InputTag("iterativeCone5GenJets") )
+ak5genPtEta = kt4genPtEta.clone( src = cms.InputTag("ak5GenJets") )
+ak7genPtEta = kt4genPtEta.clone( src = cms.InputTag("ak7GenJets") )
+ca4genPtEta = kt4genPtEta.clone( src = cms.InputTag("ca4GenJets") )
+ca6genPtEta = kt4genPtEta.clone( src = cms.InputTag("ca6GenJets") )
+gk5genPtEta = kt4genPtEta.clone( src = cms.InputTag("gk5GenJets") )
+gk7genPtEta = kt4genPtEta.clone( src = cms.InputTag("gk7GenJets") )
 
 
 #
@@ -69,38 +39,17 @@ kt4GenToParton = cms.EDFilter("MatchRecToGen",
     srcRec = cms.InputTag("kt4genPtEta"),
     srcGen = cms.InputTag("partons")
 )
-kt6GenToParton = cms.EDFilter("MatchRecToGen",
-    srcRec = cms.InputTag("kt6genPtEta"),
-    srcGen = cms.InputTag("partons")
-)
-sc5GenToParton = cms.EDFilter("MatchRecToGen",
-    srcRec = cms.InputTag("sc5genPtEta"),
-    srcGen = cms.InputTag("partons")
-)
-sc7GenToParton = cms.EDFilter("MatchRecToGen",
-    srcRec = cms.InputTag("sc7genPtEta"),
-    srcGen = cms.InputTag("partons")
-)
-ic5GenToParton = cms.EDFilter("MatchRecToGen",
-    srcRec = cms.InputTag("ic5genPtEta"),
-    srcGen = cms.InputTag("partons")
-)
-ak5GenToParton = cms.EDFilter("MatchRecToGen",
-    srcRec = cms.InputTag("ak5genPtEta"),
-    srcGen = cms.InputTag("partons")
-)
-ak7GenToParton = cms.EDFilter("MatchRecToGen",
-    srcRec = cms.InputTag("ak7genPtEta"),
-    srcGen = cms.InputTag("partons")
-)
-ca4GenToParton = cms.EDFilter("MatchRecToGen",
-    srcRec = cms.InputTag("ca4genPtEta"),
-    srcGen = cms.InputTag("partons")
-)
-ca6GenToParton = cms.EDFilter("MatchRecToGen",
-    srcRec = cms.InputTag("ca6genPtEta"),
-    srcGen = cms.InputTag("partons")
-)
+kt6GenToParton = kt4GenToParton.clone( srcRec = cms.InputTag("kt6genPtEta") )
+sc5GenToParton = kt4GenToParton.clone( srcRec = cms.InputTag("sc5genPtEta") )
+sc7GenToParton = kt4GenToParton.clone( srcRec = cms.InputTag("sc7genPtEta") )
+ic5GenToParton = kt4GenToParton.clone( srcRec = cms.InputTag("ic5genPtEta") )
+ak5GenToParton = kt4GenToParton.clone( srcRec = cms.InputTag("ak5genPtEta") )
+ak7GenToParton = kt4GenToParton.clone( srcRec = cms.InputTag("ak7genPtEta") )
+ca4GenToParton = kt4GenToParton.clone( srcRec = cms.InputTag("ca4genPtEta") )
+ca6GenToParton = kt4GenToParton.clone( srcRec = cms.InputTag("ca6genPtEta") )
+gk5GenToParton = kt4GenToParton.clone( srcRec = cms.InputTag("gk5genPtEta") )
+gk7GenToParton = kt4GenToParton.clone( srcRec = cms.InputTag("gk7genPtEta") )
+
 
 
 #
@@ -108,7 +57,7 @@ ca6GenToParton = cms.EDFilter("MatchRecToGen",
 #
 
 # kt4calo
-kt4caloPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+kt4caloPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("kt4CaloJets")
 )
@@ -125,7 +74,7 @@ kt4calo = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # kt4calol2l3
-kt4calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+kt4calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("L2L3CorJetKT4Calo")
 )
@@ -142,7 +91,7 @@ kt4calol2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # kt6calo
-kt6caloPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+kt6caloPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("kt6CaloJets")
 )
@@ -159,7 +108,7 @@ kt6calo = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # kt6calol2l3
-kt6calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+kt6calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("L2L3CorJetKT6Calo")
 )
@@ -176,7 +125,7 @@ kt6calol2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # sc5calo
-sc5caloPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+sc5caloPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("sisCone5CaloJets")
 )
@@ -193,7 +142,7 @@ sc5calo = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # sc5calol2l3
-sc5calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+sc5calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("L2L3CorJetSC5Calo")
 )
@@ -210,7 +159,7 @@ sc5calol2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # sc7calo
-sc7caloPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+sc7caloPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("sisCone7CaloJets")
 )
@@ -227,7 +176,7 @@ sc7calo = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # sc7calol2l3
-sc7calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+sc7calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("L2L3CorJetSC7Calo")
 )
@@ -244,7 +193,7 @@ sc7calol2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ic5calo
-ic5caloPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ic5caloPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("iterativeCone5CaloJets")
 )
@@ -261,7 +210,7 @@ ic5calo = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ic5calol2l3
-ic5calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ic5calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("L2L3CorJetIC5Calo")
 )
@@ -278,7 +227,7 @@ ic5calol2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ak5calo
-ak5caloPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ak5caloPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("ak5CaloJets")
 )
@@ -295,7 +244,7 @@ ak5calo = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ak5calol2l3
-ak5calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ak5calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("L2L3CorJetAK5Calo")
 )
@@ -312,7 +261,7 @@ ak5calol2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ak7calo
-ak7caloPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ak7caloPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("ak7CaloJets")
 )
@@ -329,7 +278,7 @@ ak7calo = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ak7calol2l3
-ak7calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ak7calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("L2L3CorJetAK7Calo")
 )
@@ -346,7 +295,7 @@ ak7calol2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ca4calo
-ca4caloPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ca4caloPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("ca4CaloJets")
 )
@@ -363,7 +312,7 @@ ca4calo = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ca4calol2l3
-ca4calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ca4calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("L2L3CorJetCA4Calo")
 )
@@ -380,7 +329,7 @@ ca4calol2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ca6calo
-ca6caloPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ca6caloPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("ca6CaloJets")
 )
@@ -397,7 +346,7 @@ ca6calo = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ca6calol2l3
-ca6calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ca6calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("L2L3CorJetCA6Calo")
 )
@@ -413,6 +362,74 @@ ca6calol2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
     srcRef = cms.InputTag("ca6genPtEta")
 )
 
+# gk5calo
+gk5caloPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
+    Defaults.JetPtEta,
+    src = cms.InputTag("gk5CaloJets")
+)
+
+gk5caloJetToRef = cms.EDFilter("MatchRecToGen",
+    srcGen = cms.InputTag("gk5genPtEta"),
+    srcRec = cms.InputTag("gk5caloPtEta")
+)
+
+gk5calo = cms.EDAnalyzer("JetResponseAnalyzer",
+    Defaults.JetResponseParameters,
+    srcRefToJetMap = cms.InputTag("gk5caloJetToRef","gen2rec"),
+    srcRef = cms.InputTag("gk5genPtEta")
+)
+
+# gk5calol2l3
+gk5calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
+    Defaults.JetPtEta,
+    src = cms.InputTag("L2L3CorJetGK5Calo")
+)
+
+gk5calol2l3JetToRef = cms.EDFilter("MatchRecToGen",
+    srcGen = cms.InputTag("gk5genPtEta"),
+    srcRec = cms.InputTag("gk5calol2l3PtEta")
+)
+
+gk5calol2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
+    Defaults.JetResponseParameters,
+    srcRefToJetMap = cms.InputTag("gk5calol2l3JetToRef","gen2rec"),
+    srcRef = cms.InputTag("gk5genPtEta")
+)
+
+# gk7calo
+gk7caloPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
+    Defaults.JetPtEta,
+    src = cms.InputTag("gk7CaloJets")
+)
+
+gk7caloJetToRef = cms.EDFilter("MatchRecToGen",
+    srcGen = cms.InputTag("gk7genPtEta"),
+    srcRec = cms.InputTag("gk7caloPtEta")
+)
+
+gk7calo = cms.EDAnalyzer("JetResponseAnalyzer",
+    Defaults.JetResponseParameters,
+    srcRefToJetMap = cms.InputTag("gk7caloJetToRef","gen2rec"),
+    srcRef = cms.InputTag("gk7genPtEta")
+)
+
+# gk7calol2l3
+gk7calol2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
+    Defaults.JetPtEta,
+    src = cms.InputTag("L2L3CorJetGK7Calo")
+)
+
+gk7calol2l3JetToRef = cms.EDFilter("MatchRecToGen",
+    srcGen = cms.InputTag("gk7genPtEta"),
+    srcRec = cms.InputTag("gk7calol2l3PtEta")
+)
+
+gk7calol2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
+    Defaults.JetResponseParameters,
+    srcRefToJetMap = cms.InputTag("gk7calol2l3JetToRef","gen2rec"),
+    srcRef = cms.InputTag("gk7genPtEta")
+)
+
 
 
 #
@@ -420,7 +437,7 @@ ca6calol2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 #
 
 # kt4pf
-kt4pfPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+kt4pfPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("kt4PFJets")
 )
@@ -437,7 +454,7 @@ kt4pf = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # kt4pfl2l3
-kt4pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+kt4pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("L2L3CorJetKT4PF")
 )
@@ -454,7 +471,7 @@ kt4pfl2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # kt6pf
-kt6pfPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+kt6pfPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("kt6PFJets")
 )
@@ -471,7 +488,7 @@ kt6pf = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # kt6pfl2l3
-kt6pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+kt6pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("L2L3CorJetKT6PF")
 )
@@ -488,7 +505,7 @@ kt6pfl2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # sc5pf
-sc5pfPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+sc5pfPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("sisCone5PFJets")
 )
@@ -505,7 +522,7 @@ sc5pf = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # sc5pfl2l3
-sc5pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+sc5pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("L2L3CorJetSC5PF")
 )
@@ -522,7 +539,7 @@ sc5pfl2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # sc7pf
-sc7pfPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+sc7pfPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("sisCone7PFJets")
 )
@@ -539,7 +556,7 @@ sc7pf = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # sc7pfl2l3
-sc7pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+sc7pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("L2L3CorJetSC7PF")
 )
@@ -556,7 +573,7 @@ sc7pfl2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ic5pf
-ic5pfPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ic5pfPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("iterativeCone5PFJets")
 )
@@ -573,7 +590,7 @@ ic5pf = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ic5pfl2l3
-ic5pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ic5pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("L2L3CorJetIC5PF")
 )
@@ -590,7 +607,7 @@ ic5pfl2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ak5pf
-ak5pfPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ak5pfPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("ak5PFJets")
 )
@@ -607,7 +624,7 @@ ak5pf = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ak5pfl2l3
-ak5pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ak5pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("L2L3CorJetAK5PF")
 )
@@ -624,7 +641,7 @@ ak5pfl2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ak7pf
-ak7pfPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ak7pfPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("ak7PFJets")
 )
@@ -641,7 +658,7 @@ ak7pf = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ak7pfl2l3
-ak7pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ak7pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("L2L3CorJetAK7PF")
 )
@@ -658,7 +675,7 @@ ak7pfl2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ca4pf
-ca4pfPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ca4pfPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("ca4PFJets")
 )
@@ -675,7 +692,7 @@ ca4pf = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ca4pfl2l3
-ca4pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ca4pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("L2L3CorJetCA4PF")
 )
@@ -692,7 +709,7 @@ ca4pfl2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ca6pf
-ca6pfPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ca6pfPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("ca6PFJets")
 )
@@ -709,7 +726,7 @@ ca6pf = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ca6pfl2l3
-ca6pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ca6pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("L2L3CorJetCA6PF")
 )
@@ -725,6 +742,74 @@ ca6pfl2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
     srcRef = cms.InputTag("ca6genPtEta")
 )
 
+# gk5pf
+gk5pfPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
+    Defaults.JetPtEta,
+    src = cms.InputTag("gk5PFJets")
+)
+
+gk5pfJetToRef = cms.EDFilter("MatchRecToGen",
+    srcGen = cms.InputTag("gk5genPtEta"),
+    srcRec = cms.InputTag("gk5pfPtEta")
+)
+
+gk5pf = cms.EDAnalyzer("JetResponseAnalyzer",
+    Defaults.JetResponseParameters,
+    srcRefToJetMap = cms.InputTag("gk5pfJetToRef","gen2rec"),
+    srcRef = cms.InputTag("gk5genPtEta")
+)
+
+# gk5pfl2l3
+gk5pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
+    Defaults.JetPtEta,
+    src = cms.InputTag("L2L3CorJetGK5PF")
+)
+
+gk5pfl2l3JetToRef = cms.EDFilter("MatchRecToGen",
+    srcGen = cms.InputTag("gk5genPtEta"),
+    srcRec = cms.InputTag("gk5pfl2l3PtEta")
+)
+
+gk5pfl2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
+    Defaults.JetResponseParameters,
+    srcRefToJetMap = cms.InputTag("gk5pfl2l3JetToRef","gen2rec"),
+    srcRef = cms.InputTag("gk5genPtEta")
+)
+
+# gk7pf
+gk7pfPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
+    Defaults.JetPtEta,
+    src = cms.InputTag("gk7PFJets")
+)
+
+gk7pfJetToRef = cms.EDFilter("MatchRecToGen",
+    srcGen = cms.InputTag("gk7genPtEta"),
+    srcRec = cms.InputTag("gk7pfPtEta")
+)
+
+gk7pf = cms.EDAnalyzer("JetResponseAnalyzer",
+    Defaults.JetResponseParameters,
+    srcRefToJetMap = cms.InputTag("gk7pfJetToRef","gen2rec"),
+    srcRef = cms.InputTag("gk7genPtEta")
+)
+
+# gk7pfl2l3
+gk7pfl2l3PtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
+    Defaults.JetPtEta,
+    src = cms.InputTag("L2L3CorJetGK7PF")
+)
+
+gk7pfl2l3JetToRef = cms.EDFilter("MatchRecToGen",
+    srcGen = cms.InputTag("gk7genPtEta"),
+    srcRec = cms.InputTag("gk7pfl2l3PtEta")
+)
+
+gk7pfl2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
+    Defaults.JetResponseParameters,
+    srcRefToJetMap = cms.InputTag("gk7pfl2l3JetToRef","gen2rec"),
+    srcRef = cms.InputTag("gk7genPtEta")
+)
+
 
 
 #
@@ -732,7 +817,7 @@ ca6pfl2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 #
 
 # kt4trk
-kt4trkPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+kt4trkPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("kt4TrackJets")
 )
@@ -749,7 +834,7 @@ kt4trk = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # kt6trk
-kt6trkPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+kt6trkPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("kt6TrackJets")
 )
@@ -766,7 +851,7 @@ kt6trk = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 #sc5trk
-sc5trkPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+sc5trkPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("sisCone5TrackJets")
 )
@@ -783,7 +868,7 @@ sc5trk = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # sc7trk
-sc7trkPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+sc7trkPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("sisCone7TrackJets")
 )
@@ -800,7 +885,7 @@ sc7trk = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ic5trk
-ic5trkPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ic5trkPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("iterativeCone5TrackJets")
 )
@@ -817,7 +902,7 @@ ic5trk = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ic5jpt
-ic5jptPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ic5jptPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("JetPlusTrackZSPCorJetIcone5")
 )
@@ -834,7 +919,7 @@ ic5jpt = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 #ak5trk
-ak5trkPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ak5trkPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("ak5TrackJets")
 )
@@ -851,7 +936,7 @@ ak5trk = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ak7trk
-ak7trkPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ak7trkPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("ak7TrackJets")
 )
@@ -868,7 +953,7 @@ ak7trk = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ca4trk
-ca4trkPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ca4trkPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("ca4TrackJets")
 )
@@ -885,7 +970,7 @@ ca4trk = cms.EDAnalyzer("JetResponseAnalyzer",
 )
 
 # ca6trk
-ca6trkPtEta = cms.EDFilter("EtaPtMinCandViewSelector",
+ca6trkPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
     src = cms.InputTag("ca6TrackJets")
 )
@@ -901,3 +986,36 @@ ca6trk = cms.EDAnalyzer("JetResponseAnalyzer",
     srcRef = cms.InputTag("ca6genPtEta")
 )
 
+# gk5trk
+gk5trkPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
+    Defaults.JetPtEta,
+    src = cms.InputTag("gk5TrackJets")
+)
+
+gk5trkJetToRef = cms.EDFilter("MatchRecToGen",
+    srcGen = cms.InputTag("gk5genPtEta"),
+    srcRec = cms.InputTag("gk5trkPtEta")
+)
+
+gk5trk = cms.EDAnalyzer("JetResponseAnalyzer",
+    Defaults.JetResponseParameters,
+    srcRefToJetMap = cms.InputTag("gk5trkJetToRef","gen2rec"),
+    srcRef = cms.InputTag("gk5genPtEta")
+)
+
+# gk7trk
+gk7trkPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
+    Defaults.JetPtEta,
+    src = cms.InputTag("gk7TrackJets")
+)
+
+gk7trkJetToRef = cms.EDFilter("MatchRecToGen",
+    srcGen = cms.InputTag("gk7genPtEta"),
+    srcRec = cms.InputTag("gk7trkPtEta")
+)
+
+gk7trk = cms.EDAnalyzer("JetResponseAnalyzer",
+    Defaults.JetResponseParameters,
+    srcRefToJetMap = cms.InputTag("gk7trkJetToRef","gen2rec"),
+    srcRef = cms.InputTag("gk7genPtEta")
+)

@@ -18,7 +18,7 @@ JetResponseParameters = cms.PSet(
     doRefPt  = cms.bool(True),
     doJetPt  = cms.bool(True),
     # MATCHING MODE: deltaR(ref,jet)
-    deltaRMax = cms.double(0.3),
+    deltaRMax = cms.double(99.9),
     # consider all matched references
     nRefMax = cms.uint32(0)#,
     # don't record relative / absolute response histograms

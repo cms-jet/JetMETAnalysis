@@ -35,6 +35,12 @@ ca4calo.deltaRPartonMax   = cms.double(0.25)
 ca6calo.doFlavor          = cms.bool(True)
 ca6calo.srcRefToPartonMap = cms.InputTag('ca6GenToParton','rec2gen')
 ca6calo.deltaRPartonMax   = cms.double(0.25)
+gk5calo.doFlavor          = cms.bool(True)
+gk5calo.srcRefToPartonMap = cms.InputTag('gk5GenToParton','rec2gen')
+gk5calo.deltaRPartonMax   = cms.double(0.25)
+gk7calo.doFlavor          = cms.bool(True)
+gk7calo.srcRefToPartonMap = cms.InputTag('gk7GenToParton','rec2gen')
+gk7calo.deltaRPartonMax   = cms.double(0.25)
 
 
 # pflow
@@ -65,6 +71,12 @@ ca4pf.deltaRPartonMax   = cms.double(0.25)
 ca6pf.doFlavor          = cms.bool(True)
 ca6pf.srcRefToPartonMap = cms.InputTag('ca6GenToParton','rec2gen')
 ca6pf.deltaRPartonMax   = cms.double(0.25)
+gk5pf.doFlavor          = cms.bool(True)
+gk5pf.srcRefToPartonMap = cms.InputTag('gk5GenToParton','rec2gen')
+gk5pf.deltaRPartonMax   = cms.double(0.25)
+gk7pf.doFlavor          = cms.bool(True)
+gk7pf.srcRefToPartonMap = cms.InputTag('gk7GenToParton','rec2gen')
+gk7pf.deltaRPartonMax   = cms.double(0.25)
 
 
 # track
@@ -95,6 +107,12 @@ ca4trk.deltaRPartonMax   = cms.double(0.25)
 ca6trk.doFlavor          = cms.bool(True)
 ca6trk.srcRefToPartonMap = cms.InputTag('ca6GenToParton','rec2gen')
 ca6trk.deltaRPartonMax   = cms.double(0.25)
+gk5trk.doFlavor          = cms.bool(True)
+gk5trk.srcRefToPartonMap = cms.InputTag('gk5GenToParton','rec2gen')
+gk5trk.deltaRPartonMax   = cms.double(0.25)
+gk7trk.doFlavor          = cms.bool(True)
+gk7trk.srcRefToPartonMap = cms.InputTag('gk7GenToParton','rec2gen')
+gk7trk.deltaRPartonMax   = cms.double(0.25)
 
 
 # jpt
@@ -131,6 +149,12 @@ ca4calol2l3.deltaRPartonMax   = cms.double(0.25)
 ca6calol2l3.doFlavor          = cms.bool(True)
 ca6calol2l3.srcRefToPartonMap = cms.InputTag('ca6GenToParton','rec2gen')
 ca6calol2l3.deltaRPartonMax   = cms.double(0.25)
+gk5calol2l3.doFlavor          = cms.bool(True)
+gk5calol2l3.srcRefToPartonMap = cms.InputTag('gk5GenToParton','rec2gen')
+gk5calol2l3.deltaRPartonMax   = cms.double(0.25)
+gk7calol2l3.doFlavor          = cms.bool(True)
+gk7calol2l3.srcRefToPartonMap = cms.InputTag('gk7GenToParton','rec2gen')
+gk7calol2l3.deltaRPartonMax   = cms.double(0.25)
 
 
 # pfl2l3
@@ -161,6 +185,12 @@ ca4pfl2l3.deltaRPartonMax   = cms.double(0.25)
 ca6pfl2l3.doFlavor          = cms.bool(True)
 ca6pfl2l3.srcRefToPartonMap = cms.InputTag('ca6GenToParton','rec2gen')
 ca6pfl2l3.deltaRPartonMax   = cms.double(0.25)
+gk5pfl2l3.doFlavor          = cms.bool(True)
+gk5pfl2l3.srcRefToPartonMap = cms.InputTag('gk5GenToParton','rec2gen')
+gk5pfl2l3.deltaRPartonMax   = cms.double(0.25)
+gk7pfl2l3.doFlavor          = cms.bool(True)
+gk7pfl2l3.srcRefToPartonMap = cms.InputTag('gk7GenToParton','rec2gen')
+gk7pfl2l3.deltaRPartonMax   = cms.double(0.25)
 
 
 
@@ -196,6 +226,12 @@ ca4caloJRA = cms.Path(
 ca6caloJRA = cms.Path(
     ca6caloPtEta+ca6genPtEta+ca6caloJetToRef+partons+ca6GenToParton+ca6calo
     )
+gk5caloJRA = cms.Path(
+    gk5caloPtEta+gk5genPtEta+gk5caloJetToRef+partons+gk5GenToParton+gk5calo
+    )
+gk7caloJRA = cms.Path(
+    gk7caloPtEta+gk7genPtEta+gk7caloJetToRef+partons+gk7GenToParton+gk7calo
+    )
 
 
 # pf
@@ -226,6 +262,12 @@ ca4pfJRA = cms.Path(
 ca6pfJRA = cms.Path(
     ca6pfPtEta+ca6genPtEta+ca6pfJetToRef+partons+ca6GenToParton+ca6pf
     )
+gk5pfJRA = cms.Path(
+    gk5pfPtEta+gk5genPtEta+gk5pfJetToRef+partons+gk5GenToParton+gk5pf
+    )
+gk7pfJRA = cms.Path(
+    gk7pfPtEta+gk7genPtEta+gk7pfJetToRef+partons+gk7GenToParton+gk7pf
+    )
 
 
 # trk
@@ -255,6 +297,12 @@ ca4trkJRA = cms.Path(
     )
 ca6trkJRA = cms.Path(
     ca6trkPtEta+ca6genPtEta+ca6trkJetToRef+partons+ca6GenToParton+ca6trk
+    )
+gk5trkJRA = cms.Path(
+    gk5trkPtEta+gk5genPtEta+gk5trkJetToRef+partons+gk5GenToParton+gk5trk
+    )
+gk7trkJRA = cms.Path(
+    gk7trkPtEta+gk7genPtEta+gk7trkJetToRef+partons+gk7GenToParton+gk7trk
     )
 
 
@@ -292,6 +340,12 @@ ca4calol2l3JRA = cms.Path(
 ca6calol2l3JRA = cms.Path(
     ca6calol2l3PtEta+ca6genPtEta+ca6calol2l3JetToRef+partons+ca6GenToParton+ca6calol2l3
     )
+gk5calol2l3JRA = cms.Path(
+    gk5calol2l3PtEta+gk5genPtEta+gk5calol2l3JetToRef+partons+gk5GenToParton+gk5calol2l3
+    )
+gk7calol2l3JRA = cms.Path(
+    gk7calol2l3PtEta+gk7genPtEta+gk7calol2l3JetToRef+partons+gk7GenToParton+gk7calol2l3
+    )
 
 # pfl2l3
 kt4pfl2l3JRA = cms.Path(
@@ -320,4 +374,10 @@ ca4pfl2l3JRA = cms.Path(
     )
 ca6pfl2l3JRA = cms.Path(
     ca6pfl2l3PtEta+ca6genPtEta+ca6pfl2l3JetToRef+partons+ca6GenToParton+ca6pfl2l3
+    )
+gk5pfl2l3JRA = cms.Path(
+    gk5pfl2l3PtEta+gk5genPtEta+gk5pfl2l3JetToRef+partons+gk5GenToParton+gk5pfl2l3
+    )
+gk7pfl2l3JRA = cms.Path(
+    gk7pfl2l3PtEta+gk7genPtEta+gk7pfl2l3JetToRef+partons+gk7GenToParton+gk7pfl2l3
     )

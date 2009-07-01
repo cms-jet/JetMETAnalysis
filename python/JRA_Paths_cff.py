@@ -12,6 +12,8 @@ ak5caloJRA = cms.Path(ak5caloPtEta + ak5genPtEta + ak5caloJetToRef + ak5calo)
 ak7caloJRA = cms.Path(ak7caloPtEta + ak7genPtEta + ak7caloJetToRef + ak7calo)
 ca4caloJRA = cms.Path(ca4caloPtEta + ca4genPtEta + ca4caloJetToRef + ca4calo)
 ca6caloJRA = cms.Path(ca6caloPtEta + ca6genPtEta + ca6caloJetToRef + ca6calo)
+gk5caloJRA = cms.Path(gk5caloPtEta + gk5genPtEta + gk5caloJetToRef + gk5calo)
+gk7caloJRA = cms.Path(gk7caloPtEta + gk7genPtEta + gk7caloJetToRef + gk7calo)
 
 # pf
 kt4pfJRA   = cms.Path(kt4pfPtEta   + kt4genPtEta + kt4pfJetToRef   + kt4pf)
@@ -23,6 +25,8 @@ ak5pfJRA   = cms.Path(ak5pfPtEta   + ak5genPtEta + ak5pfJetToRef   + ak5pf)
 ak7pfJRA   = cms.Path(ak7pfPtEta   + ak7genPtEta + ak7pfJetToRef   + ak7pf)
 ca4pfJRA   = cms.Path(ca4pfPtEta   + ca4genPtEta + ca4pfJetToRef   + ca4pf)
 ca6pfJRA   = cms.Path(ca6pfPtEta   + ca6genPtEta + ca6pfJetToRef   + ca6pf)
+gk5pfJRA   = cms.Path(gk5pfPtEta   + gk5genPtEta + gk5pfJetToRef   + gk5pf)
+gk7pfJRA   = cms.Path(gk7pfPtEta   + gk7genPtEta + gk7pfJetToRef   + gk7pf)
 
 # trk
 kt4trkJRA  = cms.Path(kt4trkPtEta  + kt4genPtEta + kt4trkJetToRef  + kt4trk)
@@ -34,6 +38,8 @@ ak5trkJRA  = cms.Path(ak5trkPtEta  + ak5genPtEta + ak5trkJetToRef  + ak5trk)
 ak7trkJRA  = cms.Path(ak7trkPtEta  + ak7genPtEta + ak7trkJetToRef  + ak7trk)
 ca4trkJRA  = cms.Path(ca4trkPtEta  + ca4genPtEta + ca4trkJetToRef  + ca4trk)
 ca6trkJRA  = cms.Path(ca6trkPtEta  + ca6genPtEta + ca6trkJetToRef  + ca6trk)
+gk5trkJRA  = cms.Path(gk5trkPtEta  + gk5genPtEta + gk5trkJetToRef  + gk5trk)
+gk7trkJRA  = cms.Path(gk7trkPtEta  + gk7genPtEta + gk7trkJetToRef  + gk7trk)
 
 # jpt
 ic5jptJRA  = cms.Path(ic5jptPtEta  + ic5genPtEta + ic5jptJetToRef  + ic5jpt)
@@ -48,6 +54,8 @@ ak5calol2l3JRA=cms.Path(ak5calol2l3PtEta+ak5genPtEta+ak5calol2l3JetToRef+ak5calo
 ak7calol2l3JRA=cms.Path(ak7calol2l3PtEta+ak7genPtEta+ak7calol2l3JetToRef+ak7calol2l3)
 ca4calol2l3JRA=cms.Path(ca4calol2l3PtEta+ca4genPtEta+ca4calol2l3JetToRef+ca4calol2l3)
 ca6calol2l3JRA=cms.Path(ca6calol2l3PtEta+ca6genPtEta+ca6calol2l3JetToRef+ca6calol2l3)
+gk5calol2l3JRA=cms.Path(gk5calol2l3PtEta+gk5genPtEta+gk5calol2l3JetToRef+gk5calol2l3)
+gk7calol2l3JRA=cms.Path(gk7calol2l3PtEta+gk7genPtEta+gk7calol2l3JetToRef+gk7calol2l3)
 
 # pfl2l3
 kt4pfl2l3JRA  =cms.Path(kt4pfl2l3PtEta  +kt4genPtEta+kt4pfl2l3JetToRef  +kt4pfl2l3)
@@ -59,3 +67,5 @@ ak5pfl2l3JRA  =cms.Path(ak5pfl2l3PtEta  +ak5genPtEta+ak5pfl2l3JetToRef  +ak5pfl2
 ak7pfl2l3JRA  =cms.Path(ak7pfl2l3PtEta  +ak7genPtEta+ak7pfl2l3JetToRef  +ak7pfl2l3)
 ca4pfl2l3JRA  =cms.Path(ca4pfl2l3PtEta  +ca4genPtEta+ca4pfl2l3JetToRef  +ca4pfl2l3)
 ca6pfl2l3JRA  =cms.Path(ca6pfl2l3PtEta  +ca6genPtEta+ca6pfl2l3JetToRef  +ca6pfl2l3)
+gk5pfl2l3JRA  =cms.Path(gk5pfl2l3PtEta  +gk5genPtEta+gk5pfl2l3JetToRef  +gk5pfl2l3)
+gk7pfl2l3JRA  =cms.Path(gk7pfl2l3PtEta  +gk7genPtEta+gk7pfl2l3JetToRef  +gk7pfl2l3)
