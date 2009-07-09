@@ -73,7 +73,7 @@ int main(int argc,char**argv)
   
   vector<string> drcuts_as_str;
   for (unsigned int idr=0;idr<drcuts.size();idr++) {
-    stringstream ssdr; ssdr<<drcuts[idr]*10.0;
+    stringstream ssdr; ssdr<<drcuts[idr]*100.0;
     string sdr(ssdr.str());
     drcuts_as_str.push_back("dr0"+sdr.substr(0,sdr.find('.')));
   }

@@ -17,8 +17,10 @@
 #include <TFile.h>
 #include <TCanvas.h>
 #include <TLegend.h>
+#include <TLatex.h>
 #include <TTree.h>
 #include <TH1F.h>
+#include <TF1.h>
 #include <TKey.h>
 
 #include <iostream>
@@ -52,6 +54,7 @@ int main(int argc,char**argv)
 
   vector<string> inputs   = cl.getVector<string>("inputs");
   vector<string> algs     = cl.getVector<string>("algs", "kt4calo");
+  float          ptmin    = cl.getValue<float>  ("ptmin",      0.0);
   string         datapath = cl.getValue<string> ("datapath",    "");
   bool           logy     = cl.getValue<bool>   ("logy",      true);
   bool           batch    = cl.getValue<bool>   ("batch",    false);
@@ -85,7 +88,7 @@ int main(int argc,char**argv)
     }
     
     // DEBUG
-    cout<<"filename="<<filename<<", weight="<<weight<<endl;
+    cout<<"filename="<<filename<<", xsec="<<weight<<endl;
     
     
     TFile* file = new TFile(filename.c_str(),"READ");
@@ -110,12 +113,16 @@ int main(int argc,char**argv)
 	continue;
       }
       
+      if (ialg==0) weight /= tree->GetEntries();
+
       cout<<alg<<" ... "<<flush;      
 
       unsigned char nref(0);
       float refdrjt[100];
+      float refpt[100];
       tree->SetBranchAddress("nref",     &nref);
       tree->SetBranchAddress("refdrjt",refdrjt);
+      tree->SetBranchAddress("refpt",    refpt);
 
       if (ifile==0) {
 	hDeltaR.push_back(new TH1F(("DeltaR_"+alg).c_str(),"",100,0,1));
@@ -128,6 +135,7 @@ int main(int argc,char**argv)
       for (unsigned int ievt=0;ievt<nevt;ievt++) {
 	tree->GetEntry(ievt);
 	for (unsigned int iref=0;iref<nref;iref++) {
+	  if (refpt[iref]<ptmin) continue;
 	  for (unsigned int idrmax=0;idrmax<100;idrmax++) {
 	    float drmax = idrmax*0.01+0.005;
 	    hDeltaRAll[ialg]->Fill(drmax,weight);
@@ -136,7 +144,7 @@ int main(int argc,char**argv)
 	}
       }
       
-      stringstream wsel;wsel<<weight<<"*(1)";
+      stringstream wsel;wsel<<weight<<"*(refpt>"<<ptmin<<")";
       TH1F* hDeltaRTmp = new TH1F("DeltaRTmp","",100,0.,1.0);
       tree->Project("DeltaRTmp","refdrjt",wsel.str().c_str());
       hDeltaR[ialg]->Add(hDeltaRTmp);
@@ -150,6 +158,11 @@ int main(int argc,char**argv)
   argc= (batch) ? 2 : 1; if (batch) argv[1] = "-b";
   TApplication* app = new TApplication("jet_deltar_efficiency_x",&argc,argv);
 
+  TLatex tex; tex.SetNDC();
+  tex.SetTextSize(0.0375);
+  stringstream ssptmin;
+  ssptmin<<"p_{T}^{REF} > "<<ptmin<<" GeV";
+
   gStyle->SetOptStat(0);
   TColor::SetPalette(1,0);
   Color_t colors[7] = {kRed,kBlue,kMagenta,kCyan,kGreen+1,kBlue+4,kRed+4};
@@ -158,7 +171,7 @@ int main(int argc,char**argv)
   TCanvas* cDeltaR = new TCanvas("DeltaR","DeltaR",0,0,700,700);
   cDeltaR->cd();
   if (logy) gPad->SetLogy();
-  TLegend* legDeltaR = new TLegend(0.6,0.92,0.9,0.92-algs.size()*0.065);
+  TLegend* legDeltaR = new TLegend(0.5,0.92,0.9,0.92-algs.size()*0.065);
   legDeltaR->SetLineColor(10);
   legDeltaR->SetFillColor(10);
   legDeltaR->SetShadowColor(10);
@@ -167,15 +180,17 @@ int main(int argc,char**argv)
     string drawopt = (i==0) ? "H" : "HSAME";
     hDeltaR[i]->SetLineColor(colors[i]);
     hDeltaR[i]->Draw(drawopt.c_str());
+    cout<<hDeltaR[i]->Integral()<<" / "<<hDeltaR[i]->GetEntries()<<endl;
   }
   legDeltaR->Draw();
+  tex.DrawLatex(0.2,0.2,ssptmin.str().c_str());
 
 
   TCanvas* cEffVsDeltaR = new TCanvas("EffVsDeltaR","EffVsDeltaR",700,0,700,700);
   cEffVsDeltaR->cd();
-  if (logy) gPad->SetLogy();
+  //if (logy) gPad->SetLogy();
   gPad->SetLeftMargin(0.2);
-  TLegend* legEffVsDeltaR = new TLegend(0.6,0.2,0.9,0.2+algs.size()*0.065);
+  TLegend* legEffVsDeltaR = new TLegend(0.5,0.2,0.9,0.2+algs.size()*0.065);
   legEffVsDeltaR->SetLineColor(10);
   legEffVsDeltaR->SetFillColor(10);
   legEffVsDeltaR->SetShadowColor(10);
@@ -189,12 +204,22 @@ int main(int argc,char**argv)
     hEffVsDeltaR->GetYaxis()->CenterTitle();
     
     legEffVsDeltaR->AddEntry(hEffVsDeltaR,get_legend_title(algs[i]).c_str(),"l");
+
+    TF1* fEffVsDeltaR = new TF1(("fitEffVsDeltaR_"+algs[i]).c_str(),"pol3",.15,.3);
+    
+    fEffVsDeltaR->SetLineColor(colors[i]);
+    fEffVsDeltaR->SetNpx(200);
+    hEffVsDeltaR->Fit(fEffVsDeltaR,"QR0");
+    
+    cout<<fEffVsDeltaR->GetX(0.7)<<" / "<<fEffVsDeltaR->GetX(0.85)<<endl;
     
     string drawopt = (i==0) ? "E" : "ESAME";
     hEffVsDeltaR->SetLineColor(colors[i]);
     hEffVsDeltaR->Draw(drawopt.c_str());
+    fEffVsDeltaR->Draw("SAME");
   }
   legEffVsDeltaR->Draw();
+  tex.DrawLatex(0.25,0.875,ssptmin.str().c_str());
 
   for (unsigned int i=0;i<formats.size();i++) {
     cDeltaR->Print((string(cDeltaR->GetName())+"."+formats[i]).c_str());
