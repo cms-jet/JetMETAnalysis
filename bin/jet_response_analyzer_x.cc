@@ -29,6 +29,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <map>
 #include <cmath>
 
 
@@ -118,6 +119,23 @@ int main(int argc,char**argv)
   bool dophirsp=(nbinsphirsp>0);
 
   if (xsection>0.0) TH1::SetDefaultSumw2(true);
+
+
+  //
+  // evaluate drmin requirements for individual algorithms if provided
+  //
+  map<std::string,float> alg2drmax;
+  for (unsigned int ialg=0;ialg<algs.size();ialg++) {
+    string alg=algs[ialg];
+    unsigned pos = alg.find(':');
+    if (pos!=string::npos) {
+      float drmax_alg; stringstream ss; ss<<alg.substr(pos+1); ss>>drmax_alg;
+      alg=alg.substr(0,pos);
+      alg2drmax[alg]=drmax_alg;
+      algs[ialg]=alg;
+      cout<<"drmax("<<alg<<") = "<<alg2drmax[alg]<<endl;
+    }
+  }
   
 
   //
@@ -138,12 +156,15 @@ int main(int argc,char**argv)
     string alg(idir->GetName());
     if (algs.size()>0&&!contains(algs,alg)) continue;
     
-    cout<<alg<<" ... "<<flush;
+    cout<<alg<<" ... "<<endl;
 
     TTree* tree = (TTree*)idir->Get("t");
     if (0==tree) { cout<<"no tree found."<<endl; continue; }
   
     float weight = (xsection>0.0) ? xsection/tree->GetEntries() : 1.0;
+    float drmax_alg = drmax;
+    if (alg2drmax.find(alg)!=alg2drmax.end()) drmax_alg=alg2drmax[alg];
+    //cout<<"weight="<<weight<<", drmax_alg="<<drmax_alg<<endl;
     
 
     //
