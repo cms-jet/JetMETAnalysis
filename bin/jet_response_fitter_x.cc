@@ -53,6 +53,7 @@ int main(int argc,char**argv)
   string         output  = cl.getValue<string> ("output","jrf.root");
   double         nsigma  = cl.getValue<double> ("nsigma",       1.5);
   int            niter   = cl.getValue<int>    ("niter",          3);
+  int            ndfmin  = cl.getValue<int>    ("ndfmin",         5);
   vector<string> algs    = cl.getVector<string>("algs",          "");
   int            verbose = cl.getValue<int>    ("verbose",        0);
   
@@ -135,7 +136,7 @@ int main(int argc,char**argv)
 	  peak  = fitfnc->GetParameter(1);
 	  sigma = fitfnc->GetParameter(2);
 	}
-	if (0!=fitfnc&&fitfnc->GetNDF()<=5) {
+	if (0!=fitfnc&&fitfnc->GetNDF()<ndfmin) {
 	  if (verbose>0) cout<<"NDOF(FITFNC)="<<fitfnc->GetNDF()
 			     <<" FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
 	  hrsp->GetListOfFunctions()->Delete();

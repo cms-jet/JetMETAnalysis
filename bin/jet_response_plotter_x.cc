@@ -450,6 +450,7 @@ string get_legend_title(const string& alg)
   else if (alg.find("mc")==0) { title = "MidCone. R=";    tmp = tmp.substr(2); }
   else if (alg.find("ca")==0) { title = "Cam/Aachen, D="; tmp = tmp.substr(2); }
   else if (alg.find("ak")==0) { title = "Anti k_{T}, D="; tmp = tmp.substr(2); }
+  else if (alg.find("gk")==0) { title = "Gen k_{T}, R="; tmp = tmp.substr(2); }
   
   assert(!title.empty());
   
