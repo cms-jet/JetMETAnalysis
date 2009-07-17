@@ -54,7 +54,7 @@ bool ObjectLoader<T>::load_objects(TDirectory* d,const string& expression)
 
   for (unsigned int i=0;i<variables_.size();i++) variable_index_.push_back(i);
   for (unsigned int i=0;i<variables_.size();i++) {
-    pos=variables_[i].find("!");
+    pos=variables_[i].find("#");
     if (pos==string::npos) continue;
     string index_as_string=variables_[i].substr(pos+1);
     variables_[i]=variables_[i].substr(0,pos);
@@ -64,7 +64,7 @@ bool ObjectLoader<T>::load_objects(TDirectory* d,const string& expression)
     variable_index_[i]=index;
     variable_index_[index]=tmp;
   }
-  
+
   map<int,double> fixed_values;
   for (unsigned int i=0;i<variables_.size();i++) {
     pos=variables_[i].find("@");
@@ -275,7 +275,8 @@ void ObjectLoader<T>::set_object(const vector<unsigned int>& indices,T* obj)
   unsigned int index(0);
   for (unsigned int i=0;i<nobjects_.size();i++) {
     unsigned int ii=variable_index_[i];
-    if (indices[ii]>=nobjects_[i]) throw std::runtime_error("index out of range");
+    if (indices[ii]>=nobjects_[ii])
+      throw std::runtime_error("index out of range");
     index+=indices[ii]*offset_[ii];
   }
   typename std::vector<T*>::iterator it=objects_.begin();
