@@ -25,9 +25,14 @@ public:
   
   std::string  quantity()                   const { return quantity_; }
   unsigned int nvariables()                 const { return variables_.size(); }
-  std::string  variable(unsigned int ivar)  const { return variables_[ivar]; }
-  unsigned int nobjects(unsigned int ivar)  const { return nobjects_[ivar]; }
   unsigned int nobjects()                   const { return objects_.size(); }
+  std::string  variable(unsigned int ivar)  const {
+    return variables_[variable_index_[ivar]];
+  }
+  unsigned int nobjects(unsigned int ivar)  const {
+    return nobjects_[variable_index_[ivar]];
+  }
+
 
   T*           object(unsigned int i)       const;
   T*           object(unsigned int i,
@@ -62,6 +67,7 @@ private:
   //
   std::string                             quantity_;
   std::vector<std::string>                variables_;
+  std::vector<unsigned int>               variable_index_;
   std::vector<unsigned int>               nobjects_;
   std::vector<unsigned int>               offset_;
   std::vector<T*>                         objects_;

@@ -51,6 +51,19 @@ bool ObjectLoader<T>::load_objects(TDirectory* d,const string& expression)
   quantity_=(pos==string::npos)?tmp:tmp.substr(0,pos);
   tmp=(pos==string::npos)?"":tmp.substr(pos+1);
   if (tmp!="") variables_=split(tmp,":");
+
+  for (unsigned int i=0;i<variables_.size();i++) variable_index_.push_back(i);
+  for (unsigned int i=0;i<variables_.size();i++) {
+    pos=variables_[i].find("!");
+    if (pos==string::npos) continue;
+    string index_as_string=variables_[i].substr(pos+1);
+    variables_[i]=variables_[i].substr(0,pos);
+    unsigned int index; stringstream ss; ss<<index_as_string;ss>>index;
+    assert(index<variable_index_.size());
+    unsigned int tmp=variable_index_[i];
+    variable_index_[i]=index;
+    variable_index_[index]=tmp;
+  }
   
   map<int,double> fixed_values;
   for (unsigned int i=0;i<variables_.size();i++) {
@@ -116,7 +129,7 @@ bool ObjectLoader<T>::load_objects(TDirectory* d,const string& expression)
 	    indices.push_back(i);
 	    break;
 	  }
-
+	  
 	  ++i;++it;
 	}
       }
@@ -124,7 +137,7 @@ bool ObjectLoader<T>::load_objects(TDirectory* d,const string& expression)
     compute_offset();
     set_object(indices,(T*)key->ReadObj());
   }
-
+  
   
   // DEBUG
   /*
@@ -160,9 +173,9 @@ T* ObjectLoader<T>::object(unsigned int i) const
 template <class T>
 T* ObjectLoader<T>::object(unsigned int i,unsigned int j) const
 {
-  vector<unsigned int> indices;
-  indices.push_back(i);
-  indices.push_back(j);
+  vector<unsigned int> indices(2);
+  indices[variable_index_[0]]=i;
+  indices[variable_index_[1]]=j;
   return object(indices);
 }
 
@@ -171,10 +184,10 @@ T* ObjectLoader<T>::object(unsigned int i,unsigned int j) const
 template <class T>
 T* ObjectLoader<T>::object(unsigned int i,unsigned int j,unsigned int k) const
 {
-  vector<unsigned int> indices;
-  indices.push_back(i);
-  indices.push_back(j);
-  indices.push_back(k);
+  vector<unsigned int> indices(3);
+  indices[variable_index_[0]]=i;
+  indices[variable_index_[1]]=j;
+  indices[variable_index_[2]]=k;
   return object(indices);
 }
 
@@ -186,10 +199,13 @@ T* ObjectLoader<T>::object(const std::vector<unsigned int>& indices) const
   if (indices.size()!=nobjects_.size())
     throw std::runtime_error("ObjectLoader<T>::object: indices.size()");
   for (unsigned int i=0;i<nobjects_.size();i++)
-    if (indices[i]>=nobjects_[i])
+    if (indices[variable_index_[i]]>=nobjects_[i])
       throw std::runtime_error("ObjectLoader<T>::object: index out of range");
   unsigned int index(0);
-  for (unsigned int i=0;i<indices.size();i++) index+=indices[i]*offset_[i];
+  for (unsigned int i=0;i<indices.size();i++) {
+    unsigned int ii=variable_index_[i];
+    index+=indices[ii]*offset_[ii];
+  }
   return objects_[index];
 }
 
@@ -212,7 +228,7 @@ T* ObjectLoader<T>::next_object(unsigned int& i,unsigned int& j) const
   vector<unsigned int> indices;
   T* result=next_object(indices);
   i=indices.front();
-  j=indices.front();
+  j=indices.back();
   return result;
 }
 
@@ -220,7 +236,7 @@ T* ObjectLoader<T>::next_object(unsigned int& i,unsigned int& j) const
 //______________________________________________________________________________
 template <class T>
 T* ObjectLoader<T>::next_object(unsigned int& i,unsigned int& j,
-				      unsigned int& k) const
+				unsigned int& k) const
 {
   vector<unsigned int> indices;
   T* result=next_object(indices);
@@ -235,12 +251,16 @@ T* ObjectLoader<T>::next_object(unsigned int& i,unsigned int& j,
 template <class T>
 T* ObjectLoader<T>::next_object(vector<unsigned int>& indices) const
 {
-  indices.clear();
+  indices.resize(nobjects_.size());
   if (iloop_==objects_.size()) return 0;
   for (unsigned int i=0;i<nobjects_.size();i++) {
-    indices.push_back(iloop_);
-    for (unsigned int j=0;j<i;j++) indices[i]-=indices[j]*offset_[j];
-    indices[i]/=offset_[i];
+    int ii=variable_index_[i];
+    indices[ii]=iloop_;
+    for (unsigned int j=0;j<i;j++) {
+      unsigned int jj=variable_index_[j];
+      indices[ii]-=indices[jj]*offset_[jj];
+    }
+    indices[ii]/=offset_[ii];
   }
   T* result=objects_[iloop_];
   iloop_++;
@@ -254,8 +274,9 @@ void ObjectLoader<T>::set_object(const vector<unsigned int>& indices,T* obj)
 {
   unsigned int index(0);
   for (unsigned int i=0;i<nobjects_.size();i++) {
-    if (indices[i]>=nobjects_[i]) throw std::runtime_error("index out of range");
-    index+=indices[i]*offset_[i];
+    unsigned int ii=variable_index_[i];
+    if (indices[ii]>=nobjects_[i]) throw std::runtime_error("index out of range");
+    index+=indices[ii]*offset_[ii];
   }
   typename std::vector<T*>::iterator it=objects_.begin();
   for (unsigned int i=0;i<index;i++) ++it;
@@ -288,7 +309,7 @@ vector<string> ObjectLoader<T>::split(const string& str,const string& delim)
 template <class T>
 double ObjectLoader<T>::minimum(unsigned int ivar,unsigned int iobject) const
 {
-  return bounds_[ivar][iobject].first;
+  return bounds_[variable_index_[ivar]][iobject].first;
 }
 
 
@@ -296,7 +317,7 @@ double ObjectLoader<T>::minimum(unsigned int ivar,unsigned int iobject) const
 template <class T>
 double ObjectLoader<T>::maximum(unsigned int ivar,unsigned int iobject) const
 {
-  return bounds_[ivar][iobject].second;
+  return bounds_[variable_index_[ivar]][iobject].second;
 }
 
 
