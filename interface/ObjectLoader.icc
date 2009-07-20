@@ -253,15 +253,14 @@ T* ObjectLoader<T>::next_object(vector<unsigned int>& indices) const
 {
   indices.resize(nobjects_.size());
   if (iloop_==objects_.size()) return 0;
+  vector<unsigned int> tmp(indices.size());
   for (unsigned int i=0;i<nobjects_.size();i++) {
-    int ii=variable_index_[i];
-    indices[ii]=iloop_;
-    for (unsigned int j=0;j<i;j++) {
-      unsigned int jj=variable_index_[j];
-      indices[ii]-=indices[jj]*offset_[jj];
-    }
-    indices[ii]/=offset_[ii];
+    tmp[i]=iloop_;
+    for (unsigned int j=0;j<i;j++) tmp[i]-=tmp[j]*offset_[j];
+    tmp[i]/=offset_[i];
   }
+  for (unsigned int i=0;i<indices.size();i++) indices[i]=tmp[variable_index_[i]];
+  
   T* result=objects_[iloop_];
   iloop_++;
   return result;

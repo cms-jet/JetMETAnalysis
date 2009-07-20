@@ -34,7 +34,7 @@ LIB          = libJetUtilities.$(LIB_SUFX)
 LIBS         = -L$(LIBDIR) -lJetUtilities
 
 
-all: setup lib
+all: setup lib bin
 
 setup:
 	rm -f JetMETAnalysis; ln -sf ../ JetMETAnalysis
@@ -45,8 +45,20 @@ setup:
 lib: $(OBJS)
 	$(CXX) $(CXXFLAGS) $(CXX_SHRD) $(OBJS) $(ROOTLIBS) -o $(LIBDIR)/$(LIB) 
 
+bin: jet_inspect_histos jet_inspect_graphs
+
+jet_inspect_histos:
+	$(CXX) $(CXXFLAGS) bin/jet_inspect_histos_x.cc $(LIBS) $(ROOTLIBS) \
+        -o $(BINDIR)/jet_inspect_histos_x
+
+jet_inspect_graphs:
+	$(CXX) $(CXXFLAGS) bin/jet_inspect_graphs_x.cc $(LIBS) $(ROOTLIBS) \
+        -o $(BINDIR)/jet_inspect_graphs_x
+
 clean:
-	rm -rf $(OBJS) $(LIBDIR)/$(LIB) JetMETAnalysis
+	rm -rf $(OBJS) $(LIBDIR)/$(LIB) JetMETAnalysis \
+               $(BINDIR)/jet_inspect_histos_x \
+               $(BINDIR)/jet_inspect_graphs_x
 
 
 ################################################################################

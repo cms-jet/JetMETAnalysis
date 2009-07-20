@@ -1,0 +1,7 @@
+<use name=JetMETAnalysis/JetUtilities>
+<use name=rootphysics>
+<use name=rootgraphics>
+<use name=root>
+
+<bin name=jet_inspect_histos_x file=jet_inspect_histos_x.cc>
+</bin>
