@@ -1,3 +1,12 @@
+2009-07-21  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-03-00:
+	* add bin/jet_inspect_histos_x.cc
+	* add bin/jet_inspect_graphs_x.cc
+	* add bin/BuildFile
+	* updated / fixed RootStyle
+	* enable ObjectLoader to switch the order of variables
+	
 2009-07-01  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-02-00
