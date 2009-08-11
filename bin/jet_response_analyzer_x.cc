@@ -133,7 +133,7 @@ int main(int argc,char**argv)
       alg=alg.substr(0,pos);
       alg2drmax[alg]=drmax_alg;
       algs[ialg]=alg;
-      cout<<"drmax("<<alg<<") = "<<alg2drmax[alg]<<endl;
+      //cout<<"drmax("<<alg<<") = "<<alg2drmax[alg]<<endl;
     }
   }
   
@@ -731,7 +731,7 @@ int main(int argc,char**argv)
       if (nrefmax>0) nref = std::min((int)nref,nrefmax);
       for (unsigned char iref=0;iref<nref;iref++) {
 	if (( dobalance&&refdphijt[iref]<dphimin)||
-	    (!dobalance&&refdrjt[iref]>drmax)) continue;
+	    (!dobalance&&refdrjt[iref]>drmax_alg)) continue;
 	
 	float eta    =
 	  (binseta.size()&&binseta.front()>=0.)?std::abs(jteta[iref]):jteta[iref];

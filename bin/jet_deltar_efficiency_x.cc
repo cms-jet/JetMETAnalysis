@@ -113,7 +113,7 @@ int main(int argc,char**argv)
 	continue;
       }
       
-      if (ialg==0) weight /= tree->GetEntries();
+      if (ialg==0&&weight!=1.0) weight /= tree->GetEntries();
 
       cout<<alg<<" ... "<<flush;      
 
@@ -205,8 +205,9 @@ int main(int argc,char**argv)
     
     legEffVsDeltaR->AddEntry(hEffVsDeltaR,get_legend_title(algs[i]).c_str(),"l");
 
-    //TF1* fEffVsDeltaR = new TF1(("fitEffVsDeltaR_"+algs[i]).c_str(),"pol3",0.05,.2);
-    TF1* fEffVsDeltaR = new TF1(("fitEffVsDeltaR_"+algs[i]).c_str(),"pol3",0.15,.3);
+    // TODO: AUTOMIZE!!!
+    TF1* fEffVsDeltaR = new TF1(("fitEffVsDeltaR_"+algs[i]).c_str(),"pol3",0.05,.2);
+    //TF1* fEffVsDeltaR = new TF1(("fitEffVsDeltaR_"+algs[i]).c_str(),"pol3",0.15,.3);
     
     fEffVsDeltaR->SetLineColor(colors[i]);
     fEffVsDeltaR->SetNpx(200);
