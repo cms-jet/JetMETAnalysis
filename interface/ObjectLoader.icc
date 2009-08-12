@@ -103,14 +103,15 @@ bool ObjectLoader<T>::load_objects(TDirectory* d,const string& expression)
       bounds.push_back(std::make_pair(min,max));
     }
     if (bounds.size()!=variables_.size()) continue;
-    
-    vector<unsigned int> indices;
+
+    vector<unsigned int> indices(variables_.size());
     for (unsigned int ivar=0;ivar<variables_.size();ivar++) {
-      vector< std::pair<double,double> > varbounds=bounds_[ivar];
+      unsigned int iivar=variable_index_[ivar];
+      vector<std::pair<double,double> >varbounds=bounds_[ivar];
       if (varbounds.size()==0||bounds[ivar].first>=varbounds.back().second) {
 	varbounds.push_back(bounds[ivar]);
 	bounds_[ivar]=varbounds;
-	indices.push_back(nobjects_[ivar]);
+	indices[iivar]=nobjects_[ivar];
 	nobjects_[ivar]++;
       }
       else {
@@ -118,15 +119,15 @@ bool ObjectLoader<T>::load_objects(TDirectory* d,const string& expression)
 	vector< std::pair<double,double> >::iterator it=varbounds.begin();
 	while (it!=varbounds.end()) {
 	  if (*it==bounds[ivar]) {
-	    indices.push_back(i);
+	    indices[iivar]=i;
 	    break;
 	  }
-	  else if (it->first>bounds[ivar].second) {
+	  else if (it->first > bounds[ivar].second) {
 	    vector< std::pair<double,double> >::iterator last=it;last--;
 	    varbounds.insert(last,bounds[ivar]);
 	    bounds_[ivar]=varbounds;
 	    nobjects_[ivar]++;
-	    indices.push_back(i);
+	    indices[iivar]=i;
 	    break;
 	  }
 	  
@@ -134,26 +135,10 @@ bool ObjectLoader<T>::load_objects(TDirectory* d,const string& expression)
 	}
       }
     }
+
     compute_offset();
     set_object(indices,(T*)key->ReadObj());
   }
-  
-  
-  // DEBUG
-  /*
-    for (unsigned int ivar=0;ivar<variables_.size();ivar++) {
-    for (unsigned int ih=0;ih<nobjects_[ivar];ih++) {
-    cout<<ivar<<" "<<ih
-    <<" minimum="<<minimum(ivar,ih)
-    <<" maximum="<<maximum(ivar,ih)<<endl;
-    }
-    }
-    vector<unsigned int> indices; T* h;
-    begin_loop();
-    while ((h=next_object(indices))) {
-    for (unsigned int i=0;i<indices.size();i++) cout<<indices[i]<<" ";
-    cout<<h->GetName()<<endl;  }
-  */
   
   return true;
 }
@@ -174,8 +159,8 @@ template <class T>
 T* ObjectLoader<T>::object(unsigned int i,unsigned int j) const
 {
   vector<unsigned int> indices(2);
-  indices[variable_index_[0]]=i;
-  indices[variable_index_[1]]=j;
+  indices[0]=i;
+  indices[1]=j;
   return object(indices);
 }
 
@@ -185,9 +170,9 @@ template <class T>
 T* ObjectLoader<T>::object(unsigned int i,unsigned int j,unsigned int k) const
 {
   vector<unsigned int> indices(3);
-  indices[variable_index_[0]]=i;
-  indices[variable_index_[1]]=j;
-  indices[variable_index_[2]]=k;
+  indices[0]=i;
+  indices[1]=j;
+  indices[2]=k;
   return object(indices);
 }
 
@@ -199,13 +184,12 @@ T* ObjectLoader<T>::object(const std::vector<unsigned int>& indices) const
   if (indices.size()!=nobjects_.size())
     throw std::runtime_error("ObjectLoader<T>::object: indices.size()");
   for (unsigned int i=0;i<nobjects_.size();i++)
-    if (indices[variable_index_[i]]>=nobjects_[i])
+    if (indices[i]>=nobjects(i))
       throw std::runtime_error("ObjectLoader<T>::object: index out of range");
+
   unsigned int index(0);
-  for (unsigned int i=0;i<indices.size();i++) {
-    unsigned int ii=variable_index_[i];
-    index+=indices[ii]*offset_[ii];
-  }
+  for (unsigned i=0;i<indices.size();i++) index += indices[i]*offset_[i];
+  
   return objects_[index];
 }
 
@@ -253,14 +237,11 @@ T* ObjectLoader<T>::next_object(vector<unsigned int>& indices) const
 {
   indices.resize(nobjects_.size());
   if (iloop_==objects_.size()) return 0;
-  vector<unsigned int> tmp(indices.size());
   for (unsigned int i=0;i<nobjects_.size();i++) {
-    tmp[i]=iloop_;
-    for (unsigned int j=0;j<i;j++) tmp[i]-=tmp[j]*offset_[j];
-    tmp[i]/=offset_[i];
+    indices[i]=iloop_;
+    for (unsigned int j=0;j<i;j++) indices[i]-=indices[j]*offset_[j];
+    indices[i]/=offset_[i];
   }
-  for (unsigned int i=0;i<indices.size();i++) indices[i]=tmp[variable_index_[i]];
-  
   T* result=objects_[iloop_];
   iloop_++;
   return result;
@@ -273,10 +254,8 @@ void ObjectLoader<T>::set_object(const vector<unsigned int>& indices,T* obj)
 {
   unsigned int index(0);
   for (unsigned int i=0;i<nobjects_.size();i++) {
-    unsigned int ii=variable_index_[i];
-    if (indices[ii]>=nobjects_[ii])
-      throw std::runtime_error("index out of range");
-    index+=indices[ii]*offset_[ii];
+    if (indices[i]>=nobjects(i))throw std::runtime_error("index out of range");
+    index+=indices[i]*offset_[i];
   }
   typename std::vector<T*>::iterator it=objects_.begin();
   for (unsigned int i=0;i<index;i++) ++it;
@@ -327,8 +306,8 @@ void ObjectLoader<T>::compute_offset()
 {
   offset_.clear();
   for (unsigned int i=1;i<nobjects_.size();i++) {
-    unsigned int tmp=nobjects_[i];
-    for (unsigned int j=i+1;j<nobjects_.size();j++) tmp*=nobjects_[j];
+    unsigned int tmp=nobjects(i);
+    for (unsigned int j=i+1;j<nobjects_.size();j++) tmp*=nobjects(j);
     offset_.push_back(tmp);
   }
   offset_.push_back(1);
