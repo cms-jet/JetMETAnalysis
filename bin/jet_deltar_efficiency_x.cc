@@ -165,13 +165,16 @@ int main(int argc,char**argv)
 
   gStyle->SetOptStat(0);
   TColor::SetPalette(1,0);
-  Color_t colors[7] = {kRed,kBlue,kMagenta,kCyan,kGreen+1,kBlue+4,kRed+4};
+  Color_t colors[14] = {
+    kRed,kBlue,kMagenta,kCyan,kGreen+1,kBlue+4,kRed+4,
+    kRed,kBlue,kMagenta,kCyan,kGreen+1,kBlue+4,kRed+4
+  };
   
   // draw results
   TCanvas* cDeltaR = new TCanvas("DeltaR","DeltaR",0,0,700,700);
   cDeltaR->cd();
   if (logy) gPad->SetLogy();
-  TLegend* legDeltaR = new TLegend(0.5,0.92,0.9,0.92-algs.size()*0.065);
+  TLegend* legDeltaR = new TLegend(0.5,0.92,0.9,0.92-algs.size()*0.055);
   legDeltaR->SetLineColor(10);
   legDeltaR->SetFillColor(10);
   legDeltaR->SetShadowColor(10);
@@ -190,7 +193,7 @@ int main(int argc,char**argv)
   cEffVsDeltaR->cd();
   //if (logy) gPad->SetLogy();
   gPad->SetLeftMargin(0.2);
-  TLegend* legEffVsDeltaR = new TLegend(0.5,0.2,0.9,0.2+algs.size()*0.065);
+  TLegend* legEffVsDeltaR = new TLegend(0.5,0.2,0.9,0.2+algs.size()*0.055);
   legEffVsDeltaR->SetLineColor(10);
   legEffVsDeltaR->SetFillColor(10);
   legEffVsDeltaR->SetShadowColor(10);
@@ -207,8 +210,8 @@ int main(int argc,char**argv)
 
     string alg=algs[i];
     double min(0.0),max(1.0);
-    if      (alg.find("pf")  !=string::npos) { min=0.05; max=0.2; }
-    else if (alg.find("calo")!=string::npos) { min=0.15; max=0.3; }
+    if      (alg.find("pf")  !=string::npos) { min=0.05; max=0.22; }
+    else if (alg.find("calo")!=string::npos) { min=0.17; max=0.35; }
     
     TF1* fEffVsDeltaR = new TF1(("fitEffVsDeltaR_"+algs[i]).c_str(),"pol3",min,max);
     
@@ -216,7 +219,7 @@ int main(int argc,char**argv)
     fEffVsDeltaR->SetNpx(200);
     hEffVsDeltaR->Fit(fEffVsDeltaR,"QR0");
     
-    cout<<algs[i]<<": dR(85%) = "<<fEffVsDeltaR->GetX(0.85)<<endl;
+    cout<<algs[i]<<": dR(95%) = "<<fEffVsDeltaR->GetX(0.95)<<endl;
     
     string drawopt = (i==0) ? "E" : "ESAME";
     hEffVsDeltaR->SetLineColor(colors[i]);
@@ -224,7 +227,7 @@ int main(int argc,char**argv)
     fEffVsDeltaR->Draw("SAME");
   }
   legEffVsDeltaR->Draw();
-  tex.DrawLatex(0.25,0.875,ssptmin.str().c_str());
+  tex.DrawLatex(0.25,0.2,ssptmin.str().c_str());
 
   for (unsigned int i=0;i<formats.size();i++) {
     cDeltaR->Print((string(cDeltaR->GetName())+"."+formats[i]).c_str());
