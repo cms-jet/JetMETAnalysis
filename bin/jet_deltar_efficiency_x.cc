@@ -205,9 +205,12 @@ int main(int argc,char**argv)
     
     legEffVsDeltaR->AddEntry(hEffVsDeltaR,get_legend_title(algs[i]).c_str(),"l");
 
-    // TODO: AUTOMIZE!!!
-    TF1* fEffVsDeltaR = new TF1(("fitEffVsDeltaR_"+algs[i]).c_str(),"pol3",0.05,.2);
-    //TF1* fEffVsDeltaR = new TF1(("fitEffVsDeltaR_"+algs[i]).c_str(),"pol3",0.15,.3);
+    string alg=algs[i];
+    double min(0.0),max(1.0);
+    if      (alg.find("pf")  !=string::npos) { min=0.05; max=0.2; }
+    else if (alg.find("calo")!=string::npos) { min=0.15; max=0.3; }
+    
+    TF1* fEffVsDeltaR = new TF1(("fitEffVsDeltaR_"+algs[i]).c_str(),"pol3",min,max);
     
     fEffVsDeltaR->SetLineColor(colors[i]);
     fEffVsDeltaR->SetNpx(200);
@@ -258,12 +261,13 @@ string get_legend_title(const string& alg)
 {
   string title;
   string tmp(alg);
-  if      (alg.find("kt")==0) { title = "k_{T}, D=";      tmp = tmp.substr(2); }
+  if      (alg.find("kt")==0) { title = "k_{T}, R=";      tmp = tmp.substr(2); }
   else if (alg.find("sc")==0) { title = "SISCone, R=";    tmp = tmp.substr(2); }
   else if (alg.find("ic")==0) { title = "ItCone, R=";     tmp = tmp.substr(2); }
-  else if (alg.find("mc")==0) { title = "MidCone. R=";    tmp = tmp.substr(2); }
-  else if (alg.find("ca")==0) { title = "Cam/Aachen, D="; tmp = tmp.substr(2); }
-  else if (alg.find("ak")==0) { title = "Anti k_{T}, D="; tmp = tmp.substr(2); }
+  else if (alg.find("mc")==0) { title = "MidCone, R=";    tmp = tmp.substr(2); }
+  else if (alg.find("ca")==0) { title = "Cam/Aachen, R="; tmp = tmp.substr(2); }
+  else if (alg.find("ak")==0) { title = "Anti k_{T}, R="; tmp = tmp.substr(2); }
+  else if (alg.find("gk")==0) { title = "Gen k_{T},  R="; tmp = tmp.substr(2); }
   
   assert(!title.empty());
   

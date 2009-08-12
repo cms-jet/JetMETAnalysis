@@ -76,43 +76,9 @@ name, which must either begin with 'RelRsp' or 'AbsRsp'
 * save output, close input & output files
 
 
-
---------------------------
- jet_inspect_jra_histos_x
---------------------------
-
-PURPOSE: the purpose of this application is twofold: on the one hand,
-it provides a straightforward way to display the histograms created
-with JetResponseAnalyzer or jet_response_analyzer_x, before or after
-the application of jet_response_fitter_x. On the other hand, the code
-should be instructive to those who would like to write their own code
-to evaluate these response histograms.
-
-EXAMPLE:
-jet_inspect_jra_histos_x -algorithm kt4calo -input jra.root -variable RelRsp:RefPt
-
-STEP-BY-STEP:
-
-* open the input file in read mode and access the direcotry
-  corresponding to the chosen algorithm
-
-* calculate the number of pads per canvas and how to distribute them
-  horizontally / vertically
-
-* loop over all relevant histograms; passing 'variable' to the
-  HistogramLoader constructor makes sure that only the relevant ones
-  are included in the loop.
-
-* create a TPad for each histogram and draw it in the current canvas
-
-* loop over all canvases and all specified 'formats' (e.g. pdf, ps,
-  jpg, etc) and create one file per canvas and format
-
-
-
-------------------------
- jet_response_plotter_x
-------------------------
+------------------------------
+ jet_response_and_resolution_x
+------------------------------
 
 PURPOSE: this application evaluates the response histograms for each
 algorithms over several bins of a specified variable and produces a
@@ -122,7 +88,7 @@ graph with a fit. Both response and resolution are drawn. The
 graphs are saved to an output file, including the fits.
 
 EXAMPLE:
-jet_response_plotter_x -input jra.root -variable RelRsp:RefPt -algs sc5calo,sc7calo
+jet_response_and_resolution_x -input jra.root -variable RelRsp:RefPt -algs sc5calo,sc7calo
 
 STEP-BY-STEP:
 

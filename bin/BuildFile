@@ -9,16 +9,13 @@
 <bin name=jet_response_fitter_x file=jet_response_fitter_x.cc>
 </bin>
 
-<bin name=jet_response_plotter_x file=jet_response_plotter_x.cc>
+<bin name=jet_response_and_resolution_x file=jet_response_and_resolution_x.cc>
 </bin>
 
 <bin name=jet_l2_correction_x file=jet_l2_correction_x.cc>
 </bin>
 
 <bin name=jet_l3_correction_x file=jet_l3_correction_x.cc>
-</bin>
-
-<bin name=jet_inspect_jra_histos_x file=jet_inspect_jra_histos_x.cc>
 </bin>
 
 <bin name=jet_weighted_spectrum_x file=jet_weighted_spectrum_x.cc>

@@ -50,7 +50,7 @@ int main(int argc,char**argv)
   if (!cl.parse(argc,argv)) return 0;
   
   string         input   = cl.getValue<string> ("input");
-  string         output  = cl.getValue<string> ("output","jrf.root");
+  string         output  = cl.getValue<string> ("output",        "");
   double         nsigma  = cl.getValue<double> ("nsigma",       1.5);
   int            niter   = cl.getValue<int>    ("niter",          3);
   int            ndfmin  = cl.getValue<int>    ("ndfmin",         5);
@@ -60,7 +60,16 @@ int main(int argc,char**argv)
   if (!cl.check()) return 0;
   cl.print();
   
+  //
+  // construct output file name from input file name if none given
+  //
+  if (output.empty()) {
+    unsigned int pos=input.find(".root");
+    output=input.substr(0,pos)+"_f.root";
+    cout<<"*** write output to "<<output<<endl;
+  }
   
+
   //
   // open input file and loop over input directories (=algorithms)
   //
