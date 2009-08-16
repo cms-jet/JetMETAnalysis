@@ -59,12 +59,13 @@ int main(int argc,char** argv)
   if (!cl.parse(argc,argv)) return 0;
 
   vector<string> inputs     = cl.getVector<string>("inputs");
-  vector<string> algs       = cl.getVector<string>("algs",          "kt4calo");
-  vector<string> variables  = cl.getVector<string>("variables","RelRsp:RefPt");
-  bool           logx       = cl.getValue<bool>   ("logx",              false);
-  bool           logy       = cl.getValue<bool>   ("logy",              false);
-  vector<string> formats    = cl.getVector<string>("formats",              "");
-  bool           batch      = cl.getValue<bool>   ("batch",             false);
+  vector<string> algs       = cl.getVector<string>("algs",           "ak5calo");
+  vector<string> variables  = cl.getVector<string>("variables","RelRspVsRefPt");
+  bool           logx       = cl.getValue<bool>   ("logx",               false);
+  bool           logy       = cl.getValue<bool>   ("logy",               false);
+  string         prefix     = cl.getValue<string> ("prefix",                "");
+  vector<string> formats    = cl.getVector<string>("formats",               "");
+  bool           batch      = cl.getValue<bool>   ("batch",              false);
 
   if (!cl.check()) return 0;
   cl.print();
@@ -123,7 +124,9 @@ int main(int argc,char** argv)
 	  TLegend*     leg(0);
 	  map<string,TMultiGraph*>::iterator it = mgmap.find(quantity);
 	  if (it==mgmap.end()) {
-	    stringstream sscname;sscname<<quantity;
+	    stringstream sscname;
+	    if (!prefix.empty()) sscname<<prefix<<"_";
+	    sscname<<quantity;
 	    for (unsigned int i=0;i<gl.nvariables();i++) {
 	      if (variables.size()>1&&gl.nobjects(i)==1) continue;
 	      sscname<<"_"<<gl.variable(i)
@@ -137,7 +140,7 @@ int main(int argc,char** argv)
 	      (algs.size()>1) ? algs.size() :
 	      variables.size();
 	    double ymax=(quantity.find("Rsp")==string::npos)?0.85:0.5;
-	    leg=new TLegend(0.55,ymax,0.9,ymax-nleg*0.08);
+	    leg=new TLegend(0.55,ymax,0.9,ymax-nleg*0.055);
 	    mgmap [quantity]=mg;
 	    legmap[quantity]=leg;
 	    rngmap[quantity]=get_range(gl,indices,!isRangeComparison);
@@ -343,7 +346,7 @@ void set_mg_histogram(TMultiGraph* mg,const string& quantity,bool logy)
     if (ystr=="Res"||ystr=="RelRes"||ystr=="AbsRes") {
       ytitle="#sigma(p_{T}/p_{T}^{REF})/<p_{T}/p_{T}^{REF}>";
       if (logy) h->SetMinimum(0.01); else h->SetMinimum(0.0);
-      h->SetMaximum(0.5);
+      //h->SetMaximum(0.5);
     }
     
     if (xstr=="RefPt")  xtitle="p_{T}^{REF} [GeV]";

@@ -1,6 +1,6 @@
 2009-08-16  Philipp Schieferdecker <philipp.schieferdecker@cern.ch>
 
-	* tag V00-03-01
+	* tag V00-03-02
 	* add 'prefix' parameter to jet_inspect_histos_x and
 	jet_inspect_graphs_x 
 	* various little fixes

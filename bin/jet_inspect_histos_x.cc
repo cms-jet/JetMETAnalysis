@@ -64,8 +64,6 @@ int main(int argc,char** argv)
 
   if (!cl.check()) return 0;
   cl.print();
-
-  bool put_range = (npercanvas!=0);
   
   argc = (batch) ? 2 : 1; if (batch) argv[1] = "-b";
   TApplication* app=new TApplication("jet_inspect_histos",&argc,argv);
@@ -98,6 +96,8 @@ int main(int argc,char** argv)
 	
 	ObjectLoader<TH1F> hl;
 	hl.load_objects(dir,variable);
+
+	bool put_range = (npercanvas!=0||hl.nobjects(hl.nvariables()-1)==1);
 	
 	if (ifile==0&&ialg==0&&ivar==0) {
 	  if (npercanvas==0) npercanvas=hl.nobjects(hl.nvariables()-1);
