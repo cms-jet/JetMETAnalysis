@@ -49,7 +49,8 @@ int main(int argc,char**argv)
     string("AbsRsp:RefPt,AbsRsp:JetEta,AbsRsp:JetPhi,") +
     string("RelRsp:JetEta:RefPt,RelRsp:JetEta#1:RefPt,") +
     string("AbsRsp:JetEta:RefPt,AbsRsp:JetEta#1:RefPt,") +
-    string("EtaRsp:RefPt,EtaRsp:JetEta,PhiRsp:RefPt,PhiRsp:JetEta");
+    string("EtaRsp:RefPt,EtaRsp:JetEta:RefPt,EtaRsp:JetEta#1:RefPt,EtaRsp:JetEta,")+
+    string("PhiRsp:RefPt,PhiRsp:JetEta:RefPt,PhiRsp:JetEta#1:RefPt,PhiRsp:JetEta");
   
   string         input     = cl.getValue<string> ("input");
   string         output    = cl.getValue<string> ("output",               "");
