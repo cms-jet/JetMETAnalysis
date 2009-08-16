@@ -59,11 +59,14 @@ int main(int argc,char** argv)
   bool           norm       = cl.getValue<bool>   ("norm",              false);
   bool           logx       = cl.getValue<bool>   ("logx",              false);
   bool           logy       = cl.getValue<bool>   ("logy",              false);
+  string         prefix     = cl.getValue<string> ("prefix",               "");
   vector<string> formats    = cl.getVector<string>("formats",              "");
   bool           batch      = cl.getValue<bool>   ("batch",             false);
 
   if (!cl.check()) return 0;
   cl.print();
+
+  if (prefix.empty()) prefix=algs[0];
   
   argc = (batch) ? 2 : 1; if (batch) argv[1] = "-b";
   TApplication* app=new TApplication("jet_inspect_histos",&argc,argv);
@@ -120,7 +123,7 @@ int main(int argc,char** argv)
 	  
 	  if (ifile==0&&ialg==0&&ivar==0&&
 	      (c.size()==0||ihisto%npercanvas==0)) {
-	    stringstream sscname;sscname<<alg<<"_"<<hl.quantity();
+	    stringstream sscname;sscname<<prefix<<"_"<<hl.quantity();
 	    for (unsigned int i=0;i<hl.nvariables();i++) {
 	      if (variables.size()>1&&hl.nobjects(i)==1) continue;
 	      sscname<<"_"<<hl.variable(i);
