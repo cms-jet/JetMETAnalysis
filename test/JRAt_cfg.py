@@ -62,7 +62,8 @@ process.TFileService = cms.Service("TFileService",
 
 # jet reconstruction
 #process.load("SchieferD.Configuration.JetReconstruction_cff")
-# process.load("SchieferD.Configuration.FastjetReconstruction_cff")
+#process.load("SchieferD.Configuration.FastjetReconstruction_cff")
+#process.load("SchieferD.Configuration.JPTReconstruction_cff")
 
 # jet correction
 process.load("SchieferD.Configuration.JetCorrection_cff")
@@ -76,7 +77,8 @@ process.schedule = cms.Schedule(
     # pflow reco
     #process.recoPF,
     # jet reco
-    process.recoJets,
+    #process.recoJets,
+    #process.recoJPT,
     # uncorrected jets
     process.kt4caloJRA,
     #process.kt5caloJRA,
@@ -123,7 +125,7 @@ process.schedule = cms.Schedule(
     #process.ca7trkJRA,
     #process.gk5trkJRA,
     #process.gk7trkJRA,
-    process.ic5jptJRA,
+    #process.ic5jptJRA,
     # correct jets
     process.correctJets,
     # corrected jets
