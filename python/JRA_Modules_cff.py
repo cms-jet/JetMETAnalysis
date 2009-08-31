@@ -26,8 +26,8 @@ kt7genPtEta = kt4genPtEta.clone( src = cms.InputTag("kt7GenJets") )
 sc5genPtEta = kt4genPtEta.clone( src = cms.InputTag("sisCone5GenJets") )
 sc7genPtEta = kt4genPtEta.clone( src = cms.InputTag("sisCone7GenJets") )
 ic5genPtEta = kt4genPtEta.clone( src = cms.InputTag("iterativeCone5GenJets") )
-ak5genPtEta = kt4genPtEta.clone( src = cms.InputTag("ak5GenJets") )
-ak7genPtEta = kt4genPtEta.clone( src = cms.InputTag("ak7GenJets") )
+ak5genPtEta = kt4genPtEta.clone( src = cms.InputTag("antikt5GenJets") )
+ak7genPtEta = kt4genPtEta.clone( src = cms.InputTag("antikt7GenJets") )
 ca4genPtEta = kt4genPtEta.clone( src = cms.InputTag("ca4GenJets") )
 ca5genPtEta = kt4genPtEta.clone( src = cms.InputTag("ca5GenJets") )
 ca6genPtEta = kt4genPtEta.clone( src = cms.InputTag("ca6GenJets") )
@@ -305,7 +305,7 @@ ic5calol2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 # ak5calo
 ak5caloPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
-    src = cms.InputTag("ak5CaloJets")
+    src = cms.InputTag("antikt5CaloJets")
 )
 
 ak5caloJetToRef = cms.EDFilter("MatchRecToGen",
@@ -339,7 +339,7 @@ ak5calol2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 # ak7calo
 ak7caloPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
-    src = cms.InputTag("ak7CaloJets")
+    src = cms.InputTag("antikt7CaloJets")
 )
 
 ak7caloJetToRef = cms.EDFilter("MatchRecToGen",
@@ -821,7 +821,7 @@ ic5pfl2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 # ak5pf
 ak5pfPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
-    src = cms.InputTag("ak5PFJets")
+    src = cms.InputTag("antikt5PFJets")
 )
 
 ak5pfJetToRef = cms.EDFilter("MatchRecToGen",
@@ -855,7 +855,7 @@ ak5pfl2l3 = cms.EDAnalyzer("JetResponseAnalyzer",
 # ak7pf
 ak7pfPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
-    src = cms.InputTag("ak7PFJets")
+    src = cms.InputTag("antikt7PFJets")
 )
 
 ak7pfJetToRef = cms.EDFilter("MatchRecToGen",

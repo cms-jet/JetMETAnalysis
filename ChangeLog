@@ -1,3 +1,10 @@
+2009-08-31  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-03-02
+	* fix inputtags, ak5->antikt5
+	* by default, (1) don't rerun any jet reconstruction and (2) only
+	analyze those jets found in the (31X) standard RECO files
+	
 2009-08-17 Philipp Schieferdecker <philipp.schieferdecker@cern.ch>
 
 	* tag V00-03-01
