@@ -45,7 +45,6 @@ Defaults.JetResponseParameters.absRspMax   = cms.double(100);
 process = cms.Process("JRA")
 
 process.load("JetMETAnalysis.JetAnalyzers.JRA_TreeDefaults_cff")
-process.load("JetMETAnalysis.JetAnalyzers.JRA_Paths_cff")
 
 
 #!
@@ -74,112 +73,18 @@ process.TFileService = cms.Service("TFileService",
 
 
 #!
-#! RECONSTRUCTION
-#!
-
-# particle flow reconstruction
-#process.load("SchieferD.Configuration.PFReconstruction_cff")
-
-# jet reconstruction
-#process.load("SchieferD.Configuration.JetReconstruction_cff")
-#process.load("SchieferD.Configuration.FastjetReconstruction_cff")
-#process.load("SchieferD.Configuration.JPTReconstruction_cff")
-
-
-# jet correction
-process.load("SchieferD.Configuration.JetCorrection_cff")
-process.prefer("L2L3JetCorrectorSC5Calo") 
-
-
-
-#!
 #! SCHEDULE
 #!
-process.schedule = cms.Schedule(
-    # pflow reco
-    #process.recoPF,
-    # jet reco
-    #process.recoJets,
-    #process.recoJPT,
-    # uncorrected jets
-    process.kt4caloJRA,
-    #process.kt5caloJRA,
-    process.kt6caloJRA,
-    #process.kt7caloJRA,
-    process.sc5caloJRA,
-    process.sc7caloJRA,
-    process.ic5caloJRA,
-    process.ak5caloJRA,
-    #process.ak7caloJRA,
-    #process.ca4caloJRA,
-    #process.ca5caloJRA,
-    #process.ca6caloJRA,
-    #process.ca7caloJRA,
-    #process.gk5caloJRA,
-    #process.gk7caloJRA,
-    process.kt4pfJRA,
-    #process.kt5pfJRA,
-    process.kt6pfJRA,
-    #process.kt7pfJRA,
-    process.sc5pfJRA,
-    process.sc7pfJRA,
-    process.ic5pfJRA,
-    process.ak5pfJRA,
-    #process.ak7pfJRA,
-    #process.ca4pfJRA,
-    #process.ca5pfJRA,
-    #process.ca6pfJRA,
-    #process.ca7pfJRA,
-    #process.gk5pfJRA,
-    #process.gk7pfJRA,
-    #process.kt4trkJRA,
-    #process.kt5trkJRA,
-    #process.kt6trkJRA,
-    #process.kt7trkJRA,
-    #process.sc5trkJRA,
-    #process.sc7trkJRA,
-    #process.ic5trkJRA,
-    #process.ak5trkJRA,
-    #process.ak7trkJRA,
-    #process.ca4trkJRA,
-    #process.ca5trkJRA,
-    #process.ca6trkJRA,
-    #process.ca7trkJRA,
-    #process.gk5trkJRA,
-    #process.gk7trkJRA,
-    process.ic5jptJRA,
-    # correct jets
-    process.correctJets,
-    # corrected jets
-    process.kt4calol2l3JRA,
-    #process.kt5calol2l3JRA,
-    process.kt6calol2l3JRA,
-    #process.kt7calol2l3JRA,
-    process.sc5calol2l3JRA,
-    process.sc7calol2l3JRA,
-    process.ic5calol2l3JRA,
-    process.ak5calol2l3JRA,
-    #process.ak7calol2l3JRA,
-    #process.ca4calol2l3JRA,
-    #process.ca5calol2l3JRA,
-    #process.ca6calol2l3JRA,
-    #process.ca7calol2l3JRA,
-    #process.gk5calol2l3JRA,
-    #process.gk7calol2l3JRA,
-    process.kt4pfl2l3JRA,
-    #process.kt5pfl2l3JRA,
-    process.kt6pfl2l3JRA,
-    #process.kt7pfl2l3JRA,
-    process.sc5pfl2l3JRA,
-    process.sc7pfl2l3JRA,
-    process.ic5pfl2l3JRA,
-    process.ak5pfl2l3JRA,
-    #process.ak7pfl2l3JRA,
-    #process.ca4pfl2l3JRA,
-    #process.ca5pfl2l3JRA,
-    #process.ca6pfl2l3JRA,
-    #process.ca7pfl2l3JRA,
-    #process.gk5pfl2l3JRA,
-    #process.gk7pfl2l3JRA,
-)
-
+process.load("JetMETAnalysis.JetAnalyzers.JRA_Schedules_cff")
+process.schedule = cms.Schedule()
+process.schedule.extend(process.JRAStandardCaloJetsSchedule)
+process.schedule.extend(process.JRAStandardCaloL2L3JetsSchedule)
+# process.schedule.extend(process.JRAExtraCaloJetsSchedule)
+# process.schedule.extend(process.JRAExtraCaloL2L3JetsSchedule)
+process.schedule.extend(process.JRAStandardPFJetsSchedule)
+process.schedule.extend(process.JRAStandardPFL2L3JetsSchedule)
+# process.schedule.extend(process.JRAExtraPFJetsSchedule)
+# process.schedule.extend(process.JRAExtraPFL2L3JetsSchedule)
+# process.schedule.extend(process.JRAStandardTrkJetsSchedule)
+# process.schedule.extend(process.JRAExtraTrkJetsSchedule)
+# process.schedule.extend(process.JRAStandardJPTJetsSchedule)
