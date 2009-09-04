@@ -108,8 +108,9 @@ int main(int argc,char**argv)
   int            nbinsphirsp  = cl.getValue<int>    ("nbinsphirsp",  100);
   float          phirspmin    = cl.getValue<float>  ("phirspmin",   -1.0);
   float          phirspmax    = cl.getValue<float>  ("phirspmax",    1.0);
+  float          jtptmin      = cl.getValue<float>  ("jtptmin",      1.0);
   vector<string> algs         = cl.getVector<string>("algs",          "");
-  
+
   if (!cl.check()) return 0;
   cl.print();
 
@@ -733,13 +734,15 @@ int main(int argc,char**argv)
 	if (( dobalance&&refdphijt[iref]<dphimin)||
 	    (!dobalance&&refdrjt[iref]>drmax_alg)) continue;
 	
+	if (jtpt[iref]<jtptmin) continue;
+	
 	float eta    =
 	  (binseta.size()&&binseta.front()>=0.)?std::abs(jteta[iref]):jteta[iref];
 	float absrsp = jtpt[iref]-refpt[iref];
 	float relrsp = jtpt[iref]/refpt[iref];
 	float etarsp = std::abs(jteta[iref])-std::abs(refeta[iref]);
 	float phirsp = jtphi[iref]-refphi[iref];
-	
+
 	if (eta>=etabarrelmin&&eta<=etabarrelmax) {
 	  if (dorefpt) {
 	    fill_histo(refpt[iref],weight,refpt[iref],binspt,refPtVsRefPtBarrel);

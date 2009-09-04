@@ -62,6 +62,7 @@ int main(int argc,char**argv)
   string         input   = cl.getValue<string> ("input");
   string         l3input = cl.getValue<string> ("l3input","l3.root");
   string         output  = cl.getValue<string> ("output", "l2.root");
+  string         tag     = cl.getValue<string> ("tag",          "");
   vector<string> formats = cl.getVector<string>("formats",       "");
   vector<string> algs    = cl.getVector<string>("algs",          "");
   bool           batch   = cl.getValue<bool>   ("batch",      false);
@@ -74,7 +75,7 @@ int main(int argc,char**argv)
   //
   argc = (batch) ? 2 : 1; if (batch) argv[1] = "-b";
   TApplication* app = new TApplication("jet_l2_correction_x",&argc,argv);
-  set_root_style();
+  //set_root_style();
   
   
   //
@@ -102,7 +103,6 @@ int main(int argc,char**argv)
     }
   }
   
-
   TIter nextDir(ifile->GetListOfKeys());
   TKey* dirKey(0);
   while ((dirKey=(TKey*)nextDir())) {
@@ -124,19 +124,19 @@ int main(int argc,char**argv)
       cout<<"Failed to retrieve L3 correction for "<<alg<<", skip"<<endl;
       continue;
     }
-
     TDirectoryFile* odir = (TDirectoryFile*)ofile->mkdir(alg.c_str());
     odir->cd();
     
     ObjectLoader<TH1F> hl_absrsp;
+    
     hl_absrsp.load_objects(idir,"AbsRsp:JetEta:RefPt");
-
+    
     ObjectLoader<TH1F> hl_refpt;
     hl_refpt.load_objects(idir,"RefPt:JetEta:RefPt");
-
+    
     ObjectLoader<TH1F> hl_jetpt;
     hl_jetpt.load_objects(idir,"JetPt:JetEta:RefPt");
-
+    
     
     //
     // absolute response/correction as a function of pT for each eta bin
@@ -146,6 +146,7 @@ int main(int argc,char**argv)
     
     vector<unsigned int> indices; TH1F* habsrsp(0);
     hl_absrsp.begin_loop();
+    
     while ((habsrsp=hl_absrsp.next_object(indices))) {
 
       unsigned int ieta=indices[0];
@@ -189,12 +190,13 @@ int main(int argc,char**argv)
 	double eabscor =
 	  std::abs(refpt*peak)/(refpt+peak)/(refpt+peak)*
 	  std::sqrt(epeaksq/peaksq+erefptsq/refptsq);
-	
-	int n = vabsrsp_eta.back()->GetN();
-	vabsrsp_eta.back()->SetPoint     (n,refpt, absrsp);
-	vabsrsp_eta.back()->SetPointError(n,erefpt,eabsrsp);
-	vabscor_eta.back()->SetPoint     (n,jetpt, abscor);
-	vabscor_eta.back()->SetPointError(n,ejetpt,eabscor);      
+	if ((abscor>0) && (absrsp>0) && (eabscor>1e-3) && (eabscor<0.5) && (eabsrsp>1e-3) && (eabsrsp<0.5)) { 
+	  int n = vabsrsp_eta.back()->GetN();
+	  vabsrsp_eta.back()->SetPoint     (n,refpt, absrsp);
+	  vabsrsp_eta.back()->SetPointError(n,erefpt,eabsrsp);
+	  vabscor_eta.back()->SetPoint     (n,jetpt, abscor);
+	  vabscor_eta.back()->SetPointError(n,ejetpt,eabscor);      
+        }
       }
 
       // fit graphs if last pt of the current eta bin comes around
@@ -203,7 +205,7 @@ int main(int argc,char**argv)
 	TGraphErrors* gabscor = vabscor_eta.back();
 	TF1*          fabscor(0);
 	
-	double xmin = 5.; //KK gabscor->GetX()[0];
+	double xmin = gabscor->GetX()[0];
 	double xmax = gabscor->GetX()[gabscor->GetN()-1];
       
 	if (gabscor->GetN()==0) {
@@ -220,16 +222,28 @@ int main(int argc,char**argv)
 	  fabscor->SetParameter(2,0.0);
 	}
 	else {
-	  fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),[2])+[3])",xmin,xmax);
-	  fabscor->SetParameter(0,1.0);
-	  fabscor->SetParameter(1,5.0);
-	  fabscor->SetParameter(2,3.0);
-	  fabscor->SetParameter(3,3.0);
+          if ((int)alg.find("pf")>0) {
+            fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",xmin,xmax);
+	    fabscor->SetParameter(0,0.5);
+	    fabscor->SetParameter(1,9.0);
+	    fabscor->SetParameter(2,8.0);
+	    fabscor->SetParameter(3,-0.3);
+            fabscor->SetParameter(4,0.6);
+	    fabscor->SetParameter(5,1.0);
+          }
+          else {
+            fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),[2])+[3])",xmin,xmax);
+	    fabscor->SetParameter(0,1.0);
+	    fabscor->SetParameter(1,5.0);
+	    fabscor->SetParameter(2,3.0);
+	    fabscor->SetParameter(3,3.0);
+          }
 	}
 	
 	gabscor->Fit(fabscor,"QR0");
 	gabscor->GetListOfFunctions()->First()->ResetBit(TF1::kNotDraw);
-
+        gabsrsp->SetMarkerStyle(20); 
+        gabscor->SetMarkerStyle(20); 
 	gabsrsp->Write();
 	gabscor->Write();
       }
@@ -263,8 +277,12 @@ int main(int argc,char**argv)
 	double refpt    =jetpt*fabscor->Eval(jetpt);
 	double controlpt=refpt*fl3rsp->Eval(refpt);
 	double relcor   =controlpt/jetpt;
-	int n=vrelcor_eta.back()->GetN();
-	vrelcor_eta.back()->SetPoint(n,jetpt,relcor);
+        if (relcor > 5)
+          cout<<"WARNING !!! suspicious point: "<<hjetpt->GetName()<<", jet pt = "<<jetpt<<", ref pt = "<<refpt<<" "<<endl;
+        else { 
+	  int n=vrelcor_eta.back()->GetN();
+	  vrelcor_eta.back()->SetPoint(n,jetpt,relcor);
+        }
       }
       
       // fit the graph if the last pt of the current eta bin comes around
@@ -284,7 +302,7 @@ int main(int argc,char**argv)
 	  frelcor=new TF1("fit","[0]+[1]*log10(x)",xmin,xmax);
 	}
 	else {
-	  frelcor=new TF1("fit","[0]+[1]*log10(x)+[2]*pow(log10(x),2)",xmin,xmax);
+	  frelcor=new TF1("fit","[0]+[1]*log10(x)+[2]*pow(log10(x),2)+[3]*pow(log10(x),3)+[4]*pow(log10(x),4)",xmin,xmax);
 	}
 	
 	frelcor->SetParameter(0,0.0);
@@ -296,7 +314,7 @@ int main(int argc,char**argv)
 	
 	grelcor->Fit(frelcor,"QR0");
 	grelcor->GetListOfFunctions()->First()->ResetBit(TF1::kNotDraw);
-
+        grelcor->SetMarkerStyle(20); 
 	grelcor->Write();
       }
     }
@@ -305,7 +323,11 @@ int main(int argc,char**argv)
     //
     // write the L2 correction text file for the current algorithm
     //
-    ofstream fout(("l2_"+alg+".jec").c_str());
+    string txtfilename = "l2_"+alg;
+    if (!tag.empty())
+      txtfilename+="_"+tag;
+    txtfilename+=".jec";
+    ofstream fout(txtfilename.c_str());
     fout.setf(ios::right);
     for (unsigned int ieta=0;ieta<vrelcor_eta.size();ieta++) {
       TGraph* grelcor = vrelcor_eta[ieta];

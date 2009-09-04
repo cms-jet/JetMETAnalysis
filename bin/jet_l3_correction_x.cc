@@ -61,12 +61,13 @@ int main(int argc,char**argv)
 
   string         input   = cl.getValue<string> ("input");
   string         output  = cl.getValue<string> ("output","l3.root");
+  string         tag     = cl.getValue<string> ("tag",          "");
   vector<string> formats = cl.getVector<string>("formats",      "");
   vector<string> algs    = cl.getVector<string>("algs",         "");
   bool           batch   = cl.getValue<bool>   ("batch",     false);
   bool           logx    = cl.getValue<bool>   ("logx",      false);
   bool           logy    = cl.getValue<bool>   ("logy",      false);
-  
+    
   if (!cl.check()) return 0;
   cl.print();
   
@@ -177,13 +178,26 @@ int main(int argc,char**argv)
     
 
     // response
-    TF1* fitrsp = new TF1("fitrsp","[0]-[1]/(pow(log10(x),[2])+[3])+[4]/x",
+    TF1* fitrsp;
+    if ((int)alg.find("pf")>0) {
+      fitrsp = new TF1("fitrsp","[0]-[1]/(pow(log10(x),2)+[2])-[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",
+			  1.0,grsp->GetX()[grsp->GetN()-1]);
+      fitrsp->SetParameter(0,1.0);
+      fitrsp->SetParameter(1,1.0);
+      fitrsp->SetParameter(2,1.0);
+      fitrsp->SetParameter(3,1.0);
+      fitrsp->SetParameter(4,1.0);
+      fitrsp->SetParameter(5,1.0);
+    }
+    else {
+    fitrsp = new TF1("fitrsp","[0]-[1]/(pow(log10(x),[2])+[3])+[4]/x",
 			  1.0,grsp->GetX()[grsp->GetN()-1]);
     fitrsp->SetParameter(0,1.0);
     fitrsp->SetParameter(1,1.0);
     fitrsp->SetParameter(2,1.0);
     fitrsp->SetParameter(3,1.0);
     fitrsp->SetParameter(4,1.0);
+    }
     fitrsp->SetLineWidth(2);
     grsp->Fit(fitrsp,"QR");
     
@@ -213,12 +227,25 @@ int main(int argc,char**argv)
     
     
     // correction
-    TF1* fitcor = new TF1("fitcor","[0]+[1]/(pow(log10(x),[2])+[3])",
-			  5.0/* KK */,gcor->GetX()[gcor->GetN()-1]);
-    fitcor->SetParameter(0,1.0);
-    fitcor->SetParameter(1,7.0);
-    fitcor->SetParameter(2,4.0);
-    fitcor->SetParameter(3,4.0);
+    TF1* fitcor;
+    if ((int)alg.find("pf")>0) {
+      fitcor = new TF1("fitcor","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",
+	  5.0/* KK */,gcor->GetX()[gcor->GetN()-1]);
+      fitcor->SetParameter(0,1.0);
+      fitcor->SetParameter(1,1.0);
+      fitcor->SetParameter(2,1.0);
+      fitcor->SetParameter(3,1.0); 
+      fitcor->SetParameter(4,1.0);
+      fitcor->SetParameter(5,1.0);
+    }
+    else {
+      fitcor = new TF1("fitcor","[0]+[1]/(pow(log10(x),[2])+[3])",
+			  2.0/* KK */,gcor->GetX()[gcor->GetN()-1]);
+      fitcor->SetParameter(0,1.0);
+      fitcor->SetParameter(1,7.0);
+      fitcor->SetParameter(2,4.0);
+      fitcor->SetParameter(3,4.0);       
+    }
     fitcor->SetLineWidth(2);
     gcor->Fit(fitcor,"QR");
     
@@ -242,10 +269,27 @@ int main(int argc,char**argv)
     tex.DrawLatex(0.6,0.8,get_legend_title(alg).c_str());
 
     gcor->Write();
-
-    ofstream fout(("l3_"+alg+".jec").c_str());
+    string txtfilename = "l3_"+alg;
+    if (!tag.empty())
+      txtfilename+="_"+tag;
+    txtfilename+=".jec";
+    ofstream fout(txtfilename.c_str());
     fout.setf(ios::left);
-    fout<<setw(12)<<-5.191                  // eta_min
+    if ((int)alg.find("pf")>0) {
+      fout<<setw(12)<<-5.191                  // eta_min
+	<<setw(12)<<+5.191                  // eta_max
+	<<setw(12)<<8                       // number of parameters + 2
+	<<setw(12)<<4.0                     // minimum pT
+	<<setw(12)<<5000.0                  // maximum pT
+	<<setw(12)<<fitcor->GetParameter(0) // p0
+	<<setw(12)<<fitcor->GetParameter(1) // p1
+	<<setw(12)<<fitcor->GetParameter(2) // p2
+	<<setw(12)<<fitcor->GetParameter(3) // p3
+        <<setw(12)<<fitcor->GetParameter(4) // p4
+	<<setw(12)<<fitcor->GetParameter(5);// p5
+    } 
+    else {
+      fout<<setw(12)<<-5.191                  // eta_min
 	<<setw(12)<<+5.191                  // eta_max
 	<<setw(12)<<6                       // number of parameters + 2
 	<<setw(12)<<4.0                     // minimum pT
@@ -254,6 +298,7 @@ int main(int argc,char**argv)
 	<<setw(12)<<fitcor->GetParameter(1) // p1
 	<<setw(12)<<fitcor->GetParameter(2) // p2
 	<<setw(12)<<fitcor->GetParameter(3);// p3
+    }
     fout.close();
     
     for (unsigned int iformat=0;iformat<formats.size();iformat++)
