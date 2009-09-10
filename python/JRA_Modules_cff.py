@@ -1235,7 +1235,7 @@ ic5jpt = cms.EDAnalyzer("JetResponseAnalyzer",
 #ak5trk
 ak5trkPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
-    src = cms.InputTag("ak5TrackJets")
+    src = cms.InputTag("antikt5TrackJets")
 )
 
 ak5trkJetToRef = cms.EDFilter("MatchRecToGen",
@@ -1252,7 +1252,7 @@ ak5trk = cms.EDAnalyzer("JetResponseAnalyzer",
 # ak7trk
 ak7trkPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
-    src = cms.InputTag("ak7TrackJets")
+    src = cms.InputTag("antikt7TrackJets")
 )
 
 ak7trkJetToRef = cms.EDFilter("MatchRecToGen",

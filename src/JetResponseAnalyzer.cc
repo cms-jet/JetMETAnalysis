@@ -21,11 +21,9 @@
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Candidate/interface/CandidateFwd.h"
 #include "DataFormats/Candidate/interface/CandMatchMap.h"
-//#include "DataFormats/Math/interface/deltaR.h"       // 31X+
-//#include "DataFormats/Math/interface/deltaPhi.h"     // 31X+
+#include "DataFormats/Math/interface/deltaR.h"
+#include "DataFormats/Math/interface/deltaPhi.h"
 
-#include "PhysicsTools/Utilities/interface/deltaR.h"   // 22X & 31X
-#include "PhysicsTools/Utilities/interface/deltaPhi.h" // 22X & 31X
 #include "PhysicsTools/UtilAlgos/interface/TFileService.h"
 
 #include <TH1F.h>

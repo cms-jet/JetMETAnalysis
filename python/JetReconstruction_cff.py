@@ -12,13 +12,6 @@ from RecoJets.Configuration.RecoPFJets_cff import *
 from RecoJets.Configuration.RecoTrackJets_cff import *
 
 
-# TEMPORARY?!
-from SimGeneral.HepPDTESSource.pythiapdt_cfi import *
-tracksForJets = cms.EDProducer("ConcreteChargedCandidateProducer",
-    src          = cms.InputTag("generalTracks"),
-    particleType = cms.string('pi+')
-)
-
 antikt5GenJets   = ak5GenJets.clone()
 antikt7GenJets   = ak7GenJets.clone()
 antikt5CaloJets  = ak5CaloJets.clone()

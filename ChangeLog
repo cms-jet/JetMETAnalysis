@@ -1,3 +1,11 @@
+2009-09-10  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-05-00
+	* CMSSW 33X and above!
+	* furhter reorganize configuration files
+	* no need for configuration files from SchieferD
+	* based on jet reco rewrite intorduced in 33X cycle
+	
 2009-09-02  Philipp SCHIEFERDECKER <philipp.schieferdecker@cern.ch>
 
 	* tag V00-04-00
