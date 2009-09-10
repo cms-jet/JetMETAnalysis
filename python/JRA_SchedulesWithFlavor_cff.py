@@ -2,7 +2,7 @@ import FWCore.ParameterSet.Config as cms
 
 from JetMETAnalysis.JetAnalyzers.JRA_PathsWithFlavor_cff import *
 from JetMETAnalysis.JetAnalyzers.JetReconstruction_cff import *
-#from JetMETAnalysis.JetAnalyzers.JPTReconstruction_cff import *
+from JetMETAnalysis.JetAnalyzers.JPTReconstruction_cff import *
 from JetMETAnalysis.JetAnalyzers.JetCorrection_cff import *
 
 
@@ -54,10 +54,10 @@ JRAExtraPFL2L3JetsSchedule = cms.Schedule(
     jraExtraPFL2L3Jets
     )
 
-#JRAStandardJPTJetsSchedule = cms.Schedule(
-#    recoStandardJPTJets,
-#    jraStandardJPTJets
-#    )
+JRAStandardJPTJetsSchedule = cms.Schedule(
+    recoStandardJPTJets,
+    jraStandardJPTJets
+    )
 
 JRAStandardTrkJetsSchedule = cms.Schedule(
     recoStandardTrackJets,
