@@ -7,5 +7,6 @@
   <use name=CommonTools/UtilAlgos>
   <use name=DataFormats/HepMCCandidate>
   <use name=DataFormats/JetReco>
+  <use name=DataFormats/Math>
   <use name=root>
 </library>

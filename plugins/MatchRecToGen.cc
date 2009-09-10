@@ -20,8 +20,8 @@
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Candidate/interface/CandidateFwd.h"
 #include "DataFormats/Candidate/interface/CandMatchMap.h"
-// #include "DataFormats/Math/interface/deltaR.h" // 31X+
-#include "PhysicsTools/Utilities/interface/deltaR.h"
+#include "DataFormats/Math/interface/deltaR.h"
+
 
 #include <iostream>
 #include <iomanip>

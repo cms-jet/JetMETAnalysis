@@ -20,8 +20,7 @@
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/JetReco/interface/JetCollection.h"
 #include "DataFormats/Candidate/interface/CandidateFwd.h"
-//#include "DataFormats/Math/interface/deltaR.h" // 31X+
-#include "PhysicsTools/Utilities/interface/deltaR.h" // 22X & 31X
+#include "DataFormats/Math/interface/deltaR.h"
 
 #include <memory>
 #include <vector>
