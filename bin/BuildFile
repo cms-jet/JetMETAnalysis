@@ -1,4 +1,5 @@
 <use name=JetMETAnalysis/JetUtilities>
+<use name=CondFormats/JetMETObjects>
 <use name=rootphysics>
 <use name=rootgraphics>
 <use name=root>
@@ -16,6 +17,9 @@
 </bin>
 
 <bin name=jet_l3_correction_x file=jet_l3_correction_x.cc>
+</bin>
+
+<bin name=jet_apply_jec_x file=jet_apply_jec_x.cc>
 </bin>
 
 <bin name=jet_weighted_spectrum_x file=jet_weighted_spectrum_x.cc>

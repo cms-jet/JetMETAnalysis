@@ -24,12 +24,13 @@ all:  setup bin
 
 setup:
 	rm -f JetMETAnalysis; ln -fs ../ JetMETAnalysis
+	rm -f CondFormats;    ln -fs ../ CondFormats
 	mkdir -p $(TMPDIR)
 	mkdir -p $(LIBDIR)
 	mkdir -p $(BINDIR)
 
 bin:  jet_response_analyzer jet_response_fitter jet_response_and_resolution \
-      jet_l2_correction jet_l3_correction \
+      jet_l2_correction jet_l3_correction jet_apply_jec \
       jet_weighted_spectrum jet_matching_efficiency jet_deltar_efficiency \
       jet_response_vs_deltar
 
@@ -53,6 +54,10 @@ jet_l3_correction:
 	$(CXX) $(CXXFLAGS) bin/jet_l3_correction_x.cc $(LIBS) $(ROOTLIBS) \
         -o $(BINDIR)/jet_l3_correction_x
 
+jet_apply_jec:
+	$(CXX) $(CXXFLAGS) bin/jet_apply_jec_x.cc $(LIBS) -lJetMETObjects $(ROOTLIBS) \
+        -o $(BINDIR)/jet_apply_jec_x
+
 jet_weighted_spectrum:
 	$(CXX) $(CXXFLAGS) bin/jet_weighted_spectrum_x.cc $(LIBS) $(ROOTLIBS) \
         -o $(BINDIR)/jet_weighted_spectrum_x
@@ -74,8 +79,9 @@ clean:
 	       $(BINDIR)/jet_response_analyzer_x \
 	       $(BINDIR)/jet_response_fitter_x \
 	       $(BINDIR)/jet_response_and_resolution_x \
-	       $(BINDIR)/jet_response_l2_correction_x \
-	       $(BINDIR)/jet_response_l3_correction_x \
+	       $(BINDIR)/jet_l2_correction_x \
+	       $(BINDIR)/jet_l3_correction_x \
+	       $(BINDIR)/jet_apply_jec_x \
                $(BINDIR)/jet_weighted_spectrum_x \
                $(BINDIR)/jet_matching_efficiency_x \
                $(BINDIR)/jet_deltar_efficiency_x \

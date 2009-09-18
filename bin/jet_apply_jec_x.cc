@@ -8,6 +8,7 @@
 
 
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
+#include "CondFormats/JetMETObjects/interface/CombinedJetCorrector.h"
 
 #include <TSystem.h>
 #include <TFile.h>
@@ -15,6 +16,7 @@
 #include <TTree.h>
 #include <TKey.h>
 
+#include <stdexcept>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -24,6 +26,13 @@
 
 using namespace std;
 
+
+////////////////////////////////////////////////////////////////////////////////
+// declare local functions
+////////////////////////////////////////////////////////////////////////////////
+string get_correction_levels(const vector<int>& levels);
+string get_correction_tags(const string& tag,const string& alg,
+			   const vector<int>& levels);
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -80,19 +89,20 @@ int main(int argc,char**argv)
       cout<<"exclude "<<alg<<endl;
       continue;
     }
-    cout<<alg<<endl;
+    cout<<"jet algorithm: "<<alg<<endl;
     
     TTree*      itree=(TTree*)idir->Get("t");    
     TDirectory* odir =(TDirectory*)ofile->mkdir(idir->GetName()); odir->cd();
+    itree->CloneTree()->Write();
+    //odir->Write();
+
+    itree->SetBranchStatus("jtpt",0);
     TTree*      otree=itree->CloneTree();
+    itree->SetBranchStatus("jtpt",1);
     
     stringstream ssodirname; ssodirname<<alg;
     for (unsigned int i=0;i<levels.size();i++) ssodirname<<"l"<<levels[i];
-    cout<<"odirname="<<ssodirname.str()<<endl;
     odir=(TDirectory*)ofile->mkdir(ssodirname.str().c_str()); odir->cd();
-    itree->SetBranchStatus("jtpt",0);
-    otree=itree->CloneTree();
-    itree->SetBranchStatus("jtpt",1);
     unsigned char nref;
     float         jtpt[100];
     float         jteta[100];
@@ -101,20 +111,94 @@ int main(int argc,char**argv)
     itree->SetBranchAddress("jteta",jteta);
     TBranch* b_jtpt=otree->Branch("jtpt",jtpt,"jtpt[nref]/F");
 
+    CombinedJetCorrector corrector(get_correction_levels(levels),
+				   get_correction_tags(tag,alg,levels));
+    
     int nevt=itree->GetEntries();
     for (int ievt=0;ievt<nevt;ievt++) {
       itree->GetEntry(ievt);
-      // TODO: compute correction!
+      for (unsigned int ijt=0;ijt<nref;ijt++) {
+	float pt =jtpt[ijt];
+	float eta=jteta[ijt];
+	float jec=corrector.getCorrection(pt,eta,pt);
+	jtpt[ijt]*=jec;
+	//if (ijt==0) cout<<"ptraw="<<pt<<" jec="<<jec<<" ptcorr="<<pt*jec
+	//	<<endl;
+      }
       b_jtpt->Fill();
     }
+    otree->Write();
+    //odir->Write();
   }
   
   // close files
   ifile->Close();
   delete ifile;
-  ofile->Write();
+  //ofile->Write();
   ofile->Close();
   delete ofile;
   
   return 0;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// implementation of local functions
+////////////////////////////////////////////////////////////////////////////////
+
+//______________________________________________________________________________
+string get_correction_levels(const vector<int>& levels)
+{
+  stringstream ssresult;
+  for (unsigned int ilevel=0;ilevel<levels.size();++ilevel) {
+    if (ilevel!=0) ssresult<<":";
+    ssresult<<"L"<<levels[ilevel];
+  }
+  //cout<<"levels as string: "<<ssresult.str()<<endl;
+  return ssresult.str();
+}
+
+
+//______________________________________________________________________________
+string get_correction_tags(const string& tag,const string& alg,
+			   const vector<int>& levels)
+{
+  stringstream ssresult;
+  for (unsigned int ilevel=0;ilevel<levels.size();ilevel++) {
+    
+    if (ilevel!=0) ssresult<<":";
+    
+    int level=levels[ilevel];
+    stringstream sstag;
+    sstag<<tag<<"_";
+
+    if      (level==1) sstag<<"L1Offset_";
+    else if (level==2) sstag<<"L2Relative_";
+    else if (level==3) sstag<<"L3Absolute_";
+    else if (level==4) sstag<<"L4EMF_";
+    else if (level==5) sstag<<"L5Flavor_";
+    else if (level==6) sstag<<"L6Hadron_";
+    else if (level==7) sstag<<"L7Parton_";
+    else throw std::runtime_error("unknown correction level");
+    
+    if      (alg.find("ak5")==0) sstag<<"AK5";
+    else if (alg.find("ak7")==0) sstag<<"AK7";
+    else if (alg.find("kt4")==0) sstag<<"KT4";
+    else if (alg.find("kt6")==0) sstag<<"KT6";
+    else if (alg.find("ca4")==0) sstag<<"CA4";
+    else if (alg.find("ca6")==0) sstag<<"CA6";
+    else if (alg.find("sc5")==0) sstag<<"SC5";
+    else if (alg.find("sc7")==0) sstag<<"SC7";
+    else if (alg.find("ic5")==0) sstag<<"IC5";
+    
+    if      (alg.find("calo")>0) sstag<<"Calo";
+    else if (alg.find("pf")>0)   sstag<<"PF";
+    else if (alg.find("jpt")>0)  sstag<<"JPT";
+
+    ssresult<<sstag.str();
+  }
+  
+  //cout<<"tags="<<ssresult.str()<<endl;
+  
+  return ssresult.str();
 }
