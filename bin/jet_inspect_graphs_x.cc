@@ -132,6 +132,9 @@ int main(int argc,char** argv)
       }
     }
   }
+  else {
+    labels.push_back(get_legend_label_from_alg(algs[0]));
+  }
   
   TMultiGraph* mg(0);
   TLegend*     leg(0);
@@ -182,20 +185,33 @@ int main(int argc,char** argv)
 	    range=get_range(gl,indices,variables.size()==1);
 	  }
 	  
-	  int   ilabel=(inputs.size()>1)?iinput:(algs.size()>1)?ialg:ivar;
+	  int   ilabel=(inputs.size()>1) ? iinput:(algs.size()>1) ? ialg:ivar;
 	  string label=(variables.size()>1&&labels.size()==0) ?
 	    get_range(gl,indices,true) : labels[ilabel];
 	  
 	  mg->Add(g);
 	  set_graph_style(g,mg->GetListOfGraphs()->GetEntries()-1);
 	  leg->AddEntry(g,label.c_str(),"lp");
+
+	  
+	  // print fit parameters
+	  TF1* fitfnc = (TF1*)g->GetFunction("fit");
+	  if (0!=fitfnc) {
+	    cout<<label<<":"<<endl;
+	    for (int ipar=0;ipar<fitfnc->GetNpar();ipar++)
+	      cout<<fitfnc->GetParameter(ipar)<<" +- "
+		  <<fitfnc->GetParError(ipar)<<endl;
+	  }
+	  cout<<endl;
+	  // end print fit parameters
+
 	  
 	} // graphs
       } // variables
     } // algorithms
   } // inputs
 
-  if (0==mg) return 0;
+  if (0==mg) { cout<<"Buh!"<<endl; return 0; }
   
   vector<TCanvas*> c;
   c.push_back(new TCanvas(mg->GetName(),mg->GetName(),
@@ -210,8 +226,7 @@ int main(int argc,char** argv)
   draw_legend(leg,quantity);
   draw_range(range);
   set_mg_histogram(mg,quantity,logy);
-  //}
-
+  
   
   for (unsigned int icanvas=0;icanvas<c.size();icanvas++)
     for (unsigned int iformat=0;iformat<formats.size();iformat++)
