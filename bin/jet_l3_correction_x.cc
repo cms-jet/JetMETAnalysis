@@ -75,7 +75,7 @@ int main(int argc,char**argv)
   //
   // run a tapplication if not in batch mode
   //
-  argc = (batch) ? 2 : 1; if (batch) argv[1] = "-b";
+  argc = (batch) ? 2 : 1; if (batch) argv[1] = (char*)"-b";
   TApplication* app = new TApplication("jet_l3_correction_x",&argc,argv);
   set_root_style();
 

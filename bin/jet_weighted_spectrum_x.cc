@@ -53,7 +53,7 @@ int main(int argc,char**argv)
   if(!cl.check()) return 0;
   cl.print();
   
-  argc = (batch) ? 2 : 1; if (batch) argv[1] = "-b";
+  argc = (batch) ? 2 : 1; if (batch) argv[1] = (char*)"-b";
   TApplication* app = new TApplication("jet_weighted_spectrum_x",&argc,argv);
 
   //TH1::SetDefaultSumw2();

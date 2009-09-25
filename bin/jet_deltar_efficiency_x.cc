@@ -23,6 +23,7 @@
 #include <TF1.h>
 #include <TKey.h>
 
+#include <cassert>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -155,7 +156,7 @@ int main(int argc,char**argv)
   }
   
   
-  argc= (batch) ? 2 : 1; if (batch) argv[1] = "-b";
+  argc= (batch) ? 2 : 1; if (batch) argv[1] = (char*)"-b";
   TApplication* app = new TApplication("jet_deltar_efficiency_x",&argc,argv);
 
   TLatex tex; tex.SetNDC();

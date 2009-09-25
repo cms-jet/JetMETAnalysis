@@ -22,6 +22,7 @@
 #include <TH1F.h>
 #include <TKey.h>
 
+#include <cassert>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -194,7 +195,7 @@ int main(int argc,char**argv)
   
   
   // instantiate root application object, enable batch mode if requested
-  argc= (batch) ? 2 : 1; if (batch) argv[1] = "-b";
+  argc= (batch) ? 2 : 1; if (batch) argv[1] = (char*)"-b";
   TApplication* app = new TApplication("jet_matching_efficiency_x",&argc,argv);
   
   
