@@ -44,7 +44,8 @@ string get_range(const ObjectLoader<TGraphErrors>& gl,
 		 const vector<unsigned int>& indices,
 		 bool  addFixedVars=true);
 void   draw_legend(TLegend* leg,const string& quantity);
-string get_legend_title(const string& alg);
+string get_legend_label_from_alg(const string& alg);
+string get_legend_label_from_input(const string& input);
 void   set_graph_style(TGraphErrors* g,unsigned int ngraph);
 void   set_mg_histogram(TMultiGraph* mg,const string& quantity,bool logy);
 
@@ -61,6 +62,7 @@ int main(int argc,char** argv)
   vector<string> inputs     = cl.getVector<string>("inputs");
   vector<string> algs       = cl.getVector<string>("algs",           "ak5calo");
   vector<string> variables  = cl.getVector<string>("variables","RelRspVsRefPt");
+  vector<string> labels     = cl.getVector<string>("labels",                "");
   bool           logx       = cl.getValue<bool>   ("logx",               false);
   bool           logy       = cl.getValue<bool>   ("logy",               false);
   string         prefix     = cl.getValue<string> ("prefix",                "");
@@ -69,40 +71,84 @@ int main(int argc,char** argv)
 
   if (!cl.check()) return 0;
   cl.print();
+  
+  // sanity check
+  if ((inputs.size()>1&&algs.size()>1)||
+      (algs.size()>1&&variables.size()>1)||
+      (inputs.size()>1&&variables.size()>1)) {
+    cout<<"Provide more than one value only for one of inputs/algs/variables!"
+	<<endl;
+    return 0;
+  }
 
-  argc = (batch) ? 2 : 1; if (batch) argv[1] = "-b";
+  argc = (batch) ? 2 : 1; if (batch) argv[1] = (char*)"-b";
   TApplication* app=new TApplication("jet_inspect_graphs",&argc,argv);
   
   set_root_style();
-    
+  
   gStyle->SetOptStat(0);
   gStyle->SetOptFit(0);
-
   
+  // is the *same* quantity compared for several (e.g. eta-) ranges?
   set<string> quantities;
   for (unsigned int i=0;i<variables.size();i++) {
     unsigned int pos = variables[i].find(':');
     quantities.insert(variables[i].substr(0,pos));
   }
-  bool isRangeComparison = (variables.size()>0&&
-			    quantities.size()!=variables.size());
+  if (quantities.size()!=1) {
+    cout<<"ERROR: don't try to compare different quantities!"<<endl;
+    return 0;
+  }
   
-   
-  map<string,TMultiGraph*> mgmap;
-  map<string,TLegend*>     legmap;
-  map<string,string>       rngmap;
+  // determine legend labels
+  if (algs.size()>1) {
+    if (labels.size()>0) {
+      if (labels.size()!=algs.size()) {
+	cout<<"ERROR: labels / algs mismatch!"<<endl;
+	return 0;
+      }
+    }
+    else {
+      for (unsigned int ialg=0;ialg<algs.size();ialg++)
+	labels.push_back(get_legend_label_from_alg(algs[ialg]));
+    }
+  }
+  else if (inputs.size()>1) {
+    if (labels.size()>0) {
+      if (labels.size()!=inputs.size()) {
+	cout<<"ERROR: labels / inputs mismatch!"<<endl;
+      }
+    }
+    else {
+      for (unsigned int iinput=0;iinput<inputs.size();iinput++)
+	labels.push_back(get_legend_label_from_input(inputs[iinput]));
+    }
+  }
+  else if (variables.size()>1) {
+    if (labels.size()>0) {
+      if (labels.size()!=variables.size()) {
+	cout<<"ERROR: labels / variables mismatch!"<<endl;
+	return 0;
+      }
+    }
+  }
+  
+  TMultiGraph* mg(0);
+  TLegend*     leg(0);
+  string       range;
+  string       quantity=(*quantities.begin());
   
   /// LOOP OVER FILES
-  for (unsigned int ifile=0;ifile<inputs.size();ifile++) {
-
-    string input = inputs[ifile];
+  for (unsigned int iinput=0;iinput<inputs.size();iinput++) {
+    
+    string input=inputs[iinput].substr(0,inputs[iinput].find(':'));
     TFile* file=new TFile(input.c_str(),"READ");
     if (!file->IsOpen()) {cout<<"Can't open "<<file->GetName()<<endl;return 0;}
     
     /// LOOP OVER ALGORITHMS
     for (unsigned int ialg=0;ialg<algs.size();ialg++) {
 
-      string alg = algs[ialg];
+      string alg=algs[ialg];
       TDirectory* dir =(TDirectory*)file->Get(alg.c_str());
       if (0==dir) { cout<<"No dir "<<algs[ialg]<<" found"<<endl; return 0; }
 
@@ -119,69 +165,54 @@ int main(int argc,char** argv)
 	TGraphErrors* g(0);
 	while ((g=gl.next_object(indices))) {
 	  
-	  string       quantity(gl.quantity());
-	  TMultiGraph* mg(0);
-	  TLegend*     leg(0);
-	  map<string,TMultiGraph*>::iterator it = mgmap.find(quantity);
-	  if (it==mgmap.end()) {
+	  if (0==mg) {
 	    stringstream sscname;
 	    if (!prefix.empty()) sscname<<prefix<<"_";
 	    sscname<<quantity;
 	    for (unsigned int i=0;i<gl.nvariables();i++) {
-	      if (variables.size()>1&&gl.nobjects(i)==1) continue;
+	      if (variables.size()>1&&gl.nobjects(i)==1) continue; //??
 	      sscname<<"_"<<gl.variable(i)
 		     <<gl.minimum(i,indices[i])<<"to"
 		     <<gl.maximum(i,indices[i]);
 	    }
-	    
+	    int nlabels=(labels.size()>0)?labels.size():variables.size();
 	    mg=new TMultiGraph(sscname.str().c_str(),"");
-	    int nleg = 
-	      (inputs.size()>1) ? inputs.size() :
-	      (algs.size()>1) ? algs.size() :
-	      variables.size();
 	    double ymax=(quantity.find("Rsp")==string::npos)?0.85:0.5;
-	    leg=new TLegend(0.55,ymax,0.9,ymax-nleg*0.055);
-	    mgmap [quantity]=mg;
-	    legmap[quantity]=leg;
-	    rngmap[quantity]=get_range(gl,indices,!isRangeComparison);
+	    leg=new TLegend(0.55,ymax,0.9,ymax-nlabels*0.055);
+	    range=get_range(gl,indices,variables.size()==1);
 	  }
-	  else {
-	    mg = it->second;
-	    leg=legmap[gl.quantity()];
-	  }
+	  
+	  int   ilabel=(inputs.size()>1)?iinput:(algs.size()>1)?ialg:ivar;
+	  string label=(variables.size()>1&&labels.size()==0) ?
+	    get_range(gl,indices,true) : labels[ilabel];
 	  
 	  mg->Add(g);
 	  set_graph_style(g,mg->GetListOfGraphs()->GetEntries()-1);
-	  leg->AddEntry(g,get_legend_title(alg).c_str(),"lp");
+	  leg->AddEntry(g,label.c_str(),"lp");
 	  
 	} // graphs
       } // variables
     } // algorithms
   } // inputs
 
-
-  vector<TCanvas*> c;
-  map<string,TMultiGraph*>::iterator it;
-  for (it=mgmap.begin();it!=mgmap.end();++it) {
-    string       quantity(it->first);
-    string       range(rngmap[quantity]);
-    TMultiGraph* mg(it->second);
-    TLegend*     leg(legmap[quantity]);
-    c.push_back(new TCanvas(mg->GetName(),mg->GetName(),
-			    c.size()*20,c.size()*20,600,600));
-    gPad->SetLeftMargin(0.18);
-    gPad->SetRightMargin(0.05);
-    gPad->SetTopMargin(0.08);
-    gPad->SetBottomMargin(0.14);
-    if (logx) gPad->SetLogx();
-    if (logy) gPad->SetLogy();
-    mg->Draw("AP");
-    draw_legend(leg,quantity);
-    draw_range(range);
-    set_mg_histogram(mg,quantity,logy);
-  }
+  if (0==mg) return 0;
   
+  vector<TCanvas*> c;
+  c.push_back(new TCanvas(mg->GetName(),mg->GetName(),
+			  c.size()*20,c.size()*20,600,600));
+  gPad->SetLeftMargin(0.18);
+  gPad->SetRightMargin(0.05);
+  gPad->SetTopMargin(0.08);
+  gPad->SetBottomMargin(0.14);
+  if (logx) gPad->SetLogx();
+  if (logy) gPad->SetLogy();
+  mg->Draw("AP");
+  draw_legend(leg,quantity);
+  draw_range(range);
+  set_mg_histogram(mg,quantity,logy);
+  //}
 
+  
   for (unsigned int icanvas=0;icanvas<c.size();icanvas++)
     for (unsigned int iformat=0;iformat<formats.size();iformat++)
       c[icanvas]->Print((string(c[icanvas]->GetName())+"."+
@@ -259,19 +290,19 @@ void draw_legend(TLegend* leg,const string& quantity)
 
 
 //______________________________________________________________________________
-string get_legend_title(const string& alg)
+string get_legend_label_from_alg(const string& alg)
 {
-  string title;
+  string label;
   string tmp(alg);
-  if      (alg.find("kt")==0) { title = "k_{T}, D=";      tmp = tmp.substr(2); }
-  else if (alg.find("sc")==0) { title = "SISCone, R=";    tmp = tmp.substr(2); }
-  else if (alg.find("ic")==0) { title = "ItCone, R=";     tmp = tmp.substr(2); }
-  else if (alg.find("mc")==0) { title = "MidCone, R=";    tmp = tmp.substr(2); }
-  else if (alg.find("ca")==0) { title = "Cam/Aachen, D="; tmp = tmp.substr(2); }
-  else if (alg.find("ak")==0) { title = "Anti k_{T}, D="; tmp = tmp.substr(2); }
-  else if (alg.find("gk")==0) { title = "Gen k_{T}, R="; tmp = tmp.substr(2); }
+  if      (alg.find("kt")==0) { label = "k_{T}, R=";      tmp = tmp.substr(2); }
+  else if (alg.find("sc")==0) { label = "SISCone, R=";    tmp = tmp.substr(2); }
+  else if (alg.find("ic")==0) { label = "ItCone, R=";     tmp = tmp.substr(2); }
+  else if (alg.find("mc")==0) { label = "MidCone, R=";    tmp = tmp.substr(2); }
+  else if (alg.find("ca")==0) { label = "Cam/Aachen, R="; tmp = tmp.substr(2); }
+  else if (alg.find("ak")==0) { label = "Anti k_{T}, R="; tmp = tmp.substr(2); }
+  else if (alg.find("gk")==0) { label = "Gen k_{T}, R=";  tmp = tmp.substr(2); }
   
-  assert(!title.empty());
+  assert(!label.empty());
   
   string            reco[4] = { "calo","pf","trk","jpt" };
   string            RECO[4] = { "(Calo)", "(PFlow)", "(Tracks)", "(JPT)" };
@@ -282,9 +313,30 @@ string get_legend_title(const string& alg)
   
   double jet_size; stringstream ss1; ss1<<tmp.substr(0,pos); ss1>>jet_size;
   jet_size/=10.0;  stringstream ss2; ss2<<jet_size;
-  title += ss2.str() + " " + RECO[ireco];
+  label += ss2.str() + " " + RECO[ireco];
 
-  return title;
+  return label;
+}
+
+
+//______________________________________________________________________________
+string get_legend_label_from_input(const string& input)
+{
+  string label;
+  string tmp(input);
+  unsigned int pos=tmp.find(':');
+  if (pos!=string::npos) {
+    label = tmp.substr(pos+1);
+  }
+  else {
+    pos=tmp.find_last_of('/');
+    if (pos!=string::npos) tmp=tmp.substr(pos+1);
+    pos=tmp.find(".root");
+    if (pos!=string::npos) tmp=tmp.substr(0,pos);
+    pos=tmp.find('_');
+    label=tmp.substr(0,pos);
+  }
+  return label;
 }
 
 

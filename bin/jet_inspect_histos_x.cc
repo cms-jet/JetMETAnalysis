@@ -68,7 +68,7 @@ int main(int argc,char** argv)
 
   if (prefix.empty()) prefix=algs[0];
   
-  argc = (batch) ? 2 : 1; if (batch) argv[1] = "-b";
+  argc = (batch) ? 2 : 1; if (batch) argv[1] = (char*)"-b";
   TApplication* app=new TApplication("jet_inspect_histos",&argc,argv);
   
   set_root_style();
@@ -81,7 +81,7 @@ int main(int argc,char** argv)
   /// LOOP OVER FILES
   for (unsigned int ifile=0;ifile<inputs.size();ifile++) {
 
-    string input = inputs[ifile];
+    string input(inputs[ifile]);
     TFile* file=new TFile(input.c_str(),"READ");
     if (!file->IsOpen()) {cout<<"Can't open "<<file->GetName()<<endl;return 0;}
     

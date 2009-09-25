@@ -10,6 +10,7 @@
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 
 
+#include <cassert>
 #include <fstream>
 #include <iomanip>
 
