@@ -1,6 +1,6 @@
 2009-10-22  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
-	* tag V00-05-01
+	* tag V00-05-02
 	* adjust JPT configuration for 33X (331)
 	* add sc5jpt and ak5jpt
 	* add jra.config and jra_etaphi.config to config dir: these files

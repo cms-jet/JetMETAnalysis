@@ -34,7 +34,8 @@ process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 process.source = cms.Source(
     "PoolSource",
     fileNames = cms.untracked.vstring(
-    '/store/relval/CMSSW_3_1_2/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_31X_V3-v1/0007/9E83A122-E978-DE11-9D04-001D09F23C73.root'
+    #'/store/relval/CMSSW_3_1_2/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_31X_V3-v1/0007/9E83A122-E978-DE11-9D04-001D09F23C73.root'
+    'file:RelValQCD.root'
     )
     )
 
@@ -68,4 +69,4 @@ process.schedule.extend(process.JRAStandardPFL2L3JetsSchedule)
 #process.schedule.extend(process.JRAExtraPFL2L3JetsSchedule)
 #process.schedule.extend(process.JRAStandardTrkJetsSchedule)
 #process.schedule.extend(process.JRAExtraTrkJetsSchedule)
-#process.schedule.extend(process.JRAStandardJPTJetsSchedule)
+process.schedule.extend(process.JRAStandardJPTJetsSchedule)

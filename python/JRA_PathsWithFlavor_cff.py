@@ -155,6 +155,12 @@ gk7trk.deltaRPartonMax   = cms.double(0.25)
 ic5jpt.doFlavor          = cms.bool(True)
 ic5jpt.srcRefToPartonMap = cms.InputTag('ic5GenToParton','rec2gen')
 ic5jpt.deltaRPartonMax   = cms.double(0.25)
+sc5jpt.doFlavor          = cms.bool(True)
+sc5jpt.srcRefToPartonMap = cms.InputTag('sc5GenToParton','rec2gen')
+sc5jpt.deltaRPartonMax   = cms.double(0.25)
+ak5jpt.doFlavor          = cms.bool(True)
+ak5jpt.srcRefToPartonMap = cms.InputTag('ak5GenToParton','rec2gen')
+ak5jpt.deltaRPartonMax   = cms.double(0.25)
 
 
 # calol2l3
@@ -361,8 +367,12 @@ jraExtraTrackJets=cms.Path(ak7trkJRA+
 
 # jpt
 ic5jptJRA = cms.Sequence(ic5jptPtEta+ic5genPtEta+ic5jptJetToRef+partons+ic5GenToParton+ic5jpt)
+sc5jptJRA = cms.Sequence(sc5jptPtEta+sc5genPtEta+sc5jptJetToRef+partons+sc5GenToParton+sc5jpt)
+ak5jptJRA = cms.Sequence(ak5jptPtEta+ak5genPtEta+ak5jptJetToRef+partons+ak5GenToParton+ak5jpt)
 
-jraStandardJPTJets=cms.Path(ic5jptJRA)
+jraStandardJPTJets=cms.Path(ic5jptJRA+
+                            sc5jptJRA+
+                            ak5jptJRA)
 
 
 # calol2l3

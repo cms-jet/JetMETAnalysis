@@ -106,8 +106,12 @@ jraExtraTrackJets=cms.Path(ak7trkJRA+
 
 # jpt
 ic5jptJRA =cms.Sequence(ic5jptPtEta+ic5genPtEta+ic5jptJetToRef+ic5jpt)
+sc5jptJRA =cms.Sequence(sc5jptPtEta+sc5genPtEta+sc5jptJetToRef+sc5jpt)
+ak5jptJRA =cms.Sequence(ak5jptPtEta+ak5genPtEta+ak5jptJetToRef+ak5jpt)
 
-jraStandardJPTJets=cms.Path(ic5jptJRA)
+jraStandardJPTJets=cms.Path(ic5jptJRA+
+                            sc5jptJRA+
+                            ak5jptJRA)
 
 
 # calol2l3

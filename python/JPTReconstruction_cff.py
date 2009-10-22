@@ -1,10 +1,19 @@
 import FWCore.ParameterSet.Config as cms
 
-# event setup
-#from Configuration.StandardSequences.Geometry_cff import *
-#from Configuration.StandardSequences.MagneticField_cff import *
 
 from JetMETCorrections.Configuration.ZSPJetCorrections219_cff import *
 from JetMETCorrections.Configuration.JetPlusTrackCorrections_cff import *
 
-recoStandardJPTJets = cms.Path(ZSPJetCorrections*JetPlusTrackCorrections)
+ZSPJetCorJetAntiKt5.src = 'antikt5CaloJets'
+
+recoStandardJPTJets = cms.Path(
+    ZSPJetCorrectionsIcone5+
+    ZSPrecoJetAssociationsIcone5+
+    JetPlusTrackCorrectionsIcone5+
+    ZSPJetCorrectionsSisCone5+
+    ZSPrecoJetAssociationsSisCone5+
+    JetPlusTrackCorrectionsSisCone5+
+    ZSPJetCorrectionsAntiKt5+
+    ZSPrecoJetAssociationsAntiKt5+
+    JetPlusTrackCorrectionsAntiKt5
+    )

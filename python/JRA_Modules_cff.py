@@ -1232,6 +1232,40 @@ ic5jpt = cms.EDAnalyzer("JetResponseAnalyzer",
     srcRef = cms.InputTag("ic5genPtEta")
 )
 
+# sc5jpt
+sc5jptPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
+    Defaults.JetPtEta,
+    src = cms.InputTag("JetPlusTrackZSPCorJetSiscone5")
+)
+
+sc5jptJetToRef = cms.EDFilter("MatchRecToGen",
+    srcGen = cms.InputTag("sc5genPtEta"),
+    srcRec = cms.InputTag("sc5jptPtEta")
+)
+
+sc5jpt = cms.EDAnalyzer("JetResponseAnalyzer",
+    Defaults.JetResponseParameters,
+    srcRefToJetMap = cms.InputTag("sc5jptJetToRef","gen2rec"),
+    srcRef = cms.InputTag("sc5genPtEta")
+)
+
+# ak5jpt
+ak5jptPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
+    Defaults.JetPtEta,
+    src = cms.InputTag("JetPlusTrackZSPCorJetAntiKt5")
+)
+
+ak5jptJetToRef = cms.EDFilter("MatchRecToGen",
+    srcGen = cms.InputTag("ak5genPtEta"),
+    srcRec = cms.InputTag("ak5jptPtEta")
+)
+
+ak5jpt = cms.EDAnalyzer("JetResponseAnalyzer",
+    Defaults.JetResponseParameters,
+    srcRefToJetMap = cms.InputTag("ak5jptJetToRef","gen2rec"),
+    srcRef = cms.InputTag("ak5genPtEta")
+)
+
 #ak5trk
 ak5trkPtEta = cms.EDFilter("EtaPtMinCandViewRefSelector",
     Defaults.JetPtEta,
