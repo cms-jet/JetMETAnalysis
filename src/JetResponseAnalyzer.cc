@@ -4,7 +4,6 @@
 // -------------------
 //
 //            07/04/2008 Kostas Kousouris       <kkousour@fnal.gov>
-//                       Roger Wolf             <roger.wolf@cern.ch>
 //                       Philipp Schieferdecker <philipp.schieferdecker@cern.ch>
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -17,12 +16,16 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
- 
+
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Candidate/interface/CandidateFwd.h"
 #include "DataFormats/Candidate/interface/CandMatchMap.h"
+#include "DataFormats/METReco/interface/MET.h"
+#include "DataFormats/METReco/interface/METCollection.h"
 #include "DataFormats/Math/interface/deltaR.h"
 #include "DataFormats/Math/interface/deltaPhi.h"
+
+#include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
 
 #include "PhysicsTools/UtilAlgos/interface/TFileService.h"
 
@@ -69,12 +72,16 @@ private:
   bool            doPhiRsp_;
 
   bool            doBalancing_;
+  bool            doMET_;
+
   double          deltaRMax_;
   double          deltaPhiMin_;
 
   edm::InputTag   srcRef_;
   edm::InputTag   srcRefToJetMap_;
   edm::InputTag   srcRefToPartonMap_;
+  edm::InputTag   srcMET_;
+  
   bool            getFlavorFromMap_;
   double          deltaRPartonMax_;
   
@@ -146,6 +153,8 @@ private:
   
 
   TTree*          tree_;
+  float           pthat_;
+  float           weight_;
   unsigned char   nref_;
   int             refpdgid_[100];
   float           refpt_[100];
@@ -156,7 +165,9 @@ private:
   float           jtphi_[100];
   float           refdrjt_[100];
   float           refdphijt_[100];
-
+  float           metx_;
+  float           mety_;
+  
 };
 
 
@@ -202,6 +213,7 @@ JetResponseAnalyzer::JetResponseAnalyzer(const edm::ParameterSet& iConfig)
   , doJetPt_(iConfig.getParameter<bool> ("doJetPt"))
   , doRefPt_(iConfig.getParameter<bool> ("doRefPt"))
   , doBalancing_(false)
+  , doMET_(false)
   , deltaRMax_(0.0)
   , deltaPhiMin_(3.141)
   , srcRef_(iConfig.getParameter<edm::InputTag>        ("srcRef"))
@@ -229,6 +241,10 @@ JetResponseAnalyzer::JetResponseAnalyzer(const edm::ParameterSet& iConfig)
     getFlavorFromMap_=true;
   }
   
+  if (iConfig.exists("srcMET")) {
+    doMET_  = true;
+    srcMET_ = iConfig.getParameter<edm::InputTag>("srcMET");
+  }
   
   if (doHistos_) {
 
@@ -796,6 +812,8 @@ void JetResponseAnalyzer::beginJob(const edm::EventSetup& iSetup)
   if (doTree_) {
     tree_=fs->make<TTree>("t","t");
     tree_->Branch("nref",  &nref_,  "nref/b");
+    tree_->Branch("pthat", &pthat_, "pthat/F");
+    tree_->Branch("weight",&weight_,"weight/F");
     if (doFlavor_) tree_->Branch("refpdgid",refpdgid_,"refpdgid[nref]/I");
     tree_->Branch("refpt",  refpt_, "refpt[nref]/F");
     tree_->Branch("refeta", refeta_,"refeta[nref]/F");
@@ -805,6 +823,10 @@ void JetResponseAnalyzer::beginJob(const edm::EventSetup& iSetup)
     tree_->Branch("jtphi",  jtphi_, "jtphi[nref]/F");
     if (doBalancing_) tree_->Branch("refdphijt",refdphijt_,"refdphijt[nref]/F");
     else    	      tree_->Branch("refdrjt",  refdrjt_,  "refdrjt[nref]/F");
+    if (doMET_) {
+      tree_->Branch("metx", &metx_, "metx/F");
+      tree_->Branch("mety", &mety_, "mety/F");
+    }
   }
   
 }
@@ -815,14 +837,30 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
 				  const edm::EventSetup& iSetup)
 {
   nref_=0;
-  
+  edm::Handle<GenEventInfoProduct>    genInfo;
   edm::Handle<reco::CandidateView>    refs;
   edm::Handle<reco::CandViewMatchMap> refToJetMap;
   edm::Handle<reco::CandViewMatchMap> refToPartonMap;
+  edm::Handle<reco::METCollection>    mets;
   
+  pthat_  = 0.0;
+  weight_ = 1.0;
+  if (iEvent.getByLabel("generator",genInfo)) {
+    if (genInfo->hasBinningValues())
+      pthat_  = (float)genInfo->binningValues()[0];
+    weight_ = (float)genInfo->weight();
+  }
+  
+
   iEvent.getByLabel(srcRef_,        refs);
   iEvent.getByLabel(srcRefToJetMap_,refToJetMap);
   if (getFlavorFromMap_) iEvent.getByLabel(srcRefToPartonMap_,refToPartonMap);
+
+  if (doMET_) {
+    iEvent.getByLabel(srcMET_,mets);
+    metx_ = mets->at(0).px();
+    mety_ = mets->at(0).py();
+  }
   
   if (doBalancing_&&refToJetMap->size()!=1) return;
   
@@ -835,8 +873,6 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
     if (itMatch==refToJetMap->end()) continue;
     reco::CandidateBaseRef jet=itMatch->val;
     
-    //refdrjt_[nref_]  =reco::deltaR(*jet,*ref);
-    //refdphijt_[nref_]=reco::deltaPhi(*jet,*ref);
     refdrjt_[nref_]  =reco::deltaR(jet->eta(),jet->phi(),ref->eta(),ref->phi());
     refdphijt_[nref_]=reco::deltaPhi(jet->phi(),ref->phi());
     

@@ -1,5 +1,12 @@
 2009-10-22  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
+	* tag V00-05-04
+	* add variables pthat & weight (from GenEventInfoProduct) to tree
+	* add variables metx & mety to the tree, if parameter 'srcMET'
+	(edm::InputTag) is set
+
+2009-10-22  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
 	* tag V00-05-03
 	* make get_legend_title() in various executables (bin/*_x.cc) more
 	robust
