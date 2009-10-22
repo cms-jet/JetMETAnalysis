@@ -1,3 +1,16 @@
+2009-10-22  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-05-01
+	* adjust JPT configuration for 33X (331)
+	* add sc5jpt and ak5jpt
+	* add jra.config and jra_etaphi.config to config dir: these files
+	can be passed to the jet_response_analyzer_x executable as the
+	first parameter in order to define sensible binnings in pt, eta,
+	and phi
+	* add jra_dr.config and jra_etaphi_dr.config: same as above, but
+	with individual matching requirements for each algorithm found to
+	yield ~ the same matching efficiency. RECOMMENDED!
+
 2009-09-10  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-05-01
