@@ -62,7 +62,7 @@ int main(int argc,char**argv)
   string         input   = cl.getValue<string> ("input");
   string         l3input = cl.getValue<string> ("l3input","l3.root");
   string         output  = cl.getValue<string> ("output", "l2.root");
-  string         tag     = cl.getValue<string> ("tag",          "");
+  string         tag     = cl.getValue<string> ("tag",           "");
   vector<string> formats = cl.getVector<string>("formats",       "");
   vector<string> algs    = cl.getVector<string>("algs",          "");
   bool           batch   = cl.getValue<bool>   ("batch",      false);
@@ -399,18 +399,18 @@ string get_legend_title(const string& alg)
   else if (alg.find("mc")==0) { title = "MidCone. R=";    tmp = tmp.substr(2); }
   else if (alg.find("ca")==0) { title = "Cam/Aachen, D="; tmp = tmp.substr(2); }
   else if (alg.find("ak")==0) { title = "Anti k_{T}, D="; tmp = tmp.substr(2); }
+  else return alg;
   
-  assert(!title.empty());
-  
-  string reco[4] = { "calo",   "pf",      "trk",      "jpt" };
-  string RECO[4] = { "(Calo)", "(PFlow)", "(Tracks)", "(Jet+Tracks)" };
+  string reco[5] = { "gen",  "calo",   "pf",      "trk",      "jpt" };
+  string RECO[5] = { "(Gen)","(Calo)", "(PFlow)", "(Tracks)", "(JPT)" };
 
   string::size_type pos=string::npos; int ireco=-1;
-  while (pos==string::npos&&ireco<3) { pos = tmp.find(reco[++ireco]); }
-  assert(pos!=string::npos);
+  while (pos==string::npos&&ireco<4) { pos = tmp.find(reco[++ireco]); }
+  if (pos==string::npos) return alg;
   
   double jet_size; stringstream ss1; ss1<<tmp.substr(0,pos); ss1>>jet_size;
   jet_size/=10.0;  stringstream ss2; ss2<<jet_size;
+
   title += ss2.str() + " " + RECO[ireco];
 
   return title;

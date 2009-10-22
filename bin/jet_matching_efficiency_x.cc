@@ -404,25 +404,25 @@ string get_legend_title(const string& alg)
 {
   string title;
   string tmp(alg);
-  if      (alg.find("kt")==0) { title = "k_{T}, D=";      tmp = tmp.substr(2); }
+  if      (alg.find("kt")==0) { title = "k_{T}, R=";      tmp = tmp.substr(2); }
   else if (alg.find("sc")==0) { title = "SISCone, R=";    tmp = tmp.substr(2); }
   else if (alg.find("ic")==0) { title = "ItCone, R=";     tmp = tmp.substr(2); }
   else if (alg.find("mc")==0) { title = "MidCone. R=";    tmp = tmp.substr(2); }
-  else if (alg.find("ca")==0) { title = "Cam/Aachen, D="; tmp = tmp.substr(2); }
-  else if (alg.find("ak")==0) { title = "Anti k_{T}, D="; tmp = tmp.substr(2); }
+  else if (alg.find("ca")==0) { title = "Cam/Aachen, R="; tmp = tmp.substr(2); }
+  else if (alg.find("ak")==0) { title = "Anti k_{T}, R="; tmp = tmp.substr(2); }
+  else return alg;
   
-  assert(!title.empty());
-  
-  string            reco[4] = { "calo","pf","trk","jpt" };
-  string            RECO[4] = { "(Calo)", "(PFlow)", "(Tracks)", "(JPT)" };
+  string reco[5] = { "gen",  "calo",   "pf",      "trk",      "jpt" };
+  string RECO[5] = { "(Gen)","(Calo)", "(PFlow)", "(Tracks)", "(JPT)" };
 
   string::size_type pos=string::npos; int ireco=-1;
-  while (pos==string::npos&&ireco<3) { pos = tmp.find(reco[++ireco]); }
-  assert(pos!=string::npos);
+  while (pos==string::npos&&ireco<4) { pos = tmp.find(reco[++ireco]); }
+  if (pos==string::npos) return alg;
   
   double jet_size; stringstream ss1; ss1<<tmp.substr(0,pos); ss1>>jet_size;
   jet_size/=10.0;  stringstream ss2; ss2<<jet_size;
-  title += ss2.str() + " " + RECO[ireco];
 
+  title += ss2.str() + " " + RECO[ireco];
+  
   return title;
 }

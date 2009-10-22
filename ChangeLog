@@ -1,5 +1,11 @@
 2009-10-22  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
+	* tag V00-05-03
+	* make get_legend_title() in various executables (bin/*_x.cc) more
+	robust
+
+2009-10-22  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
 	* tag V00-05-02
 	* adjust JPT configuration for 33X (331)
 	* add sc5jpt and ak5jpt
