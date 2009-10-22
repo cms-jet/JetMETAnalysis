@@ -316,20 +316,20 @@ string get_legend_label_from_alg(const string& alg)
   else if (alg.find("ca")==0) { label = "Cam/Aachen, R="; tmp = tmp.substr(2); }
   else if (alg.find("ak")==0) { label = "Anti k_{T}, R="; tmp = tmp.substr(2); }
   else if (alg.find("gk")==0) { label = "Gen k_{T}, R=";  tmp = tmp.substr(2); }
+  else return alg;
   
-  assert(!label.empty());
-  
-  string            reco[4] = { "calo","pf","trk","jpt" };
-  string            RECO[4] = { "(Calo)", "(PFlow)", "(Tracks)", "(JPT)" };
+  string reco[5] = { "gen",  "calo",   "pf",      "trk",      "jpt" };
+  string RECO[5] = { "(Gen)","(Calo)", "(PFlow)", "(Tracks)", "(JPT)" };
 
   string::size_type pos=string::npos; int ireco=-1;
-  while (pos==string::npos&&ireco<3) { pos = tmp.find(reco[++ireco]); }
-  assert(pos!=string::npos);
-  
+  while (pos==string::npos&&ireco<4) { pos = tmp.find(reco[++ireco]); }
+  if (pos==string::npos) return alg;
+
   double jet_size; stringstream ss1; ss1<<tmp.substr(0,pos); ss1>>jet_size;
   jet_size/=10.0;  stringstream ss2; ss2<<jet_size;
+  
   label += ss2.str() + " " + RECO[ireco];
-
+  
   return label;
 }
 

@@ -1,3 +1,8 @@
+2009-10-22  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-04-01
+	* make get_legend_title() in jet_inspect_graphs_x more robust
+
 2009-09-10  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-04-00
