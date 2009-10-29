@@ -73,12 +73,14 @@ int main(int argc,char**argv)
   THStack* stRefPtW = new THStack("RefPtW","");
 
   for (unsigned int i=0;i<inputs.size();i++) {
-    unsigned pos    = inputs[i].find(":");
+    size_t pos      = inputs[i].find(":");
     string sample   = inputs[i].substr(0,pos);
     string filename = sample + ".root";
 
     float  weight   = 1.0;
-    if (pos!=string::npos){stringstream ss;ss<<inputs[i].substr(pos+1);ss>>weight;}
+    if (pos!=string::npos) {
+      stringstream ss;ss<<inputs[i].substr(pos+1); ss>>weight;
+    }
 
     // DEBUG
     cout<<"filename="<<filename<<", weight="<<weight<<endl;

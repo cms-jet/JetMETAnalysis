@@ -1,3 +1,10 @@
+2009-10-29  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* BuildFile: tag V00-05-05
+	* use size_t where appropriate, as suggested by Yetkin
+	* remove jet_apply_jec target from Makefile, as it won't compile
+	standalone just yet
+
 2009-10-22  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-05-04

@@ -66,7 +66,7 @@ int main(int argc,char**argv)
   // open output file and declare vectors for response & resolution graphs
   //
   if (output.empty()) {
-    unsigned int pos=input.find(".root");
+    size_t pos=input.find(".root");
     output=input.substr(0,pos)+"_g.root";
     cout<<"*** write output to "<<output<<endl;
   }

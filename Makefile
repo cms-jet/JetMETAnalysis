@@ -30,10 +30,10 @@ setup:
 	mkdir -p $(BINDIR)
 
 bin:  jet_response_analyzer jet_response_fitter jet_response_and_resolution \
-      jet_l2_correction jet_l3_correction jet_apply_jec \
+      jet_l2_correction jet_l3_correction \ 
       jet_weighted_spectrum jet_matching_efficiency jet_deltar_efficiency \
       jet_response_vs_deltar
-
+      
 jet_response_analyzer:
 	$(CXX) $(CXXFLAGS) bin/jet_response_analyzer_x.cc $(LIBS) $(ROOTLIBS) \
         -o $(BINDIR)/jet_response_analyzer_x

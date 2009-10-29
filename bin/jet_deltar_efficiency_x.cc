@@ -77,7 +77,7 @@ int main(int argc,char**argv)
   //
   for (unsigned int ifile=0;ifile<inputs.size();ifile++) {
     
-    unsigned pos    = inputs[ifile].find(":");
+    size_t pos      = inputs[ifile].find(":");
     string sample   = inputs[ifile].substr(0,pos);
     string filename = datapath+"/"+sample;
     if (filename.find(".root")==string::npos) filename += ".root";
@@ -278,7 +278,7 @@ string get_legend_title(const string& alg)
   string            reco[4] = { "calo","pf","trk","jpt" };
   string            RECO[4] = { "(Calo)", "(PFlow)", "(Tracks)", "(JPT)" };
 
-  string::size_type pos=string::npos; int ireco=-1;
+  size_t pos=string::npos; int ireco=-1;
   while (pos==string::npos&&ireco<3) { pos = tmp.find(reco[++ireco]); }
   assert(pos!=string::npos);
   

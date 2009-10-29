@@ -128,7 +128,7 @@ int main(int argc,char**argv)
   map<std::string,float> alg2drmax;
   for (unsigned int ialg=0;ialg<algs.size();ialg++) {
     string alg=algs[ialg];
-    unsigned pos = alg.find(':');
+    size_t pos=alg.find(':');
     if (pos!=string::npos) {
       float drmax_alg; stringstream ss; ss<<alg.substr(pos+1); ss>>drmax_alg;
       alg=alg.substr(0,pos);

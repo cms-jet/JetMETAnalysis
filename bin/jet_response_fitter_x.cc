@@ -64,7 +64,7 @@ int main(int argc,char**argv)
   // construct output file name from input file name if none given
   //
   if (output.empty()) {
-    unsigned int pos=input.find(".root");
+    size_t pos=input.find(".root");
     output=input.substr(0,pos)+"_f.root";
     cout<<"*** write output to "<<output<<endl;
   }
