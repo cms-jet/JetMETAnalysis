@@ -137,7 +137,7 @@ std::vector<T> CommandLine::getVector(const std::string& name)
     it->second.second = true;
     _ordered_options.push_back(name);
     std::string tmp=it->second.first;
-    std::string::size_type pos;
+    size_t pos;
     if (!tmp.empty()) {
       do {
 	pos = tmp.find(",");

@@ -119,8 +119,8 @@ void CommandLine::print()
     assert(it!=_options.end());
     if (it->second.first.find(",")<string::npos) {
       string tmp=it->second.first;
-      string::size_type length = tmp.length();
-      string::size_type pos;
+      size_t length = tmp.length();
+      size_t pos;
       do {
 	pos = tmp.find(",");
 	if (tmp.length()==length) {

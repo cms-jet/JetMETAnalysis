@@ -48,7 +48,7 @@ template<class T>
 bool ObjectLoader<T>::load_objects(TDirectory* d,const string& expression)
 {
   string tmp=expression;
-  unsigned int pos=tmp.find(':');
+  size_t pos=tmp.find(':');
   quantity_=(pos==string::npos)?tmp:tmp.substr(0,pos);
   tmp=(pos==string::npos)?"":tmp.substr(pos+1);
   if (tmp!="") variables_=split(tmp,":");
@@ -92,7 +92,7 @@ bool ObjectLoader<T>::load_objects(TDirectory* d,const string& expression)
     vector< std::pair<double,double> > bounds;
     if (variables_.size()!=histo_variables.size()) continue;
     for (unsigned int i=0;i<variables_.size();i++) {
-      int pos=histo_variables[i].find(variables_[i]);
+      size_t pos=histo_variables[i].find(variables_[i]);
       if (pos!=0) continue;
       string tmp=histo_variables[i].substr(variables_[i].length());
       vector<string> vtmp=split(tmp,"to");
@@ -271,7 +271,7 @@ vector<string> ObjectLoader<T>::split(const string& str,const string& delim)
   vector<string> result;
   string tmp=str;
   while (tmp.length()>0) {
-    string::size_type pos=tmp.find(delim);
+    size_t pos=tmp.find(delim);
     if (pos==string::npos) {
       result.push_back(tmp);
       tmp="";

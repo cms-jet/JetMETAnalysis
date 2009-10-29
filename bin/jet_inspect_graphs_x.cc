@@ -92,7 +92,7 @@ int main(int argc,char** argv)
   // is the *same* quantity compared for several (e.g. eta-) ranges?
   set<string> quantities;
   for (unsigned int i=0;i<variables.size();i++) {
-    unsigned int pos = variables[i].find(':');
+    size_t pos = variables[i].find(':');
     quantities.insert(variables[i].substr(0,pos));
   }
   if (quantities.size()!=1) {
@@ -293,7 +293,7 @@ void draw_legend(TLegend* leg,const string& quantity)
 {
   
   string mode("");
-  unsigned int pos = quantity.find("Vs");
+  size_t pos = quantity.find("Vs");
   if (pos!=string::npos) {
     string str=quantity.substr(0,pos);
     if (str=="Rsp"||str=="RelRsp"||str=="AbsRsp") mode="Rsp";
@@ -321,7 +321,7 @@ string get_legend_label_from_alg(const string& alg)
   string reco[5] = { "gen",  "calo",   "pf",      "trk",      "jpt" };
   string RECO[5] = { "(Gen)","(Calo)", "(PFlow)", "(Tracks)", "(JPT)" };
 
-  string::size_type pos=string::npos; int ireco=-1;
+  size_t pos=string::npos; int ireco=-1;
   while (pos==string::npos&&ireco<4) { pos = tmp.find(reco[++ireco]); }
   if (pos==string::npos) return alg;
 
@@ -339,7 +339,7 @@ string get_legend_label_from_input(const string& input)
 {
   string label;
   string tmp(input);
-  unsigned int pos=tmp.find(':');
+  size_t pos=tmp.find(':');
   if (pos!=string::npos) {
     label = tmp.substr(pos+1);
   }
@@ -400,7 +400,7 @@ void set_mg_histogram(TMultiGraph* mg,const string& quantity,bool logy)
 
   string xtitle("");
   string ytitle("");
-  unsigned int pos = quantity.find("Vs");
+  size_t pos = quantity.find("Vs");
   if (pos!=string::npos) {
     string ystr=quantity.substr(0,pos);
     string xstr=quantity.substr(pos+2);
