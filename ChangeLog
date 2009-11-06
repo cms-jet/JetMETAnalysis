@@ -1,6 +1,13 @@
+2009-11-06  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-06-00
+	* completely redesinged the configuration system
+	* single runnable configuration now: test/run_JRA_cfg.py
+	* driven by new python function: python/addAlgorithm.py
+
 2009-10-29  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
-	* BuildFile: tag V00-05-05
+	* tag V00-05-05
 	* use size_t where appropriate, as suggested by Yetkin
 	* remove jet_apply_jec target from Makefile, as it won't compile
 	standalone just yet

@@ -11,17 +11,16 @@ import FWCore.ParameterSet.Config as cms
 
 JetResponseParameters = cms.PSet(
     # write tree, no histograms
-    doHistos = cms.bool(False),
-    doTree   = cms.bool(True),
-    # DON'T record flavor information, consider both RefPt and JetPt
-    doFlavor = cms.bool(False),
-    doRefPt  = cms.bool(True),
-    doJetPt  = cms.bool(True),
+    doHistos        = cms.bool(False),
+    doTree          = cms.bool(True),
+    # record flavor information, consider both RefPt and JetPt
+    doFlavor        = cms.bool(True),
+    doRefPt         = cms.bool(True),
+    doJetPt         = cms.bool(True),
     # MATCHING MODE: deltaR(ref,jet)
-    deltaRMax = cms.double(99.9),
+    deltaRMax       = cms.double(99.9),
+    # deltaR(ref,parton) IF doFlavor is True
+    deltaRPartonMax = cms.double(0.25),
     # consider all matched references
-    nRefMax = cms.uint32(0)#,
-    # don't record relative / absolute response histograms
-    #nBinsRelRsp = cms.uint32(0),
-    #nBinsAbsRsp = cms.uint32(0)
+    nRefMax         = cms.uint32(0)
 )
