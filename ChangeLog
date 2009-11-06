@@ -1,6 +1,6 @@
 2009-11-06  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
-	* tag V00-06-00
+	* tag V00-06-01
 	* completely redesinged the configuration system
 	* single runnable configuration now: test/run_JRA_cfg.py
 	* driven by new python function: python/addAlgorithm.py
