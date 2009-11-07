@@ -3,25 +3,36 @@
 # JetMETAnalysis/JetUtilities Makefile (for standalone use outside CMSSW/SCRAM)
 # -----------------------------------------------------------------------------
 #
+# INSTRUCTIONS:
+# =============
+# setenv ROOTSYS /path/to/root
+# setenv PATH $ROOTSYS/bin:${PATH}
+# setenv LD_LIBRARY_PATH $ROOTSYS/lib
+#
+# mkdir standalone; cd standalone
+# setenv STANDALONE_DIR $PWD
+# setenv PATH $STANDALONE_DIR/bin:${PATH}
+# setenv LD_LIBRARY_PATH $STANDALONE_DIR/lib:${LD_LIBRARY_PATH}
+# cvs co -d JetUtilities CMSSW/CondFormats/JetUtilities
+# cd JetUtilities
+# make
+#
+# [you might want to stick these into e.g. $STANDALONE_DIR/setup.[c]sh]
 #
 #             07/29/2008 Philipp Schieferdecker <philipp.schieferdecker@cern.ch>
 ################################################################################
 
-
-CXX          = g++
+ifeq ($(STANDALONE_DIR),)
+	standalone_dir:=../
+	export STANDALONE_DIR:=$(standalone_dir)
+endif
 
 TMPDIR       = $(STANDALONE_DIR)/tmp
 LIBDIR       = $(STANDALONE_DIR)/lib
 BINDIR       = $(STANDALONE_DIR)/bin
 
-# maxosx
-CXX_SHRD     = -dynamiclib
-LIB_SUFX     = dylib
 
-# linux
-#CXX_SHRD     = -shared
-#LIB_SUFX     = so
-
+CXX          = g++
 
 ROOTCXXFLAGS = $(shell $(ROOTSYS)/bin/root-config --cflags)
 CXXFLAGS     = -O3 -Wall -fPIC -I. $(ROOTCXXFLAGS)
@@ -30,7 +41,7 @@ ROOTLIBS     = $(shell $(ROOTSYS)/bin/root-config --libs)
 
 OBJS         = $(TMPDIR)/CommandLine.o $(TMPDIR)/RootStyle.o
 
-LIB          = libJetUtilities.$(LIB_SUFX)
+LIB          = libJetUtilities.so
 LIBS         = -L$(LIBDIR) -lJetUtilities
 
 
@@ -43,7 +54,7 @@ setup:
 	mkdir -p $(BINDIR)
 
 lib: $(OBJS)
-	$(CXX) $(CXXFLAGS) $(CXX_SHRD) $(OBJS) $(ROOTLIBS) -o $(LIBDIR)/$(LIB) 
+	$(CXX) $(CXXFLAGS) -shared $(OBJS) $(ROOTLIBS) -o $(LIBDIR)/$(LIB) 
 
 bin: jet_inspect_histos jet_inspect_graphs
 
