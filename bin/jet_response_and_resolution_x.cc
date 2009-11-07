@@ -230,13 +230,12 @@ int main(int argc,char**argv)
   //
   // close input & output files
   //
-  ifile->Close();
-  delete ifile;
-
   gROOT->GetListOfFiles()->Remove(ofile);
   ofile->Close();
   delete ofile;
-  
+
+  ifile->Close();
+  delete ifile;
 
   return 0;
 }

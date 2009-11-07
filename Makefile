@@ -3,16 +3,39 @@
 # JetMETAnalysis/JetAnalyzers Makefile (for standalone use without CMSSW/SCRAM)
 # -----------------------------------------------------------------------------
 #
+# INSTRUCTIONS:
+# =============
+# setenv ROOTSYS /path/to/root
+# setenv PATH $ROOTSYS/bin:${PATH}
+# setenv LD_LIBRARY_PATH $ROOTSYS/lib
+#
+# mkdir standalone; cd standalone
+# setenv STANDALONE_DIR $PWD
+# setenv PATH $STANDALONE_DIR/bin:${PATH}
+# setenv LD_LIBRARY_PATH $STANDALONE_DIR/lib:${LD_LIBRARY_PATH}
+# cvs co -d JetUtilities CMSSW/CondFormats/JetUtilities
+# cvs co -d JetMETObjects CMSSW/CondFormats/JetMETObjects
+# cvs co -d JetAnalyzers CMSSW/JetMETAnalysis/JetAnalyzers
+# cd JetUtilities; make; cd ..
+# cd JetMETObjects; make; cd ..
+# cd JetAnalyzers; make; cd ..
+#
+# [you might want to stick these into e.g. $STANDALONE_DIR/setup.[c]sh]
 #
 #             07/30/2008 Philipp Schieferdecker <philipp.schieferdecker@cern.ch>
 ################################################################################
 
-
-CXX          = g++
+ifeq ($(STANDALONE_DIR),)
+	standalone_dir:=../
+	export STANDALONE_DIR:=$(standalone_dir)
+endif
 
 TMPDIR       = $(STANDALONE_DIR)/tmp
 LIBDIR       = $(STANDALONE_DIR)/lib
 BINDIR       = $(STANDALONE_DIR)/bin
+
+
+CXX          = g++
 
 ROOTCXXFLAGS = $(shell $(ROOTSYS)/bin/root-config --cflags)
 CXXFLAGS     = -O3 -Wall -fPIC -I. $(ROOTCXXFLAGS)
@@ -55,7 +78,8 @@ jet_l3_correction:
         -o $(BINDIR)/jet_l3_correction_x
 
 jet_apply_jec:
-	$(CXX) $(CXXFLAGS) bin/jet_apply_jec_x.cc $(LIBS) -lJetMETObjects $(ROOTLIBS) \
+	$(CXX) $(CXXFLAGS) bin/jet_apply_jec_x.cc \
+	$(LIBS) -lJetMETObjects $(ROOTLIBS) \
         -o $(BINDIR)/jet_apply_jec_x
 
 jet_weighted_spectrum:

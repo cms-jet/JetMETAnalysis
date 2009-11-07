@@ -8,7 +8,7 @@
 
 
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
-#include "CondFormats/JetMETObjects/interface/CombinedJetCorrector.h"
+#include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
 
 #include <TSystem.h>
 #include <TFile.h>
@@ -111,16 +111,16 @@ int main(int argc,char**argv)
     itree->SetBranchAddress("jteta",jteta);
     TBranch* b_jtpt=otree->Branch("jtpt",jtpt,"jtpt[nref]/F");
 
-    CombinedJetCorrector corrector(get_correction_levels(levels),
-				   get_correction_tags(tag,alg,levels));
+    FactorizedJetCorrector corrector(get_correction_levels(levels),
+				     get_correction_tags(tag,alg,levels));
     
     int nevt=itree->GetEntries();
     for (int ievt=0;ievt<nevt;ievt++) {
       itree->GetEntry(ievt);
       for (unsigned int ijt=0;ijt<nref;ijt++) {
-	float pt =jtpt[ijt];
-	float eta=jteta[ijt];
-	float jec=corrector.getCorrection(pt,eta,pt);
+	corrector.setJetPt(jtpt[ijt]);
+	corrector.setJetEta(jteta[ijt]);
+	float jec=corrector.getCorrection();
 	jtpt[ijt]*=jec;
 	//if (ijt==0) cout<<"ptraw="<<pt<<" jec="<<jec<<" ptcorr="<<pt*jec
 	//	<<endl;
