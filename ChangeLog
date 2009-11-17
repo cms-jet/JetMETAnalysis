@@ -1,3 +1,16 @@
+2009-11-17  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-07-00
+	* adopted latest JEC software framework changes
+	* requires CMSSW_3_3_X
+	* requires HEAD of most relevant JetMETCorrections/* packages, as
+	well as CondFormats/JetMETObjects
+	* jet_response_analyzer_x: add option 'useweight', default is
+	'true', will attempt to read the weight for each event from the
+	input tree *unless* the parameter xsection is set to something
+	larger than 0.0 (in which case the weight is still computed as the
+	xsection divided by the number of events in the tree).
+
 2009-11-06  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-06-01

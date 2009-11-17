@@ -83,6 +83,7 @@ int main(int argc,char**argv)
   vector<float>  binsphi      = cl.getVector<float> ("binsphi",       "");
   string         treename     = cl.getValue<string> ("treename",     "t");
   string         output       = cl.getValue<string> ("output","jra.root");
+  bool           useweight    = cl.getValue<bool>   ("useweight",   true);
   float          xsection     = cl.getValue<float>  ("xsection",     0.0);
   int            nrefmax      = cl.getValue<int>    ("nrefmax",        0);
   int            nbinspt      = cl.getValue<int>    ("nbinspt",       50);
@@ -119,7 +120,7 @@ int main(int argc,char**argv)
   bool doetarsp=(nbinsetarsp>0);
   bool dophirsp=(nbinsphirsp>0);
 
-  if (xsection>0.0) TH1::SetDefaultSumw2(true);
+  TH1::SetDefaultSumw2(true);
 
 
   //
@@ -162,16 +163,16 @@ int main(int argc,char**argv)
     TTree* tree = (TTree*)idir->Get("t");
     if (0==tree) { cout<<"no tree found."<<endl; continue; }
   
-    float weight = (xsection>0.0) ? xsection/tree->GetEntries() : 1.0;
+
     float drmax_alg = drmax;
     if (alg2drmax.find(alg)!=alg2drmax.end()) drmax_alg=alg2drmax[alg];
-    //cout<<"weight="<<weight<<", drmax_alg="<<drmax_alg<<endl;
     
 
     //
     // setup the tree for reading
     //
     unsigned char nref;
+    float weight(1.0);
     int   refpdgid[100];
     float refpt[100];
     float refeta[100];
@@ -190,6 +191,14 @@ int main(int argc,char**argv)
     tree->SetBranchAddress("jtpt",    jtpt);
     tree->SetBranchAddress("jteta",   jteta);
     tree->SetBranchAddress("jtphi",   jtphi);
+    
+    if (xsection>0.0) { weight = xsection/tree->GetEntries(); useweight = false; }
+    if (useweight) {
+      if (0==tree->GetBranch("weight"))
+	cout<<"branch 'weight' not found, events will NOT be weighted!"<<endl;
+      else
+	tree->SetBranchAddress("weight",&weight);
+    }
     
     if (dobalance) {
       if (0==tree->GetBranch("refdphijt")) {
