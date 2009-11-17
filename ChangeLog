@@ -1,6 +1,14 @@
+2009-11-17  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-05-00
+	* added Hauke as developer
+	* removed Roger as admin / developer
+	* added GenJetLeptonFinder (Hauke)
+
 2009-11-17  Hauke Held  <held@cern.ch>
 
-	* added the GenJetLeptonFinder class and adjusted the BuildFile accordingly 
+	* added the GenJetLeptonFinder class and adjusted the BuildFile
+	accordingly
 	
 
 2009-10-29  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
