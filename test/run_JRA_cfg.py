@@ -116,9 +116,10 @@ algorithms.append('kt6pfl2l3')
 algorithms.append('ic5pf')
 algorithms.append('ic5pfl2l3')
 
-algorithms.append('ak5jpt')
-algorithms.append('sc5jpt')
-algorithms.append('ic5jpt')
+# CURRENTLY NOT SUPPORTED, BACK SOON!
+#algorithms.append('ak5jpt')
+#algorithms.append('sc5jpt')
+#algorithms.append('ic5jpt')
 
 # set to False to use jets from the input file (NOT RECOMMENDED)
 doJetReco = True

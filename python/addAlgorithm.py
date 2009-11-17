@@ -18,7 +18,7 @@ partons = cms.EDFilter(
 ## jet reconstruction
 ################################################################################
 from JetMETAnalysis.JetAnalyzers.JetReconstruction_cff import *
-from JetMETAnalysis.JetAnalyzers.JPTReconstruction_cff import *
+#from JetMETAnalysis.JetAnalyzers.JPTReconstruction_cff import *
 from JetMETAnalysis.JetAnalyzers.JetCorrection_cff     import *
 
 stdGenJetsDict = {
@@ -42,48 +42,48 @@ stdGenJetsDict = {
     }
 
 genJetsDict = {
-    'ak5calo':     ('ak5GenJetsNoMusNoNus', ak5GenJetsNoMusNoNus),
-    'ak7calo':     ('ak7GenJetsNoMusNoNus', ak7GenJetsNoMusNoNus),
-    'sc5calo':     ('sc5GenJetsNoMusNoNus', sc5GenJetsNoMusNoNus),
-    'sc7calo':     ('sc7GenJetsNoMusNoNus', sc7GenJetsNoMusNoNus),
-    'ic5calo':     ('ic5GenJetsNoMusNoNus', ic5GenJetsNoMusNoNus),
-    'kt4calo':     ('kt4GenJetsNoMusNoNus', kt4GenJetsNoMusNoNus),
-    'kt5calo':     ('kt5GenJetsNoMusNoNus', kt5GenJetsNoMusNoNus),
-    'kt6calo':     ('kt6GenJetsNoMusNoNus', kt6GenJetsNoMusNoNus),
-    'kt7calo':     ('kt7GenJetsNoMusNoNus', kt7GenJetsNoMusNoNus),
-    'ca4calo':     ('ca4GenJetsNoMusNoNus', ca4GenJetsNoMusNoNus),
-    'ca5calo':     ('ca5GenJetsNoMusNoNus', ca5GenJetsNoMusNoNus),
-    'ca6calo':     ('ca6GenJetsNoMusNoNus', ca6GenJetsNoMusNoNus),
-    'ca7calo':     ('ca7GenJetsNoMusNoNus', ca7GenJetsNoMusNoNus),
-    'ak5pf':       ('ak5GenJetsNoNus',      ak5GenJetsNoNus),
-    'ak7pf':       ('ak7GenJetsNoNus',      ak7GenJetsNoNus),
-    'sc5pf':       ('sc5GenJetsNoNus',      sc5GenJetsNoNus),
-    'sc7pf':       ('sc7GenJetsNoNus',      sc7GenJetsNoNus),
-    'ic5pf':       ('ic5GenJetsNoNus',      ic5GenJetsNoNus),
-    'kt4pf':       ('kt4GenJetsNoNus',      kt4GenJetsNoNus),
-    'kt5pf':       ('kt5GenJetsNoNus',      kt5GenJetsNoNus),
-    'kt6pf':       ('kt6GenJetsNoNus',      kt6GenJetsNoNus),
-    'kt7pf':       ('kt7GenJetsNoNus',      kt7GenJetsNoNus),
-    'ca4pf':       ('ca4GenJetsNoNus',      ca4GenJetsNoNus),
-    'ca5pf':       ('ca5GenJetsNoNus',      ca5GenJetsNoNus),
-    'ca6pf':       ('ca6GenJetsNoNus',      ca6GenJetsNoNus),
-    'ca7pf':       ('ca7GenJetsNoNus',      ca7GenJetsNoNus),
-    'ak5trk':      ('ak5GenJetsNoNus',      ak5GenJetsNoNus),
-    'ak7trk':      ('ak7GenJetsNoNus',      ak7GenJetsNoNus),
-    'sc5trk':      ('sc5GenJetsNoNus',      sc5GenJetsNoNus),
-    'sc7trk':      ('sc7GenJetsNoNus',      sc7GenJetsNoNus),
-    'ic5trk':      ('ic5GenJetsNoNus',      ic5GenJetsNoNus),
-    'kt4trk':      ('kt4GenJetsNoNus',      kt4GenJetsNoNus),
-    'kt5trk':      ('kt5GenJetsNoNus',      kt5GenJetsNoNus),
-    'kt6trk':      ('kt6GenJetsNoNus',      kt6GenJetsNoNus),
-    'kt7trk':      ('kt7GenJetsNoNus',      kt7GenJetsNoNus),
-    'ca4trk':      ('ca4GenJetsNoNus',      ca4GenJetsNoNus),
-    'ca5trk':      ('ca5GenJetsNoNus',      ca5GenJetsNoNus),
-    'ca6trk':      ('ca6GenJetsNoNus',      ca6GenJetsNoNus),
-    'ca7trk':      ('ca7GenJetsNoNus',      ca7GenJetsNoNus),
-    'ak5jpt':      ('ak5GenJetsNoNus',      ak5GenJetsNoNus),
-    'sc5jpt':      ('sc5GenJetsNoNus',      sc5GenJetsNoNus),
-    'ic5jpt':      ('ic5GenJetsNoNus',      ic5GenJetsNoNus)
+    'ak5calo':     ('ak5GenJetsNoMuNoNu', ak5GenJetsNoMuNoNu),
+    'ak7calo':     ('ak7GenJetsNoMuNoNu', ak7GenJetsNoMuNoNu),
+    'sc5calo':     ('sc5GenJetsNoMuNoNu', sc5GenJetsNoMuNoNu),
+    'sc7calo':     ('sc7GenJetsNoMuNoNu', sc7GenJetsNoMuNoNu),
+    'ic5calo':     ('ic5GenJetsNoMuNoNu', ic5GenJetsNoMuNoNu),
+    'kt4calo':     ('kt4GenJetsNoMuNoNu', kt4GenJetsNoMuNoNu),
+    'kt5calo':     ('kt5GenJetsNoMuNoNu', kt5GenJetsNoMuNoNu),
+    'kt6calo':     ('kt6GenJetsNoMuNoNu', kt6GenJetsNoMuNoNu),
+    'kt7calo':     ('kt7GenJetsNoMuNoNu', kt7GenJetsNoMuNoNu),
+    'ca4calo':     ('ca4GenJetsNoMuNoNu', ca4GenJetsNoMuNoNu),
+    'ca5calo':     ('ca5GenJetsNoMuNoNu', ca5GenJetsNoMuNoNu),
+    'ca6calo':     ('ca6GenJetsNoMuNoNu', ca6GenJetsNoMuNoNu),
+    'ca7calo':     ('ca7GenJetsNoMuNoNu', ca7GenJetsNoMuNoNu),
+    'ak5pf':       ('ak5GenJetsNoNu',     ak5GenJetsNoNu),
+    'ak7pf':       ('ak7GenJetsNoNu',     ak7GenJetsNoNu),
+    'sc5pf':       ('sc5GenJetsNoNu',     sc5GenJetsNoNu),
+    'sc7pf':       ('sc7GenJetsNoNu',     sc7GenJetsNoNu),
+    'ic5pf':       ('ic5GenJetsNoNu',     ic5GenJetsNoNu),
+    'kt4pf':       ('kt4GenJetsNoNu',     kt4GenJetsNoNu),
+    'kt5pf':       ('kt5GenJetsNoNu',     kt5GenJetsNoNu),
+    'kt6pf':       ('kt6GenJetsNoNu',     kt6GenJetsNoNu),
+    'kt7pf':       ('kt7GenJetsNoNu',     kt7GenJetsNoNu),
+    'ca4pf':       ('ca4GenJetsNoNu',     ca4GenJetsNoNu),
+    'ca5pf':       ('ca5GenJetsNoNu',     ca5GenJetsNoNu),
+    'ca6pf':       ('ca6GenJetsNoNu',     ca6GenJetsNoNu),
+    'ca7pf':       ('ca7GenJetsNoNu',     ca7GenJetsNoNu),
+    'ak5trk':      ('ak5GenJetsNoNu',     ak5GenJetsNoNu),
+    'ak7trk':      ('ak7GenJetsNoNu',     ak7GenJetsNoNu),
+    'sc5trk':      ('sc5GenJetsNoNu',     sc5GenJetsNoNu),
+    'sc7trk':      ('sc7GenJetsNoNu',     sc7GenJetsNoNu),
+    'ic5trk':      ('ic5GenJetsNoNu',     ic5GenJetsNoNu),
+    'kt4trk':      ('kt4GenJetsNoNu',     kt4GenJetsNoNu),
+    'kt5trk':      ('kt5GenJetsNoNu',     kt5GenJetsNoNu),
+    'kt6trk':      ('kt6GenJetsNoNu',     kt6GenJetsNoNu),
+    'kt7trk':      ('kt7GenJetsNoNu',     kt7GenJetsNoNu),
+    'ca4trk':      ('ca4GenJetsNoNu',     ca4GenJetsNoNu),
+    'ca5trk':      ('ca5GenJetsNoNu',     ca5GenJetsNoNu),
+    'ca6trk':      ('ca6GenJetsNoNu',     ca6GenJetsNoNu),
+    'ca7trk':      ('ca7GenJetsNoNu',     ca7GenJetsNoNu),
+    'ak5jpt':      ('ak5GenJetsNoNu',     ak5GenJetsNoNu),
+    'sc5jpt':      ('sc5GenJetsNoNu',     sc5GenJetsNoNu),
+    'ic5jpt':      ('ic5GenJetsNoNu',     ic5GenJetsNoNu)
     }
 
 stdRecJetsDict = {
@@ -146,38 +146,90 @@ recJetsDict = {
     'ca5trk':      ('ca5TrackJets',     ca5TrackJets),
     'ca6trk':      ('ca6TrackJets',     ca6TrackJets),
     'ca7trk':      ('ca7TrackJets',     ca7TrackJets),
-    'ak5jpt':      ('ak5JPTJets',       ak5JPTJets),
-    'sc5jpt':      ('sc5JPTJets',       sc5JPTJets),
-    'ic5jpt':      ('ic5JPTJets',       ic5JPTJets)
+#    'ak5jpt':      ('ak5JPTJets',       ak5JPTJets),
+#    'sc5jpt':      ('sc5JPTJets',       sc5JPTJets),
+#    'ic5jpt':      ('ic5JPTJets',       ic5JPTJets)
     }
 
 corrJetsDict = {
-    'ak5calol2l3': ('ak5CaloJetsL2L3',  ak5CaloJetsL2L3),
-    'ak7calol2l3': ('ak7CaloJetsL2L3',  ak7CaloJetsL2L3),
-    'sc5calol2l3': ('sc5CaloJetsL2L3',  sc5CaloJetsL2L3),
-    'sc7calol2l3': ('sc7CaloJetsL2L3',  sc7CaloJetsL2L3),
-    'ic5calol2l3': ('ic5CaloJetsL2L3',  ic5CaloJetsL2L3),
-    'kt4calol2l3': ('kt4CaloJetsL2L3',  kt4CaloJetsL2L3),
-    'kt5calol2l3': ('kt5CaloJetsL2L3',  kt5CaloJetsL2L3),
-    'kt6calol2l3': ('kt6CaloJetsL2L3',  kt6CaloJetsL2L3),
-    'kt7calol2l3': ('kt7CaloJetsL2L3',  kt7CaloJetsL2L3),
-    'ca4calol2l3': ('ca4CaloJetsL2L3',  ca4CaloJetsL2L3),
-    'ca5calol2l3': ('ca5CaloJetsL2L3',  ca5CaloJetsL2L3),
-    'ca6calol2l3': ('ca6CaloJetsL2L3',  ca6CaloJetsL2L3),
-    'ca7calol2l3': ('ca7CaloJetsL2L3',  ca7CaloJetsL2L3),
-    'ak5pfl2l3':   ('ak5PFJetsL2L3',    ak5PFJetsL2L3),
-    'ak7pfl2l3':   ('ak7PFJetsL2L3',    ak7PFJetsL2L3),
-    'sc5pfl2l3':   ('sc5PFJetsL2L3',    sc5PFJetsL2L3),
-    'sc7pfl2l3':   ('sc7PFJetsL2L3',    sc7PFJetsL2L3),
-    'ic5pfl2l3':   ('ic5PFJetsL2L3',    ic5PFJetsL2L3),
-    'kt4pfl2l3':   ('kt4PFJetsL2L3',    kt4PFJetsL2L3),
-    'kt5pfl2l3':   ('kt5PFJetsL2L3',    kt5PFJetsL2L3),
-    'kt6pfl2l3':   ('kt6PFJetsL2L3',    kt6PFJetsL2L3),
-    'kt7pfl2l3':   ('kt7PFJetsL2L3',    kt7PFJetsL2L3),
-    'ca4pfl2l3':   ('ca4PFJetsL2L3',    ca4PFJetsL2L3),
-    'ca5pfl2l3':   ('ca5PFJetsL2L3',    ca5PFJetsL2L3),
-    'ca6pfl2l3':   ('ca6PFJetsL2L3',    ca6PFJetsL2L3),
-    'ca7pfl2l3':   ('ca7PFJetsL2L3',    ca7PFJetsL2L3),
+    'ak5calol1':     ('ak5CaloJetsL1',    ak5CaloJetsL1),
+    'ak7calol1':     ('ak7CaloJetsL1',    ak7CaloJetsL1),
+    'sc5calol1':     ('sc5CaloJetsL1',    sc5CaloJetsL1),
+    'sc7calol1':     ('sc7CaloJetsL1',    sc7CaloJetsL1),
+    'ic5calol1':     ('ic5CaloJetsL1',    ic5CaloJetsL1),
+    'kt4calol1':     ('kt4CaloJetsL1',    kt4CaloJetsL1),
+    'kt5calol1':     ('kt5CaloJetsL1',    kt5CaloJetsL1),
+    'kt6calol1':     ('kt6CaloJetsL1',    kt6CaloJetsL1),
+    'kt7calol1':     ('kt7CaloJetsL1',    kt7CaloJetsL1),
+    'ca4calol1':     ('ca4CaloJetsL1',    ca4CaloJetsL1),
+    'ca5calol1':     ('ca5CaloJetsL1',    ca5CaloJetsL1),
+    'ca6calol1':     ('ca6CaloJetsL1',    ca6CaloJetsL1),
+    'ca7calol1':     ('ca7CaloJetsL1',    ca7CaloJetsL1),
+    'ak5pfl1':       ('ak5PFJetsL1',      ak5PFJetsL1),
+    'ak7pfl1':       ('ak7PFJetsL1',      ak7PFJetsL1),
+    'sc5pfl1':       ('sc5PFJetsL1',      sc5PFJetsL1),
+    'sc7pfl1':       ('sc7PFJetsL1',      sc7PFJetsL1),
+    'ic5pfl1':       ('ic5PFJetsL1',      ic5PFJetsL1),
+    'kt4pfl1':       ('kt4PFJetsL1',      kt4PFJetsL1),
+    'kt5pfl1':       ('kt5PFJetsL1',      kt5PFJetsL1),
+    'kt6pfl1':       ('kt6PFJetsL1',      kt6PFJetsL1),
+    'kt7pfl1':       ('kt7PFJetsL1',      kt7PFJetsL1),
+    'ca4pfl1':       ('ca4PFJetsL1',      ca4PFJetsL1),
+    'ca5pfl1':       ('ca5PFJetsL1',      ca5PFJetsL1),
+    'ca6pfl1':       ('ca6PFJetsL1',      ca6PFJetsL1),
+    'ca7pfl1':       ('ca7PFJetsL1',      ca7PFJetsL1),
+    'ak5calol2l3':   ('ak5CaloJetsL2L3',  ak5CaloJetsL2L3),
+    'ak7calol2l3':   ('ak7CaloJetsL2L3',  ak7CaloJetsL2L3),
+    'sc5calol2l3':   ('sc5CaloJetsL2L3',  sc5CaloJetsL2L3),
+    'sc7calol2l3':   ('sc7CaloJetsL2L3',  sc7CaloJetsL2L3),
+    'ic5calol2l3':   ('ic5CaloJetsL2L3',  ic5CaloJetsL2L3),
+    'kt4calol2l3':   ('kt4CaloJetsL2L3',  kt4CaloJetsL2L3),
+    'kt5calol2l3':   ('kt5CaloJetsL2L3',  kt5CaloJetsL2L3),
+    'kt6calol2l3':   ('kt6CaloJetsL2L3',  kt6CaloJetsL2L3),
+    'kt7calol2l3':   ('kt7CaloJetsL2L3',  kt7CaloJetsL2L3),
+    'ca4calol2l3':   ('ca4CaloJetsL2L3',  ca4CaloJetsL2L3),
+    'ca5calol2l3':   ('ca5CaloJetsL2L3',  ca5CaloJetsL2L3),
+    'ca6calol2l3':   ('ca6CaloJetsL2L3',  ca6CaloJetsL2L3),
+    'ca7calol2l3':   ('ca7CaloJetsL2L3',  ca7CaloJetsL2L3),
+    'ak5pfl2l3':     ('ak5PFJetsL2L3',    ak5PFJetsL2L3),
+    'ak7pfl2l3':     ('ak7PFJetsL2L3',    ak7PFJetsL2L3),
+    'sc5pfl2l3':     ('sc5PFJetsL2L3',    sc5PFJetsL2L3),
+    'sc7pfl2l3':     ('sc7PFJetsL2L3',    sc7PFJetsL2L3),
+    'ic5pfl2l3':     ('ic5PFJetsL2L3',    ic5PFJetsL2L3),
+    'kt4pfl2l3':     ('kt4PFJetsL2L3',    kt4PFJetsL2L3),
+    'kt5pfl2l3':     ('kt5PFJetsL2L3',    kt5PFJetsL2L3),
+    'kt6pfl2l3':     ('kt6PFJetsL2L3',    kt6PFJetsL2L3),
+    'kt7pfl2l3':     ('kt7PFJetsL2L3',    kt7PFJetsL2L3),
+    'ca4pfl2l3':     ('ca4PFJetsL2L3',    ca4PFJetsL2L3),
+    'ca5pfl2l3':     ('ca5PFJetsL2L3',    ca5PFJetsL2L3),
+    'ca6pfl2l3':     ('ca6PFJetsL2L3',    ca6PFJetsL2L3),
+    'ca7pfl2l3':     ('ca7PFJetsL2L3',    ca7PFJetsL2L3),
+    'ak5calol1l2l3': ('ak5CaloJetsL1L2L3',ak5CaloJetsL1L2L3),
+    'ak7calol1l2l3': ('ak7CaloJetsL1L2L3',ak7CaloJetsL1L2L3),
+    'sc5calol1l2l3': ('sc5CaloJetsL1L2L3',sc5CaloJetsL1L2L3),
+    'sc7calol1l2l3': ('sc7CaloJetsL1L2L3',sc7CaloJetsL1L2L3),
+    'ic5calol1l2l3': ('ic5CaloJetsL1L2L3',ic5CaloJetsL1L2L3),
+    'kt4calol1l2l3': ('kt4CaloJetsL1L2L3',kt4CaloJetsL1L2L3),
+    'kt5calol1l2l3': ('kt5CaloJetsL1L2L3',kt5CaloJetsL1L2L3),
+    'kt6calol1l2l3': ('kt6CaloJetsL1L2L3',kt6CaloJetsL1L2L3),
+    'kt7calol1l2l3': ('kt7CaloJetsL1L2L3',kt7CaloJetsL1L2L3),
+    'ca4calol1l2l3': ('ca4CaloJetsL1L2L3',ca4CaloJetsL1L2L3),
+    'ca5calol1l2l3': ('ca5CaloJetsL1L2L3',ca5CaloJetsL1L2L3),
+    'ca6calol1l2l3': ('ca6CaloJetsL1L2L3',ca6CaloJetsL1L2L3),
+    'ca7calol1l2l3': ('ca7CaloJetsL1L2L3',ca7CaloJetsL1L2L3),
+    'ak5pfl1l2l3':   ('ak5PFJetsL1L2L3',  ak5PFJetsL1L2L3),
+    'ak7pfl1l2l3':   ('ak7PFJetsL1L2L3',  ak7PFJetsL1L2L3),
+    'sc5pfl1l2l3':   ('sc5PFJetsL1L2L3',  sc5PFJetsL1L2L3),
+    'sc7pfl1l2l3':   ('sc7PFJetsL1L2L3',  sc7PFJetsL1L2L3),
+    'ic5pfl1l2l3':   ('ic5PFJetsL1L2L3',  ic5PFJetsL1L2L3),
+    'kt4pfl1l2l3':   ('kt4PFJetsL1L2L3',  kt4PFJetsL1L2L3),
+    'kt5pfl1l2l3':   ('kt5PFJetsL1L2L3',  kt5PFJetsL1L2L3),
+    'kt6pfl1l2l3':   ('kt6PFJetsL1L2L3',  kt6PFJetsL1L2L3),
+    'kt7pfl1l2l3':   ('kt7PFJetsL1L2L3',  kt7PFJetsL1L2L3),
+    'ca4pfl1l2l3':   ('ca4PFJetsL1L2L3',  ca4PFJetsL1L2L3),
+    'ca5pfl1l2l3':   ('ca5PFJetsL1L2L3',  ca5PFJetsL1L2L3),
+    'ca6pfl1l2l3':   ('ca6PFJetsL1L2L3',  ca6PFJetsL1L2L3),
+    'ca7pfl1l2l3':   ('ca7PFJetsL1L2L3',  ca7PFJetsL1L2L3),
     }
 
 
@@ -214,6 +266,7 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         type          = 'PF'
         alg_size_type = alg_size + 'pf'
     elif (alg_size_type_corr.find('jpt') > 0) :
+        raise ValueError("JPT currently not supported, soon to be back!") # TEMP!
         alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('jpt')]
         type          = 'JPT'
         alg_size_type = alg_size + 'jpt'
@@ -226,8 +279,9 @@ def addAlgorithm(process,alg_size_type_corr,reco):
 
         
     if (alg_size_type_corr.find('l1') > 0):
-        raise ValueError('PU subtraction not yet (!) supported, omit l1!')
         correctl1   = True
+        if not reco:
+            raise ValueError("Can't subtract PU without reco!")
         
     if (alg_size_type_corr.find('l2l3') > 0):
         correctl2l3 = True
@@ -277,7 +331,7 @@ def addAlgorithm(process,alg_size_type_corr,reco):
     
     ## correct jets
     corrLabel = ''
-    if correctl2l3:
+    if correctl1 or correctl2l3:
         process.load('JetMETAnalysis.JetAnalyzers.JetCorrection_cff')
         (corrLabel,corrJets) = corrJetsDict[alg_size_type_corr]
         setattr(process,corrLabel,corrJets)
@@ -297,12 +351,19 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         else:
             raise ValueError(alg_size + " not supported for JPT!")
     elif reco:
+        process.load('Configuration.StandardSequences.Geometry_cff')
+        process.load('Configuration.StandardSequences.MagneticField_cff')
         (recLabel,recJets) = recJetsDict[alg_size_type]
         if correctl2l3:
             corrJets.src = recLabel
             jetPtEta.src = corrLabel
         else:
             jetPtEta.src = recLabel
+        if correctl1:
+            recJets.doPUFastjet         = True
+            recJets.Active_Area_Repeats = 1
+            recJets.GhostArea           = 0.01
+            recJets.Ghost_EtaMax        = 5.0
         setattr(process,recLabel,recJets)
         sequence = recJets * sequence
         if type == 'PF':
@@ -319,12 +380,12 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         setattr(process,genLabel,genJets)
         sequence = genJets * sequence
         if type == 'Calo':
-            setattr(process,'genParticlesForJetsNoMusNoNus',
-                    genParticlesForJetsNoMusNoNus)
-            sequence = genParticlesForJetsNoMusNoNus * sequence
+            setattr(process,'genParticlesForJetsNoMuNoNu',
+                    genParticlesForJetsNoMuNoNu)
+            sequence = genParticlesForJetsNoMuNoNu * sequence
         else:
-            setattr(process,'genParticlesForJetsNoNus',genParticlesForJetsNoNus)
-            sequence = genParticlesForJetsNoNus * sequence
+            setattr(process,'genParticlesForJetsNoNu',genParticlesForJetsNoNu)
+            sequence = genParticlesForJetsNoNu * sequence
         refPtEta.src = genJets.label()
         
     ## filter / map partons only if flavor information is requested
