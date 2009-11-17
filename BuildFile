@@ -1,6 +1,7 @@
-<use name=root>
-
+  <use name=root>
+  <use name=DataFormats/JetReco>
 <export>
   <lib name=JetMETAnalysisJetUtilities>
+  <use name=DataFormats/JetReco>
   <use name=root>
 </export>
