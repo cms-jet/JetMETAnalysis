@@ -1,3 +1,10 @@
+2009-11-19  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-05-01
+	* style improvements to jet_inspect_graphs_c
+	* fix CommandLine: only now can [v]string parmeter values with
+	whitespaces in them be read correctly!
+
 2009-11-17  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-05-00

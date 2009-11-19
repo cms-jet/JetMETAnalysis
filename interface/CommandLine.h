@@ -9,6 +9,13 @@
 #include <map>
 
 
+//
+// convert stringstream to element, allow std::string specialization
+//
+template <class T> void ssToVal(std::stringstream& ss,T& e){ss>>e;}
+template <> void ssToVal(std::stringstream& ss,std::string& e){e=ss.str();}
+
+
 class CommandLine
 {
 public:
@@ -35,6 +42,7 @@ public:
 private:
   bool parse_file(const std::string& file_name);
   
+
 private:
   //
   // internal typedefs
@@ -68,7 +76,7 @@ T CommandLine::getValue(const std::string& name)
     _ordered_options.push_back(name);
     std::stringstream ss;
     ss<<it->second.first;
-    ss>>result;
+    ssToVal(ss,result);
     return result;
   }
   _unknowns.push_back(name);
@@ -85,7 +93,8 @@ T CommandLine::getValue(const std::string& name,T default_value)
   std::string default_as_string;
   std::stringstream ss;
   ss<<default_value;
-  ss>>default_as_string;
+  default_as_string = ss.str();
+  //ss>>default_as_string;
   _options[name] = std::make_pair(default_as_string,true);
   _ordered_options.push_back(name);
   return default_value;
@@ -145,7 +154,7 @@ std::vector<T> CommandLine::getVector(const std::string& name)
 	ss<<tmp.substr(0,pos);
 	tmp.erase(0,pos+1);
 	T element;
-	ss>>element;
+	ssToVal(ss,element);
 	result.push_back(element);
       }
       while (pos!=std::string::npos);

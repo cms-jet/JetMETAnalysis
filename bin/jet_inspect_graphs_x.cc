@@ -72,6 +72,9 @@ int main(int argc,char** argv)
   if (!cl.check()) return 0;
   cl.print();
   
+  cout<<"labels[0] = "<<labels[0]<<endl;
+  cout<<"prefix = "<<prefix<<endl;
+  
   // sanity check
   if ((inputs.size()>1&&algs.size()>1)||
       (algs.size()>1&&variables.size()>1)||
@@ -137,7 +140,8 @@ int main(int argc,char** argv)
   else {
     labels.push_back(get_legend_label_from_alg(algs[0]));
   }
-  
+  cout<<"labels[0] = "<<labels[0]<<endl;
+
   TMultiGraph* mg(0);
   TLegend*     leg(0);
   string       range;
@@ -182,8 +186,8 @@ int main(int argc,char** argv)
 	    }
 	    int nlabels=(labels.size()>0)?labels.size():variables.size();
 	    mg=new TMultiGraph(sscname.str().c_str(),"");
-	    double ymax=(quantity.find("Rsp")==string::npos)?0.85:0.5;
-	    leg=new TLegend(0.55,ymax,0.9,ymax-nlabels*0.055);
+	    double ymax=(quantity.find("Rsp")==string::npos)?0.85:0.4;
+	    leg=new TLegend(0.5,ymax,0.9,ymax-nlabels*0.06);
 	    range=get_range(gl,indices,variables.size()==1);
 	  }
 	  
@@ -191,6 +195,7 @@ int main(int argc,char** argv)
 	  string label=(variables.size()>1&&labels.size()==0) ?
 	    get_range(gl,indices,true) : labels[ilabel];
 	  
+	  cout<<"label = "<<label<<endl;
 	  mg->Add(g);
 	  set_graph_style(g,mg->GetListOfGraphs()->GetEntries()-1);
 	  leg->AddEntry(g,label.c_str(),"lp");
@@ -293,15 +298,9 @@ string get_range(const ObjectLoader<TGraphErrors>& gl,
 //______________________________________________________________________________
 void draw_legend(TLegend* leg,const string& quantity)
 {
-  
-  string mode("");
-  size_t pos = quantity.find("Vs");
-  if (pos!=string::npos) {
-    string str=quantity.substr(0,pos);
-    if (str=="Rsp"||str=="RelRsp"||str=="AbsRsp") mode="Rsp";
-    if (str=="Res"||str=="RelRes"||str=="AbsRes") mode="Res";
-  }
+  leg->SetLineColor(10);
   leg->SetFillColor(10);
+  leg->SetBorderSize(0);
   leg->Draw();
 }
 
@@ -379,6 +378,7 @@ void set_graph_style(TGraphErrors* g, unsigned int ngraph)
   g->SetLineColor(color);
   g->SetMarkerColor(color);
   g->SetMarkerStyle(marker);
+  g->SetMarkerSize(0.8);
   
   TF1* f(0);
   if (g->GetListOfFunctions()->GetEntries()>0) {
