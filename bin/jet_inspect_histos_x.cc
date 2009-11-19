@@ -68,6 +68,8 @@ int main(int argc,char** argv)
 
   if (prefix.empty()) prefix=algs[0];
   
+  if (batch&&formats.size()==0) formats.push_back("pdf");
+  
   argc = (batch) ? 2 : 1; if (batch) argv[1] = (char*)"-b";
   TApplication* app=new TApplication("jet_inspect_histos",&argc,argv);
   

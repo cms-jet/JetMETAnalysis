@@ -80,7 +80,9 @@ int main(int argc,char** argv)
 	<<endl;
     return 0;
   }
-
+  
+  if (batch&&formats.size()==0) formats.push_back("pdf");
+  
   argc = (batch) ? 2 : 1; if (batch) argv[1] = (char*)"-b";
   TApplication* app=new TApplication("jet_inspect_graphs",&argc,argv);
   
