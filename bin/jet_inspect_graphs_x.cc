@@ -72,9 +72,6 @@ int main(int argc,char** argv)
   if (!cl.check()) return 0;
   cl.print();
   
-  cout<<"labels[0] = "<<labels[0]<<endl;
-  cout<<"prefix = "<<prefix<<endl;
-  
   // sanity check
   if ((inputs.size()>1&&algs.size()>1)||
       (algs.size()>1&&variables.size()>1)||

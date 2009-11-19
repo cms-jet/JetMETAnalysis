@@ -94,7 +94,6 @@ T CommandLine::getValue(const std::string& name,T default_value)
   std::stringstream ss;
   ss<<default_value;
   default_as_string = ss.str();
-  //ss>>default_as_string;
   _options[name] = std::make_pair(default_as_string,true);
   _ordered_options.push_back(name);
   return default_value;
