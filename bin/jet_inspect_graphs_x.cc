@@ -46,9 +46,8 @@ string get_range(const ObjectLoader<TGraphErrors>& gl,
 		 bool  addFixedVars=true);
 string get_legend_label_from_alg(const string& alg);
 string get_legend_label_from_input(const string& input);
-void   set_graph_style(TGraphErrors* g,unsigned int ngraph);
-void   set_mg_histogram(TMultiGraph* mg,const string& quantity,bool logy);
-
+void   set_graph_style(TGraphErrors* g,unsigned int ngraph,bool nocolor);
+void   set_axis_titles(TH1*h,const string& quantity,float ymin,float ymax);
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -60,16 +59,20 @@ int main(int argc,char** argv)
   CommandLine cl;
   if (!cl.parse(argc,argv)) return 0;
 
-  vector<string> inputs     = cl.getVector<string>("inputs");
-  vector<string> algs       = cl.getVector<string>("algs",           "ak5calo");
-  vector<string> variables  = cl.getVector<string>("variables","RelRspVsRefPt");
-  vector<string> labels     = cl.getVector<string>("labels",                "");
-  string         text       = cl.getValue<string> ("text",                  "");
-  bool           logx       = cl.getValue<bool>   ("logx",               false);
-  bool           logy       = cl.getValue<bool>   ("logy",               false);
-  string         prefix     = cl.getValue<string> ("prefix",                "");
-  vector<string> formats    = cl.getVector<string>("formats",               "");
-  bool           batch      = cl.getValue<bool>   ("batch",              false);
+  vector<string> inputs    = cl.getVector<string>("inputs");
+  vector<string> algs      = cl.getVector<string>("algs",           "ak5calo");
+  vector<string> variables = cl.getVector<string>("variables","RelRspVsRefPt");
+  vector<string> labels    = cl.getVector<string>("labels",                "");
+  string         text      = cl.getValue<string> ("text",                  "");
+  bool           logx      = cl.getValue<bool>   ("logx",               false);
+  bool           logy      = cl.getValue<bool>   ("logy",               false);
+  float          ymin      = cl.getValue<float>  ("ymin",                -1.0);
+  float          ymax      = cl.getValue<float>  ("ymax",                -1.0);
+  bool           nocolor   = cl.getValue<bool>   ("nocolor",            false);
+  bool           overlay   = cl.getValue<bool>   ("overlay",             true);
+  string         prefix    = cl.getValue<string> ("prefix",                "");
+  vector<string> formats   = cl.getVector<string>("formats",               "");
+  bool           batch     = cl.getValue<bool>   ("batch",              false);
 
   if (!cl.check()) return 0;
   cl.print();
@@ -83,6 +86,8 @@ int main(int argc,char** argv)
     return 0;
   }
   
+  if (ymin<0.0&&logy) ymin = 0.01;
+
   if (batch&&formats.size()==0) formats.push_back("pdf");
   
   argc = (batch) ? 2 : 1; if (batch) argv[1] = (char*)"-b";
@@ -140,10 +145,11 @@ int main(int argc,char** argv)
     labels.push_back(get_legend_label_from_alg(algs[0]));
   }
 
-  TMultiGraph* mg(0);
-  TLegend*     leg(0);
-  string       range;
-  string       quantity=(*quantities.begin());
+  TMultiGraph*          mg(0);
+  TLegend*              leg(0);
+  vector<TGraphErrors*> graphs;
+  vector<string>        ranges;
+  string                quantity=(*quantities.begin());
   
   /// LOOP OVER FILES
   for (unsigned int iinput=0;iinput<inputs.size();iinput++) {
@@ -171,6 +177,9 @@ int main(int argc,char** argv)
 	vector<unsigned int> indices;
 	TGraphErrors* g(0);
 	while ((g=gl.next_object(indices))) {
+
+	  graphs.push_back(g);
+	  ranges.push_back(get_range(gl,indices,variables.size()==1));
 	  
 	  if (0==mg) {
 	    stringstream sscname;
@@ -186,15 +195,15 @@ int main(int argc,char** argv)
 	    mg=new TMultiGraph(sscname.str().c_str(),"");
 	    double ymax=(quantity.find("Rsp")==string::npos)?0.85:0.4;
 	    leg=new TLegend(0.5,ymax,0.9,ymax-nlabels*0.06);
-	    range=get_range(gl,indices,variables.size()==1);
+	    //range=get_range(gl,indices,variables.size()==1);
 	  }
-	  
+
 	  int   ilabel=(inputs.size()>1) ? iinput:(algs.size()>1) ? ialg:ivar;
 	  string label=(variables.size()>1&&labels.size()==0) ?
 	    get_range(gl,indices,true) : labels[ilabel];
 	  
 	  mg->Add(g);
-	  set_graph_style(g,mg->GetListOfGraphs()->GetEntries()-1);
+	  set_graph_style(g,overlay*(graphs.size()-1),nocolor);
 	  leg->AddEntry(g,label.c_str(),"lp");
 
 	  
@@ -216,30 +225,62 @@ int main(int argc,char** argv)
   } // inputs
 
   if (0==mg) { cout<<"Buh!"<<endl; return 0; }
+
+  TCanvas* c;
   
-  vector<TCanvas*> c;
-  c.push_back(new TCanvas(mg->GetName(),mg->GetName(),
-			  c.size()*20,c.size()*20,600,600));
-  gPad->SetLeftMargin(0.18);
-  gPad->SetRightMargin(0.05);
-  gPad->SetTopMargin(0.08);
-  gPad->SetBottomMargin(0.14);
-  if (logx) gPad->SetLogx();
-  if (logy) gPad->SetLogy();
-  mg->Draw("AP");
-  leg->SetLineColor(10);
-  leg->SetFillColor(10);
-  leg->SetBorderSize(0);
-  leg->Draw();
-  draw_range(range);
-  draw_text(text);
-  set_mg_histogram(mg,quantity,logy);
+  if (overlay) {
+    c = new TCanvas(mg->GetName(),mg->GetName(),600,600);
+    gPad->SetLeftMargin(0.18);
+    gPad->SetRightMargin(0.05);
+    gPad->SetTopMargin(0.08);
+    gPad->SetBottomMargin(0.14);
+    gPad->SetLogx(logx);
+    gPad->SetLogy(logy);
+    mg->Draw("AP");
+    leg->SetLineColor(10);
+    leg->SetFillColor(10);
+    leg->SetBorderSize(0);
+    leg->Draw();
+    draw_range(ranges.front());
+    draw_text(text);
+    set_axis_titles(mg->GetHistogram(),quantity,ymin,ymax);
+  }
+  else {
+    c = new TCanvas(mg->GetName(),mg->GetName(),600,600);
+    unsigned nx = (unsigned)std::sqrt((float)graphs.size());
+    unsigned ny = nx;
+    if (nx*ny<graphs.size()) nx++;
+    if (nx*ny<graphs.size()) ny++;
+    c->Divide(nx,ny);
+    for (unsigned i=0;i<graphs.size();i++) {
+      c->cd(i+1);
+      gPad->SetLeftMargin(0.18);
+      gPad->SetRightMargin(0.05);
+      gPad->SetTopMargin(0.08);
+      gPad->SetBottomMargin(0.14);
+      gPad->SetLogx(logx);
+      gPad->SetLogy(logy);
+      graphs[i]->Draw("AP");
+      draw_range(ranges[i]);
+      draw_text(text);
+      set_axis_titles(graphs[i]->GetHistogram(),quantity,ymin,ymax);
+
+      if (algs.size()>1||inputs.size()>1) {
+	TLatex tex;
+	tex.SetNDC();
+	tex.SetTextFont(42);
+	tex.SetTextSize(0.05);
+	string txt = (algs.size()>1) ?
+	  get_legend_label_from_alg(algs[i]) :
+	  get_legend_label_from_input(inputs[i]);
+	tex.DrawLatex(0.6,0.85,txt.c_str());
+      }
+
+    }
+  }
   
-  
-  for (unsigned int icanvas=0;icanvas<c.size();icanvas++)
-    for (unsigned int iformat=0;iformat<formats.size();iformat++)
-      c[icanvas]->Print((string(c[icanvas]->GetName())+"."+
-			 formats[iformat]).c_str());
+  for (unsigned int iformat=0;iformat<formats.size();iformat++)
+    c->Print(((string)c->GetName()+"."+formats[iformat]).c_str());
   
   
   if (!batch) app->Run();
@@ -310,10 +351,12 @@ string get_range(const ObjectLoader<TGraphErrors>& gl,
     double varmin  = gl.minimum(i,indices[i]);
     double varmax  = gl.maximum(i,indices[i]);
 
-    if (varname=="RefPt")  { varname = "p_{T}^{REF}"; unit = " GeV"; }
-    if (varname=="JetPt")  { varname = "p_{T}";       unit = " GeV"; }
-    if (varname=="JetEta") { varname = varnameEta;    unit =     ""; }
-    if (varname=="JetPhi") { varname = "#varphi";     unit =     ""; }
+    if (varname=="RefPt")    { varname = "p_{T}^{REF}"; unit = " GeV"; }
+    if (varname=="JetPt")    { varname = "p_{T}";       unit = " GeV"; }
+    if (varname=="JetEta")   { varname = varnameEta;    unit =     ""; }
+    if (varname=="JetPhi")   { varname = "#varphi";     unit =     ""; }
+    if (varname=="PtRel")    { varname = "p_{T}^{rel}"; unit = " GeV"; }
+    if (varname=="RelLepPt") { varname = "p_{T}^{l}/p_{T}^{jet}"; unit =""; }
 
     ssrange<<varmin<<" < "<<varname<<" < "<<varmax<<unit<<"    ";
   }
@@ -374,23 +417,33 @@ string get_legend_label_from_input(const string& input)
 
 
 //______________________________________________________________________________
-void set_graph_style(TGraphErrors* g, unsigned int ngraph)
+void set_graph_style(TGraphErrors* g, unsigned int ngraph,bool nocolor)
 {
-  Color_t colors[10]  = {
+  Color_t colors[10] = {
     kBlue+1,kRed+1,kGreen+2,kMagenta+2,kCyan+3,
     kViolet+4,kOrange+1,kGreen-1,kMagenta-4,kCyan-2
   };
   Style_t lines[10]   = {
     1,1,1,1,1,1,1,1,1,1
   };
-  Style_t markers[10] = {
-    kOpenCircle,kOpenSquare,kOpenTriangleUp,kOpenDiamond,kOpenCross,
-    kOpenStar,kFullCircle,kFullSquare,kFullTriangleUp,kFullTriangleDown
-  };
+  Style_t markers[10] =
+    { kOpenCircle,kOpenSquare,kOpenTriangleUp,kOpenDiamond,kOpenCross,
+      kOpenStar,kFullCircle,kFullSquare,kFullTriangleUp,kFullTriangleDown
+    };
+  
+  if (nocolor) {
+    markers[0]=kFullCircle;       markers[1]=kOpenCircle;
+    markers[2]=kFullSquare;       markers[3]=kOpenSquare;
+    markers[4]=kFullTriangleUp;   markers[5]=kOpenTriangleUp;
+    markers[6]=kFullStar;         markers[7]=kOpenStar;
+    markers[8]=kFullTriangleDown; markers[9]=kOpenCross;
+  }
   
   Color_t color = colors[std::min(ngraph,(unsigned)9)];
   Style_t line  = lines[std::min(ngraph,(unsigned)9)];
   Style_t marker = markers[std::min(ngraph,(unsigned)9)];
+  
+  if (nocolor) color = kBlack;
   
   g->SetLineColor(color);
   g->SetMarkerColor(color);
@@ -402,6 +455,7 @@ void set_graph_style(TGraphErrors* g, unsigned int ngraph)
     f=(TF1*)(g->GetListOfFunctions()->At(0));
     f->SetLineColor(color);
     f->SetLineStyle(line);
+    f->SetLineWidth(1);
   }
   
   return;
@@ -409,36 +463,40 @@ void set_graph_style(TGraphErrors* g, unsigned int ngraph)
 
 
 //______________________________________________________________________________
-void set_mg_histogram(TMultiGraph* mg,const string& quantity,bool logy)
+void set_axis_titles(TH1* h,const string& quantity,float ymin,float ymax)
 {
-  TH1* h = mg->GetHistogram();
   if (0==h) {
-    cout<<"Can't aquire histogram for multi-graph "<<mg->GetName()<<endl;
+    cout<<"set_axis_title ERROR: h is NULL!"<<endl;
     return;
   }
-
+  h->SetTitle("");
+  
+  ymin = (ymin<0.0) ? 0.0 : ymin;
+  h->SetMinimum(ymin);
+  
   string xtitle("");
   string ytitle("");
   size_t pos = quantity.find("Vs");
   if (pos!=string::npos) {
     string ystr=quantity.substr(0,pos);
     string xstr=quantity.substr(pos+2);
-
+    
     if (ystr=="Rsp"||ystr=="RelRsp"||ystr=="AbsRsp") {
-      ytitle="p_{T}/p_{T}^{REF}";
-      if (logy) h->SetMinimum(0.01); else h->SetMinimum(0.0);
-      h->SetMaximum(1.2);
+      ytitle="p_{T} / p_{T}^{REF}";
+      ymax = (ymax<0.0) ? 1.2 : ymax;
+      h->SetMaximum(ymax);
     }
     if (ystr=="Res"||ystr=="RelRes"||ystr=="AbsRes") {
-      ytitle="#sigma(p_{T}/p_{T}^{REF})/<p_{T}/p_{T}^{REF}>";
-      if (logy) h->SetMinimum(0.01); else h->SetMinimum(0.0);
-      //h->SetMaximum(0.5);
+      ytitle="#sigma(p_{T}/p_{T}^{REF}) / <p_{T}/p_{T}^{REF}>";
+      if (ymax>0.0) h->SetMaximum(ymax);
     }
     
-    if (xstr=="RefPt")  xtitle="p_{T}^{REF} [GeV]";
-    if (xstr=="JetPt")  xtitle="p_{T} [GeV]";
-    if (xstr=="JetEta") xtitle="#eta";
-    if (xstr=="JetPhi") xtitle="#varphi";
+    if (xstr=="RefPt")    xtitle="p_{T}^{REF} [GeV]";
+    if (xstr=="JetPt")    xtitle="p_{T} [GeV]";
+    if (xstr=="JetEta")   xtitle="#eta";
+    if (xstr=="JetPhi")   xtitle="#varphi";
+    if (xstr=="PtRel")    xtitle="p_{T}^{rel} [GeV]";
+    if (xstr=="RelLepPt") xtitle="p_{T}^{l} / p_{T}^{jet}";
   }
   
   h->SetXTitle(xtitle.c_str());

@@ -1,5 +1,17 @@
 2009-11-22  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
+	* tag V00-05-04
+	* add options 'mean', 'median', and 'peak' to
+	jet_inspect_histos_x, each of which will lead to the appropriate
+	line being drawn on top of each histogram, including a legend
+	* add option 'overlay' to jet_inspect_graphs_x (default true): if
+	set to false, the canvas will be divided and each graph will
+	appear in its own pad
+	* add option 'nocolor' to jet_inspect_graphs_x default false): use
+	only black & white and an adjusted marker style scheme (with
+	alternating full / open styles)
+	* make variables 'PtRel' and 'RelLepPt' known to both programs
+
 	* tag V00-05-03
 	* bin/jet_inspect_histos_x.cc: improve plots
 	* bin/jet_inspect_graphs_x.cc: add 'text' parameter

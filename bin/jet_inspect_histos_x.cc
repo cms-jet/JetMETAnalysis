@@ -19,6 +19,8 @@
 #include <TH1F.h>
 #include <TF1.h>
 #include <TText.h>
+#include <TLine.h>
+#include <TLegend.h>
 
 #include <iostream>
 #include <iomanip>
@@ -41,6 +43,10 @@ void draw_stats(TH1* h,double xoffset,Color_t color,Color_t fitColor);
 void draw_range(const ObjectLoader<TH1F>& hl,
 		const vector<unsigned int>& indices,
 		bool  addFixedVars=true);
+void draw_line_mean(TH1* h);
+void draw_line_median(TH1* h);
+void draw_line_peak(TH1* h);
+void draw_line_legend(bool mean,bool median,bool peak);
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -58,6 +64,9 @@ int main(int argc,char** argv)
   vector<string> variables  = cl.getVector<string>("variables","RelRsp:RefPt");
   int            npercanvas = cl.getValue<int>    ("npercanvas",            0);
   bool           norm       = cl.getValue<bool>   ("norm",              false);
+  bool           mean       = cl.getValue<bool>   ("mean",              false);
+  bool           median     = cl.getValue<bool>   ("median",            false);
+  bool           peak       = cl.getValue<bool>   ("peak",              false);
   bool           logx       = cl.getValue<bool>   ("logx",              false);
   bool           logy       = cl.getValue<bool>   ("logy",              false);
   string         prefix     = cl.getValue<string> ("prefix",               "");
@@ -159,6 +168,7 @@ int main(int argc,char** argv)
 	    if (logy) h->SetMaximum(10.*h->GetMaximum());
 	    draw_stats(h,0.65,kBlack,kBlack);
 	    draw_range(hl,indices,(variables.size()==1));
+	    draw_line_legend(mean,median,peak);
 	  }
 	  else {
 	    h->SetLineColor(kBlue);
@@ -168,6 +178,9 @@ int main(int argc,char** argv)
 	    TH1F* hdraw = (TH1F*)gPad->GetListOfPrimitives()->First();
 	    set_xaxis_range(hdraw,h);
 	  }
+	  if (mean)   draw_line_mean(h);
+	  if (median) draw_line_median(h);
+	  if (peak)   draw_line_peak(h);
 	  
 	  ihisto++;
 	  
@@ -306,13 +319,109 @@ void draw_range(const ObjectLoader<TH1F>& hl,
     double varmin  = hl.minimum(i,indices[i]);
     double varmax  = hl.maximum(i,indices[i]);
     
-    if (varname=="RefPt")  { varname = "p_{T}^{REF}"; unit = " GeV"; }
-    if (varname=="JetPt")  { varname = "p_{T}";       unit = " GeV"; }
-    if (varname=="JetEta") { varname = varnameEta;    unit =     ""; }
-    if (varname=="JetPhi") { varname = "#varphi";     unit =     ""; }
+    if (varname=="RefPt")    { varname = "p_{T}^{REF}"; unit = " GeV"; }
+    if (varname=="JetPt")    { varname = "p_{T}";       unit = " GeV"; }
+    if (varname=="JetEta")   { varname = varnameEta;    unit =     ""; }
+    if (varname=="JetPhi")   { varname = "#varphi";     unit =     ""; }
+    if (varname=="PtRel")    { varname = "p_{T}^{rel}", unit = " GeV"; }
+    if (varname=="RelLepPt") { varname = "p_{T}^{l}/p_{T}^{jet}",unit = ""; }
 
     ssrange<<varmin<<" < "<<varname<<" < "<<varmax<<unit<<"    ";
   }
   
   range.DrawLatex(0.1,0.96,ssrange.str().c_str());
 }
+
+
+//______________________________________________________________________________
+void draw_line_mean(TH1* h)
+{
+  double mean = h->GetMean();
+  int binMean;
+  for (binMean=1;binMean<h->GetNbinsX();binMean++) {
+    float binLowEdge = h->GetBinLowEdge(binMean);
+    float binHighEdge = binLowEdge + h->GetBinWidth(binMean);
+    if (mean>=binLowEdge&&mean<binHighEdge) break;
+  }
+  double xmin = mean;
+  double xmax = mean;
+  double ymin = h->GetMinimum();
+  double ymax = h->GetBinContent(binMean);
+  TLine* lineMean = new TLine(xmin,ymin,xmax,ymax);
+  lineMean->SetLineColor(h->GetLineColor());
+  lineMean->SetLineStyle(2);
+  lineMean->SetLineWidth(3);
+  lineMean->Draw("SAME");
+}
+
+
+//______________________________________________________________________________
+void draw_line_median(TH1* h)
+{
+  double median;
+  double prb(0.5);
+  h->GetQuantiles(1,&median,&prb);
+  int binMedian;
+  for (binMedian=1;binMedian<h->GetNbinsX();binMedian++) {
+    double binLowEdge = h->GetBinLowEdge(binMedian);
+    double binHighEdge = binLowEdge + h->GetBinWidth(binMedian);
+    if (median>=binLowEdge&&median<binHighEdge) break;
+  }
+  double xmin = median;
+  double xmax = median;
+  double ymin = h->GetMinimum();
+  double ymax = h->GetBinContent(binMedian);
+  TLine* lineMedian = new TLine(xmin,ymin,xmax,ymax);
+  lineMedian->SetLineColor(h->GetLineColor());
+  lineMedian->SetLineStyle(3);
+  lineMedian->SetLineWidth(3);
+  lineMedian->Draw("SAME");
+}
+
+
+//______________________________________________________________________________
+void draw_line_peak(TH1* h)
+{
+  TF1* fitFnc = h->GetFunction("fit"); if (0==fitFnc) return;
+  double peak = fitFnc->GetParameter(1);
+  double xmin = peak;
+  double xmax = peak;
+  double ymin = h->GetMinimum();
+  double ymax = fitFnc->Eval(peak);
+  TLine* linePeak = new TLine(xmin,ymin,xmax,ymax);
+  linePeak->SetLineColor(h->GetLineColor());
+  linePeak->SetLineStyle(4);
+  linePeak->SetLineWidth(3);
+  linePeak->Draw("SAME");
+}
+
+
+//______________________________________________________________________________
+void draw_line_legend(bool mean,bool median,bool peak)
+{
+  if (!mean&&!median&&!peak) return;
+  TLegend* leg = new TLegend(0.75,0.5,0.95,0.5-(mean+median+peak)*0.055);
+  leg->SetLineColor(10);
+  leg->SetFillColor(10);
+  leg->SetBorderSize(0);
+  if (mean) {
+    TLine* lMean = new TLine();
+    lMean->SetLineWidth(3);
+    lMean->SetLineStyle(2);
+    leg->AddEntry(lMean,"mean","l");
+  }
+  if (median) {
+    TLine* lMedian = new TLine();
+    lMedian->SetLineWidth(3);
+    lMedian->SetLineStyle(3);
+    leg->AddEntry(lMedian,"median","l");
+  }
+  if (peak) {
+    TLine* lPeak = new TLine();
+    lPeak->SetLineWidth(3);
+    lPeak->SetLineStyle(4);
+    leg->AddEntry(lPeak,"peak","l");
+  }
+  leg->Draw();
+}
+
