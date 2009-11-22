@@ -14,7 +14,6 @@
 
 #include "JetMETAnalysis/JetUtilities/interface/GenJetLeptonFinder.h"
 
-#include "DataFormats/JetReco/interface/GenJet.h"
 #include "DataFormats/Candidate/interface/Candidate.h"
 
 #include <iostream>
@@ -29,7 +28,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 //______________________________________________________________________________
-GenJetLeptonFinder::GenJetLeptonFinder(const reco::GenJet& genJet) :
+GenJetLeptonFinder::GenJetLeptonFinder(const reco::Candidate& genJet) :
   genJet_(genJet),
   lepton_(0),
   neutrino_(0)
@@ -50,10 +49,11 @@ GenJetLeptonFinder::~GenJetLeptonFinder()
 
 bool GenJetLeptonFinder::run()
 {
-  // get the GenJet constituents
-  const vector<const reco::Candidate*> jetdaus = genJet_.getJetConstituentsQuick();
-  unsigned njetdaus = jetdaus.size();
-
+  // get the GenJet constituents (but sticking to the Candidate interface)
+  unsigned njetdaus = genJet_.numberOfDaughters();
+  vector<const reco::Candidate*> jetdaus;
+  for (unsigned i=0;i<njetdaus;i++) jetdaus.push_back(genJet_.daughter(i));
+  
   // loop over constituents until lepton is found, then search neutrino
   bool foundLep = false;
   for (unsigned itd=0;itd<njetdaus&&!foundLep;itd++){

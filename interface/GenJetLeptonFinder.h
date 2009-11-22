@@ -1,7 +1,7 @@
 #ifndef GENJETLEPTONFINDER
 #define GENJETLEPTONFINDER 1
 
-#include "DataFormats/JetReco/interface/GenJet.h"
+
 #include "DataFormats/Candidate/interface/Candidate.h"
 
 
@@ -16,7 +16,7 @@ class GenJetLeptonFinder
   // construction/destruction
   //
 public:
-  GenJetLeptonFinder(const reco::GenJet& genJet);
+  GenJetLeptonFinder(const reco::Candidate& genJet);
   virtual ~GenJetLeptonFinder();
 
   
@@ -42,7 +42,7 @@ public:
   // member data
   //
 private:
-  const reco::GenJet&    genJet_;
+  const reco::Candidate& genJet_;
   const reco::Candidate* lepton_;
   const reco::Candidate* neutrino_;
   

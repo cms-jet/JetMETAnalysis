@@ -1,5 +1,9 @@
 2009-11-22  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
+	* tag V00-05-05:
+	* stick to reco::Candidate interface in GenJetLeptonFinder instead
+	of reco::GenJet
+
 	* tag V00-05-04
 	* add options 'mean', 'median', and 'peak' to
 	jet_inspect_histos_x, each of which will lead to the appropriate
