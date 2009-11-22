@@ -1,3 +1,9 @@
+2009-11-22  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-05-03
+	* bin/jet_inspect_histos_x.cc: improve plots
+	* bin/jet_inspect_graphs_x.cc: add 'text' parameter
+
 2009-11-19  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-05-02

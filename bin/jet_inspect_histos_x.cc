@@ -34,8 +34,9 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 // declare local functions
 ////////////////////////////////////////////////////////////////////////////////
-void set_xaxis_range(TH1* h);
-void set_draw_attributes(TH1* h,Color_t fitColor=kRed);
+void set_xaxis_range(TH1* h1,TH1* h2=0);
+void get_xaxis_range(TH1* h,int& binmin,int& binmax);
+void set_draw_attributes(TH1* h,unsigned index=0);
 void draw_stats(TH1* h,double xoffset,Color_t color,Color_t fitColor);
 void draw_range(const ObjectLoader<TH1F>& hl,
 		const vector<unsigned int>& indices,
@@ -151,18 +152,21 @@ int main(int argc,char** argv)
 	    gPad->SetTopMargin(0.12);
 	    gPad->SetBottomMargin(0.15);
 	    set_xaxis_range(h);
-	    set_draw_attributes(h,kRed);
+	    h->SetLineColor(kBlack);
+	    set_draw_attributes(h,0);
 	    h->Draw("EH");
 	    h->SetMaximum(1.5*h->GetMaximum());
 	    if (logy) h->SetMaximum(10.*h->GetMaximum());
-	    draw_stats(h,0.65,kBlack,kRed);
+	    draw_stats(h,0.65,kBlack,kBlack);
 	    draw_range(hl,indices,(variables.size()==1));
 	  }
 	  else {
 	    h->SetLineColor(kBlue);
-	    set_draw_attributes(h,kMagenta);
-	    h->Draw("ESAME");
-	    draw_stats(h,0.15,kBlue,kMagenta);
+	    set_draw_attributes(h,1);
+	    h->Draw("EHSAME");
+	    draw_stats(h,0.15,kBlue,kBlue);
+	    TH1F* hdraw = (TH1F*)gPad->GetListOfPrimitives()->First();
+	    set_xaxis_range(hdraw,h);
 	  }
 	  
 	  ihisto++;
@@ -172,9 +176,9 @@ int main(int argc,char** argv)
     } // algorithms
   } // inputs
   
-  for (unsigned int icanvas=0;icanvas<c.size();icanvas++)
-    for (unsigned int iformat=0;iformat<formats.size();iformat++)
-      c[icanvas]->Print((string(c[icanvas]->GetName())+"."+formats[iformat]).c_str());
+  for (unsigned int ic=0;ic<c.size();ic++)
+    for (unsigned int ifmt=0;ifmt<formats.size();ifmt++)
+      c[ic]->Print((string(c[ic]->GetName())+"."+formats[ifmt]).c_str());
   
   if (!batch) app->Run();
   
@@ -187,28 +191,46 @@ int main(int argc,char** argv)
 ////////////////////////////////////////////////////////////////////////////////
 
 //______________________________________________________________________________
-void set_xaxis_range(TH1* h)
+void set_xaxis_range(TH1* h1,TH1* h2)
 {
-  if (h->GetEntries()==0) return;
-  int imin=-1; int imax=-1;
-  for (int i=1;i<h->GetNbinsX();i++) {
-    double bc = h->GetBinContent(i);
-    if (bc>0) {
-      if (imin==-1) imin=i;
-      imax=i;
-    }
+  if (h1->GetEntries()==0) return;
+  int binmin,binmax;
+  get_xaxis_range(h1,binmin,binmax);
+  if (0!=h2) {
+    int binmin2,binmax2;
+    get_xaxis_range(h2,binmin2,binmax2);
+    binmin = std::min(binmin,binmin2);
+    binmax = std::max(binmax,binmax2);
   }
-  h->GetXaxis()->SetRange(imin,imax);
+  h1->GetXaxis()->SetRange(binmin,binmax);
 }
 
 
 //______________________________________________________________________________
-void set_draw_attributes(TH1* h,Color_t color)
+void get_xaxis_range(TH1* h,int& binmin,int &binmax)
 {
+  binmin=-1; binmax=-1;
+  for (int i=1;i<h->GetNbinsX();i++) {
+    double bc = h->GetBinContent(i);
+    if (bc>0) {
+      if (binmin==-1) binmin=i;
+      binmax=i;
+    }
+  }
+}
+
+
+//______________________________________________________________________________
+void set_draw_attributes(TH1* h,unsigned index)
+{
+  Style_t fillstyle = (index==0) ? 3002 : 3001;
+  h->SetFillColor(h->GetLineColor());
+  h->SetFillStyle(fillstyle);
   TF1* fitfnc = h->GetFunction("fit");
-  if (0==fitfnc) return;
-  fitfnc->SetLineWidth(1);
-  fitfnc->SetLineColor(color);
+  if (0!=fitfnc) {
+    fitfnc->SetLineWidth(2);
+    fitfnc->SetLineColor(h->GetLineColor());
+  }
 }
 
 

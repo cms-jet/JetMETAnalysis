@@ -40,14 +40,15 @@ using namespace std;
 // declare local functions
 ////////////////////////////////////////////////////////////////////////////////
 void   draw_range(const string& range);
+void   draw_text(const string& text);
 string get_range(const ObjectLoader<TGraphErrors>& gl,
 		 const vector<unsigned int>& indices,
 		 bool  addFixedVars=true);
-void   draw_legend(TLegend* leg,const string& quantity);
 string get_legend_label_from_alg(const string& alg);
 string get_legend_label_from_input(const string& input);
 void   set_graph_style(TGraphErrors* g,unsigned int ngraph);
 void   set_mg_histogram(TMultiGraph* mg,const string& quantity,bool logy);
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -63,6 +64,7 @@ int main(int argc,char** argv)
   vector<string> algs       = cl.getVector<string>("algs",           "ak5calo");
   vector<string> variables  = cl.getVector<string>("variables","RelRspVsRefPt");
   vector<string> labels     = cl.getVector<string>("labels",                "");
+  string         text       = cl.getValue<string> ("text",                  "");
   bool           logx       = cl.getValue<bool>   ("logx",               false);
   bool           logy       = cl.getValue<bool>   ("logy",               false);
   string         prefix     = cl.getValue<string> ("prefix",                "");
@@ -137,7 +139,6 @@ int main(int argc,char** argv)
   else {
     labels.push_back(get_legend_label_from_alg(algs[0]));
   }
-  cout<<"labels[0] = "<<labels[0]<<endl;
 
   TMultiGraph* mg(0);
   TLegend*     leg(0);
@@ -192,7 +193,6 @@ int main(int argc,char** argv)
 	  string label=(variables.size()>1&&labels.size()==0) ?
 	    get_range(gl,indices,true) : labels[ilabel];
 	  
-	  cout<<"label = "<<label<<endl;
 	  mg->Add(g);
 	  set_graph_style(g,mg->GetListOfGraphs()->GetEntries()-1);
 	  leg->AddEntry(g,label.c_str(),"lp");
@@ -227,8 +227,12 @@ int main(int argc,char** argv)
   if (logx) gPad->SetLogx();
   if (logy) gPad->SetLogy();
   mg->Draw("AP");
-  draw_legend(leg,quantity);
+  leg->SetLineColor(10);
+  leg->SetFillColor(10);
+  leg->SetBorderSize(0);
+  leg->Draw();
   draw_range(range);
+  draw_text(text);
   set_mg_histogram(mg,quantity,logy);
   
   
@@ -261,6 +265,32 @@ void draw_range(const string& range)
 
 
 //______________________________________________________________________________
+void draw_text(const string& text)
+{
+  if (text.empty()) return;
+  double x(0.22);
+  double y(0.88);
+  string tmp(text);
+  size_t pos = tmp.find(':');
+  if (pos!=string::npos) {
+    string x_as_str = tmp.substr(0,pos);
+    tmp = tmp.substr(pos+1);
+    pos = tmp.find(':'); assert(pos!=string::npos);
+    string y_as_str = tmp.substr(0,pos);
+    tmp = tmp.substr(pos+1);
+    stringstream ssx; ssx<<x_as_str; ssx>>x;
+    stringstream ssy; ssy<<y_as_str; ssy>>y;
+  }
+  TLatex tex;
+  tex.SetNDC(true);
+  tex.SetTextAlign(13);
+  tex.SetTextSize(0.045);
+  tex.SetTextFont(42);
+  tex.DrawLatex(x,y,tmp.c_str());
+}
+
+
+//______________________________________________________________________________
 string get_range(const ObjectLoader<TGraphErrors>& gl,
 		 const vector<unsigned int>& indices,
 		 bool  addFixedVars)
@@ -289,16 +319,6 @@ string get_range(const ObjectLoader<TGraphErrors>& gl,
   }
   
   return ssrange.str();
-}
-
-
-//______________________________________________________________________________
-void draw_legend(TLegend* leg,const string& quantity)
-{
-  leg->SetLineColor(10);
-  leg->SetFillColor(10);
-  leg->SetBorderSize(0);
-  leg->Draw();
 }
 
 
