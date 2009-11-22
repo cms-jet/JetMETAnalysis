@@ -83,7 +83,7 @@ int main(int argc,char**argv)
   vector<float>  binsphi      = cl.getVector<float> ("binsphi",       "");
   string         treename     = cl.getValue<string> ("treename",     "t");
   string         output       = cl.getValue<string> ("output","jra.root");
-  bool           useweight    = cl.getValue<bool>   ("useweight",   true);
+  bool           useweight    = cl.getValue<bool>   ("useweight",  false);
   float          xsection     = cl.getValue<float>  ("xsection",     0.0);
   int            nrefmax      = cl.getValue<int>    ("nrefmax",        0);
   int            nbinspt      = cl.getValue<int>    ("nbinspt",       50);
@@ -274,6 +274,8 @@ int main(int argc,char**argv)
       flavor.push_back("c_");
       flavor.push_back("b_");
       flavor.push_back("g_");
+      flavor.push_back("slc_");
+      flavor.push_back("slb_");
     }
     
     // book pT histograms
@@ -1032,6 +1034,10 @@ void fill_histo(int pdgid,float value,float weight,float x,
   else if (abspdgid== 4)        iflv=2;
   else if (abspdgid== 5)        iflv=3;
   else if (abspdgid==21)        iflv=4;
+  else if (abspdgid==411||
+	   abspdgid==413)       iflv=5;
+  else if (abspdgid==511||
+	   abspdgid==513)       iflv=6;
   else return;
 
   int ix=get_index(x,binsx);
@@ -1063,8 +1069,12 @@ void fill_histo(int pdgid,float value,float weight,float x,float y,
   else if (abspdgid== 4)        iflv=2;
   else if (abspdgid== 5)        iflv=3;
   else if (abspdgid==21)        iflv=4;
+  else if (abspdgid==411||
+	   abspdgid==413)       iflv=5;
+  else if (abspdgid==511||
+	   abspdgid==513)       iflv=6;
   else return;
-
+  
   int ix=get_index(x,binsx);
   int iy=get_index(y,binsy);
   if (ix>=0&&iy>=0) histos[ix][iy][iflv]->Fill(value,weight);

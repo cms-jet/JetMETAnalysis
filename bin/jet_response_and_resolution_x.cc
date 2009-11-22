@@ -44,17 +44,13 @@ int main(int argc,char**argv)
   CommandLine cl;
   if (!cl.parse(argc,argv)) return 0;
 
-  string var_default =
-    string("RelRsp:RefPt,RelRsp:JetEta,RelRsp:JetPhi,") +
-    string("AbsRsp:RefPt,AbsRsp:JetEta,AbsRsp:JetPhi,") +
-    string("RelRsp:JetEta:RefPt,RelRsp:JetEta#1:RefPt,") +
-    string("AbsRsp:JetEta:RefPt,AbsRsp:JetEta#1:RefPt,") +
-    string("EtaRsp:RefPt,EtaRsp:JetEta:RefPt,EtaRsp:JetEta#1:RefPt,EtaRsp:JetEta,")+
-    string("PhiRsp:RefPt,PhiRsp:JetEta:RefPt,PhiRsp:JetEta#1:RefPt,PhiRsp:JetEta");
-  
   string         input     = cl.getValue<string> ("input");
   string         output    = cl.getValue<string> ("output",               "");
-  vector<string> variables = cl.getVector<string>("variables",   var_default);
+  bool           dorelrsp  = cl.getValue<bool>   ("dorelrsp",           true);
+  bool           doabsrsp  = cl.getValue<bool>   ("doabsrsp",          false);
+  bool           doetarsp  = cl.getValue<bool>   ("doetarsp",          false);
+  bool           dophirsp  = cl.getValue<bool>   ("dophirsp",          false);
+  vector<string> flavors   = cl.getVector<string>("flavors",              "");
   vector<string> algs      = cl.getVector<string>("algs",                 "");
   bool           fitres    = cl.getValue<bool>   ("fitres",             true);
 
@@ -62,6 +58,55 @@ int main(int argc,char**argv)
   cl.print();
   
   
+  //
+  // construct variables vector
+  //
+  vector<string> variables;
+  if (dorelrsp) {
+    variables.push_back("RelRsp:RefPt");
+    variables.push_back("RelRsp:JetEta");
+    variables.push_back("RelRsp:JetPhi");
+    variables.push_back("RelRsp:JetEta:RefPt");
+    variables.push_back("RelRsp:JetEta#1:RefPt");
+  }
+  if (doabsrsp) {
+    variables.push_back("AbsRsp:RefPt");
+    variables.push_back("AbsRsp:JetEta");
+    variables.push_back("AbsRsp:JetPhi");
+    variables.push_back("AbsRsp:JetEta:RefPt");
+    variables.push_back("AbsRsp:JetEta#1:RefPt");
+  }
+  if (doetarsp) {
+    variables.push_back("EtaRsp:RefPt");
+    variables.push_back("EtaRsp:JetEta");
+    variables.push_back("EtaRsp:JetEta:RefPt");
+    variables.push_back("EtaRsp:JetEta#1:RefPt");
+  }
+  if (dophirsp) {
+    variables.push_back("PhiRsp:RefPt");
+    variables.push_back("PhiRsp:JetEta");
+    variables.push_back("PhiRsp:JetEta:RefPt");
+    variables.push_back("PhiRsp:JetEta#1:RefPt");
+  }
+  if (flavors.size()>0) {
+    if (flavors.front()=="all") {
+      flavors.clear();
+      flavors.push_back("uds");
+      flavors.push_back("c");
+      flavors.push_back("b");
+      flavors.push_back("g");
+      flavors.push_back("slc");
+      flavors.push_back("slb");
+    }
+    vector<string> vtmp(variables.begin(),variables.end());
+    for (unsigned iflv=0;iflv<flavors.size();iflv++)
+      for (unsigned iv=0;iv<vtmp.size();iv++)
+	variables.push_back(flavors[iflv]+"_"+vtmp[iv]);
+  }
+  cout<<"List of variables: "<<endl;
+  for (unsigned iv=0;iv<variables.size();iv++) cout<<variables[iv]<<endl;
+  
+
   //
   // open output file and declare vectors for response & resolution graphs
   //
@@ -154,7 +199,6 @@ int main(int argc,char**argv)
 	  double min = hlrsp.minimum(hlrsp.nvariables()-1,indices.back());
 	  double max = hlrsp.maximum(hlrsp.nvariables()-1,indices.back());
 	  x=0.5*(min+max);
-	  //cout<<grsp->GetName()<<" x="<<x<<" min="<<min<<" max="<<max<<endl;
 	}
 	
 	TF1*   frsp = hrsp->GetFunction("fit");
@@ -163,7 +207,7 @@ int main(int argc,char**argv)
 	double e  = (frsp==0) ? hrsp->GetRMS()       : frsp->GetParameter(2);
 	double ee = (frsp==0) ? hrsp->GetRMSError()  : frsp->GetParError(2);
 	
-	if (hlrsp.quantity().find("AbsRsp")==0) {
+	if (hlrsp.quantity().find("AbsRsp")!=string::npos) {
 	  
 	  double yabs  = (x+y)/x;
 	  double eyabs = std::abs(yabs-1)*std::sqrt(ey*ey/y/y+ex*ex/x/x);
@@ -175,7 +219,7 @@ int main(int argc,char**argv)
 	  e  = eabs;
 	  ee = eeabs;
 	}
-	else if (hlrsp.quantity().find("RelRsp")==0) {
+	else if (hlrsp.quantity().find("RelRsp")!=string::npos) {
 	  
 	  double erel  = e/y;
 	  double eerel = erel*std::sqrt(ee*ee/e/e+ey*ey/y/y);
@@ -213,14 +257,12 @@ int main(int argc,char**argv)
     
     // write response & resolution graphs to output root file
     odir->cd();
-    for (unsigned int igraph=0;igraph<vrsp.size();igraph++) {
-      //cout<<"alg="<<alg<<": write "<<vrsp[igraph]->GetName()<<endl;
+
+    for (unsigned int igraph=0;igraph<vrsp.size();igraph++)
       vrsp[igraph]->Write();
-    }
-    for (unsigned int igraph=0;igraph<vres.size();igraph++) {
-      //cout<<"alg="<<alg<<": write "<<vres[igraph]->GetName()<<endl;
+    for (unsigned int igraph=0;igraph<vres.size();igraph++)
       vres[igraph]->Write();
-    }
+    
     vrsp.clear(); vres.clear();
     
     cout<<" DONE."<<endl;

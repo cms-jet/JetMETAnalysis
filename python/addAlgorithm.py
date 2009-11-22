@@ -354,23 +354,19 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         process.load('Configuration.StandardSequences.Geometry_cff')
         process.load('Configuration.StandardSequences.MagneticField_cff')
         (recLabel,recJets) = recJetsDict[alg_size_type]
-        if correctl2l3:
+        if correctl1 or correctl2l3:
             corrJets.src = recLabel
             jetPtEta.src = corrLabel
         else:
             jetPtEta.src = recLabel
-        if correctl1:
-            recJets.doPUFastjet         = True
-            recJets.Active_Area_Repeats = 1
-            recJets.GhostArea           = 0.01
-            recJets.Ghost_EtaMax        = 5.0
         setattr(process,recLabel,recJets)
         sequence = recJets * sequence
-        if type == 'PF':
-            process.load('JetMETAnalysis.JetAnalyzers.PFParticlesForJets_cff')
-            recJets.src = 'pfNoElectron'
-            sequence = process.pfParticlesForJets * sequence
-        elif type =='Track':
+        #if type == 'PF':
+        #    process.load('JetMETAnalysis.JetAnalyzers.PFParticlesForJets_cff')
+        #    recJets.src = 'pfNoElectron'
+        #    sequence = process.pfParticlesForJets * sequence
+        #elif type =='Track':
+        if type =='Track':
             setattr(process,'tracksForJets',tracksForJets)
             sequence = tracksForJets * sequence
                 

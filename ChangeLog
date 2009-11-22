@@ -1,3 +1,21 @@
+2009-11-22  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-07-01
+	* cfg: disable PF2PAT temporarily
+	* cfg: disable JPT temporarily
+	* JRA: take out metx & mety
+	* JRA: add reference & jet energy (branches refe & jte)
+	* JRA: identify semileptonic c- and b-decays (refpdgids:
+	+-411,+-413, +-511, +-513)
+	* jra: take semileptonic decays into account (slb_* and slc_*, no
+	distinction between electrons and muons right now!)
+	* jra: set default of 'useweight' in jet_response_analyzer_x to
+	false
+	* jrar: remove parameter 'variables', add parameters (bool)
+	dorelrsp, doabsrsp, doetarsp, dophirsp, (vstring)
+	formats. construct vstring 'variables' from the values of these
+	parameters
+
 2009-11-17  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-07-00
