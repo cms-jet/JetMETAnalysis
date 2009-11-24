@@ -1,3 +1,8 @@
+2009-11-24  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-05-06:
+	* jih bugfix for inclusive distributions (when there are no bins!)
+
 2009-11-22  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-05-05:

@@ -108,14 +108,16 @@ int main(int argc,char** argv)
       for (unsigned int ivar=0;ivar<variables.size();ivar++) {
 	
 	string variable=variables[ivar];
-	
+
 	ObjectLoader<TH1F> hl;
 	hl.load_objects(dir,variable);
-
-	bool put_range = (npercanvas!=0||hl.nobjects(hl.nvariables()-1)==1);
+	
+	bool put_range = (npercanvas!=0||
+			  (hl.nvariables()>0&&hl.nobjects(hl.nvariables()-1)==1));
 	
 	if (ifile==0&&ialg==0&&ivar==0) {
-	  if (npercanvas==0) npercanvas=hl.nobjects(hl.nvariables()-1);
+	  if (npercanvas==0)
+	    npercanvas= (hl.nvariables()==0)? 1 : hl.nobjects(hl.nvariables()-1);
 	  nx=(int)std::sqrt((float)npercanvas);
 	  ny=nx;
 	  if (nx*ny<npercanvas) nx++;
@@ -123,9 +125,10 @@ int main(int argc,char** argv)
 	}
 	
 	hl.begin_loop();
+	
 	vector<unsigned int> indices; TH1F* h(0); unsigned int ihisto(0);
 	while ((h=hl.next_object(indices))) {
-	  
+
 	  if (norm) {
 	    TF1* f = h->GetFunction("fit");
 	    if (0!=f) f->SetParameter(0,f->GetParameter(0)/h->Integral());
