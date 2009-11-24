@@ -9,7 +9,7 @@ from RecoJets.Configuration.GenJetParticles_cff import *
 from RecoJets.Configuration.RecoGenJets_cff import *
 from RecoJets.Configuration.RecoJets_cff import *
 from RecoJets.Configuration.RecoPFJets_cff import *
-from RecoJets.Configuration.RecoTrackJets_cff import *
+#from RecoJets.Configuration.RecoTrackJets_cff import *
 
 # sc & ic clones
 sc5GenJets = sisCone5GenJets.clone()
@@ -21,9 +21,9 @@ ic5CaloJets = iterativeCone5CaloJets.clone()
 sc5PFJets = sisCone5PFJets.clone()
 sc7PFJets = sisCone7PFJets.clone()
 ic5PFJets = iterativeCone5PFJets.clone()
-sc5TrackJets = sisCone5TrackJets.clone()
-sc7TrackJets = sisCone7TrackJets.clone()
-ic5TrackJets = iterativeCone5TrackJets.clone()
+#sc5TrackJets = sisCone5TrackJets.clone()
+#sc7TrackJets = sisCone7TrackJets.clone()
+#ic5TrackJets = iterativeCone5TrackJets.clone()
 
 # extra producers for kt
 kt5GenJets   = kt4GenJets.clone( rParam=0.5 )
@@ -32,8 +32,8 @@ kt5CaloJets  = kt4CaloJets.clone( rParam=0.5 )
 kt7CaloJets  = kt4CaloJets.clone( rParam=0.7 )
 kt5PFJets    = kt4PFJets.clone( rParam=0.5 )
 kt7PFJets    = kt4PFJets.clone( rParam=0.7 )
-kt5TrackJets = kt4TrackJets.clone( rParam=0.5 )
-kt7TrackJets = kt4TrackJets.clone( rParam=0.7 )
+#kt5TrackJets = kt4TrackJets.clone( rParam=0.5 )
+#kt7TrackJets = kt4TrackJets.clone( rParam=0.7 )
 
 # extra producers for ca
 ca5GenJets   = ca4GenJets.clone( rParam=0.5 )
@@ -42,8 +42,8 @@ ca5CaloJets  = ca4CaloJets.clone( rParam=0.5 )
 ca7CaloJets  = ca4CaloJets.clone( rParam=0.7 )
 ca5PFJets    = ca4PFJets.clone( rParam=0.5 )
 ca7PFJets    = ca4PFJets.clone( rParam=0.7 )
-ca5TrackJets = ca4TrackJets.clone( rParam=0.5 )
-ca7TrackJets = ca4TrackJets.clone( rParam=0.7 )
+#ca5TrackJets = ca4TrackJets.clone( rParam=0.5 )
+#ca7TrackJets = ca4TrackJets.clone( rParam=0.7 )
 
 # genjets without muons & neutrinos
 ak5GenJetsNoMuNoNu = ak5GenJets.clone( src = 'genParticlesForJetsNoMuNoNu' )

@@ -1,5 +1,10 @@
 2009-11-24  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
+	* tag V00-07-03
+	* jma: small fix
+	* bring back JPT
+	* disable TrackJets for the time being
+
 	* tag V00-07-02
 	* add jet_mass_analyzer_x
 

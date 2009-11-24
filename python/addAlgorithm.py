@@ -18,7 +18,7 @@ partons = cms.EDFilter(
 ## jet reconstruction
 ################################################################################
 from JetMETAnalysis.JetAnalyzers.JetReconstruction_cff import *
-#from JetMETAnalysis.JetAnalyzers.JPTReconstruction_cff import *
+from JetMETAnalysis.JetAnalyzers.JPTReconstruction_cff import *
 from JetMETAnalysis.JetAnalyzers.JetCorrection_cff     import *
 
 stdGenJetsDict = {
@@ -133,22 +133,22 @@ recJetsDict = {
     'ca5pf':       ('ca5PFJets',        ca5PFJets),
     'ca6pf':       ('ca6PFJets',        ca6PFJets),
     'ca7pf':       ('ca7PFJets',        ca7PFJets),
-    'ak5trk':      ('ak5TrackJets',     ak5TrackJets),
-    'ak7trk':      ('ak7TrackJets',     ak7TrackJets),
-    'sc5trk':      ('sc5TrackJets',     sc5TrackJets),
-    'sc7trk':      ('sc7TrackJets',     sc7TrackJets),
-    'ic5trk':      ('ic5TrackJets',     ic5TrackJets),
-    'kt4trk':      ('kt4TrackJets',     kt4TrackJets),
-    'kt5trk':      ('kt5TrackJets',     kt5TrackJets),
-    'kt6trk':      ('kt6TrackJets',     kt6TrackJets),
-    'kt7trk':      ('kt7TrackJets',     kt7TrackJets),
-    'ca4trk':      ('ca4TrackJets',     ca4TrackJets),
-    'ca5trk':      ('ca5TrackJets',     ca5TrackJets),
-    'ca6trk':      ('ca6TrackJets',     ca6TrackJets),
-    'ca7trk':      ('ca7TrackJets',     ca7TrackJets),
-#    'ak5jpt':      ('ak5JPTJets',       ak5JPTJets),
-#    'sc5jpt':      ('sc5JPTJets',       sc5JPTJets),
-#    'ic5jpt':      ('ic5JPTJets',       ic5JPTJets)
+#    'ak5trk':      ('ak5TrackJets',     ak5TrackJets),
+#    'ak7trk':      ('ak7TrackJets',     ak7TrackJets),
+#    'sc5trk':      ('sc5TrackJets',     sc5TrackJets),
+#    'sc7trk':      ('sc7TrackJets',     sc7TrackJets),
+#    'ic5trk':      ('ic5TrackJets',     ic5TrackJets),
+#    'kt4trk':      ('kt4TrackJets',     kt4TrackJets),
+#    'kt5trk':      ('kt5TrackJets',     kt5TrackJets),
+#    'kt6trk':      ('kt6TrackJets',     kt6TrackJets),
+#    'kt7trk':      ('kt7TrackJets',     kt7TrackJets),
+#    'ca4trk':      ('ca4TrackJets',     ca4TrackJets),
+#    'ca5trk':      ('ca5TrackJets',     ca5TrackJets),
+#    'ca6trk':      ('ca6TrackJets',     ca6TrackJets),
+#    'ca7trk':      ('ca7TrackJets',     ca7TrackJets),
+    'ak5jpt':      ('ak5JPTJets',       ak5JPTJets),
+    'sc5jpt':      ('sc5JPTJets',       sc5JPTJets),
+    'ic5jpt':      ('ic5JPTJets',       ic5JPTJets)
     }
 
 corrJetsDict = {
@@ -266,11 +266,11 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         type          = 'PF'
         alg_size_type = alg_size + 'pf'
     elif (alg_size_type_corr.find('jpt') > 0) :
-        raise ValueError("JPT currently not supported, soon to be back!") # TEMP!
         alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('jpt')]
         type          = 'JPT'
         alg_size_type = alg_size + 'jpt'
     elif (alg_size_type_corr.find('trk') > 0) :
+        raise ValueError("TrackJets currently not supported, back soon!") # TEMP!
         alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('trk')]
         type          = 'Track'
         alg_size_type = alg_size + 'trk'
@@ -366,9 +366,9 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         #    recJets.src = 'pfNoElectron'
         #    sequence = process.pfParticlesForJets * sequence
         #elif type =='Track':
-        if type =='Track':
-            setattr(process,'tracksForJets',tracksForJets)
-            sequence = tracksForJets * sequence
+        #if type =='Track':
+        #    setattr(process,'tracksForJets',tracksForJets)
+        #    sequence = tracksForJets * sequence
                 
     # reconstruct genjets
     if reco:

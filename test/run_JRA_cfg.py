@@ -60,7 +60,7 @@ ttbarFiles = cms.untracked.vstring(
     '/store/relval/CMSSW_3_3_0/RelValTTbar/GEN-SIM-RECO/MC_31X_V9-v2/0002/249CA932-E9BC-DE11-9C34-00261894393E.root'
     )
 
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1000))
 process.source = cms.Source(
     "PoolSource", fileNames = qcdFiles
     )
@@ -116,10 +116,9 @@ algorithms.append('kt6pfl2l3')
 algorithms.append('ic5pf')
 algorithms.append('ic5pfl2l3')
 
-# CURRENTLY NOT SUPPORTED, BACK SOON!
-#algorithms.append('ak5jpt')
-#algorithms.append('sc5jpt')
-#algorithms.append('ic5jpt')
+algorithms.append('ak5jpt')
+algorithms.append('sc5jpt')
+algorithms.append('ic5jpt')
 
 # set to False to use jets from the input file (NOT RECOMMENDED)
 doJetReco = True

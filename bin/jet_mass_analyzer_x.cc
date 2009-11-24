@@ -67,7 +67,6 @@ int main(int argc,char**argv)
   if (!cl.parse(argc,argv)) return 0;
 
   string         input        = cl.getValue<string> ("input");
-  string         treename     = cl.getValue<string> ("treename",     "t");
   string         particle     = cl.getValue<string> ("particle",     "Z");
   string         output       = cl.getValue<string> ("output","jma.root");
   bool           useweight    = cl.getValue<bool>   ("useweight",  false);
