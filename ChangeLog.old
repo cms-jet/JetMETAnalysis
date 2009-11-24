@@ -1,11 +1,15 @@
 2009-11-24  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
-	* tag V00-05-06:
+	* tag V00-05-07
+	* jih: reset maximum of first histogram according to maximum of
+	additional histograms
+
+	* tag V00-05-06
 	* jih bugfix for inclusive distributions (when there are no bins!)
 
 2009-11-22  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
-	* tag V00-05-05:
+	* tag V00-05-05
 	* stick to reco::Candidate interface in GenJetLeptonFinder instead
 	of reco::GenJet
 

@@ -180,6 +180,8 @@ int main(int argc,char** argv)
 	    draw_stats(h,0.15,kBlue,kBlue);
 	    TH1F* hdraw = (TH1F*)gPad->GetListOfPrimitives()->First();
 	    set_xaxis_range(hdraw,h);
+	    if (h->GetMaximum()>hdraw->GetMaximum())
+	      hdraw->SetMaximum(1.2*h->GetMaximum());
 	  }
 	  if (mean)   draw_line_mean(h);
 	  if (median) draw_line_median(h);
