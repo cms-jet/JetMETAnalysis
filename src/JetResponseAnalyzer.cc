@@ -867,12 +867,14 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
 	double refdrparton=reco::deltaR(*itMatch->key,*itMatch->val);
 	if (refdrparton<deltaRPartonMax_) {
 	  refpdgid_[nref_]=itMatch->val->pdgId();
-	  GenJetLeptonFinder finder(*ref);
-	  finder.run();
-	  if (finder.foundLeptonAndNeutrino()) {
-	    int sign  = (refpdgid_[nref_]>0) ? +1 : -1;
-	    int absid = std::abs(refpdgid_[nref_]);
-	    refpdgid_[nref_] = sign*(absid*100+std::abs(finder.leptonPdgId()));
+	  int absid = std::abs(refpdgid_[nref_]);
+	  if (absid==4||absid==5) {
+	    GenJetLeptonFinder finder(*ref);
+	    finder.run();
+	    if (finder.foundLeptonAndNeutrino()) {
+	      int sign  = (refpdgid_[nref_]>0) ? +1 : -1;
+	      refpdgid_[nref_] = sign*(absid*100+std::abs(finder.leptonPdgId()));
+	    }
 	  }
 	}
       }

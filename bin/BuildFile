@@ -4,32 +4,14 @@
 <use name=rootgraphics>
 <use name=root>
 
-<bin name=jet_response_analyzer_x file=jet_response_analyzer_x.cc>
-</bin>
-
-<bin name=jet_response_fitter_x file=jet_response_fitter_x.cc>
-</bin>
-
-<bin name=jet_response_and_resolution_x file=jet_response_and_resolution_x.cc>
-</bin>
-
-<bin name=jet_l2_correction_x file=jet_l2_correction_x.cc>
-</bin>
-
-<bin name=jet_l3_correction_x file=jet_l3_correction_x.cc>
-</bin>
-
-<bin name=jet_apply_jec_x file=jet_apply_jec_x.cc>
-</bin>
-
-<bin name=jet_weighted_spectrum_x file=jet_weighted_spectrum_x.cc>
-</bin>
-
-<bin name=jet_deltar_efficiency_x file=jet_deltar_efficiency_x.cc>
-</bin>
-
-<bin name=jet_matching_efficiency_x file=jet_matching_efficiency_x.cc>
-</bin>
-
-<bin name=jet_response_vs_deltar_x file=jet_response_vs_deltar_x.cc>
-</bin>
+<bin name=jet_response_analyzer_x file=jet_response_analyzer_x.cc></bin>
+<bin name=jet_mass_analyzer_x file=jet_mass_analyzer_x.cc></bin>
+<bin name=jet_response_fitter_x file=jet_response_fitter_x.cc></bin>
+<bin name=jet_response_and_resolution_x file=jet_response_and_resolution_x.cc></bin>
+<bin name=jet_l2_correction_x file=jet_l2_correction_x.cc></bin>
+<bin name=jet_l3_correction_x file=jet_l3_correction_x.cc></bin>
+<bin name=jet_apply_jec_x file=jet_apply_jec_x.cc></bin>
+<bin name=jet_weighted_spectrum_x file=jet_weighted_spectrum_x.cc></bin>
+<bin name=jet_deltar_efficiency_x file=jet_deltar_efficiency_x.cc></bin>
+<bin name=jet_matching_efficiency_x file=jet_matching_efficiency_x.cc></bin>
+<bin name=jet_response_vs_deltar_x file=jet_response_vs_deltar_x.cc></bin>
