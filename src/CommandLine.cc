@@ -169,12 +169,14 @@ bool CommandLine::parse_file(const string& file_name)
 
   stringstream ss;
   bool filter(false);
+  bool instr(false);
   while(!fin.eof()){
     char next;
     fin.get(next);
-    if (!filter&&next=='$') filter=true;
+    if (!filter&&!instr&&next=='$') filter=true;
+    if (next=='"') instr=(!instr);
     if(!filter) {
-      if (next=='=') ss<<" "<<next<<" ";
+      if (!instr&&next=='=') ss<<" "<<next<<" ";
       else ss<<next;
     }
     if (filter&&next=='\n') filter=false;
