@@ -74,7 +74,7 @@ void set_root_style()
   gStyle->SetNdivisions (405  ,"XYZ");
   
   gStyle->SetTitleOffset(1.15,"X");
-  gStyle->SetTitleOffset(1.50,"Y");
+  gStyle->SetTitleOffset(1.25,"Y");
   gStyle->SetTitleOffset(1.15,"Z");
   
   gStyle->SetLabelOffset(0.004,"X");
