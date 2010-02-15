@@ -55,7 +55,7 @@ public:
 
 private:
   // member functions
-  void beginJob(const edm::EventSetup& iSetup);
+  void beginJob();
   void analyze(const edm::Event& iEvent,const edm::EventSetup& iSetup);
   void endJob(){;}
 
@@ -290,7 +290,7 @@ JetResponseAnalyzer::~JetResponseAnalyzer()
 ////////////////////////////////////////////////////////////////////////////////
 
 //______________________________________________________________________________
-void JetResponseAnalyzer::beginJob(const edm::EventSetup& iSetup)
+void JetResponseAnalyzer::beginJob()
 {
   edm::Service<TFileService> fs;
   if (!fs) throw edm::Exception(edm::errors::Configuration,
