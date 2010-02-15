@@ -5,6 +5,8 @@
 <use name=PhysicsTools/UtilAlgos>
 <use name=DataFormats/JetReco>
 <use name=DataFormats/Math>
+<use name=DataFormats/HepMCCandidate>
+<use name=SimDataFormats/GeneratorProducts>
 
 <use name=root>
 
