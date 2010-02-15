@@ -1028,7 +1028,7 @@ void fill_histo(int pdgid,float value,float weight,float x,
 		const vector<float>& binsx,const vector<TH1F**>& histos)
 {
   if (binsx.size()==0) return;
-  int abspdgid=std::abs(pdgid);
+  int abspdgid=fabs(pdgid);
   int iflv(-1);
   if (abspdgid>=1&&abspdgid<=3) iflv=1;
   else if (abspdgid== 4)        iflv=2;
@@ -1063,7 +1063,7 @@ void fill_histo(int pdgid,float value,float weight,float x,float y,
 		const vector<TH1F***>& histos)
 {
   if (binsx.size()==0||binsy.size()==0) return;
-  int abspdgid=std::abs(pdgid);
+  int abspdgid=fabs(pdgid);
   int iflv(-1);
   if (abspdgid>=1&&abspdgid<=3) iflv=1;
   else if (abspdgid== 4)        iflv=2;
