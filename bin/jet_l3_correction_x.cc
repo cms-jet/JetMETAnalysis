@@ -149,16 +149,10 @@ int main(int argc,char**argv)
       double peak    =(fabsrsp==0)?habsrsp->GetMean():fabsrsp->GetParameter(1);
       double epeak   =(fabsrsp==0)?habsrsp->GetMeanError():fabsrsp->GetParError(1);
       
-      double refptsq =refpt*refpt;
-      double erefptsq=erefpt*erefpt;
-      double peaksq  =peak*peak;
-      double epeaksq =epeak*epeak;
-
-      double rsp     =(refpt+peak)/refpt;
-      double ersp    =std::abs(rsp-1.)*std::sqrt(epeaksq/peaksq+erefptsq/refptsq);
+      double rsp     =peak;
+      double ersp    =epeak;
       double cor     =1.0/rsp;
-      double ecor    =std::abs(refpt*peak)/(refpt+peak)/(refpt+peak)*
-	              std::sqrt(epeaksq/peaksq+erefptsq/refptsq);
+      double ecor    = cor*cor*ersp;
 
       assert(grsp->GetN()==gcor->GetN());
       

@@ -179,17 +179,16 @@ int main(int argc,char**argv)
 	double peak   =(fabsrsp==0)?habsrsp->GetMean():fabsrsp->GetParameter(1);
 	double epeak  =(fabsrsp==0)?habsrsp->GetMeanError():fabsrsp->GetParError(1);
 	
-	double refptsq =refpt*refpt;
-	double erefptsq=erefpt*erefpt;
-	double peaksq  =peak*peak;
-	double epeaksq =epeak*epeak;
-	
-	double absrsp =(refpt+peak)/refpt;
-	double eabsrsp=std::abs(absrsp-1.)*std::sqrt(epeaksq/peaksq+erefptsq/refptsq);
-	double abscor  =1.0/absrsp;
-	double eabscor =
-	  std::abs(refpt*peak)/(refpt+peak)/(refpt+peak)*
-	  std::sqrt(epeaksq/peaksq+erefptsq/refptsq);
+        double absrsp = peak;
+        double eabsrsp = epeak;
+        double abscor = 0.0;
+        double eabscor = 0.0;
+
+        if (absrsp > 0) 
+          {  
+            abscor  =1.0/absrsp;
+            eabscor = abscor*abscor*epeak;
+          } 
 	if ((abscor>0) && (absrsp>0) && (eabscor>1e-3) && (eabscor<0.5) && (eabsrsp>1e-3) && (eabsrsp<0.5)) { 
 	  int n = vabsrsp_eta.back()->GetN();
 	  vabsrsp_eta.back()->SetPoint     (n,refpt, absrsp);
@@ -204,23 +203,27 @@ int main(int argc,char**argv)
 	TGraphErrors* gabsrsp = vabsrsp_eta.back();
 	TGraphErrors* gabscor = vabscor_eta.back();
 	TF1*          fabscor(0);
-	
-	double xmin = gabscor->GetX()[0];
-	double xmax = gabscor->GetX()[gabscor->GetN()-1];
-      
-	if (gabscor->GetN()==0) {
-	  gabscor->SetPoint     (0, 10.0,1.0);
-	  gabscor->SetPointError(0,  0.0,0.0);
-	  gabscor->SetPoint     (1,100.0,1.0);
-	  gabscor->SetPointError(1,  0.0,0.0);
-	  fabscor = new TF1("fit","[0]",10.0,100.0);
-	}
-	else if (gabscor->GetN()<10) {
-	  fabscor=new TF1("fit","[0]+[1]*log10(x)+[2]*pow(log10(x),2)",xmin,xmax);
-	  fabscor->SetParameter(0,0.0);
-	  fabscor->SetParameter(1,0.0);
-	  fabscor->SetParameter(2,0.0);
-	}
+	int npoints = gabscor->GetN(); 
+        double xmin(1.0),xmax(100.0);
+        if (npoints > 0)
+          {
+            xmin = gabscor->GetX()[0];
+            xmax = gabscor->GetX()[gabscor->GetN()-1];
+          }
+        if (npoints<3) {
+          gabscor->SetPoint     (0, 10.0,1.0);
+          gabscor->SetPointError(0,  0.0,0.0);
+          gabscor->SetPoint     (1,100.0,1.0);
+          gabscor->SetPointError(1,  0.0,0.0);
+          fabscor = new TF1("fit","[0]",10.0,100.0);
+          fabscor->FixParameter(0,1.0);
+        }
+        else if (npoints > 2 && gabscor->GetN()<10) {
+          fabscor=new TF1("fit","[0]+[1]*log10(x)+[2]*pow(log10(x),2)",xmin,xmax);
+          fabscor->SetParameter(0,1.0);
+          fabscor->SetParameter(1,0.0);
+          fabscor->SetParameter(2,0.0);
+        } 
 	else {
           if ((int)alg.find("pf")>0) {
             fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",xmin,xmax);
