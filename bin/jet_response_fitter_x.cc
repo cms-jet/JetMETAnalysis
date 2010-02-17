@@ -19,10 +19,11 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <vector>
 #include <cmath>
-
+#include <algorithm>
 
 using namespace std;
 
@@ -34,7 +35,14 @@ using namespace std;
 /// check if a vector of strings contains a certain element
 bool contains(const vector<string>& collection,const string& element);
 void adjust_fitrange(TH1* h,double& min,double& max);
-
+template <class T>
+bool from_string(T& t, 
+                 const std::string& s, 
+                 std::ios_base& (*f)(std::ios_base&))
+{
+  std::istringstream iss(s);
+  return !(iss >> f >> t).fail();
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -52,6 +60,7 @@ int main(int argc,char**argv)
   string         input   = cl.getValue<string> ("input");
   string         output  = cl.getValue<string> ("output",        "");
   double         nsigma  = cl.getValue<double> ("nsigma",       1.5);
+  float          jtptmin = cl.getValue<float>  ("jtptmin",      1.0);
   int            niter   = cl.getValue<int>    ("niter",          3);
   int            ndfmin  = cl.getValue<int>    ("ndfmin",         5);
   vector<string> algs    = cl.getVector<string>("algs",          "");
@@ -120,18 +129,31 @@ int main(int argc,char**argv)
       double integral = hrsp->Integral();
       double mean     = hrsp->GetMean();
       double rms      = hrsp->GetRMS();
-      
+      double ptRefMax(1.0),rspMax(0.0);     
       if (integral>0.0) {
 	double norm  = hrsp->GetMaximumStored();
 	double peak  = mean;
 	double sigma = rms;
+        int pos1     = histname.find("RefPt");
+        int pos2     = histname.find("to",pos1);
+        string ss    = histname.substr(pos1+5,pos2);
+        if (from_string(ptRefMax,ss,std::dec)) {
+          if (histname.find("RelRsp")==0)
+            rspMax = jtptmin/ptRefMax;
+          if (histname.find("AbsRsp")==0)
+            rspMax = jtptmin-ptRefMax;
+        }
 	double xmin  = hrsp->GetXaxis()->GetXmin();
 	double xmax  = hrsp->GetXaxis()->GetXmax();
 	TF1* fitfnc(0);
 	for (int iiter=0;iiter<niter;iiter++) {
-	  double fitrange_min = std::max(xmin,peak-nsigma*sigma);
-	  double fitrange_max = std::min(xmax,peak+nsigma*sigma);
-	  adjust_fitrange(hrsp,fitrange_min,fitrange_max);
+          vector<double> vv;
+          vv.push_back(rspMax);
+          vv.push_back(xmin);
+          vv.push_back(peak-nsigma*sigma);   
+          double fitrange_min = *std::max_element(vv.begin(),vv.end());
+          double fitrange_max = std::min(xmax,peak+nsigma*sigma);
+          adjust_fitrange(hrsp,fitrange_min,fitrange_max);
 	  fitfnc = new TF1("fit","gaus",fitrange_min,fitrange_max);
 	  fitfnc->SetParNames("N","#mu","#sigma");
 	  fitfnc->SetParameter(0,norm);
