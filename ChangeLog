@@ -1,3 +1,10 @@
+2010-02-17  Konstantinos Kousouris  <Konstantinos.Kousouris@cern.ch>
+
+        * tag V00-07-06
+        * compatible with CMSSW_3_5_0
+        * jet_l3_correction_x: response is now calculated from the ratio ptCalo/ptGen
+        * jet_l2_correction_x: response is now calculated from the ratio ptCalo/ptGen
+        * jet_response_fitter_x: implemented the low pt bias modification
 2009-11-24  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-07-03
