@@ -31,7 +31,8 @@ using namespace std;
 GenJetLeptonFinder::GenJetLeptonFinder(const reco::Candidate& genJet) :
   genJet_(genJet),
   lepton_(0),
-  neutrino_(0)
+  neutrino_(0),
+  bmother_(0)
 {
 
 }
@@ -47,6 +48,7 @@ GenJetLeptonFinder::~GenJetLeptonFinder()
 // -------------------- member function implementation -------------------------
 ////////////////////////////////////////////////////////////////////////////////
 
+//______________________________________________________________________________
 bool GenJetLeptonFinder::run()
 {
   // get the GenJet constituents (but sticking to the Candidate interface)
@@ -72,6 +74,7 @@ bool GenJetLeptonFinder::run()
     // check for mother
     const reco::Candidate* mo  = lepton_->mother();
     assert (0!=mo);
+    bmother_ = mo;
     unsigned nmodaus = mo->numberOfDaughters();
     bool foundNu = false;
     for (unsigned itcand=0;itcand<nmodaus&&!foundNu;itcand++){
@@ -84,5 +87,17 @@ bool GenJetLeptonFinder::run()
       }
     }
   }
+
+  // search for B ancestry; if not found set pointer to zero!
+  // the moving up in the mother chain is required for e.g. cascade c decays...
+  while (0!=bmother_&&abs(bmother_->pdgId())>100) {
+    if (abs(bmother_->pdgId())>  500 && abs(bmother_->pdgId())<  550) return true;
+    if (abs(bmother_->pdgId())>10500 && abs(bmother_->pdgId())<10550) return true;
+    if (abs(bmother_->pdgId())>20500 && abs(bmother_->pdgId())<20550) return true;
+    bmother_ = bmother_->mother();
+  }
+  bmother_ = 0;
   return true;
 }
+
+

@@ -1,3 +1,8 @@
+2010-03-08  Hauke Held  <held@cern.ch>
+
+	* tag V00-05-08
+	* added foundBAncestor flag in GenJetLeptonFinder
+
 2009-11-24  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-05-07
