@@ -48,10 +48,12 @@ bool CommandLine::parse(int argc,char**argv)
   _ordered_options.clear();
   _unknowns.clear();
   
+  bool do_parse_files(true);
+  
   for (int i=1;i<argc;i++) {
     string opt=argv[i];
     if(0!=opt.find("-")) {
-      if (i==1) {
+      if (do_parse_files) {
 	bool success = parse_file(opt);
 	if (!success) return false;
 	continue;
@@ -61,9 +63,12 @@ bool CommandLine::parse(int argc,char**argv)
 	return false;
       }
     }
+    else {
+      do_parse_files = false;
+    }
     opt.erase(0,1);
     string next=argv[i+1];
-    if (/*0==next.find("-")||*/i+1>=argc) {
+    if (i+1>=argc) {
       cout<<"ERROR: option '"<<opt<<"' requires value!"<<endl;
       return false;
     }
@@ -97,8 +102,8 @@ bool CommandLine::check()
   
   if (_unknowns.size()>0) {
     result = false;
-    cout<<"\nCommandLine WARNING: "<<_unknowns.size()
-	<<" the followingparameters *must* be provided:"<<endl;
+    cout<<"\nCommandLine WARNING: "
+	<<"the following parameters *must* be provided:"<<endl;
     for (StrVec_t::const_iterator it=_unknowns.begin();it!=_unknowns.end();++it)
       cout<<(*it)<<endl;
     cout<<endl;
