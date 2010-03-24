@@ -120,8 +120,8 @@ int main(int argc,char**argv)
     grsp->SetName("L3RspVsRefPt");
     gcor->SetName("L3CorVsJetPt");
     
-    ObjectLoader<TH1F> hl_absrsp;
-    hl_absrsp.load_objects(idir,"AbsRsp_Barrel:RefPt");
+    ObjectLoader<TH1F> hl_relrsp;
+    hl_relrsp.load_objects(idir,"RelRsp_Barrel:RefPt");
     
     ObjectLoader<TH1F> hl_refpt;
     hl_refpt.load_objects(idir,"RefPt_Barrel:RefPt");
@@ -129,12 +129,12 @@ int main(int argc,char**argv)
     ObjectLoader<TH1F> hl_jetpt;
     hl_jetpt.load_objects(idir,"JetPt_Barrel:RefPt");
         
-    vector<unsigned int> indices; TH1F* habsrsp(0);
-    hl_absrsp.begin_loop();
-    while ((habsrsp=hl_absrsp.next_object(indices))) {
-      if (habsrsp->Integral()==0) continue;
+    vector<unsigned int> indices; TH1F* hrelrsp(0);
+    hl_relrsp.begin_loop();
+    while ((hrelrsp=hl_relrsp.next_object(indices))) {
+      if (hrelrsp->Integral()==0) continue;
       
-      TF1*  fabsrsp = habsrsp->GetFunction("fit");
+      TF1*  frelrsp = hrelrsp->GetFunction("fit");
       TH1F* hrefpt  = hl_refpt.object(indices);
       TH1F* hjetpt  = hl_jetpt.object(indices);
 
@@ -146,8 +146,8 @@ int main(int argc,char**argv)
       double jetpt   =hjetpt->GetMean();
       double ejetpt  =hjetpt->GetMeanError();
 
-      double peak    =(fabsrsp==0)?habsrsp->GetMean():fabsrsp->GetParameter(1);
-      double epeak   =(fabsrsp==0)?habsrsp->GetMeanError():fabsrsp->GetParError(1);
+      double peak    =(frelrsp==0)?hrelrsp->GetMean():frelrsp->GetParameter(1);
+      double epeak   =(frelrsp==0)?hrelrsp->GetMeanError():frelrsp->GetParError(1);
       
       double rsp     =peak;
       double ersp    =epeak;
@@ -271,27 +271,27 @@ int main(int argc,char**argv)
     fout.setf(ios::left);
     if ((int)alg.find("pf")>0) {
       fout<<setw(12)<<-5.191                  // eta_min
-	<<setw(12)<<+5.191                  // eta_max
-	<<setw(12)<<8                       // number of parameters + 2
-	<<setw(12)<<4.0                     // minimum pT
-	<<setw(12)<<5000.0                  // maximum pT
-	<<setw(12)<<fitcor->GetParameter(0) // p0
-	<<setw(12)<<fitcor->GetParameter(1) // p1
-	<<setw(12)<<fitcor->GetParameter(2) // p2
-	<<setw(12)<<fitcor->GetParameter(3) // p3
-        <<setw(12)<<fitcor->GetParameter(4) // p4
-	<<setw(12)<<fitcor->GetParameter(5);// p5
+	  <<setw(12)<<+5.191                  // eta_max
+	  <<setw(12)<<8                       // number of parameters + 2
+	  <<setw(12)<<4.0                     // minimum pT
+	  <<setw(12)<<5000.0                  // maximum pT
+	  <<setw(12)<<fitcor->GetParameter(0) // p0
+	  <<setw(12)<<fitcor->GetParameter(1) // p1
+	  <<setw(12)<<fitcor->GetParameter(2) // p2
+	  <<setw(12)<<fitcor->GetParameter(3) // p3
+	  <<setw(12)<<fitcor->GetParameter(4) // p4
+	  <<setw(12)<<fitcor->GetParameter(5);// p5
     } 
     else {
       fout<<setw(12)<<-5.191                  // eta_min
-	<<setw(12)<<+5.191                  // eta_max
-	<<setw(12)<<6                       // number of parameters + 2
-	<<setw(12)<<4.0                     // minimum pT
-	<<setw(12)<<5000.0                  // maximum pT
-	<<setw(12)<<fitcor->GetParameter(0) // p0
-	<<setw(12)<<fitcor->GetParameter(1) // p1
-	<<setw(12)<<fitcor->GetParameter(2) // p2
-	<<setw(12)<<fitcor->GetParameter(3);// p3
+	  <<setw(12)<<+5.191                  // eta_max
+	  <<setw(12)<<6                       // number of parameters + 2
+	  <<setw(12)<<4.0                     // minimum pT
+	  <<setw(12)<<5000.0                  // maximum pT
+	  <<setw(12)<<fitcor->GetParameter(0) // p0
+	  <<setw(12)<<fitcor->GetParameter(1) // p1
+	  <<setw(12)<<fitcor->GetParameter(2) // p2
+	  <<setw(12)<<fitcor->GetParameter(3);// p3
     }
     fout.close();
     
