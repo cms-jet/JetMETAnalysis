@@ -1,3 +1,10 @@
+2010-03-24  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-08-00
+	* compatible with CMSSW_3_5_4 (->TFileService)
+	* transition from absolute to relative response for
+	jet_l3_correction_x tool, jet_l2_correction_x toll still pending
+
 2010-02-17  Konstantinos Kousouris  <Konstantinos.Kousouris@cern.ch>
 
         * tag V00-07-06
