@@ -38,7 +38,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 void set_xaxis_range(TH1* h1,TH1* h2=0);
 void get_xaxis_range(TH1* h,int& binmin,int& binmax);
-void set_draw_attributes(TH1* h,unsigned index=0);
+void set_draw_attributes(TH1* h,unsigned index=0,bool fill=true);
 void draw_stats(TH1* h,double xoffset,Color_t color,Color_t fitColor);
 void draw_range(const ObjectLoader<TH1F>& hl,
 		const vector<unsigned int>& indices,
@@ -69,6 +69,7 @@ int main(int argc,char** argv)
   bool           peak       = cl.getValue<bool>   ("peak",              false);
   bool           logx       = cl.getValue<bool>   ("logx",              false);
   bool           logy       = cl.getValue<bool>   ("logy",              false);
+  bool           fill       = cl.getValue<bool>   ("fill",               true);
   string         prefix     = cl.getValue<string> ("prefix",               "");
   vector<string> formats    = cl.getVector<string>("formats",              "");
   bool           batch      = cl.getValue<bool>   ("batch",             false);
@@ -165,7 +166,7 @@ int main(int argc,char** argv)
 	    gPad->SetBottomMargin(0.15);
 	    set_xaxis_range(h);
 	    h->SetLineColor(kBlack);
-	    set_draw_attributes(h,0);
+	    set_draw_attributes(h,0,fill);
 	    h->Draw("EH");
 	    h->SetMaximum(1.5*h->GetMaximum());
 	    if (logy) h->SetMaximum(10.*h->GetMaximum());
@@ -175,7 +176,7 @@ int main(int argc,char** argv)
 	  }
 	  else {
 	    h->SetLineColor(kBlue);
-	    set_draw_attributes(h,1);
+	    set_draw_attributes(h,1,fill);
 	    h->Draw("EHSAME");
 	    draw_stats(h,0.15,kBlue,kBlue);
 	    TH1F* hdraw = (TH1F*)gPad->GetListOfPrimitives()->First();
@@ -239,11 +240,13 @@ void get_xaxis_range(TH1* h,int& binmin,int &binmax)
 
 
 //______________________________________________________________________________
-void set_draw_attributes(TH1* h,unsigned index)
+void set_draw_attributes(TH1* h,unsigned index,bool fill)
 {
-  Style_t fillstyle = (index==0) ? 3002 : 3001;
-  h->SetFillColor(h->GetLineColor());
-  h->SetFillStyle(fillstyle);
+  if (fill) {
+    Style_t fillstyle = (index==0) ? 3002 : 3001;
+    h->SetFillColor(h->GetLineColor());
+    h->SetFillStyle(fillstyle);
+  }
   TF1* fitfnc = h->GetFunction("fit");
   if (0!=fitfnc) {
     fitfnc->SetLineWidth(2);
