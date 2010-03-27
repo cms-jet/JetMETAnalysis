@@ -23,7 +23,11 @@ public:
   //
   // member functions
   //
-  bool run();
+  bool findLepton(bool fromB=true);
+  bool findElectron(bool fromB=true);
+  bool findMuon(bool fromB=true);
+  bool run() { return findLepton(false); }
+
   bool foundLeptonAndNeutrino() 
                          const { return (lepton_!=0 && neutrino_!=0); }
   bool foundLepton()     const { return (lepton_!=0); }
@@ -39,6 +43,10 @@ public:
   int  leptonPdgId()   const { return (lepton_!=0)   ? lepton_  ->pdgId() : 0 ; }
   int  neutrinoPdgId() const { return (neutrino_!=0) ? neutrino_->pdgId() : 0 ; }
   int  bmotherPdgId()  const { return (bmother_!=0)  ? bmother_ ->pdgId() : 0 ; }
+
+private:
+  bool run(const std::vector<int>& absPdgIds,bool fromB);
+  
 
   //
   // member data

@@ -21,7 +21,9 @@
 #include <vector>
 #include <string>
 
+
 using namespace std;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // -------------------- constructor && destructor ------------------------------
@@ -49,7 +51,35 @@ GenJetLeptonFinder::~GenJetLeptonFinder()
 ////////////////////////////////////////////////////////////////////////////////
 
 //______________________________________________________________________________
-bool GenJetLeptonFinder::run()
+bool GenJetLeptonFinder::findLepton(bool fromB)
+{
+  vector<int> absPdgIds;
+  absPdgIds.push_back(11);
+  absPdgIds.push_back(13);
+  return run(absPdgIds,fromB);
+}
+
+
+//______________________________________________________________________________
+bool GenJetLeptonFinder::findElectron(bool fromB)
+{
+  vector<int> absPdgIds;
+  absPdgIds.push_back(11);
+  return run(absPdgIds,fromB);
+}
+
+
+//______________________________________________________________________________
+bool GenJetLeptonFinder::findMuon(bool fromB)
+{
+  vector<int> absPdgIds;
+  absPdgIds.push_back(13);
+  return run(absPdgIds,fromB);
+}
+
+
+//______________________________________________________________________________
+bool GenJetLeptonFinder::run(const vector<int>& absPdgIds,bool fromB)
 {
   // get the GenJet constituents (but sticking to the Candidate interface)
   unsigned njetdaus = genJet_.numberOfDaughters();
@@ -57,47 +87,49 @@ bool GenJetLeptonFinder::run()
   for (unsigned i=0;i<njetdaus;i++) jetdaus.push_back(genJet_.daughter(i));
   
   // loop over constituents until lepton is found, then search neutrino
-  bool foundLep = false;
-  for (unsigned itd=0;itd<njetdaus&&!foundLep;itd++){
+  for (unsigned itd=0;itd<njetdaus;itd++) {
     
     // retrieve constituent
-    const reco::Candidate* dau = jetdaus[itd];
-    int dauid = dau->pdgId();
+    const reco::Candidate* lepcand = jetdaus[itd];
+    int lepid    = lepcand->pdgId();
+    int abslepid = std::abs(lepid);
     
     // decide wether lepton or not
-    if (abs(dauid)!=11 && abs(dauid)!=13)continue;
+    if (find(absPdgIds.begin(),absPdgIds.end(),abslepid)==absPdgIds.end()) continue;
     
-    // if dau is lepton save as lepton_
-    lepton_  = dau;
-    foundLep = true;
-    
-    // check for mother
-    const reco::Candidate* mo  = lepton_->mother();
-    assert (0!=mo);
-    bmother_ = mo;
-    unsigned nmodaus = mo->numberOfDaughters();
-    bool foundNu = false;
-    for (unsigned itcand=0;itcand<nmodaus&&!foundNu;itcand++){
-      const reco::Candidate* nucand = mo->daughter(itcand);
-      if (lepton_==nucand)continue;
-      if ( (lepton_->pdgId())*(nucand->pdgId())==-132 ||
-	   (lepton_->pdgId())*(nucand->pdgId())==-182 ){
-	neutrino_ = nucand;
-	foundNu   = true;
-      }
+    // search for B ancestry; if not found set pointer to zero!
+    // the moving up in the mother chain is required for e.g. cascade c decays...
+    bool foundB(false);
+    const reco::Candidate* mother = lepton_->mother(); assert(0!=mother);
+    const reco::Candidate* bcand(mother);
+    while (0!=bcand&&abs(bcand->pdgId())>100&&!foundB) {
+      if (abs(bcand->pdgId())>  500 && abs(bcand->pdgId())<  550) foundB=true;
+      if (abs(bcand->pdgId())>10500 && abs(bcand->pdgId())<10550) foundB=true;
+      if (abs(bcand->pdgId())>20500 && abs(bcand->pdgId())<20550) foundB=true;
+      bcand=bcand->mother();
     }
+    if (fromB&&!foundB) continue;
+    
+    // check for neutrino
+    bool foundNu(false);
+    unsigned nmodaus(mother->numberOfDaughters());
+    const reco::Candidate* nucand(0);
+    for (unsigned i=0;i<nmodaus&&!foundNu;i++){
+      nucand = mother->daughter(i);
+      if (lepcand==nucand) continue;
+      if ((lepcand->pdgId())*(nucand->pdgId())==-132||
+	  (lepcand->pdgId())*(nucand->pdgId())==-182) foundNu=true;
+    }
+    
+    // save the relevant particles
+    lepton_   = lepcand;
+    neutrino_ = (foundNu) ? nucand : 0;
+    bmother_  = (foundB)  ? bcand  : 0;    
+    
+    return true;
   }
-
-  // search for B ancestry; if not found set pointer to zero!
-  // the moving up in the mother chain is required for e.g. cascade c decays...
-  while (0!=bmother_&&abs(bmother_->pdgId())>100) {
-    if (abs(bmother_->pdgId())>  500 && abs(bmother_->pdgId())<  550) return true;
-    if (abs(bmother_->pdgId())>10500 && abs(bmother_->pdgId())<10550) return true;
-    if (abs(bmother_->pdgId())>20500 && abs(bmother_->pdgId())<20550) return true;
-    bmother_ = bmother_->mother();
-  }
-  bmother_ = 0;
-  return true;
+  
+  return false;
 }
 
 
