@@ -57,6 +57,7 @@ namespace jetmet
   }
   
   
+  // BASED ON SINGLE-PRECISION VALUES
   inline float getPtRel(float jetPt, float jetEta, float jetPhi, float jetE,
 			float lepPx, float lepPy,  float lepPz,
 			bool   addLepToJet)
