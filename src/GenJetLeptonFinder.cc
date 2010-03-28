@@ -100,7 +100,7 @@ bool GenJetLeptonFinder::run(const vector<int>& absPdgIds,bool fromB)
     // search for B ancestry; if not found set pointer to zero!
     // the moving up in the mother chain is required for e.g. cascade c decays...
     bool foundB(false);
-    const reco::Candidate* mother = lepton_->mother(); assert(0!=mother);
+    const reco::Candidate* mother = lepcand->mother(); assert(0!=mother);
     const reco::Candidate* bcand(mother);
     while (0!=bcand&&abs(bcand->pdgId())>100&&!foundB) {
       if (abs(bcand->pdgId())>  500 && abs(bcand->pdgId())<  550) foundB=true;
