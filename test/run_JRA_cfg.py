@@ -80,6 +80,13 @@ process.TFileService = cms.Service("TFileService",
 
 
 #!
+#! CHOOSE JET ENERGY CORRECTION SET
+#!
+from JetMETCorrections.Configuration.JetCorrectionEra_cff import JetCorrectionEra
+JetCorrectionEra.era = 'Summer09_7TeV_ReReco332'
+
+
+#!
 #! CHOOSE ALGORITHMS
 #!
 from JetMETAnalysis.JetAnalyzers.addAlgorithm import addAlgorithm
@@ -117,8 +124,11 @@ algorithms.append('ic5pf')
 algorithms.append('ic5pfl2l3')
 
 algorithms.append('ak5jpt')
+algorithms.append('ak5jptl2l3')
 algorithms.append('sc5jpt')
+algorithms.append('sc5jptl2l3')
 algorithms.append('ic5jpt')
+algorithms.append('ic5jptl2l3')
 
 # set to False to use jets from the input file (NOT RECOMMENDED)
 doJetReco = True

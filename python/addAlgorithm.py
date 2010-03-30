@@ -191,6 +191,9 @@ corrJetsDict = {
     'ca5calol2l3':   ('ca5CaloJetsL2L3',  ca5CaloJetsL2L3),
     'ca6calol2l3':   ('ca6CaloJetsL2L3',  ca6CaloJetsL2L3),
     'ca7calol2l3':   ('ca7CaloJetsL2L3',  ca7CaloJetsL2L3),
+    'ak5jptl2l3':    ('ak5JPTJetsL2L3',   ak5JPTJetsL2L3),
+    'sc5jptl2l3':    ('sc5JPTJetsL2L3',   sc5JPTJetsL2L3),
+    'ic5jptl2l3':    ('ic5JPTJetsL2L3',   ic5JPTJetsL2L3),
     'ak5pfl2l3':     ('ak5PFJetsL2L3',    ak5PFJetsL2L3),
     'ak7pfl2l3':     ('ak7PFJetsL2L3',    ak7PFJetsL2L3),
     'sc5pfl2l3':     ('sc5PFJetsL2L3',    sc5PFJetsL2L3),
@@ -350,6 +353,8 @@ def addAlgorithm(process,alg_size_type_corr,reco):
             sequence = process.ic5JPTJetsSequence * sequence
         else:
             raise ValueError(alg_size + " not supported for JPT!")
+        if correctl1 or correctl2l3:
+            jetPtEta.src = corrLabel
     elif reco:
         process.load('Configuration.StandardSequences.Geometry_cff')
         process.load('Configuration.StandardSequences.MagneticField_cff')
