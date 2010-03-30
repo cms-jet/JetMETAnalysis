@@ -56,7 +56,11 @@ setup:
 lib: $(OBJS)
 	$(CXX) $(CXXFLAGS) -shared $(OBJS) $(ROOTLIBS) -o $(LIBDIR)/$(LIB) 
 
-bin: jet_inspect_histos jet_inspect_graphs
+bin: jet_inspect_profiles jet_inspect_histos jet_inspect_graphs
+
+jet_inspect_profiles:
+	$(CXX) $(CXXFLAGS) bin/jet_inspect_profiles_x.cc $(LIBS) $(ROOTLIBS) \
+        -o $(BINDIR)/jet_inspect_profiles_x
 
 jet_inspect_histos:
 	$(CXX) $(CXXFLAGS) bin/jet_inspect_histos_x.cc $(LIBS) $(ROOTLIBS) \
@@ -69,6 +73,7 @@ jet_inspect_graphs:
 
 clean:
 	rm -rf $(OBJS) $(LIBDIR)/$(LIB) JetMETAnalysis \
+               $(BINDIR)/jet_inspect_profiles_x \
                $(BINDIR)/jet_inspect_histos_x \
                $(BINDIR)/jet_inspect_graphs_x
 
