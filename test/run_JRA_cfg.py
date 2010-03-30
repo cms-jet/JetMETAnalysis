@@ -8,7 +8,7 @@ import JetMETAnalysis.JetAnalyzers.Defaults_cff as Defaults;
 Defaults.JetPtEta = cms.PSet(
     etaMin = cms.double(-5.0),
     etaMax = cms.double(5.0),
-    ptMin  = cms.double(10.0)
+    ptMin  = cms.double(1.0)
 )
 Defaults.RefPtEta = cms.PSet(
     etaMin = cms.double(-5.0),
