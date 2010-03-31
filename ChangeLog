@@ -1,5 +1,10 @@
 2010-03-31  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
+	* tag V00-08-03
+	* fix jet_l2_correction_x tool (finally!), according to Kostas'
+	instructions (thanks to Andreas for pointing out that it was still
+	wrong). 
+
 	* tag V00-08-02
 	* add tree branch 'refrank'
 	* add tree branch 'refy' (reference rapidity)

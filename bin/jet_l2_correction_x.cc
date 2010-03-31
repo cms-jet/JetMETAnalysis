@@ -127,9 +127,9 @@ int main(int argc,char**argv)
     TDirectoryFile* odir = (TDirectoryFile*)ofile->mkdir(alg.c_str());
     odir->cd();
     
-    ObjectLoader<TH1F> hl_absrsp;
+    ObjectLoader<TH1F> hl_rsp;
     
-    hl_absrsp.load_objects(idir,"AbsRsp:JetEta:RefPt");
+    hl_rsp.load_objects(idir,"RelRsp:JetEta:RefPt");
     
     ObjectLoader<TH1F> hl_refpt;
     hl_refpt.load_objects(idir,"RefPt:JetEta:RefPt");
@@ -144,10 +144,10 @@ int main(int argc,char**argv)
     vector<TGraphErrors*> vabsrsp_eta;
     vector<TGraphErrors*> vabscor_eta;
     
-    vector<unsigned int> indices; TH1F* habsrsp(0);
-    hl_absrsp.begin_loop();
+    vector<unsigned int> indices; TH1F* hrsp(0);
+    hl_rsp.begin_loop();
     
-    while ((habsrsp=hl_absrsp.next_object(indices))) {
+    while ((hrsp=hl_rsp.next_object(indices))) {
 
       unsigned int ieta=indices[0];
       unsigned int ipt =indices[1];
@@ -157,15 +157,15 @@ int main(int argc,char**argv)
 	vabsrsp_eta.push_back(new TGraphErrors());
 	vabscor_eta.push_back(new TGraphErrors());
 	stringstream ss;
-	ss<<hl_absrsp.minimum(0,ieta)<<"to"<<hl_absrsp.maximum(0,ieta);
+	ss<<hl_rsp.minimum(0,ieta)<<"to"<<hl_rsp.maximum(0,ieta);
 	vabsrsp_eta.back()->SetName(("AbsRspVsRefPt_JetEta"+ss.str()).c_str());
 	vabscor_eta.back()->SetName(("AbsCorVsJetPt_JetEta"+ss.str()).c_str());
       }
       
       // only add points to the graphs if the current histo is not empty
-      if (habsrsp->Integral()!=0) {
+      if (hrsp->Integral()!=0) {
 	
-	TF1*  fabsrsp = habsrsp->GetFunction("fit");
+	TF1*  frsp    = hrsp->GetFunction("fit");
 	TH1F* hrefpt  = hl_refpt.object(indices);
 	TH1F* hjetpt  = hl_jetpt.object(indices);
 	
@@ -176,8 +176,8 @@ int main(int argc,char**argv)
 	double jetpt  =hjetpt->GetMean();
 	double ejetpt =hjetpt->GetMeanError();
 	
-	double peak   =(fabsrsp==0)?habsrsp->GetMean():fabsrsp->GetParameter(1);
-	double epeak  =(fabsrsp==0)?habsrsp->GetMeanError():fabsrsp->GetParError(1);
+	double peak   =(frsp==0)?hrsp->GetMean()     :frsp->GetParameter(1);
+	double epeak  =(frsp==0)?hrsp->GetMeanError():frsp->GetParError(1);
 	
         double absrsp = peak;
         double eabsrsp = epeak;
