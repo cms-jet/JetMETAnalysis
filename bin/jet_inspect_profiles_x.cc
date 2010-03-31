@@ -121,7 +121,7 @@ int main(int argc,char** argv)
   } // INPUTS (FILES)
   
 
-  // DRAW!
+  // DRAW PROFILES
   TCanvas* c=new TCanvas(output.c_str(),output.c_str(),0,0,600,600);
   if (logx) gPad->SetLogx();
   if (logy) gPad->SetLogy();
@@ -138,6 +138,7 @@ int main(int argc,char** argv)
     }
   }
   
+  // DRAW LEGEND
   if (labels.size()==profiles.size()) {
     TLegend* leg = new TLegend(0.65,0.2,0.9,0.2+labels.size()*0.05);
     leg->SetLineColor(10);
@@ -148,6 +149,21 @@ int main(int argc,char** argv)
     leg->Draw();
   }
   
+  // DRAW HORIZONTAL LINES
+  for (unsigned iline=0;iline<hlines.size();iline++) {
+    size_t pos = hlines[iline].find(':');
+    string y_as_str = hlines[iline].substr(0,pos);
+    string s_as_str("1");
+    if (pos!=string::npos) s_as_str = hlines[iline].substr(pos+1);
+    stringstream ssy; ssy<<y_as_str; double y; ssy>>y;
+    stringstream sss; sss<<s_as_str; int s; sss>>s;
+    TLine* line = new TLine(profiles.front()->GetXaxis()->GetXmin(),y,
+			    profiles.front()->GetXaxis()->GetXmax(),y);
+    line->SetLineStyle(s);
+    line->Draw("SAME");
+  }
+  
+  // CREATE FILES
   for (unsigned int ifmt=0;ifmt<formats.size();ifmt++)
     c->Print((output+"."+formats[ifmt]).c_str());
   
