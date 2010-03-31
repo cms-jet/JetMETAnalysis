@@ -1,3 +1,11 @@
+2010-03-31  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-08-02
+	* add tree branch 'refrank'
+	* add tree branch 'refy' (reference rapidity)
+	* add tree branch 'jty' (jet rapidity)
+	* yet to be accounted for in e.g. jet_response_analyzer_x tool!
+	
 2010-03-30  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-08-01

@@ -154,15 +154,18 @@ private:
   float           pthat_;
   float           weight_;
   unsigned char   nref_;
+  unsigned char   refrank_[100];
   int             refpdgid_[100];
   float           refe_[100];
   float           refpt_[100];
   float           refeta_[100];
   float           refphi_[100];
+  float           refy_[100];
   float           jte_[100];
   float           jtpt_[100];
   float           jteta_[100];
   float           jtphi_[100];
+  float           jty_[100];
   float           refdrjt_[100];
   float           refdphijt_[100];
   
@@ -803,18 +806,20 @@ void JetResponseAnalyzer::beginJob()
   
   if (doTree_) {
     tree_=fs->make<TTree>("t","t");
-    tree_->Branch("nref",  &nref_,  "nref/b");
-    tree_->Branch("pthat", &pthat_, "pthat/F");
-    tree_->Branch("weight",&weight_,"weight/F");
+    tree_->Branch("pthat", &pthat_,  "pthat/F");
+    tree_->Branch("weight",&weight_, "weight/F");
+    tree_->Branch("nref",  &nref_,   "nref/b");
+    tree_->Branch("refrank",refrank_,"refrank[nref]/b");
     if (doFlavor_) tree_->Branch("refpdgid",refpdgid_,"refpdgid[nref]/I");
-    tree_->Branch("refe",   refe_,  "refe[nref]/F");
-    tree_->Branch("refpt",  refpt_, "refpt[nref]/F");
-    tree_->Branch("refeta", refeta_,"refeta[nref]/F");
-    tree_->Branch("refphi", refphi_,"refphi[nref]/F");
-    tree_->Branch("jte",    jte_,   "jte[nref]/F");
-    tree_->Branch("jtpt",   jtpt_,  "jtpt[nref]/F");
-    tree_->Branch("jteta",  jteta_, "jteta[nref]/F");
-    tree_->Branch("jtphi",  jtphi_, "jtphi[nref]/F");
+    tree_->Branch("refe",   refe_,   "refe[nref]/F");
+    tree_->Branch("refpt",  refpt_,  "refpt[nref]/F");
+    tree_->Branch("refeta", refeta_, "refeta[nref]/F");
+    tree_->Branch("refphi", refphi_, "refphi[nref]/F");
+    tree_->Branch("jte",    jte_,    "jte[nref]/F");
+    tree_->Branch("jtpt",   jtpt_,   "jtpt[nref]/F");
+    tree_->Branch("jteta",  jteta_,  "jteta[nref]/F");
+    tree_->Branch("jtphi",  jtphi_,  "jtphi[nref]/F");
+    tree_->Branch("jty",    jty_,    "jty[nref]/F");
     if (doBalancing_) tree_->Branch("refdphijt",refdphijt_,"refdphijt[nref]/F");
     else    	      tree_->Branch("refdrjt",  refdrjt_,  "refdrjt[nref]/F");
   }
@@ -883,14 +888,17 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
       refpdgid_[nref_]=ref->pdgId();
     }
     
-    refe_[nref_]   = ref->energy();
-    refpt_[nref_]  = ref->pt();
-    refeta_[nref_] = ref->eta();
-    refphi_[nref_] = ref->phi();
-    jte_[nref_]    = jet->energy();
-    jtpt_[nref_]   = jet->pt();
-    jteta_[nref_]  = jet->eta();
-    jtphi_[nref_]  = jet->phi();
+    refrank_[nref_] = nref_;
+    refe_[nref_]    = ref->energy();
+    refpt_[nref_]   = ref->pt();
+    refeta_[nref_]  = ref->eta();
+    refphi_[nref_]  = ref->phi();
+    refy_[nref_]    = ref->rapidity();
+    jte_[nref_]     = jet->energy();
+    jtpt_[nref_]    = jet->pt();
+    jteta_[nref_]   = jet->eta();
+    jtphi_[nref_]   = jet->phi();
+    jty_[nref_]     = jet->rapidity();
     nref_++;
 
     double jetPt  =jet->pt();    
