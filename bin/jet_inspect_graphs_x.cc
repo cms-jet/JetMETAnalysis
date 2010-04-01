@@ -224,7 +224,7 @@ int main(int argc,char** argv)
     } // algorithms
   } // inputs
 
-  if (0==mg) { cout<<"Buh!"<<endl; return 0; }
+  if (0==mg) { cout<<"ERROR: No data points in the graph!"<<endl; return 0; }
 
   TCanvas* c;
   
