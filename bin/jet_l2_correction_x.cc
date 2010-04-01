@@ -189,7 +189,7 @@ int main(int argc,char**argv)
             abscor  =1.0/absrsp;
             eabscor = abscor*abscor*epeak;
           } 
-	if ((abscor>0) && (absrsp>0) && (eabscor>1e-3) && (eabscor<0.5) && (eabsrsp>1e-3) && (eabsrsp<0.5)) { 
+	if ((abscor>0) && (absrsp>0) && (eabscor>1e-3) && (eabscor/abscor<0.5) && (eabsrsp>1e-3) && (eabsrsp/absrsp<0.5)) { 
 	  int n = vabsrsp_eta.back()->GetN();
 	  vabsrsp_eta.back()->SetPoint     (n,refpt, absrsp);
 	  vabsrsp_eta.back()->SetPointError(n,erefpt,eabsrsp);
@@ -233,6 +233,15 @@ int main(int argc,char**argv)
 	    fabscor->SetParameter(3,-0.3);
             fabscor->SetParameter(4,0.6);
 	    fabscor->SetParameter(5,1.0);
+          }
+          else if ((int)alg.find("trk")>0) {
+            fabscor=new TF1("fit","[0]+[1]*pow(x/500.0,[2])+[3]/log10(x)+[4]*log10(x)",xmin,xmax);
+	    fabscor->SetParameter(0,1.7);
+	    fabscor->SetParameter(1,0.7);
+	    fabscor->SetParameter(2,3.0);
+	    fabscor->SetParLimits(2,1,10);
+	    fabscor->SetParameter(3,0.0);
+	    fabscor->SetParameter(4,0.0);
           }
           else {
             fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),[2])+[3])",xmin,xmax);
@@ -304,7 +313,10 @@ int main(int argc,char**argv)
 	else if (grelcor->GetN()==2) {
 	  frelcor=new TF1("fit","[0]+[1]*log10(x)",xmin,xmax);
 	}
-	else {
+    else if ((int)alg.find("trk")>0) {
+	  frelcor=new TF1("fit","[0]+[1]*log10(x)+[2]*pow(log10(x),2)+[3]*pow(log10(x),3)+[4]*pow(x/500.0,3)",xmin,xmax);
+	}
+    else {
 	  frelcor=new TF1("fit","[0]+[1]*log10(x)+[2]*pow(log10(x),2)+[3]*pow(log10(x),3)+[4]*pow(log10(x),4)",xmin,xmax);
 	}
 	

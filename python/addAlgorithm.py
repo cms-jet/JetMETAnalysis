@@ -36,6 +36,13 @@ stdGenJetsDict = {
     'ic5pf':   'iterativeCone5GenJets',
     'kt4pf':   'kt4GenJets',
     'kt6pf':   'kt6GenJets',
+    'ak5trk': 'ak5GenJets',
+    'ak7trk': 'ak7GenJets',
+    'sc5trk': 'sisCone5GenJets',
+    'sc7trk': 'sisCone7GenJets',
+    'ic5trk': 'iterativeCone5GenJets',
+    'kt4trk': 'kt4GenJets',
+    'kt6trk': 'kt6GenJets',
     'ak5jpt':  'ak5GenJets',
     'sc5jpt':  'ak5GenJets',
     'ic5jpt':  'ak5GenJets'
@@ -101,6 +108,13 @@ stdRecJetsDict = {
     'ic5pf':       'iterativeCone5PFJets',
     'kt4pf':       'kt4PFJets',
     'kt6pf':       'kt6PFJets',
+    'ak5trk':     'ak5TrackJets',
+#    'ak7trk':     'ak7TrackJets',
+    'sc5trk':     'sisCone5TrackJets',
+#    'sc7trk':     'sisCone7TrackJets',
+#    'ic5trk':     'iterativeCone5TrackJets',
+    'kt4trk':     'kt4TrackJets',
+#    'kt6trk':     'kt6TrackJets',
     'ak5jpt':      'ak5JPTJets',
     'sc5jpt':      'sc5JPTJets',
     'ic5jpt':      'ic5JPTJets'
@@ -133,19 +147,19 @@ recJetsDict = {
     'ca5pf':       ('ca5PFJets',        ca5PFJets),
     'ca6pf':       ('ca6PFJets',        ca6PFJets),
     'ca7pf':       ('ca7PFJets',        ca7PFJets),
-#    'ak5trk':      ('ak5TrackJets',     ak5TrackJets),
+    'ak5trk':      ('ak5TrackJets',     ak5TrackJets),
 #    'ak7trk':      ('ak7TrackJets',     ak7TrackJets),
-#    'sc5trk':      ('sc5TrackJets',     sc5TrackJets),
+    'sc5trk':      ('sc5TrackJets',     sc5TrackJets),
 #    'sc7trk':      ('sc7TrackJets',     sc7TrackJets),
 #    'ic5trk':      ('ic5TrackJets',     ic5TrackJets),
-#    'kt4trk':      ('kt4TrackJets',     kt4TrackJets),
+    'kt4trk':      ('kt4TrackJets',     kt4TrackJets),
 #    'kt5trk':      ('kt5TrackJets',     kt5TrackJets),
 #    'kt6trk':      ('kt6TrackJets',     kt6TrackJets),
 #    'kt7trk':      ('kt7TrackJets',     kt7TrackJets),
-#    'ca4trk':      ('ca4TrackJets',     ca4TrackJets),
-#    'ca5trk':      ('ca5TrackJets',     ca5TrackJets),
-#    'ca6trk':      ('ca6TrackJets',     ca6TrackJets),
-#    'ca7trk':      ('ca7TrackJets',     ca7TrackJets),
+    'ca4trk':      ('ca4TrackJets',     ca4TrackJets),
+    'ca5trk':      ('ca5TrackJets',     ca5TrackJets),
+    'ca6trk':      ('ca6TrackJets',     ca6TrackJets),
+    'ca7trk':      ('ca7TrackJets',     ca7TrackJets),
     'ak5jpt':      ('ak5JPTJets',       ak5JPTJets),
     'sc5jpt':      ('sc5JPTJets',       sc5JPTJets),
     'ic5jpt':      ('ic5JPTJets',       ic5JPTJets)
@@ -207,6 +221,19 @@ corrJetsDict = {
     'ca5pfl2l3':     ('ca5PFJetsL2L3',    ca5PFJetsL2L3),
     'ca6pfl2l3':     ('ca6PFJetsL2L3',    ca6PFJetsL2L3),
     'ca7pfl2l3':     ('ca7PFJetsL2L3',    ca7PFJetsL2L3),
+#    'ak5trkl2l3':   ('ak5TrackJetsL2L3',  ak5TrackJetsL2L3),
+#    'ak7trkl2l3':   ('ak7TrackJetsL2L3',  ak7TrackJetsL2L3),
+#    'sc5trkl2l3':   ('sc5TrackJetsL2L3',  sc5TrackJetsL2L3),
+#    'sc7trkl2l3':   ('sc7TrackJetsL2L3',  sc7TrackJetsL2L3),
+#    'ic5trkl2l3':   ('ic5TrackJetsL2L3',  ic5TrackJetsL2L3),
+#    'kt4trkl2l3':   ('kt4TrackJetsL2L3',  kt4TrackJetsL2L3),
+#    'kt5trkl2l3':   ('kt5TrackJetsL2L3',  kt5TrackJetsL2L3),
+#    'kt6trkl2l3':   ('kt6TrackJetsL2L3',  kt6TrackJetsL2L3),
+#    'kt7trkl2l3':   ('kt7TrackJetsL2L3',  kt7TrackJetsL2L3),
+#    'ca4trkl2l3':   ('ca4TrackJetsL2L3',  ca4TrackJetsL2L3),
+#    'ca5trkl2l3':   ('ca5TrackJetsL2L3',  ca5TrackJetsL2L3),
+#    'ca6trkl2l3':   ('ca6TrackJetsL2L3',  ca6TrackJetsL2L3),
+#    'ca7trkl2l3':   ('ca7TrackJetsL2L3',  ca7TrackJetsL2L3),
     'ak5calol1l2l3': ('ak5CaloJetsL1L2L3',ak5CaloJetsL1L2L3),
     'ak7calol1l2l3': ('ak7CaloJetsL1L2L3',ak7CaloJetsL1L2L3),
     'sc5calol1l2l3': ('sc5CaloJetsL1L2L3',sc5CaloJetsL1L2L3),
@@ -273,7 +300,7 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         type          = 'JPT'
         alg_size_type = alg_size + 'jpt'
     elif (alg_size_type_corr.find('trk') > 0) :
-        raise ValueError("TrackJets currently not supported, back soon!") # TEMP!
+        #raise ValueError("TrackJets currently not supported, back soon!") # TEMP!
         alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('trk')]
         type          = 'Track'
         alg_size_type = alg_size + 'trk'
@@ -371,10 +398,10 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         #    recJets.src = 'pfNoElectron'
         #    sequence = process.pfParticlesForJets * sequence
         #elif type =='Track':
-        #if type =='Track':
-        #    setattr(process,'tracksForJets',tracksForJets)
-        #    sequence = tracksForJets * sequence
-                
+        if type =='Track':
+            process.load('JetMETAnalysis.JetAnalyzers.TrackJetReconstruction_cff')
+            sequence = trackJetSequence * sequence
+
     # reconstruct genjets
     if reco:
         (genLabel,genJets) = genJetsDict[alg_size_type]

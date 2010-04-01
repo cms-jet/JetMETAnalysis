@@ -9,7 +9,7 @@ from RecoJets.Configuration.GenJetParticles_cff import *
 from RecoJets.Configuration.RecoGenJets_cff import *
 from RecoJets.Configuration.RecoJets_cff import *
 from RecoJets.Configuration.RecoPFJets_cff import *
-#from RecoJets.Configuration.RecoTrackJets_cff import *
+from JetMETAnalysis.JetAnalyzers.TrackJetReconstruction_cff import *
 
 # sc & ic clones
 sc5GenJets = sisCone5GenJets.clone()

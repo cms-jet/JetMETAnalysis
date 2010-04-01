@@ -122,7 +122,6 @@ int main(int argc,char**argv)
 
   TH1::SetDefaultSumw2(true);
 
-
   //
   // evaluate drmin requirements for individual algorithms if provided
   //
@@ -307,9 +306,9 @@ int main(int argc,char**argv)
 	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
 	    hname=flavor[iflv]+"JetPt_"+get_suffix("RefPt",ipt,binspt);
 	    jetPtVsRefPt.back()[iflv]=new TH1F(hname.c_str(),";p_{T} [GeV]",
-					       2*nbinspt,
-					       (ptmin>100.)*0.25*ptmin,
-					       1.25*ptmax);
+					       3*nbinspt,
+					       0,
+					       3.0*ptmax);
 	  }
 	}
 	
@@ -329,9 +328,9 @@ int main(int argc,char**argv)
 	    hname=flavor[iflv]+"JetPt_Barrel_"+get_suffix("RefPt",ipt,binspt);
 	    jetPtVsRefPtBarrel.back()[iflv]=new TH1F(hname.c_str(),
 						     ";p_{T} [GeV]",
-						     2*nbinspt,
-						     (ptmin>100.)*0.25*ptmin,
-						     1.25*ptmax);
+						     3*nbinspt,
+						     0,
+						     3.0*ptmax);
 	  }
 	}
 	
@@ -661,9 +660,9 @@ int main(int argc,char**argv)
 	    if (dorefpt) {
 	      hname=flavor[iflv]+"JetPt_"+jetEtaSuffix+"_"+refPtSuffix;
 	      jetPtRefPt[ipt][iflv]=new TH1F(hname.c_str(),";p_{T}",
-					     2*nbinspt,
-					     (ptmin>100.)*0.25*ptmin,
-					     1.25*ptmax);
+					     3*nbinspt,
+					     0,
+					     3.0*ptmax);
 	    }
 	    
 	    if (dorelrsp&&dojetpt) {
@@ -742,6 +741,7 @@ int main(int argc,char**argv)
       tree->GetEntry(ievt);
       if (nrefmax>0) nref = std::min((int)nref,nrefmax);
       for (unsigned char iref=0;iref<nref;iref++) {
+
 	if (( dobalance&&refdphijt[iref]<dphimin)||
 	    (!dobalance&&refdrjt[iref]>drmax_alg)) continue;
 	
@@ -749,6 +749,7 @@ int main(int argc,char**argv)
 	
 	float eta    =
 	  (binseta.size()&&binseta.front()>=0.)?std::abs(jteta[iref]):jteta[iref];
+     
 	float absrsp = jtpt[iref]-refpt[iref];
 	float relrsp = jtpt[iref]/refpt[iref];
 	float etarsp = std::abs(jteta[iref])-std::abs(refeta[iref]);

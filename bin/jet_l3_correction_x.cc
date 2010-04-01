@@ -183,6 +183,13 @@ int main(int argc,char**argv)
       fitrsp->SetParameter(4,1.0);
       fitrsp->SetParameter(5,1.0);
     }
+    else if ((int)alg.find("trk")>0) {
+      fitrsp = new TF1("fitrsp","[0]-[1]*pow(x/500.0,[2])",
+			  1.0,grsp->GetX()[grsp->GetN()-1]);
+      fitrsp->SetParameter(0,1.0);
+      fitrsp->SetParameter(1,1.0);
+      fitrsp->SetParameter(2,1.0);
+    }
     else {
     fitrsp = new TF1("fitrsp","[0]-[1]/(pow(log10(x),[2])+[3])+[4]/x",
 			  1.0,grsp->GetX()[grsp->GetN()-1]);
@@ -231,6 +238,13 @@ int main(int argc,char**argv)
       fitcor->SetParameter(3,1.0); 
       fitcor->SetParameter(4,1.0);
       fitcor->SetParameter(5,1.0);
+    }
+    else if ((int)alg.find("trk")>0) {
+      fitcor = new TF1("fitcor","[0]+[1]*pow(x/500.0,[2])",
+			  2.0/* KK */,gcor->GetX()[gcor->GetN()-1]);
+      fitcor->SetParameter(0,1.7);
+      fitcor->SetParameter(1,0.2);
+      fitcor->SetParameter(2,0.3);
     }
     else {
       fitcor = new TF1("fitcor","[0]+[1]/(pow(log10(x),[2])+[3])",
@@ -281,7 +295,17 @@ int main(int argc,char**argv)
 	  <<setw(12)<<fitcor->GetParameter(3) // p3
 	  <<setw(12)<<fitcor->GetParameter(4) // p4
 	  <<setw(12)<<fitcor->GetParameter(5);// p5
-    } 
+    }
+    else if ((int)alg.find("trk")>0) {
+      fout<<setw(12)<<-2.5                // eta_min
+	<<setw(12)<<+2.5                      // eta_max
+	<<setw(12)<<5                         // number of parameters + 2
+	<<setw(12)<<4.0                       // minimum pT
+	<<setw(12)<<500.0                     // maximum pT
+	<<setw(12)<<fitcor->GetParameter(0) // p0
+	<<setw(12)<<fitcor->GetParameter(1) // p1
+	<<setw(12)<<fitcor->GetParameter(2); // p2
+    }
     else {
       fout<<setw(12)<<-5.191                  // eta_min
 	  <<setw(12)<<+5.191                  // eta_max
