@@ -71,6 +71,7 @@ int main(int argc,char** argv)
   bool           nocolor   = cl.getValue<bool>   ("nocolor",            false);
   bool           overlay   = cl.getValue<bool>   ("overlay",             true);
   string         prefix    = cl.getValue<string> ("prefix",                "");
+  string         opath     = cl.getValue<string> ("opath",                 "");
   vector<string> formats   = cl.getVector<string>("formats",               "");
   bool           batch     = cl.getValue<bool>   ("batch",              false);
 
@@ -279,8 +280,10 @@ int main(int argc,char** argv)
     }
   }
   
+  string output = c->GetName();
+  if (!opath.empty()) output = opath + "/" + output;
   for (unsigned int iformat=0;iformat<formats.size();iformat++)
-    c->Print(((string)c->GetName()+"."+formats[iformat]).c_str());
+    c->Print((output+"."+formats[iformat]).c_str());
   
   
   if (!batch) app->Run();

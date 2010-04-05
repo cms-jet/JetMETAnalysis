@@ -14,6 +14,7 @@
 #include <TStyle.h>
 #include <TFile.h>
 #include <TTree.h>
+#include <TCut.h>
 #include <TCanvas.h>
 #include <TLatex.h>
 #include <TProfile.h>
@@ -46,8 +47,10 @@ int main(int argc,char** argv)
 
   vector<string> inputs     = cl.getVector<string>("inputs");
   vector<string> algs       = cl.getVector<string>("algs",              "ak5pf");
-  vector<string> selections = cl.getVector<string>("selections",             "");
-  string         varexpr    = cl.getValue <string>("varexpr","jtpt/refpt:jteta");
+  vector<string> selections = cl.getVector<string>("selections",            "1");
+  string         presel     = cl.getValue <string>("presel",                "1");
+  string         xvariable  = cl.getValue <string>("xvariable",         "jteta");
+  string         yvariable  = cl.getValue <string>("yvariable",    "jtpt/refpt");
   string         treename   = cl.getValue <string>("treename",              "t");
   int            nbinsx     = cl.getValue <int>   ("nbinsx",                 50);
   double         xmin       = cl.getValue <double>("xmin",                 -5.0);
@@ -62,6 +65,7 @@ int main(int argc,char** argv)
   vector<int>    colors     = cl.getVector<int>   ("colors",                 "");
   vector<string> labels     = cl.getVector<string>("labels",                 "");
   vector<string> hlines     = cl.getVector<string>("hlines",                 "");
+  string         opath      = cl.getValue <string>("opath",                  "");
   string         output     = cl.getValue<string> ("output",          "profile");
   vector<string> formats    = cl.getVector<string>("formats",                "");
   bool           batch      = cl.getValue<bool>   ("batch",               false);
@@ -70,7 +74,10 @@ int main(int argc,char** argv)
   cl.print();
 
   if (batch&&formats.size()==0) formats.push_back("pdf");
+  string varexpr = yvariable + ":" + xvariable;
   string htitle = ";" + xtitle + ";" + ytitle;
+  
+  TCut preselection(presel.c_str());
   
   argc = (batch) ? 2 : 1; if (batch) argv[1] = (char*)"-b";
   TApplication* app=new TApplication("jet_inspect_profiles_x",&argc,argv);
@@ -104,15 +111,20 @@ int main(int argc,char** argv)
       /// LOOP OVER SELECTIONS
       for (unsigned int isel=0;isel<selections.size();isel++) {
 	
-	string selection = selections[isel];
-
+	TCut selection = preselection && TCut(selections[isel].c_str());
+	
+	//string selection = selections[isel];
+	//if (!presel.empty()) selection = presel + "&&" + selection;
+	
 	stringstream hname; hname<<"h2_f"<<ifile+1<<"_a"<<ialg+1<<"_s"<<isel+1;
 	TH2F* h2=new TH2F(hname.str().c_str(),
 			  htitle.c_str(),
 			  nbinsx,xmin,xmax,
 			  nbinsy,0.,3.);
-	tree->Project(hname.str().c_str(),varexpr.c_str(),selection.c_str());
+	tree->Project(hname.str().c_str(),varexpr.c_str(),selection);
 	profiles.push_back(h2->ProfileX());
+	profiles.back()->SetTitle(htitle.c_str());
+	
 	
       } // SELECTIONS
 
@@ -164,6 +176,7 @@ int main(int argc,char** argv)
   }
   
   // CREATE FILES
+  if (!opath.empty()) output = opath + "/" + output;
   for (unsigned int ifmt=0;ifmt<formats.size();ifmt++)
     c->Print((output+"."+formats[ifmt]).c_str());
   

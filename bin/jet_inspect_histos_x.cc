@@ -71,6 +71,7 @@ int main(int argc,char** argv)
   bool           logy       = cl.getValue<bool>   ("logy",              false);
   bool           fill       = cl.getValue<bool>   ("fill",               true);
   string         prefix     = cl.getValue<string> ("prefix",               "");
+  string         opath      = cl.getValue<string> ("opath",                "");
   vector<string> formats    = cl.getVector<string>("formats",              "");
   bool           batch      = cl.getValue<bool>   ("batch",             false);
 
@@ -195,9 +196,13 @@ int main(int argc,char** argv)
     } // algorithms
   } // inputs
   
-  for (unsigned int ic=0;ic<c.size();ic++)
-    for (unsigned int ifmt=0;ifmt<formats.size();ifmt++)
-      c[ic]->Print((string(c[ic]->GetName())+"."+formats[ifmt]).c_str());
+  for (unsigned int ic=0;ic<c.size();ic++) {
+    string output = c[ic]->GetName();
+    if (!opath.empty()) output = opath + "/" + output;
+    for (unsigned int ifmt=0;ifmt<formats.size();ifmt++) {
+      c[ic]->Print((output+"."+formats[ifmt]).c_str());
+    }
+  }
   
   if (!batch) app->Run();
   
