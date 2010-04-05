@@ -100,7 +100,7 @@ int main(int argc,char**argv)
   int            nbinsrelrsp  = cl.getValue<int>    ("nbinsrelrsp",   50);
   float          relrspmin    = cl.getValue<float>  ("relrspmin",    0.0);
   float          relrspmax    = cl.getValue<float>  ("relrspmax",    2.0);
-  int            nbinsabsrsp  = cl.getValue<int>    ("nbinsabsrsp",  150);
+  int            nbinsabsrsp  = cl.getValue<int>    ("nbinsabsrsp",    0);
   float          absrspmin    = cl.getValue<float>  ("absrspmin", -250.0);
   float          absrspmax    = cl.getValue<float>  ("absrspmax",  100.0);
   int            nbinsetarsp  = cl.getValue<int>    ("nbinsetarsp",  100);

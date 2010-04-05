@@ -1,7 +1,15 @@
+2010-04-05  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-08-04
+	* fix JPT reconstruction sequence
+	* set jet_response_analyzer_x option 'nbinsabsrsp' to 0, which
+	means that by default absolute response histograms will not be
+	created
+
 2010-04-01  Andreas Hinzmann  <hinzmann@cern.ch>
 
-    * add trackjet reconstruction sequence
-    * adapt L2 and L3 correctors for trackjets
+	* add trackjet reconstruction sequence
+	* adapt L2 and L3 correctors for trackjets
 
 2010-03-31  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
