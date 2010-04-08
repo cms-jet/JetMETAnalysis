@@ -71,6 +71,7 @@ int main(int argc,char** argv)
   bool           logy       = cl.getValue<bool>   ("logy",              false);
   bool           fill       = cl.getValue<bool>   ("fill",               true);
   string         prefix     = cl.getValue<string> ("prefix",               "");
+  string         suffix     = cl.getValue<string> ("suffix",               "");
   string         opath      = cl.getValue<string> ("opath",                "");
   vector<string> formats    = cl.getVector<string>("formats",              "");
   bool           batch      = cl.getValue<bool>   ("batch",             false);
@@ -148,6 +149,7 @@ int main(int argc,char** argv)
 		sscname<<hl.minimum(i,indices[i])<<"to"
 		       <<hl.maximum(i,indices[i]);
 	    }
+	    if (!suffix.empty()) sscname<<"_"<<suffix;
 	    c.push_back(new TCanvas(sscname.str().c_str(),
 				    sscname.str().c_str(),
 				    1000,1000));
