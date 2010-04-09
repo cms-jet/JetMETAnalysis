@@ -5,9 +5,7 @@ tracksForJets = cms.EDFilter("TrackSelector",
                              cut = cms.string('pt > 0.3 && quality("highPurity")')
                             )
 
-trackWithVertexRefSelector.nVertices = 99
-trackWithVertexRefSelector.zetaVtx = 1.0
-trackWithVertexRefSelector.rhoVtx = 0.2
+trackWithVertexRefSelector.nVertices = 0
 trackWithVertexRefSelector.ptErrorCut = 0.2
 trackWithVertexRefSelector.src = cms.InputTag("tracksForJets")
 

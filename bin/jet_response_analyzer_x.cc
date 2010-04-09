@@ -19,6 +19,7 @@
 
 
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
+#include "DataFormats/Math/interface/deltaPhi.h"
 
 #include <TROOT.h>
 #include <TFile.h>
@@ -752,8 +753,8 @@ int main(int argc,char**argv)
      
 	float absrsp = jtpt[iref]-refpt[iref];
 	float relrsp = jtpt[iref]/refpt[iref];
-	float etarsp = std::abs(jteta[iref])-std::abs(refeta[iref]);
-	float phirsp = jtphi[iref]-refphi[iref];
+	float etarsp = jteta[iref]-refeta[iref];
+	float phirsp = reco::deltaPhi(jtphi[iref],refphi[iref]);
 
 	if (eta>=etabarrelmin&&eta<=etabarrelmax) {
 	  if (dorefpt) {
