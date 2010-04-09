@@ -38,7 +38,11 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 void set_xaxis_range(TH1* h1,TH1* h2=0);
 void get_xaxis_range(TH1* h,int& binmin,int& binmax);
-void set_draw_attributes(TH1* h,unsigned index=0,bool fill=true);
+void set_draw_attributes(TH1* h,
+			 unsigned index,
+			 bool fill,
+			 const vector<int>& colors,
+			 const vector<int>& fillstyles);
 void draw_stats(TH1* h,double xoffset,Color_t color,Color_t fitColor);
 void draw_range(const ObjectLoader<TH1F>& hl,
 		const vector<unsigned int>& indices,
@@ -70,11 +74,15 @@ int main(int argc,char** argv)
   bool           logx       = cl.getValue<bool>   ("logx",              false);
   bool           logy       = cl.getValue<bool>   ("logy",              false);
   bool           fill       = cl.getValue<bool>   ("fill",               true);
+  bool           fullfit    = cl.getValue<int>    ("fullfit",            true);
+  vector<int>    colors     = cl.getVector<int>   ("colors",               "");
+  vector<int>    fillstyles = cl.getVector<int>   ("fillstyles",           "");
   string         prefix     = cl.getValue<string> ("prefix",               "");
   string         suffix     = cl.getValue<string> ("suffix",               "");
   string         opath      = cl.getValue<string> ("opath",                "");
   vector<string> formats    = cl.getVector<string>("formats",              "");
   bool           batch      = cl.getValue<bool>   ("batch",             false);
+
 
   if (!cl.check()) return 0;
   cl.print();
@@ -82,6 +90,10 @@ int main(int argc,char** argv)
   if (prefix.empty()) prefix=algs[0];
   
   if (batch&&formats.size()==0) formats.push_back("pdf");
+
+  if (!fillstyles.empty() && (colors.size()!=fillstyles.size())) {
+    cout<<"Error: #Fillstyles has no corresponding colors!"<<endl;return 0;
+  }
   
   argc = (batch) ? 2 : 1; if (batch) argv[1] = (char*)"-b";
   TApplication* app=new TApplication("jet_inspect_histos",&argc,argv);
@@ -130,6 +142,7 @@ int main(int argc,char** argv)
 	hl.begin_loop();
 	
 	vector<unsigned int> indices; TH1F* h(0); unsigned int ihisto(0);
+	unsigned int icolor(0);
 	while ((h=hl.next_object(indices))) {
 
 	  if (norm) {
@@ -161,6 +174,7 @@ int main(int argc,char** argv)
 	  c[icnv]->cd(ipad);
 	  
 	  if (ifile==0&&ialg==0&&ivar==0) {
+	    icolor=0;
 	    if (logx) gPad->SetLogx();
 	    if (logy) gPad->SetLogy();
 	    gPad->SetLeftMargin(0.1);
@@ -168,20 +182,30 @@ int main(int argc,char** argv)
 	    gPad->SetTopMargin(0.12);
 	    gPad->SetBottomMargin(0.15);
 	    set_xaxis_range(h);
-	    h->SetLineColor(kBlack);
-	    set_draw_attributes(h,0,fill);
+	    if (colors.empty()) h->SetLineColor(kBlack);
+	    else h->SetLineColor(colors[icolor]);
+	    set_draw_attributes(h,icolor,fill,colors,fillstyles);
 	    h->Draw("EH");
 	    h->SetMaximum(1.5*h->GetMaximum());
 	    if (logy) h->SetMaximum(10.*h->GetMaximum());
-	    draw_stats(h,0.65,kBlack,kBlack);
+	    if (colors.empty()) draw_stats(h,0.65,kBlack,kBlack);
+	    else draw_stats(h,0.65,colors[icolor],colors[icolor]);
 	    draw_range(hl,indices,(variables.size()==1));
 	    draw_line_legend(mean,median,peak);
 	  }
 	  else {
-	    h->SetLineColor(kBlue);
-	    set_draw_attributes(h,1,fill);
+	    icolor=ifile+ialg+ivar;
+	    if (colors.empty()) h->SetLineColor(kBlue);
+	    else if (icolor>colors.size()-1) {
+	      cout<<"WARNING: #Histo Vs specified colors mismatch!"<<endl;
+	      h->SetLineColor(kBlue);
+	    }
+	    else h->SetLineColor(colors[icolor]);
+	    set_draw_attributes(h,icolor,fill,colors,fillstyles);
 	    h->Draw("EHSAME");
-	    draw_stats(h,0.15,kBlue,kBlue);
+	    if (colors.empty() || (icolor>colors.size()-1)) 
+	      draw_stats(h,0.15,kBlue,kBlue);
+	    else draw_stats(h,0.15,colors[icolor],colors[icolor]);
 	    TH1F* hdraw = (TH1F*)gPad->GetListOfPrimitives()->First();
 	    set_xaxis_range(hdraw,h);
 	    if (h->GetMaximum()>hdraw->GetMaximum())
@@ -190,6 +214,16 @@ int main(int argc,char** argv)
 	  if (mean)   draw_line_mean(h);
 	  if (median) draw_line_median(h);
 	  if (peak)   draw_line_peak(h);
+
+	  TF1* f = h->GetFunction("fit");
+	  if (fullfit&&(0!=f)){
+	    TF1* ff = (TF1*)f->Clone("ff");
+	    ff->SetRange(h->GetXaxis()->GetXmin(),h->GetXaxis()->GetXmax());
+	    ff->SetLineColor(f->GetLineColor());
+	    ff->SetLineStyle(kDashed);
+	    ff->SetLineWidth(2);
+	    ff->Draw("SAME");
+	  }
 	  
 	  ihisto++;
 	  
@@ -247,10 +281,13 @@ void get_xaxis_range(TH1* h,int& binmin,int &binmax)
 
 
 //______________________________________________________________________________
-void set_draw_attributes(TH1* h,unsigned index,bool fill)
+void set_draw_attributes(TH1* h,unsigned index,bool fill,
+			 const vector<int>& colors,
+			 const vector<int>& fillstyles)
 {
   if (fill) {
-    Style_t fillstyle = (index==0) ? 3002 : 3001;
+    Style_t fillstyle = (fillstyles.empty() || (index>fillstyles.size()-1)) ? 
+      (3001+index) : fillstyles[index];
     h->SetFillColor(h->GetLineColor());
     h->SetFillStyle(fillstyle);
   }

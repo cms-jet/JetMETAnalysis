@@ -32,6 +32,8 @@
 #include <map>
 #include <cmath>
 
+#include <fstream>
+
 
 using namespace std;
 
@@ -74,6 +76,7 @@ int main(int argc,char** argv)
   string         opath     = cl.getValue<string> ("opath",                 "");
   vector<string> formats   = cl.getVector<string>("formats",               "");
   bool           batch     = cl.getValue<bool>   ("batch",              false);
+  bool           latex     = cl.getValue<bool>   ("latex",              false);
 
   if (!cl.check()) return 0;
   cl.print();
@@ -207,7 +210,6 @@ int main(int argc,char** argv)
 	  set_graph_style(g,overlay*(graphs.size()-1),nocolor);
 	  leg->AddEntry(g,label.c_str(),"lp");
 
-	  
 	  // print fit parameters
 	  TF1* fitfnc = (TF1*)g->GetFunction("fit");
 	  if (0!=fitfnc) {
@@ -216,8 +218,49 @@ int main(int argc,char** argv)
 	      cout<<fitfnc->GetParameter(ipar)<<" +- "
 		  <<fitfnc->GetParError(ipar)<<endl;
 	  }
-	  cout<<endl;
+
 	  // end print fit parameters
+
+	  // save latex table //hh
+	  
+	  if (latex&&(0!=fitfnc)) {
+
+	    ofstream texfile; stringstream texfilename; stringstream texinput;
+	    
+	    if (!opath.empty()) texfilename<<opath<<"/";
+	    texfilename<<alg<<"_"<<mg->GetName()<<".tex";
+	    texfile.open(texfilename.str().c_str(),ofstream::trunc);
+	    if (!texfile.is_open()) {
+	      cout<<"tex-ERROR: Could not create "<<texfilename.str()<<endl;continue;
+	    }
+	    texinput<<"%%fitfnc: "<<fitfnc->GetExpFormula()<<endl;
+
+	    if (alg.find("pf")!=string::npos)texinput<<"\\pfjets & ";
+	    else if (alg.find("calo")!=string::npos)texinput<<"\\calojets & ";
+	    else if (alg.find("jpt")!=string::npos)texinput<<"\\jptjets & ";
+	    else {
+	      cout<<"tex-ERROR: Did not recognize alg "<<alg<<endl;continue;
+	    }
+
+	    for (int ipar=0;ipar<fitfnc->GetNpar()-1;ipar++) {
+	      texinput<<"$ ("<<setprecision(5)<<fixed
+		      <<fitfnc->GetParameter(ipar)
+		      <<" $ & $ \\pm $ & "
+		      <<"$ "<<setprecision(5)<<fixed
+		      <<fitfnc->GetParError(ipar)<<") $ & ";
+	    }
+	    texinput<<"$ ("<<setprecision(5)<<fixed
+		    <<fitfnc->GetParameter(fitfnc->GetNpar()-1)
+		    <<" $ & $ \\pm $ & "
+		    <<"$ "<<setprecision(5)<<fixed
+		    <<fitfnc->GetParError(fitfnc->GetNpar()-1)<<") $";
+
+	      texfile<<texinput.str().c_str()<<endl; texfile.close();
+	    cout<<"Created tex file with fit table: "<<texfilename.str()<<endl<<endl;
+	  }
+	  else cout<<endl;
+
+	  // end latex table //hh
 
 	  
 	} // graphs
