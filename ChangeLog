@@ -1,3 +1,12 @@
+2010-04-09  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-08-05
+	* improve etarsp and phirsp definitions (Andreas)
+	* fixes to track reconstruction sequence (Andreas)
+	* fix jet_apply_jec_x tool to work (well, compile) with
+	CondFormats/JetMETObjects V02-00-05-03. Still not in default build
+	sequence
+
 2010-04-05  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-08-04

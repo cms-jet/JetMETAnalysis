@@ -4,6 +4,7 @@
 // ---------------
 //
 //            08/30/2009 Philipp Schieferdecker <philipp.schieferdecker@cern.ch>
+//                       Hauke Held                               <held@cern.ch>
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -32,7 +33,8 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 string get_correction_levels(const vector<int>& levels);
 string get_correction_tags(const string& tag,const string& alg,
-			   const vector<int>& levels);
+			   const vector<int>& levels,const string& jecpath);
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -45,8 +47,9 @@ int main(int argc,char**argv)
   if (!cl.parse(argc,argv)) return 0;
   
   string         input    = cl.getValue<string> ("input");
-  string         tag      = cl.getValue<string> ("tag");
+  string         era      = cl.getValue<string> ("era");
   string         output   = cl.getValue<string> ("output",   "");
+  string         jecpath  = cl.getValue<string> ("jecpath",  "");
   vector<string> algs     = cl.getVector<string>("algs",     "");
   vector<int>    levels   = cl.getVector<int>   ("levels","2,3");
   
@@ -94,11 +97,12 @@ int main(int argc,char**argv)
     TTree*      itree=(TTree*)idir->Get("t");    
     TDirectory* odir =(TDirectory*)ofile->mkdir(idir->GetName()); odir->cd();
     itree->CloneTree()->Write();
-    //odir->Write();
-
+    
     itree->SetBranchStatus("jtpt",0);
+    itree->SetBranchStatus("jte", 0);
     TTree*      otree=itree->CloneTree();
     itree->SetBranchStatus("jtpt",1);
+    itree->SetBranchStatus("jte", 1);
     
     stringstream ssodirname; ssodirname<<alg;
     for (unsigned int i=0;i<levels.size();i++) ssodirname<<"l"<<levels[i];
@@ -106,13 +110,15 @@ int main(int argc,char**argv)
     unsigned char nref;
     float         jtpt[100];
     float         jteta[100];
+    float         jte[100];
     itree->SetBranchAddress("nref",&nref);
     itree->SetBranchAddress("jtpt", jtpt);
     itree->SetBranchAddress("jteta",jteta);
     TBranch* b_jtpt=otree->Branch("jtpt",jtpt,"jtpt[nref]/F");
-
+    TBranch* b_jte =otree->Branch("jte", jte, "jte[nref]/F");
+    
     FactorizedJetCorrector corrector(get_correction_levels(levels),
-				     get_correction_tags(tag,alg,levels));
+				     get_correction_tags(era,alg,levels,jecpath));
     
     int nevt=itree->GetEntries();
     for (int ievt=0;ievt<nevt;ievt++) {
@@ -122,19 +128,17 @@ int main(int argc,char**argv)
 	corrector.setJetEta(jteta[ijt]);
 	float jec=corrector.getCorrection();
 	jtpt[ijt]*=jec;
-	//if (ijt==0) cout<<"ptraw="<<pt<<" jec="<<jec<<" ptcorr="<<pt*jec
-	//	<<endl;
+	jte[ijt] *=jec;
       }
       b_jtpt->Fill();
+      b_jte ->Fill();
     }
     otree->Write();
-    //odir->Write();
   }
   
   // close files
   ifile->Close();
   delete ifile;
-  //ofile->Write();
   ofile->Close();
   delete ofile;
   
@@ -154,14 +158,14 @@ string get_correction_levels(const vector<int>& levels)
     if (ilevel!=0) ssresult<<":";
     ssresult<<"L"<<levels[ilevel];
   }
-  //cout<<"levels as string: "<<ssresult.str()<<endl;
   return ssresult.str();
 }
 
 
 //______________________________________________________________________________
-string get_correction_tags(const string& tag,const string& alg,
-			   const vector<int>& levels)
+string get_correction_tags(const string& era,const string& alg,
+			   const vector<int>& levels,
+			   const string& jecpath)
 {
   stringstream ssresult;
   for (unsigned int ilevel=0;ilevel<levels.size();ilevel++) {
@@ -169,36 +173,47 @@ string get_correction_tags(const string& tag,const string& alg,
     if (ilevel!=0) ssresult<<":";
     
     int level=levels[ilevel];
-    stringstream sstag;
-    sstag<<tag<<"_";
+    stringstream ssera;
+    
+    ssera<<jecpath;
 
-    if      (level==1) sstag<<"L1Offset_";
-    else if (level==2) sstag<<"L2Relative_";
-    else if (level==3) sstag<<"L3Absolute_";
-    else if (level==4) sstag<<"L4EMF_";
-    else if (level==5) sstag<<"L5Flavor_";
-    else if (level==6) sstag<<"L6Hadron_";
-    else if (level==7) sstag<<"L7Parton_";
+    if      (level==1) ssera<<"L1Offset_";
+    else if (level==2) ssera<<era<<"_L2Relative_";
+    else if (level==3) ssera<<era<<"_L3Absolute_";
+    else if (level==4) ssera<<"L4EMF_";
+    else if (level==5) ssera<<"L5Flavor_";
+    else if (level==6) ssera<<"L6SLB_gen";
+    else if (level==7) ssera<<"L7Parton_";
     else throw std::runtime_error("unknown correction level");
     
-    if      (alg.find("ak5")==0) sstag<<"AK5";
-    else if (alg.find("ak7")==0) sstag<<"AK7";
-    else if (alg.find("kt4")==0) sstag<<"KT4";
-    else if (alg.find("kt6")==0) sstag<<"KT6";
-    else if (alg.find("ca4")==0) sstag<<"CA4";
-    else if (alg.find("ca6")==0) sstag<<"CA6";
-    else if (alg.find("sc5")==0) sstag<<"SC5";
-    else if (alg.find("sc7")==0) sstag<<"SC7";
-    else if (alg.find("ic5")==0) sstag<<"IC5";
-    
-    if      (alg.find("calo")>0) sstag<<"Calo";
-    else if (alg.find("pf")>0)   sstag<<"PF";
-    else if (alg.find("jpt")>0)  sstag<<"JPT";
+    if (level==6)
+      {ssresult<<ssera.str()<<".txt";continue;}
 
-    ssresult<<sstag.str();
+    if      (alg.find("ak5")==0) ssera<<"AK5";
+    else if (alg.find("ak7")==0) ssera<<"AK7";
+    else if (alg.find("kt4")==0) ssera<<"KT4";
+    else if (alg.find("kt6")==0) ssera<<"KT6";
+    else if (alg.find("ca4")==0) ssera<<"CA4";
+    else if (alg.find("ca6")==0) ssera<<"CA6";
+    else if (alg.find("sc5")==0) ssera<<"SC5";
+    else if (alg.find("sc7")==0) ssera<<"SC7";
+    else if (alg.find("ic5")==0) ssera<<"IC5";
+
+    if (level==1 || level==4 || level==5 || level==7)
+      {ssresult<<ssera.str()<<".txt";continue;}
+    
+    if      (alg.find("calo")!=string::npos ||
+	     alg.find("Calo")!=string::npos ||
+	     alg.find("CALO")!=string::npos) ssera<<"Calo";
+    else if (alg.find("pf")!=string::npos   ||
+	     alg.find("Pf")!=string::npos   ||
+	     alg.find("PF")!=string::npos)   ssera<<"PF";
+    else if (alg.find("jpt")!=string::npos  ||
+	     alg.find("Jpt")!=string::npos  ||
+	     alg.find("JPT")!=string::npos)  ssera<<"JPT";
+
+    ssresult<<ssera.str()<<".txt";
   }
-  
-  //cout<<"tags="<<ssresult.str()<<endl;
   
   return ssresult.str();
 }

@@ -78,8 +78,7 @@ jet_l3_correction:
         -o $(BINDIR)/jet_l3_correction_x
 
 jet_apply_jec:
-	$(CXX) $(CXXFLAGS) bin/jet_apply_jec_x.cc \
-	$(LIBS) -lJetMETObjects $(ROOTLIBS) \
+	$(CXX) $(CXXFLAGS) bin/jet_apply_jec_x.cc $(LIBS) -lJetMETObjects $(ROOTLIBS) \
         -o $(BINDIR)/jet_apply_jec_x
 
 jet_weighted_spectrum:
