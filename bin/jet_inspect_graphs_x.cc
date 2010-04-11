@@ -73,6 +73,7 @@ int main(int argc,char** argv)
   bool           nocolor   = cl.getValue<bool>   ("nocolor",            false);
   bool           overlay   = cl.getValue<bool>   ("overlay",             true);
   string         prefix    = cl.getValue<string> ("prefix",                "");
+  string         suffix    = cl.getValue<string> ("suffix",                "");
   string         opath     = cl.getValue<string> ("opath",                 "");
   vector<string> formats   = cl.getVector<string>("formats",               "");
   bool           batch     = cl.getValue<bool>   ("batch",              false);
@@ -195,6 +196,7 @@ int main(int argc,char** argv)
 		     <<gl.minimum(i,indices[i])<<"to"
 		     <<gl.maximum(i,indices[i]);
 	    }
+	    if (!suffix.empty()) sscname<<"_"<<suffix;
 	    int nlabels=(labels.size()>0)?labels.size():variables.size();
 	    mg=new TMultiGraph(sscname.str().c_str(),"");
 	    double ymax=(quantity.find("Rsp")==string::npos)?0.85:0.4;

@@ -102,6 +102,7 @@ int main(int argc,char** argv)
     
   gStyle->SetOptStat(0);
   gStyle->SetOptFit(0);
+  gStyle->SetOptTitle(0);//hh 11.04.2010
   
   vector<TCanvas*> c; int nx(1),ny(1);
   
@@ -356,6 +357,8 @@ void draw_range(const ObjectLoader<TH1F>& hl,
   range.SetTextSize(0.055);
   range.SetTextFont(42);
 
+  if (hl.nvariables()>2) range.SetTextSize(0.055-(hl.nvariables()*.003));
+
   string varnameEta = "#eta";
   for (unsigned int i=0;i<hl.nvariables();i++)
     if (hl.variable(i)=="JetEta"&&hl.minimum(i,0)>=0) varnameEta="|#eta|";
@@ -370,6 +373,7 @@ void draw_range(const ObjectLoader<TH1F>& hl,
     string unit    = "";
     double varmin  = hl.minimum(i,indices[i]);
     double varmax  = hl.maximum(i,indices[i]);
+    bool   threshold(false);
     
     if (varname=="RefPt")    { varname = "p_{T}^{REF}"; unit = " GeV"; }
     if (varname=="JetPt")    { varname = "p_{T}";       unit = " GeV"; }
@@ -377,8 +381,11 @@ void draw_range(const ObjectLoader<TH1F>& hl,
     if (varname=="JetPhi")   { varname = "#varphi";     unit =     ""; }
     if (varname=="PtRel")    { varname = "p_{T}^{rel}", unit = " GeV"; }
     if (varname=="RelLepPt") { varname = "p_{T}^{l}/p_{T}^{jet}",unit = ""; }
+    if (varname=="ThreshPt") { varname = "p_{T}^{3rd}", unit = "GeV"; 
+                               threshold = true; }
 
-    ssrange<<varmin<<" < "<<varname<<" < "<<varmax<<unit<<"    ";
+    if (threshold) ssrange<<varname<<" < "<<varmax<<unit<<"    ";
+    else ssrange<<varmin<<" < "<<varname<<" < "<<varmax<<unit<<"    ";
   }
   
   range.DrawLatex(0.1,0.96,ssrange.str().c_str());
