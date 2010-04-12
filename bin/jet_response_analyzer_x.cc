@@ -178,7 +178,7 @@ int main(int argc,char**argv)
     float refpt[100];
     float refeta[100];
     float refphi[100];
-    float refy[100];
+    //float refy[100];
     float jtpt[100];
     float jteta[100];
     float jtphi[100];
@@ -191,7 +191,7 @@ int main(int argc,char**argv)
     tree->SetBranchAddress("refpt",   refpt);
     tree->SetBranchAddress("refeta",  refeta);
     tree->SetBranchAddress("refphi",  refphi);
-    tree->SetBranchAddress("refy",    refy);
+    //tree->SetBranchAddress("refy",    refy);
     tree->SetBranchAddress("jtpt",    jtpt);
     tree->SetBranchAddress("jteta",   jteta);
     tree->SetBranchAddress("jtphi",   jtphi);

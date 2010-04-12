@@ -1,5 +1,8 @@
 2010-04-12  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
+	* tag V00-08-07
+	* don't try to read branch refy (it does not exist)
+
 	* tag V00-08-06
 	* jet_response_analyzer: integrate rapidity (y) binning
 
