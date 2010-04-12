@@ -543,6 +543,7 @@ void set_axis_titles(TH1* h,const string& quantity,float ymin,float ymax)
     if (xstr=="JetPt")    xtitle="p_{T} [GeV]";
     if (xstr=="JetEta")   xtitle="#eta";
     if (xstr=="JetPhi")   xtitle="#varphi";
+    if (xstr=="JetY")     xtitle="y";
     if (xstr=="PtRel")    xtitle="p_{T}^{rel} [GeV]";
     if (xstr=="RelLepPt") xtitle="p_{T}^{l} / p_{T}^{jet}";
   }

@@ -375,6 +375,10 @@ void draw_range(const ObjectLoader<TH1F>& hl,
   for (unsigned int i=0;i<hl.nvariables();i++)
     if (hl.variable(i)=="JetEta"&&hl.minimum(i,0)>=0) varnameEta="|#eta|";
   
+  string varnameY = "y";
+  for (unsigned int i=0;i<hl.nvariables();i++)
+    if (hl.variable(i)=="JetY"&&hl.minimum(i,0)>=0) varnameEta="|y|";
+  
   stringstream ssrange;
 
   for (unsigned int i=0;i<hl.nvariables();i++) {
@@ -390,6 +394,7 @@ void draw_range(const ObjectLoader<TH1F>& hl,
     if (varname=="RefPt")    { varname = "p_{T}^{REF}"; unit = " GeV"; }
     if (varname=="JetPt")    { varname = "p_{T}";       unit = " GeV"; }
     if (varname=="JetEta")   { varname = varnameEta;    unit =     ""; }
+    if (varname=="JetY")     { varname = varnameY;    unit =     ""; }
     if (varname=="JetPhi")   { varname = "#varphi";     unit =     ""; }
     if (varname=="PtRel")    { varname = "p_{T}^{rel}", unit = " GeV"; }
     if (varname=="RelLepPt") { varname = "p_{T}^{l}/p_{T}^{jet}",unit = ""; }
