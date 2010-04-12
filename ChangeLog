@@ -1,3 +1,8 @@
+2010-04-12  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-08-06
+	* jet_response_analyzer: integrate rapidity (y) binning
+
 2010-04-09  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-08-05
