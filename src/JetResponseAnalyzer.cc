@@ -815,6 +815,7 @@ void JetResponseAnalyzer::beginJob()
     tree_->Branch("refpt",  refpt_,  "refpt[nref]/F");
     tree_->Branch("refeta", refeta_, "refeta[nref]/F");
     tree_->Branch("refphi", refphi_, "refphi[nref]/F");
+    tree_->Branch("refy",   refy_,   "refy[nref]/F");
     tree_->Branch("jte",    jte_,    "jte[nref]/F");
     tree_->Branch("jtpt",   jtpt_,   "jtpt[nref]/F");
     tree_->Branch("jteta",  jteta_,  "jteta[nref]/F");
