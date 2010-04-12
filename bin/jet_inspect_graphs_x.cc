@@ -387,7 +387,12 @@ string get_range(const ObjectLoader<TGraphErrors>& gl,
   string varnameEta = "#eta";
   for (unsigned int i=0;i<gl.nvariables();i++)
     if (gl.variable(i)=="JetEta"&&gl.minimum(i,0)>=0) varnameEta="|#eta|";
-  
+    
+  string varnameY = "y";
+  for (unsigned int i=0;i<gl.nvariables();i++)
+    if (gl.variable(i)=="JetY"&&gl.minimum(i,0)>=0) varnameY="|y|";
+
+
   stringstream ssrange;
 
   for (unsigned int i=0;i<gl.nvariables();i++) {
@@ -398,15 +403,20 @@ string get_range(const ObjectLoader<TGraphErrors>& gl,
     string unit    = "";
     double varmin  = gl.minimum(i,indices[i]);
     double varmax  = gl.maximum(i,indices[i]);
+    bool   threshold(false);
 
     if (varname=="RefPt")    { varname = "p_{T}^{REF}"; unit = " GeV"; }
     if (varname=="JetPt")    { varname = "p_{T}";       unit = " GeV"; }
     if (varname=="JetEta")   { varname = varnameEta;    unit =     ""; }
+    if (varname=="JetY")     { varname = varnameY;      unit =     ""; }
     if (varname=="JetPhi")   { varname = "#varphi";     unit =     ""; }
     if (varname=="PtRel")    { varname = "p_{T}^{rel}"; unit = " GeV"; }
     if (varname=="RelLepPt") { varname = "p_{T}^{l}/p_{T}^{jet}"; unit =""; }
+    if (varname=="ThreshPt") { varname = "p_{T}^{3rd}", unit = " GeV"; 
+                               threshold = true; }
 
-    ssrange<<varmin<<" < "<<varname<<" < "<<varmax<<unit<<"    ";
+    if (threshold) ssrange<<varname<<" < "<<varmax<<unit<<"    ";
+    else ssrange<<varmin<<" < "<<varname<<" < "<<varmax<<unit<<"    ";
   }
   
   return ssrange.str();
