@@ -38,6 +38,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 void set_xaxis_range(TH1* h1,TH1* h2=0);
 void get_xaxis_range(TH1* h,int& binmin,int& binmax);
+void set_yaxis_range(TH1* h1,float ymin=-1.,float ymax=-1.);
 void set_draw_attributes(TH1* h,
 			 unsigned index,
 			 bool fill,
@@ -67,6 +68,8 @@ int main(int argc,char** argv)
   vector<string> algs       = cl.getVector<string>("algs",          "kt4calo");
   vector<string> variables  = cl.getVector<string>("variables","RelRsp:RefPt");
   int            npercanvas = cl.getValue<int>    ("npercanvas",            0);
+  float          ymin       = cl.getValue<float>  ("ymin",                 -1);
+  float          ymax       = cl.getValue<float>  ("ymax",                 -1);
   bool           norm       = cl.getValue<bool>   ("norm",              false);
   bool           mean       = cl.getValue<bool>   ("mean",              false);
   bool           median     = cl.getValue<bool>   ("median",            false);
@@ -183,6 +186,7 @@ int main(int argc,char** argv)
 	    gPad->SetTopMargin(0.12);
 	    gPad->SetBottomMargin(0.15);
 	    set_xaxis_range(h);
+	    if (ymin!=-1 || ymax!=-1) set_yaxis_range(h,ymin,ymax);
 	    if (colors.empty()) h->SetLineColor(kBlack);
 	    else h->SetLineColor(colors[icolor]);
 	    set_draw_attributes(h,icolor,fill,colors,fillstyles);
@@ -209,6 +213,7 @@ int main(int argc,char** argv)
 	    else draw_stats(h,0.15,colors[icolor],colors[icolor]);
 	    TH1F* hdraw = (TH1F*)gPad->GetListOfPrimitives()->First();
 	    set_xaxis_range(hdraw,h);
+	    if (ymin!=-1 || ymax!=-1) set_yaxis_range(hdraw,ymin,ymax);
 	    if (h->GetMaximum()>hdraw->GetMaximum())
 	      hdraw->SetMaximum(1.2*h->GetMaximum());
 	  }
@@ -266,6 +271,13 @@ void set_xaxis_range(TH1* h1,TH1* h2)
   h1->GetXaxis()->SetRange(binmin,binmax);
 }
 
+//______________________________________________________________________________
+void set_yaxis_range(TH1* h1,float ymin,float ymax)
+{
+  if (h1->GetEntries()==0) return;
+  if (ymin!=-1) h1->SetMinimum(ymin);
+  if (ymax!=-1) h1->SetMaximum(ymax);
+}
 
 //______________________________________________________________________________
 void get_xaxis_range(TH1* h,int& binmin,int &binmax)
@@ -357,7 +369,7 @@ void draw_range(const ObjectLoader<TH1F>& hl,
   range.SetTextSize(0.055);
   range.SetTextFont(42);
 
-  if (hl.nvariables()>2) range.SetTextSize(0.055-(hl.nvariables()*.003));
+  if (hl.nvariables()>2) range.SetTextSize(0.055-(hl.nvariables()*.0055));
 
   string varnameEta = "#eta";
   for (unsigned int i=0;i<hl.nvariables();i++)
@@ -381,7 +393,7 @@ void draw_range(const ObjectLoader<TH1F>& hl,
     if (varname=="JetPhi")   { varname = "#varphi";     unit =     ""; }
     if (varname=="PtRel")    { varname = "p_{T}^{rel}", unit = " GeV"; }
     if (varname=="RelLepPt") { varname = "p_{T}^{l}/p_{T}^{jet}",unit = ""; }
-    if (varname=="ThreshPt") { varname = "p_{T}^{3rd}", unit = "GeV"; 
+    if (varname=="ThreshPt") { varname = "p_{T}^{3rd}", unit = " GeV"; 
                                threshold = true; }
 
     if (threshold) ssrange<<varname<<" < "<<varmax<<unit<<"    ";
