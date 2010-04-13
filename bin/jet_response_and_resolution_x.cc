@@ -66,15 +66,21 @@ int main(int argc,char**argv)
     variables.push_back("RelRsp:RefPt");
     variables.push_back("RelRsp:JetEta");
     variables.push_back("RelRsp:JetPhi");
+    variables.push_back("RelRsp:JetY");
     variables.push_back("RelRsp:JetEta:RefPt");
     variables.push_back("RelRsp:JetEta#1:RefPt");
+    variables.push_back("RelRsp:JetY:RefPt");
+    variables.push_back("RelRsp:JetY#1:RefPt");
   }
   if (doabsrsp) {
     variables.push_back("AbsRsp:RefPt");
     variables.push_back("AbsRsp:JetEta");
     variables.push_back("AbsRsp:JetPhi");
+    variables.push_back("AbsRsp:JetY");
     variables.push_back("AbsRsp:JetEta:RefPt");
     variables.push_back("AbsRsp:JetEta#1:RefPt");
+    variables.push_back("AbsRsp:JetY:RefPt");
+    variables.push_back("AbsRsp:JetY#1:RefPt");
   }
   if (doetarsp) {
     variables.push_back("EtaRsp:RefPt");
