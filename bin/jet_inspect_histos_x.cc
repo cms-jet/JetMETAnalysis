@@ -36,7 +36,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 // declare local functions
 ////////////////////////////////////////////////////////////////////////////////
-void set_xaxis_range(TH1* h1,TH1* h2=0);
+void set_xaxis_range(TH1* h1,TH1* h2=0,TH1* h3=0,TH1* h4=0);
 void get_xaxis_range(TH1* h,int& binmin,int& binmax);
 void set_yaxis_range(TH1* h1,float ymin=-1.,float ymax=-1.);
 void set_draw_attributes(TH1* h,
@@ -51,7 +51,16 @@ void draw_range(const ObjectLoader<TH1F>& hl,
 void draw_line_mean(TH1* h);
 void draw_line_median(TH1* h);
 void draw_line_peak(TH1* h);
+void draw_zline(TH1* h1);
 void draw_line_legend(bool mean,bool median,bool peak);
+
+void draw_residual(TPad* pad,TH1* hist,TF1* func,
+		   TPad*& hpad, TPad*& rpad,
+		   int errMode=-1,//-1:no residuals//0:chi2perbin,3:relative
+		   bool firsthisto=true,
+		   const string input="",
+		   const string alg="",
+		   const string variable="");
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -85,6 +94,7 @@ int main(int argc,char** argv)
   string         opath      = cl.getValue<string> ("opath",                "");
   vector<string> formats    = cl.getVector<string>("formats",              "");
   bool           batch      = cl.getValue<bool>   ("batch",             false);
+  int            residual   = cl.getValue<int>    ("residual",              -1);
 
 
   if (!cl.check()) return 0;
@@ -156,6 +166,7 @@ int main(int argc,char** argv)
 	    h->Scale(1./h->Integral());
 	  }
 	  
+
 	  if (ifile==0&&ialg==0&&ivar==0&&
 	      (c.size()==0||ihisto%npercanvas==0)) {
 	    stringstream sscname;sscname<<prefix<<"_"<<hl.quantity();
@@ -167,32 +178,46 @@ int main(int argc,char** argv)
 		       <<hl.maximum(i,indices[i]);
 	    }
 	    if (!suffix.empty()) sscname<<"_"<<suffix;
+
 	    c.push_back(new TCanvas(sscname.str().c_str(),
 				    sscname.str().c_str(),
 				    1000,1000));
 	    c.back()->Divide(nx,ny,1e-04,1e-04);
 	  }
-	  
+
 	  int icnv = ihisto/npercanvas;
 	  int ipad = ihisto%npercanvas+1;
 	  c[icnv]->cd(ipad);
 	  
 	  if (ifile==0&&ialg==0&&ivar==0) {
 	    icolor=0;
-	    if (logx) gPad->SetLogx();
-	    if (logy) gPad->SetLogy();
-	    gPad->SetLeftMargin(0.1);
+	    if (logx&&(h->GetEntries()>0)) gPad->SetLogx();
+	    if (logy&&(h->GetEntries()>0)) gPad->SetLogy();
+	    gPad->SetLeftMargin(0.13);
 	    gPad->SetRightMargin(0.05);
 	    gPad->SetTopMargin(0.12);
 	    gPad->SetBottomMargin(0.15);
-	    set_xaxis_range(h);
+
 	    if (ymin!=-1 || ymax!=-1) set_yaxis_range(h,ymin,ymax);
 	    if (colors.empty()) h->SetLineColor(kBlack);
 	    else h->SetLineColor(colors[icolor]);
 	    set_draw_attributes(h,icolor,fill,colors,fillstyles);
-	    h->Draw("EH");
+
 	    h->SetMaximum(1.5*h->GetMaximum());
-	    if (logy) h->SetMaximum(10.*h->GetMaximum());
+	    if (logy&&(h->GetEntries()>0)) h->SetMaximum(10.*h->GetMaximum());
+
+	    TPad* hpad(0); TPad* rpad(0); //pointer to new histo/resi pads
+	    draw_residual((TPad*)gPad,h,h->GetFunction("fit"),hpad,rpad,
+			  residual,true,input,alg,h->GetName()); 
+
+	    TH1F* r1(0);
+	    if (0!=rpad) r1 = (TH1F*) rpad->GetListOfPrimitives()->First();
+	    set_xaxis_range(h,0,r1);
+	    if (0!=rpad) rpad->cd();draw_zline(r1);hpad->cd();
+    
+	    if (0==hpad) h->Draw("EH");
+	    else hpad->cd();
+
 	    if (colors.empty()) draw_stats(h,0.65,kBlack,kBlack);
 	    else draw_stats(h,0.65,colors[icolor],colors[icolor]);
 	    draw_range(hl,indices,(variables.size()==1));
@@ -207,15 +232,31 @@ int main(int argc,char** argv)
 	    }
 	    else h->SetLineColor(colors[icolor]);
 	    set_draw_attributes(h,icolor,fill,colors,fillstyles);
-	    h->Draw("EHSAME");
+
+	    TPad* hpad(0); TPad* rpad(0);
+	    draw_residual((TPad*)gPad,h,h->GetFunction("fit"),hpad,rpad,
+			  residual,false,input,alg,h->GetName()); 
+    
+	    if (0==hpad) h->Draw("EHSAME");
+	    else hpad->cd();
+
 	    if (colors.empty() || (icolor>colors.size()-1)) 
 	      draw_stats(h,0.15,kBlue,kBlue);
 	    else draw_stats(h,0.15,colors[icolor],colors[icolor]);
-	    TH1F* hdraw = (TH1F*)gPad->GetListOfPrimitives()->First();
-	    set_xaxis_range(hdraw,h);
-	    if (ymin!=-1 || ymax!=-1) set_yaxis_range(hdraw,ymin,ymax);
-	    if (h->GetMaximum()>hdraw->GetMaximum())
-	      hdraw->SetMaximum(1.2*h->GetMaximum());
+
+	    //TH1F* hdraw = (TH1F*)gPad->GetListOfPrimitives()->First();
+
+	    TH1F* r1(0); TH1F* r2(0);
+	    TH1F* h1 = (TH1F*) hpad->GetListOfPrimitives()->First();
+	    if (0!=rpad) r1 = (TH1F*) rpad->GetListOfPrimitives()->First();
+	    if (0!=rpad) r2 = (TH1F*) rpad->GetListOfPrimitives()->Last();
+	    set_xaxis_range(h1,h,r1,r2);
+	    if (0!=rpad) rpad->cd();draw_zline(r1);hpad->cd();
+
+
+	    if (ymin!=-1 || ymax!=-1) set_yaxis_range(h1,ymin,ymax);
+	    if (h->GetMaximum()>h1->GetMaximum())
+	      h1->SetMaximum(1.2*h->GetMaximum());
 	  }
 	  if (mean)   draw_line_mean(h);
 	  if (median) draw_line_median(h);
@@ -256,8 +297,216 @@ int main(int argc,char** argv)
 // implement local functions
 ////////////////////////////////////////////////////////////////////////////////
 
+
+
 //______________________________________________________________________________
-void set_xaxis_range(TH1* h1,TH1* h2)
+void draw_residual(TPad* pad,TH1* hist,TF1* func,
+		   TPad*& hpad,TPad*& rpad,
+		   int errMode,
+		   bool firstHisto,
+		   const string input,
+		   const string alg,
+		   const string variable)
+{
+  if (errMode<0) return;
+  else if (errMode>3) {
+    cout<<"ERROR: draw_residual() invalid error mode"<<endl;return;
+  }
+  if (0==pad || 0==hist) return;
+
+
+  //divide this pad
+  if (firstHisto) pad->Divide(1,2,0.01,0.0);
+
+  // make default settings
+  if (firstHisto) pad->GetPad( 1 )->SetFillColor( 0 );
+  if (firstHisto) pad->GetPad( 2 )->SetFillColor( 0 );
+  if (firstHisto) pad->GetPad( 1 )->SetPad( 0.0,0.25,1.0, 1.0 );
+  if (firstHisto) pad->GetPad( 2 )->SetPad( 0.0, 0.0,1.0,0.25 );
+
+  if (firstHisto) pad->cd(1);
+  if (firstHisto && pad->GetLogx()) gPad->SetLogx();
+  if (firstHisto && pad->GetLogy()) gPad->SetLogy();
+  if (firstHisto) gPad->SetTopMargin(0.1);
+  if (firstHisto) gPad->SetLeftMargin(0.13);
+  if (firstHisto) gPad->SetRightMargin(0.05);
+
+  if (firstHisto) pad->cd(2);
+  if (firstHisto && pad->GetLogx())gPad->SetLogx();
+  if (firstHisto) gPad->SetBottomMargin(0.375);
+  if (firstHisto) gPad->SetLeftMargin(0.13);
+  if (firstHisto) gPad->SetRightMargin(0.05);
+
+  // define residual histo
+  
+  stringstream ssresname;
+  ssresname<<"rsh_"<<input<<"_"<<alg<<"_"<<variable;
+  TH1F *resiHist = new TH1F(ssresname.str().c_str(),
+			    "Residual Histogram ",
+			    hist->GetNbinsX(),
+			    hist->GetXaxis()->GetXmin(), 
+			    hist->GetXaxis()->GetXmax());
+
+  resiHist->Sumw2();
+  resiHist->SetLineWidth(1);
+  resiHist->SetXTitle(hist->GetXaxis()->GetTitle());
+  resiHist->GetYaxis()->CenterTitle(1);
+  resiHist->GetYaxis()->SetTitleSize( 0.13 );
+  resiHist->GetYaxis()->SetTitleOffset( 0.34 );
+  resiHist->GetYaxis()->SetLabelSize( 0.13 );
+  resiHist->GetYaxis()->SetNdivisions( 505 );
+  resiHist->GetXaxis()->SetTitleSize( 0.16 );
+  resiHist->GetXaxis()->SetLabelSize( 0.16 );
+  resiHist->GetXaxis()->SetTitleOffset( 1 );
+  resiHist->GetXaxis()->SetLabelOffset( 0.006 );
+  resiHist->GetXaxis()->SetNdivisions( 505 );
+  resiHist->GetXaxis()->SetTickLength( resiHist->GetXaxis()->GetTickLength() * 3.0 );
+
+  resiHist->SetFillStyle(hist->GetFillStyle());
+  resiHist->SetFillColor(hist->GetLineColor());
+  resiHist->SetMarkerColor(hist->GetLineColor());
+  if (3==errMode) resiHist->SetLineColor(hist->GetLineColor());
+  else resiHist->SetLineColor(kBlack);
+
+  if ( errMode == 0 )
+    resiHist->SetYTitle( "#frac{(data - fit)}{#sqrt{data}}" );
+  else if ( errMode == 1 )
+    resiHist->SetYTitle( "#frac{(data - fit)}{#sqrt{fit}}" );
+  else if (errMode == 2)
+    resiHist->SetYTitle( "#frac{(data - fit)}{binerror}" );
+  else 
+    resiHist->SetYTitle( "#frac{(data-fit)}{data}" );
+  
+
+
+  int    NDF   = 0;
+  int    chi2  = 0;
+  double nEvts = 0;
+  int    nBins = 0;
+
+  double evtThresh = 0.0;
+  if( errMode != 1 )
+    {
+      evtThresh = 0.01 * hist->GetMaximum();
+    }
+  double evtErr, theory, lowEdge, highEdge, binChi2;
+
+  double binWidth = hist->GetXaxis()->GetBinWidth( 1 );
+
+  int firstBin = 1;
+  int lastBin = hist->GetNbinsX();
+
+  int binStarted = firstBin;
+
+  double funcMin, funcMax;
+  if (0!=func) func->GetRange( funcMin, funcMax );
+  else {
+    funcMin=hist->GetXaxis()->GetXmin();
+    funcMax=hist->GetXaxis()->GetXmax();
+  }
+
+  // Go through all bins excluding unterflow and overlow bins
+  for( int i = firstBin; i <= lastBin; i++ ) {
+    
+    // Are we outside the definition ranges of the function?
+    if( hist->GetXaxis()->GetBinUpEdge( i ) < funcMin || 
+	hist->GetXaxis()->GetBinLowEdge( i ) > funcMax ) {
+      resiHist->SetBinContent( i, 0.0 );
+      binStarted = i;
+      continue;
+    }
+    
+    if (0==func) continue;
+    
+    nEvts += double( hist->GetBinContent( i ) );
+      
+    if ( ( nEvts <= evtThresh ) && ( i != hist->GetNbinsX() ) )
+      continue;
+      
+    lowEdge  = hist->GetXaxis()->GetBinLowEdge( binStarted );
+    highEdge = hist->GetXaxis()->GetBinUpEdge( i );
+    theory = func->Integral( lowEdge, highEdge ) / binWidth;
+      
+    if ( errMode == 0 )
+      evtErr = sqrt( nEvts );
+    else if ( errMode == 1 )
+      evtErr = sqrt( theory );
+    else
+      evtErr = hist->GetBinError( i );
+    
+    if(!(evtErr == 0)) {
+      binChi2 = ( nEvts - theory ) / evtErr;
+      binChi2 *= binChi2;
+      
+      chi2 += binChi2;
+	
+      for( int jTmp = binStarted; jTmp <= i; jTmp++ ) {
+	if ( 3!=errMode) resiHist->SetBinContent( jTmp, ( nEvts - theory ) / evtErr );
+	else {
+	  resiHist->SetBinContent( jTmp, (nEvts-theory)/nEvts );
+	  resiHist->SetBinError( jTmp, theory/nEvts/nEvts*evtErr);
+	}
+      }
+	
+      binStarted = i + 1;
+      nEvts = 0;
+      nBins++;
+    }
+  }
+  if (0!=func) {
+
+    // Why ?
+    nBins -= 1;
+    
+    int npar = func->GetNpar();
+    
+    double parmin, parmax;
+    int fixed = 0;
+    
+    for( int i = 0; i < npar; i++ ) {
+      func->GetParLimits( i, parmin, parmax );
+      if ( parmin >= parmax ) fixed++;
+    }
+    
+    NDF = nBins - npar + fixed;
+    
+    float hmax = std::max(abs(resiHist->GetMaximum()),abs(resiHist->GetMinimum()));
+    hmax *=1.2;
+    if (hmax>=.5) hmax = .49999;
+    resiHist->SetMaximum(1.*hmax);
+    resiHist->SetMinimum(-1.*hmax);
+    
+  }
+      
+  pad->cd(2);
+  rpad = (TPad*)gPad;
+      
+  if (firstHisto)
+    resiHist->Draw("E1");
+  else {
+    TH1F* rhist = (TH1F*)gPad->GetListOfPrimitives()->First();
+    float hmax  = std::max(abs(resiHist->GetMaximum()),abs(resiHist->GetMinimum()));
+    hmax *=1.2;
+    if (hmax>=.5) hmax = .49999;
+    if (hmax>abs(rhist->GetMaximum())) {
+      resiHist->SetMaximum(hmax);resiHist->SetMinimum(-1.*hmax);
+	  rhist->SetMaximum(resiHist->GetMaximum());
+	  rhist->SetMinimum(resiHist->GetMinimum());
+    }
+    resiHist->Draw("E1SAME");
+  }
+  pad->cd(1);
+  hpad = (TPad*)gPad;
+  if (firstHisto) hist->Draw("EH");
+  else hist->Draw("EHSAME");
+
+}
+
+
+
+
+//______________________________________________________________________________
+void set_xaxis_range(TH1* h1,TH1* h2,TH1* h3,TH1* h4)
 {
   if (h1->GetEntries()==0) return;
   int binmin,binmax;
@@ -269,6 +518,9 @@ void set_xaxis_range(TH1* h1,TH1* h2)
     binmax = std::max(binmax,binmax2);
   }
   h1->GetXaxis()->SetRange(binmin,binmax);
+  if (0!=h2) h2->GetXaxis()->SetRange(binmin,binmax);
+  if (0!=h3) h3->GetXaxis()->SetRange(binmin,binmax);
+  if (0!=h4) h4->GetXaxis()->SetRange(binmin,binmax);
 }
 
 //______________________________________________________________________________
@@ -399,15 +651,28 @@ void draw_range(const ObjectLoader<TH1F>& hl,
     if (varname=="PtRel")    { varname = "p_{T}^{rel}", unit = " GeV"; }
     if (varname=="RelLepPt") { varname = "p_{T}^{l}/p_{T}^{jet}",unit = ""; }
     if (varname=="ThreshPt") { varname = "p_{T}^{3rd}", unit = " GeV"; 
-                               threshold = true; }
+      threshold = true; }
 
     if (threshold) ssrange<<varname<<" < "<<varmax<<unit<<"    ";
     else ssrange<<varmin<<" < "<<varname<<" < "<<varmax<<unit<<"    ";
   }
   
-  range.DrawLatex(0.1,0.96,ssrange.str().c_str());
+  range.DrawLatex(0.13,0.96,ssrange.str().c_str());
 }
 
+
+//______________________________________________________________________________
+void draw_zline(TH1* h1)
+{
+  if (0==h1) return;
+  float xmin = h1->GetBinLowEdge(h1->GetXaxis()->GetFirst());
+  float xmax = h1->GetBinLowEdge(h1->GetXaxis()->GetLast()+1);
+
+  TLine* zline = new TLine(xmin,0,xmax,0);
+  zline->SetLineStyle(kDashed);
+  zline->SetLineWidth(1);
+  zline->Draw("SAME");
+}
 
 //______________________________________________________________________________
 void draw_line_mean(TH1* h)

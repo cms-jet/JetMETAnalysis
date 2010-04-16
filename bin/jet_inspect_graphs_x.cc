@@ -412,7 +412,7 @@ string get_range(const ObjectLoader<TGraphErrors>& gl,
     if (varname=="JetPhi")   { varname = "#varphi";     unit =     ""; }
     if (varname=="PtRel")    { varname = "p_{T}^{rel}"; unit = " GeV"; }
     if (varname=="RelLepPt") { varname = "p_{T}^{l}/p_{T}^{jet}"; unit =""; }
-    if (varname=="ThreshPt") { varname = "p_{T}^{3rd}", unit = " GeV"; 
+    if (varname=="ThreshPt") { varname = "p_{T,raw}^{3rd}", unit = " GeV"; 
                                threshold = true; }
 
     if (threshold) ssrange<<varname<<" < "<<varmax<<unit<<"    ";
@@ -548,6 +548,12 @@ void set_axis_titles(TH1* h,const string& quantity,float ymin,float ymax)
       ytitle="#sigma(p_{T}/p_{T}^{REF}) / <p_{T}/p_{T}^{REF}>";
       if (ymax>0.0) h->SetMaximum(ymax);
     }
+    if (ystr=="Asym") {
+      ytitle="#sqrt{2}#sigma_{A}";
+      ymax = (ymax<0.0) ? 1.3*h->GetMaximum() : ymax;
+      h->SetMaximum(ymax);
+
+    }
     
     if (xstr=="RefPt")    xtitle="p_{T}^{REF} [GeV]";
     if (xstr=="JetPt")    xtitle="p_{T} [GeV]";
@@ -556,6 +562,8 @@ void set_axis_titles(TH1* h,const string& quantity,float ymin,float ymax)
     if (xstr=="JetY")     xtitle="y";
     if (xstr=="PtRel")    xtitle="p_{T}^{rel} [GeV]";
     if (xstr=="RelLepPt") xtitle="p_{T}^{l} / p_{T}^{jet}";
+    if (xstr=="ThreshPt") xtitle="p_{T,max}^{3^{rd}}";
+    
   }
   
   h->SetXTitle(xtitle.c_str());
