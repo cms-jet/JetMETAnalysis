@@ -45,6 +45,9 @@ bool   contains(const vector<string>& collection,const string& element);
 /// transform the alg label into a title, e.g.: kt4calo -> k_{T}, D=0.4 (Calo)
 string get_legend_title(const string& alg);
 
+/// get the suffix to the parmeter text file for each algorithm
+string get_algorithm_suffix(const string& alg);
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -60,9 +63,9 @@ int main(int argc,char**argv)
   if (!cl.parse(argc,argv)) return 0;
 
   string         input   = cl.getValue<string> ("input");
+  string         era     = cl.getValue<string> ("era");
   string         l3input = cl.getValue<string> ("l3input","l3.root");
   string         output  = cl.getValue<string> ("output", "l2.root");
-  string         tag     = cl.getValue<string> ("tag",           "");
   vector<string> formats = cl.getVector<string>("formats",       "");
   vector<string> algs    = cl.getVector<string>("algs",          "");
   bool           batch   = cl.getValue<bool>   ("batch",      false);
@@ -75,7 +78,6 @@ int main(int argc,char**argv)
   //
   argc = (batch) ? 2 : 1; if (batch) argv[1] = (char*)"-b";
   TApplication* app = new TApplication("jet_l2_correction_x",&argc,argv);
-  //set_root_style();
   
   
   //
@@ -84,7 +86,7 @@ int main(int argc,char**argv)
   TFile* ofile = new TFile(output.c_str(),"RECREATE");
   if (!ofile->IsOpen()) { cout<<"Can't create "<<output<<endl; return 0; }
   
-
+  
   //
   // open input & l3input files and loop over directories (algorithms)
   //
@@ -266,8 +268,12 @@ int main(int argc,char**argv)
     //
     // relative (L2) response/correction as a function of pT for each eta bin
     //
+    string fnc_as_str = (alg.find("trk")>0) ? 
+      "[0]+[1]*log10(x)+[2]*pow(log10(x),2)+[3]*pow(log10(x),3)+[4]*pow(x/500.0,3)" :
+      "[0]+[1]*log10(x)+[2]*pow(log10(x),2)+[3]*pow(log10(x),3)+[4]*pow(log10(x),4)";
+    
     vector<TGraph*> vrelcor_eta;
-    TH1F* hjetpt(0);
+    TH1F*           hjetpt(0);
     hl_jetpt.begin_loop();
     while ((hjetpt=hl_jetpt.next_object(indices))) {
       
@@ -290,7 +296,8 @@ int main(int argc,char**argv)
 	double controlpt=refpt*fl3rsp->Eval(refpt);
 	double relcor   =controlpt/jetpt;
         if (relcor > 5)
-          cout<<"WARNING !!! suspicious point: "<<hjetpt->GetName()<<", jet pt = "<<jetpt<<", ref pt = "<<refpt<<" "<<endl;
+          cout<<"WARNING !!! suspicious point: "<<hjetpt->GetName()
+	      <<", jet pt = "<<jetpt<<", ref pt = "<<refpt<<" "<<endl;
         else { 
 	  int n=vrelcor_eta.back()->GetN();
 	  vrelcor_eta.back()->SetPoint(n,jetpt,relcor);
@@ -300,25 +307,9 @@ int main(int argc,char**argv)
       // fit the graph if the last pt of the current eta bin comes around
       if (ipt==hl_jetpt.nobjects(1)-1) {
 	TGraph* grelcor = vrelcor_eta.back();
-	TF1*    frelcor(0);
-
-	double xmin = grelcor->GetX()[0];
-	double xmax = grelcor->GetX()[grelcor->GetN()-1];
-      
-	if (grelcor->GetN()<2) {
-	  grelcor->SetPoint(0,10,1.0);
-	  grelcor->SetPoint(1,100,1.0);
-	  frelcor=new TF1("fit","[0]",10,100);
-	}
-	else if (grelcor->GetN()==2) {
-	  frelcor=new TF1("fit","[0]+[1]*log10(x)",xmin,xmax);
-	}
-    else if ((int)alg.find("trk")>0) {
-	  frelcor=new TF1("fit","[0]+[1]*log10(x)+[2]*pow(log10(x),2)+[3]*pow(log10(x),3)+[4]*pow(x/500.0,3)",xmin,xmax);
-	}
-    else {
-	  frelcor=new TF1("fit","[0]+[1]*log10(x)+[2]*pow(log10(x),2)+[3]*pow(log10(x),3)+[4]*pow(log10(x),4)",xmin,xmax);
-	}
+	double  xmin    = grelcor->GetX()[0];
+	double  xmax    = grelcor->GetX()[grelcor->GetN()-1];
+	TF1*    frelcor = new TF1("fit",fnc_as_str.c_str(),xmin,xmax);
 	
 	frelcor->SetParameter(0,0.0);
 	frelcor->SetParameter(1,0.0);
@@ -327,7 +318,23 @@ int main(int argc,char**argv)
 	frelcor->SetParameter(4,0.0);
 	frelcor->SetParameter(5,0.0);
 	
-	grelcor->Fit(frelcor,"QR0");
+	if (grelcor->GetN()<2) {
+	  grelcor->SetPoint(0,10,1.0);
+	  grelcor->SetPoint(1,100,1.0);
+	  frelcor->FixParameter(1,0.0);
+	  frelcor->FixParameter(2,0.0);
+	  frelcor->FixParameter(3,0.0);
+	  frelcor->FixParameter(4,0.0);
+	  frelcor->FixParameter(5,0.0);
+	}
+	else if (grelcor->GetN()==2) {
+	  frelcor->FixParameter(2,0.0);
+	  frelcor->FixParameter(3,0.0);
+	  frelcor->FixParameter(4,0.0);
+	  frelcor->FixParameter(5,0.0);
+	}
+	
+	grelcor->Fit(frelcor,"QRB0");
 	grelcor->GetListOfFunctions()->First()->ResetBit(TF1::kNotDraw);
         grelcor->SetMarkerStyle(20); 
 	grelcor->Write();
@@ -338,12 +345,10 @@ int main(int argc,char**argv)
     //
     // write the L2 correction text file for the current algorithm
     //
-    string txtfilename = "l2_"+alg;
-    if (!tag.empty())
-      txtfilename+="_"+tag;
-    txtfilename+=".jec";
+    string txtfilename = era+"_L2Relative_"+get_algorithm_suffix(alg)+".txt";
     ofstream fout(txtfilename.c_str());
     fout.setf(ios::right);
+    fout<<"{1 JetEta 1 JetPt "<<fnc_as_str<<" Correction}"<<endl;
     for (unsigned int ieta=0;ieta<vrelcor_eta.size();ieta++) {
       TGraph* grelcor = vrelcor_eta[ieta];
       TF1*    frelcor = (TF1*)grelcor->GetListOfFunctions()->First();
@@ -351,7 +356,6 @@ int main(int argc,char**argv)
       double  etamax  = hl_jetpt.maximum(0,ieta);
       double  ptmin = grelcor->GetX()[0];
       double  ptmax = grelcor->GetX()[grelcor->GetN()-1];
-      //frelcor()->GetRange(ptmin,ptmax); 
       fout<<setw(11)<<etamin
 	  <<setw(11)<<etamax
 	  <<setw(11)<<(int)8
@@ -429,4 +433,20 @@ string get_legend_title(const string& alg)
   title += ss2.str() + " " + RECO[ireco];
 
   return title;
+}
+
+
+//______________________________________________________________________________
+string get_algorithm_suffix(const string& alg)
+{
+  string result;
+  result += std::toupper(alg[0]);
+  result += std::toupper(alg[1]);
+  result += alg[2];
+  if      (alg.find("calo")==3) result += "Calo";
+  else if (alg.find("jpt") ==3) result += "JPT";
+  else if (alg.find("pf")  ==3) result += "PF";
+  else if (alg.find("trk") ==3) result += "TRK";
+  cout<<"get_algorithm_suffix: result = "<<result;
+  return result;
 }
