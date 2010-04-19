@@ -233,10 +233,8 @@ int main(int argc,char**argv)
     // correction
     string fitcor_as_str;
     
-    if (alg.find("pf")>0)
-      fitcor_as_str =
-	"[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))";
-    else if (alg.find("trk")>0)  fitcor_as_str = "[0]+[1]*pow(x/500.0,[2])";
+    if ((int)alg.find("pf")>0) fitcor_as_str = "[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))";
+    else if ((int)alg.find("trk")>0) fitcor_as_str = "[0]+[1]*pow(x/500.0,[2])";
     else                         fitcor_as_str = "[0]+[1]/(pow(log10(x),[2])+[3])";
     
     TF1* fitcor = new TF1("fitcor",fitcor_as_str.c_str(),
