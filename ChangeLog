@@ -1,3 +1,9 @@
+2010-04-19  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-08-08
+	* improvements to jet_l2_correction_x and jet_l3_correction_x
+	tools
+
 2010-04-12  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-08-07
