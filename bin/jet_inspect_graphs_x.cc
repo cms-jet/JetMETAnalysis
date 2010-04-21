@@ -22,6 +22,7 @@
 #include <TH1F.h>
 #include <TF1.h>
 #include <TText.h>
+#include <TLine.h>
 
 #include <iostream>
 #include <iomanip>
@@ -41,7 +42,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 // declare local functions
 ////////////////////////////////////////////////////////////////////////////////
-void   draw_range(const string& range);
+void   draw_range(const string& range,const int residual=-1);
 void   draw_text(const string& text);
 string get_range(const ObjectLoader<TGraphErrors>& gl,
 		 const vector<unsigned int>& indices,
@@ -50,6 +51,12 @@ string get_legend_label_from_alg(const string& alg);
 string get_legend_label_from_input(const string& input);
 void   set_graph_style(TGraphErrors* g,unsigned int ngraph,bool nocolor);
 void   set_axis_titles(TH1*h,const string& quantity,float ymin,float ymax);
+
+void   draw_graph_residual(TPad* pad,TMultiGraph* mg,
+			   int errMode=-1);
+
+
+void   draw_zline(TH1* h1);
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -78,6 +85,7 @@ int main(int argc,char** argv)
   vector<string> formats   = cl.getVector<string>("formats",               "");
   bool           batch     = cl.getValue<bool>   ("batch",              false);
   bool           latex     = cl.getValue<bool>   ("latex",              false);
+  int            residual  = cl.getValue<int>    ("residual",              -1);
 
   if (!cl.check()) return 0;
   cl.print();
@@ -282,14 +290,22 @@ int main(int argc,char** argv)
     gPad->SetBottomMargin(0.14);
     gPad->SetLogx(logx);
     gPad->SetLogy(logy);
+
     mg->Draw("AP");
+    set_axis_titles(mg->GetHistogram(),quantity,ymin,ymax);
+
+    // hh messing around
+
+    draw_graph_residual((TPad*)gPad,mg,residual);
+
+ 
     leg->SetLineColor(10);
     leg->SetFillColor(10);
     leg->SetBorderSize(0);
     leg->Draw();
-    draw_range(ranges.front());
+    draw_range(ranges.front(),residual);
     draw_text(text);
-    set_axis_titles(mg->GetHistogram(),quantity,ymin,ymax);
+
   }
   else {
     c = new TCanvas(mg->GetName(),mg->GetName(),600,600);
@@ -306,8 +322,20 @@ int main(int argc,char** argv)
       gPad->SetBottomMargin(0.14);
       gPad->SetLogx(logx);
       gPad->SetLogy(logy);
-      graphs[i]->Draw("AP");
-      draw_range(ranges[i]);
+
+      stringstream ssmgindname;
+      ssmgindname<<"ind_"<<i<<mg->GetName();
+      TMultiGraph* mgind = new TMultiGraph(ssmgindname.str().c_str(),
+					   ssmgindname.str().c_str());
+      mgind->Add(graphs[i]);
+      //graphs[i]->Draw("AP");
+      mgind->Draw("AP");
+      //set_axis_titles(graphs[i]->GetHistogram(),quantity,ymin,ymax);
+      set_axis_titles(mgind->GetHistogram(),quantity,ymin,ymax);
+
+      draw_graph_residual((TPad*)gPad,mgind,residual);
+      
+      draw_range(ranges[i],residual);
       draw_text(text);
       set_axis_titles(graphs[i]->GetHistogram(),quantity,ymin,ymax);
 
@@ -342,14 +370,182 @@ int main(int argc,char** argv)
 ////////////////////////////////////////////////////////////////////////////////
 
 //______________________________________________________________________________
-void draw_range(const string& range)
+void draw_graph_residual(TPad* pad,TMultiGraph* mg,
+			 int errMode)
+{
+  if (errMode<0) return;
+  else if (errMode>3){
+    cout<<"ERROR: draw_graph_residual() invalid error mode"<<endl;return;
+  }
+  if (0==pad) return;
+
+  // make sure nobody uses wrong methods...
+  if (errMode==1 || errMode==2){
+    cout<<"DAMN: residual "<<errMode<<" not implemented:/"<<endl;return;
+  }
+
+  TIter next(mg->GetListOfGraphs());
+  TGraphErrors* g(0);vector<TGraphErrors*> vg;vector<TF1*>vf;
+  
+  while (( g = (TGraphErrors*)next() )) {
+    vg.push_back(g);
+    vf.push_back((TF1*)g->GetListOfFunctions()->Last());
+  }
+  assert (vg.size()==vf.size());
+  
+  stringstream rmgname;
+  rmgname<<"rmg_"<<mg->GetName();
+  TMultiGraph* rmg = new TMultiGraph(rmgname.str().c_str(),
+				     rmgname.str().c_str());
+
+  //vector<TGraphErrors*> vrGraph;
+
+  for (unsigned i(0);i<vg.size();i++){
+    
+    //divide this pad
+    if (0==i) pad->Divide(1,2,0.01,0.0);
+
+    // make default settings
+    if (0==i) pad->GetPad( 1 )->SetFillColor( 0 );
+    if (0==i) pad->GetPad( 2 )->SetFillColor( 0 );
+    if (0==i) pad->GetPad( 1 )->SetPad( 0.0,0.25,1.0, 1.0 );
+    if (0==i) pad->GetPad( 2 )->SetPad( 0.0, 0.0,1.0,0.25 );
+
+    if (0==i) pad->cd(1);
+    if (0==i && pad->GetLogx()) gPad->SetLogx();
+    if (0==i && pad->GetLogy()) gPad->SetLogy();
+    if (0==i) gPad->SetTopMargin(0.1);
+    if (0==i) gPad->SetLeftMargin(0.15);
+    if (0==i) gPad->SetRightMargin(0.05);
+    
+    if (0==i) pad->cd(2);
+    if (0==i && pad->GetLogx())gPad->SetLogx();
+    if (0==i) gPad->SetBottomMargin(0.375);
+    if (0==i) gPad->SetLeftMargin(0.15);
+    if (0==i) gPad->SetRightMargin(0.05);
+
+    // define residual graph
+  
+    TGraphErrors* rGraph = new TGraphErrors(0);
+
+    // Go through all points now...
+
+    for(int ip(0);ip<vg[i]->GetN();ip++) {
+
+      double y  = vg[i]->GetY()[ip];
+      double ey = vg[i]->GetEY()[ip];
+
+      double x  = vg[i]->GetX()[ip];
+      double ex = vg[i]->GetEX()[ip];
+      
+      double fy = (0==vf[i]) ? 0.0 : vf[i]->Eval(x);
+
+      double resy(0.0),resey(0.0);
+
+      if (0==y) continue;
+  
+      if (errMode==3) {
+	resy  = (y-fy)/y;
+	resey = fy/y/y*ey;
+      }
+      else if (errMode==0) {
+	resy  = (y-fy)/sqrt(y);
+      }
+
+      int n = rGraph->GetN();
+
+      rGraph->SetPoint(n,x,resy);
+      rGraph->SetPointError(n,ex,resey);
+    }
+
+    rGraph->SetTitle("");
+    if (errMode==3) rGraph->SetMarkerStyle(20); else rGraph->SetMarkerStyle(2);
+    if (errMode==3) rGraph->SetMarkerSize(.5); else rGraph->SetMarkerSize(1.);
+    if (0!=vf[i]) rGraph->SetMarkerColor(vf[i]->GetLineColor());
+    if (0!=vf[i]) rGraph->SetLineColor(vf[i]->GetLineColor());
+    rGraph->SetLineWidth(1);
+      
+    rmg->Add(rGraph);
+  }
+  
+      
+  // draw this shit
+
+  // first pad 1 to get the histogram
+  pad->cd(1);
+  mg->Draw("AP");
+  mg->GetHistogram()->GetYaxis()->SetTitleOffset(1.2);
+
+  // then pad 2 for everything else
+  pad->cd(2);
+  rmg->Draw("AP");
+  rmg->GetHistogram()->SetTitle("");
+
+  rmg->GetHistogram()->GetYaxis()->CenterTitle(1);
+  rmg->GetHistogram()->GetYaxis()->SetTitleSize( 0.11 );
+  rmg->GetHistogram()->GetYaxis()->SetTitleOffset( 0.6 );
+  rmg->GetHistogram()->GetYaxis()->SetLabelSize( 0.13 );
+  rmg->GetHistogram()->GetYaxis()->SetNdivisions( 505 );
+
+  rmg->GetHistogram()->SetXTitle(mg->GetHistogram()->GetXaxis()->GetTitle());
+  rmg->GetHistogram()->GetXaxis()->SetTitleSize( 0.16 );
+  rmg->GetHistogram()->GetXaxis()->SetLabelSize( 0.16 );
+  rmg->GetHistogram()->GetXaxis()->SetTitleOffset( 1 );
+  rmg->GetHistogram()->GetXaxis()->SetLabelOffset( 0.006 );
+  rmg->GetHistogram()->GetXaxis()->SetNdivisions( 505 );
+  rmg->GetHistogram()->GetXaxis()->SetTickLength(mg->GetHistogram()->GetXaxis()->GetTickLength()*3.);
+
+  // draw the zline already here:)
+  draw_zline(rmg->GetHistogram());
+
+  // set y title and
+  // calculate the residual value range
+
+  float ymax = std::max(TMath::Abs(rmg->GetHistogram()->GetMinimum()),
+			TMath::Abs(rmg->GetHistogram()->GetMaximum()));
+
+  ymax = (ymax>.5) ? .5 : ymax;
+
+  rmg->GetHistogram()->SetMinimum(-1.2*ymax);
+  rmg->GetHistogram()->SetMaximum( 1.2*ymax);
+
+  if ( errMode == 0 )
+    rmg->GetHistogram()->SetYTitle( "#frac{(data - fit)}{#sqrt{data}}" );
+  else if ( errMode == 1 )
+    rmg->GetHistogram()->SetYTitle( "#frac{(data - fit)}{#sqrt{fit}}" );
+  else if (errMode == 2)
+    rmg->GetHistogram()->SetYTitle( "#frac{(data - fit)}{binerror}" );
+  else 
+    rmg->GetHistogram()->SetYTitle( "#frac{(data-fit)}{data}" );
+
+  // go back to the graph pad for the rest...
+  pad->cd(1);
+}
+
+//______________________________________________________________________________
+void draw_zline(TH1* h1)
+{
+  if (0==h1) return;
+  float xmin = h1->GetBinLowEdge(h1->GetXaxis()->GetFirst());
+  float xmax = h1->GetBinLowEdge(h1->GetXaxis()->GetLast()+1);
+
+  TLine* zline = new TLine(xmin,0,xmax,0);
+  zline->SetLineStyle(kDashed);
+  zline->SetLineWidth(1);
+  zline->Draw("SAME");
+}
+
+
+//______________________________________________________________________________
+void draw_range(const string& range, const int residual)
 {
   TLatex tex;
   tex.SetNDC(true);
   tex.SetTextAlign(13);
   tex.SetTextSize(0.055);
   tex.SetTextFont(42);
-  tex.DrawLatex(0.18,0.98,range.c_str());
+  if (residual<0) tex.DrawLatex(0.18,0.98,range.c_str());
+  else tex.DrawLatex(0.15,0.96,range.c_str());
 }
 
 
@@ -544,16 +740,29 @@ void set_axis_titles(TH1* h,const string& quantity,float ymin,float ymax)
       ymax = (ymax<0.0) ? 1.2 : ymax;
       h->SetMaximum(ymax);
     }
-    if (ystr=="Res"||ystr=="RelRes"||ystr=="AbsRes") {
+    else if (ystr=="Res"||ystr=="RelRes"||ystr=="AbsRes") {
       ytitle="#sigma(p_{T}/p_{T}^{REF}) / <p_{T}/p_{T}^{REF}>";
       if (ymax>0.0) h->SetMaximum(ymax);
     }
-    if (ystr=="Asym") {
+    else if (ystr=="Asym") {
       ytitle="#sqrt{2}#sigma_{A}";
       ymax = (ymax<0.0) ? 1.3*h->GetMaximum() : ymax;
       h->SetMaximum(ymax);
-
     }
+    else if (ystr=="Aone") {
+      ytitle="a_{1}";
+    }
+    else if (ystr=="Atwo") {
+      ytitle="a_{2}";
+    }
+    else if (ystr=="Pone") {
+      ytitle="p_{1}";
+    }
+    else if (ystr=="Ptwo") {
+      ytitle="p_{2}";
+    }
+
+
     
     if (xstr=="RefPt")    xtitle="p_{T}^{REF} [GeV]";
     if (xstr=="JetPt")    xtitle="p_{T} [GeV]";

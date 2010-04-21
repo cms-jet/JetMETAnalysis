@@ -94,7 +94,8 @@ int main(int argc,char** argv)
   string         opath      = cl.getValue<string> ("opath",                "");
   vector<string> formats    = cl.getVector<string>("formats",              "");
   bool           batch      = cl.getValue<bool>   ("batch",             false);
-  int            residual   = cl.getValue<int>    ("residual",              -1);
+  int            residual   = cl.getValue<int>    ("residual",             -1);
+  bool           verbose    = cl.getValue<bool>   ("verbose",           false);
 
 
   if (!cl.check()) return 0;
@@ -160,7 +161,8 @@ int main(int argc,char** argv)
 	while ((h=hl.next_object(indices))) {
 
 	  if (norm) {
-	    TF1* f = h->GetFunction("fit");
+	    //TF1* f = h->GetFunction("fit");
+	    TF1* f = (TF1*)h->GetListOfFunctions()->Last();
 	    if (0!=f) f->SetParameter(0,f->GetParameter(0)/h->Integral());
 	    h->Sumw2();
 	    h->Scale(1./h->Integral());
@@ -206,18 +208,23 @@ int main(int argc,char** argv)
 	    h->SetMaximum(1.5*h->GetMaximum());
 	    if (logy&&(h->GetEntries()>0)) h->SetMaximum(10.*h->GetMaximum());
 
+	    TF1* fitfnc = (TF1*)h->GetListOfFunctions()->Last();
+	    if (verbose) cout<<"Detected function 1: "<<fitfnc->GetName()<<endl;
 	    TPad* hpad(0); TPad* rpad(0); //pointer to new histo/resi pads
-	    draw_residual((TPad*)gPad,h,h->GetFunction("fit"),hpad,rpad,
-			  residual,true,input,alg,h->GetName()); 
+	    if (0!=fitfnc) draw_residual((TPad*)gPad,h,fitfnc,hpad,rpad,
+					 residual,true,input,alg,h->GetName());
+	    if (verbose) cout<<"Survived draw_residual() w/o crash"<<endl;
 
 	    TH1F* r1(0);
 	    if (0!=rpad) r1 = (TH1F*) rpad->GetListOfPrimitives()->First();
+	    if (verbose) cout<<"set_xaxis_range()"<<endl;
 	    set_xaxis_range(h,0,r1);
-	    if (0!=rpad) rpad->cd();draw_zline(r1);hpad->cd();
+	    if (0!=rpad) {rpad->cd();draw_zline(r1);hpad->cd();}
     
 	    if (0==hpad) h->Draw("EH");
 	    else hpad->cd();
 
+	    if (verbose) cout<<"draw_stats()"<<endl;
 	    if (colors.empty()) draw_stats(h,0.65,kBlack,kBlack);
 	    else draw_stats(h,0.65,colors[icolor],colors[icolor]);
 	    draw_range(hl,indices,(variables.size()==1));
@@ -233,9 +240,11 @@ int main(int argc,char** argv)
 	    else h->SetLineColor(colors[icolor]);
 	    set_draw_attributes(h,icolor,fill,colors,fillstyles);
 
+	    TF1* fitfnc = (TF1*)h->GetListOfFunctions()->Last();
+	    if (verbose) cout<<"Detected function 1: "<<fitfnc->GetName()<<endl;
 	    TPad* hpad(0); TPad* rpad(0);
-	    draw_residual((TPad*)gPad,h,h->GetFunction("fit"),hpad,rpad,
-			  residual,false,input,alg,h->GetName()); 
+	    if (0!=fitfnc) draw_residual((TPad*)gPad,h,fitfnc,hpad,rpad,
+					 residual,false,input,alg,h->GetName()); 
     
 	    if (0==hpad) h->Draw("EHSAME");
 	    else hpad->cd();
@@ -262,8 +271,9 @@ int main(int argc,char** argv)
 	  if (median) draw_line_median(h);
 	  if (peak)   draw_line_peak(h);
 
-	  TF1* f = h->GetFunction("fit");
+	  TF1* f = (TF1*)h->GetListOfFunctions()->Last();
 	  if (fullfit&&(0!=f)){
+	    if (verbose) cout<<"Extrapolating "<<f->GetName()<<endl;
 	    TF1* ff = (TF1*)f->Clone("ff");
 	    ff->SetRange(h->GetXaxis()->GetXmin(),h->GetXaxis()->GetXmax());
 	    ff->SetLineColor(f->GetLineColor());
@@ -314,6 +324,11 @@ void draw_residual(TPad* pad,TH1* hist,TF1* func,
   }
   if (0==pad || 0==hist) return;
 
+  // make sure nobody uses wrong methods...
+  if (errMode==1 || errMode==2){
+    cout<<"DAMN: residual "<<errMode<<" not correctly implemented:/"<<endl;return;
+  }
+
 
   //divide this pad
   if (firstHisto) pad->Divide(1,2,0.01,0.0);
@@ -351,8 +366,8 @@ void draw_residual(TPad* pad,TH1* hist,TF1* func,
   resiHist->SetLineWidth(1);
   resiHist->SetXTitle(hist->GetXaxis()->GetTitle());
   resiHist->GetYaxis()->CenterTitle(1);
-  resiHist->GetYaxis()->SetTitleSize( 0.13 );
-  resiHist->GetYaxis()->SetTitleOffset( 0.34 );
+  resiHist->GetYaxis()->SetTitleSize( 0.11 );
+  resiHist->GetYaxis()->SetTitleOffset( 0.55 );
   resiHist->GetYaxis()->SetLabelSize( 0.13 );
   resiHist->GetYaxis()->SetNdivisions( 505 );
   resiHist->GetXaxis()->SetTitleSize( 0.16 );
@@ -385,10 +400,11 @@ void draw_residual(TPad* pad,TH1* hist,TF1* func,
   int    nBins = 0;
 
   double evtThresh = 0.0;
-  if( errMode != 1 )
-    {
-      evtThresh = 0.01 * hist->GetMaximum();
-    }
+  if ( errMode != 1 ) {
+    evtThresh = 0.01 * hist->GetMaximum();
+  }
+  if (errMode==3) evtThresh = 0.0;
+
   double evtErr, theory, lowEdge, highEdge, binChi2;
 
   double binWidth = hist->GetXaxis()->GetBinWidth( 1 );
@@ -412,6 +428,7 @@ void draw_residual(TPad* pad,TH1* hist,TF1* func,
     if( hist->GetXaxis()->GetBinUpEdge( i ) < funcMin || 
 	hist->GetXaxis()->GetBinLowEdge( i ) > funcMax ) {
       resiHist->SetBinContent( i, 0.0 );
+      //if (errMode==3) resiHist->SetBinError( i, 1.0);
       binStarted = i;
       continue;
     }
@@ -453,6 +470,8 @@ void draw_residual(TPad* pad,TH1* hist,TF1* func,
       nBins++;
     }
   }
+
+
   if (0!=func) {
 
     // Why ?
@@ -556,7 +575,7 @@ void set_draw_attributes(TH1* h,unsigned index,bool fill,
     h->SetFillColor(h->GetLineColor());
     h->SetFillStyle(fillstyle);
   }
-  TF1* fitfnc = h->GetFunction("fit");
+  TF1* fitfnc = (TF1*)h->GetListOfFunctions()->Last();
   if (0!=fitfnc) {
     fitfnc->SetLineWidth(2);
     fitfnc->SetLineColor(h->GetLineColor());
@@ -567,10 +586,10 @@ void set_draw_attributes(TH1* h,unsigned index,bool fill,
 //______________________________________________________________________________
 void draw_stats(TH1* h,double xoffset,Color_t color,Color_t fitColor)
 {
-  TF1* fitfnc = h->GetFunction("fit");
+  TF1* fitfnc = (TF1*)h->GetListOfFunctions()->Last();
   stringstream ssentries;
   ssentries<<setw(6) <<setiosflags(ios::left)<<"N:"
-	   <<setw(10)<<resetiosflags(ios::left)<<setprecision(4)<<h->GetEntries();
+	   <<setw(10)<<resetiosflags(ios::left)<<setprecision(4)<<h->GetEffectiveEntries();
   
   stringstream ssmean;
   ssmean<<setw(6)<<setiosflags(ios::left)<<"Mean:"
@@ -723,7 +742,8 @@ void draw_line_median(TH1* h)
 //______________________________________________________________________________
 void draw_line_peak(TH1* h)
 {
-  TF1* fitFnc = h->GetFunction("fit"); if (0==fitFnc) return;
+  TF1* fitFnc = (TF1*)h->GetListOfFunctions()->Last(); 
+  if (0==fitFnc) return;
   double peak = fitFnc->GetParameter(1);
   double xmin = peak;
   double xmax = peak;
