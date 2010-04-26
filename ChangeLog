@@ -1,3 +1,10 @@
+2010-04-26  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-07-05
+	* add jet_calcxsec_x tool, which calculates the effective
+	cross-sections to properly combine *inclusuve* QCD samples, which
+	are produced with a lower but no upper pthat boundary
+
 2010-04-12  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-07-04
