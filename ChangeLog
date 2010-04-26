@@ -1,3 +1,8 @@
+2010-04-26  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-08-09
+	* pick up fix by Andreas (see below)
+
 2010-04-20  Andreas Hinzmann  <hinzmann@cern.ch>
 
 	* fix in jet_l3_correction_x
