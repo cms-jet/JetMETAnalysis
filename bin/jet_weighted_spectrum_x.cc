@@ -44,7 +44,7 @@ int main(int argc,char**argv)
   
   vector<string> inputs   = cl.getVector<string>("inputs");
   string         datapath = cl.getValue <string>("datapath",        "");
-  string         algorithm= cl.getValue <string>("algorithm","kt4calo");
+  string         algorithm= cl.getValue <string>("algorithm","ak5calo");
   bool           logx     = cl.getValue <bool>  ("logx",         false);
   bool           logy     = cl.getValue <bool>  ("logy",          true);
   bool           batch    = cl.getValue <bool>  ("batch",        false);
