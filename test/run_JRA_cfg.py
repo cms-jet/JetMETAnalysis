@@ -41,29 +41,29 @@ process = cms.Process("JRA")
 #! INPUT
 #!
 qcdFiles = cms.untracked.vstring(
-    '/store/relval/CMSSW_3_3_1/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_31X_V9-v3/0003/FC5633F4-CAC0-DE11-9B8C-0030487C6090.root',
-    '/store/relval/CMSSW_3_3_1/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_31X_V9-v3/0003/AC1E71D1-C9C0-DE11-AD08-0030487C6090.root',
-    '/store/relval/CMSSW_3_3_1/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_31X_V9-v3/0003/AAEB831F-E4C0-DE11-85CC-0030487C6090.root',
-    '/store/relval/CMSSW_3_3_1/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_31X_V9-v3/0003/80B9B076-C6C0-DE11-970A-000423D98B6C.root',
-    '/store/relval/CMSSW_3_3_1/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_31X_V9-v3/0003/7A6512C0-9CC1-DE11-9228-0030487A18F2.root',
-    '/store/relval/CMSSW_3_3_1/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_31X_V9-v3/0003/1CE3F169-C7C0-DE11-914D-0030487C6090.root',
-    '/store/relval/CMSSW_3_3_1/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_31X_V9-v3/0003/16D5C17F-C8C0-DE11-9BEE-0030487A1990.root'    
+    '/store/relval/CMSSW_3_5_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_3XY_V26-v1/0013/B6AAFEE4-6849-DF11-A42F-0026189437FD.root',
+    '/store/relval/CMSSW_3_5_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_3XY_V26-v1/0012/FE3569A8-5849-DF11-B926-0018F3D09652.root',
+    '/store/relval/CMSSW_3_5_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_3XY_V26-v1/0012/625514A2-5849-DF11-ACEA-0018F3D096A4.root',
+    '/store/relval/CMSSW_3_5_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_3XY_V26-v1/0012/221C3CAC-5949-DF11-8847-003048678F02.root',
+    '/store/relval/CMSSW_3_5_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_3XY_V26-v1/0012/20A090C0-5A49-DF11-B921-001A92810ADC.root',
+    '/store/relval/CMSSW_3_5_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_3XY_V26-v1/0012/1281AF09-5749-DF11-B389-001A92971B26.root',
+    '/store/relval/CMSSW_3_5_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_3XY_V26-v1/0012/082A389B-5749-DF11-8421-001A92810ACA.root'
     )
 
 ttbarFiles = cms.untracked.vstring(
-    '/store/relval/CMSSW_3_3_0/RelValTTbar/GEN-SIM-RECO/MC_31X_V9-v2/0003/8C293B1C-7DBD-DE11-A138-002618943969.root',
-    '/store/relval/CMSSW_3_3_0/RelValTTbar/GEN-SIM-RECO/MC_31X_V9-v2/0002/80746BC6-E1BC-DE11-B6AF-0026189438F4.root',
-    '/store/relval/CMSSW_3_3_0/RelValTTbar/GEN-SIM-RECO/MC_31X_V9-v2/0002/76B9924A-E2BC-DE11-8D8F-001A92971B06.root',
-    '/store/relval/CMSSW_3_3_0/RelValTTbar/GEN-SIM-RECO/MC_31X_V9-v2/0002/6A476ECE-E7BC-DE11-941A-002618943923.root',
-    '/store/relval/CMSSW_3_3_0/RelValTTbar/GEN-SIM-RECO/MC_31X_V9-v2/0002/585171F0-4CBD-DE11-B96D-001A92971AA4.root',
-    '/store/relval/CMSSW_3_3_0/RelValTTbar/GEN-SIM-RECO/MC_31X_V9-v2/0002/348829ED-E9BC-DE11-B2A5-0026189438C4.root',
-    '/store/relval/CMSSW_3_3_0/RelValTTbar/GEN-SIM-RECO/MC_31X_V9-v2/0002/249CA932-E9BC-DE11-9C34-00261894393E.root'
+    '/store/relval/CMSSW_3_5_7/RelValTTbar/GEN-SIM-RECO/START3X_V26-v1/0013/C452DA3E-6949-DF11-8457-002618943975.root',
+    '/store/relval/CMSSW_3_5_7/RelValTTbar/GEN-SIM-RECO/START3X_V26-v1/0012/F8624D39-5349-DF11-A757-001A92971B36.root',
+    '/store/relval/CMSSW_3_5_7/RelValTTbar/GEN-SIM-RECO/START3X_V26-v1/0012/F4252D9B-5249-DF11-A065-001A92810AC4.root',
+    '/store/relval/CMSSW_3_5_7/RelValTTbar/GEN-SIM-RECO/START3X_V26-v1/0012/E2BA50BC-5D49-DF11-B108-003048678CA2.root',
+    '/store/relval/CMSSW_3_5_7/RelValTTbar/GEN-SIM-RECO/START3X_V26-v1/0012/DE696E91-5149-DF11-A286-003048679266.root',
+    '/store/relval/CMSSW_3_5_7/RelValTTbar/GEN-SIM-RECO/START3X_V26-v1/0012/AE690A9A-5049-DF11-BE2D-003048679294.root',
+    '/store/relval/CMSSW_3_5_7/RelValTTbar/GEN-SIM-RECO/START3X_V26-v1/0012/849A6B50-5A49-DF11-932C-001A92810ADC.root',
+    '/store/relval/CMSSW_3_5_7/RelValTTbar/GEN-SIM-RECO/START3X_V26-v1/0012/5A2E40BB-5B49-DF11-B20A-003048679076.root',
+    '/store/relval/CMSSW_3_5_7/RelValTTbar/GEN-SIM-RECO/START3X_V26-v1/0012/06E0961F-6149-DF11-BF10-003048678EE2.root'
     )
 
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1000))
-process.source = cms.Source(
-    "PoolSource", fileNames = qcdFiles
-    )
+process.source = cms.Source("PoolSource", fileNames = qcdFiles )
 
 
 #!
@@ -97,10 +97,6 @@ algorithms.append('ak5calo')
 algorithms.append('ak5calol2l3')
 algorithms.append('ak7calo')
 algorithms.append('ak7calol2l3')
-algorithms.append('sc5calo')
-algorithms.append('sc5calol2l3')
-algorithms.append('sc7calo')
-algorithms.append('sc7calol2l3')
 algorithms.append('kt4calo')
 algorithms.append('kt4calol2l3')
 algorithms.append('kt6calo')
@@ -112,10 +108,6 @@ algorithms.append('ak5pf')
 algorithms.append('ak5pfl2l3')
 algorithms.append('ak7pf')
 algorithms.append('ak7pfl2l3')
-algorithms.append('sc5pf')
-algorithms.append('sc5pfl2l3')
-algorithms.append('sc7pf')
-algorithms.append('sc7pfl2l3')
 algorithms.append('kt4pf')
 algorithms.append('kt4pfl2l3')
 algorithms.append('kt6pf')
@@ -125,8 +117,6 @@ algorithms.append('ic5pfl2l3')
 
 algorithms.append('ak5jpt')
 algorithms.append('ak5jptl2l3')
-algorithms.append('sc5jpt')
-algorithms.append('sc5jptl2l3')
 algorithms.append('ic5jpt')
 algorithms.append('ic5jptl2l3')
 

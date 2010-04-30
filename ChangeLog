@@ -1,3 +1,11 @@
+2010-04-30  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-09-00
+	* runs with CMSSW_3_6_0 (on 35X files)
+	* eliminate (mostly) references to sisCone
+	* repair JPT reconstruction which has changed significantly
+	(configuration-wise) in 36X
+
 2010-04-26  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-08-09

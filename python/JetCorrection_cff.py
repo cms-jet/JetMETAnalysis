@@ -24,11 +24,10 @@ ca7PFJetsL1   = ca6PFJetsL1.clone( src = 'ca7PFJets' )
 
 # extra l2l3 producers for jpt jets
 ak5JPTJetsL2L3  = cms.EDProducer(
-    'CaloJetCorrectionProducer',
+    'JPTJetCorrectionProducer',
     src         = cms.InputTag('ak5JPTJets'),
     correctors  = cms.vstring('ak5JPTL2L3')
     )
-sc5JPTJetsL2L3 = ak5JPTJetsL2L3.clone(src='sc5JPTJets', correctors=['sc5JPTL2L3'])
 ic5JPTJetsL2L3 = ak5JPTJetsL2L3.clone(src='ic5JPTJets', correctors=['ic5JPTL2L3'])
 
 
