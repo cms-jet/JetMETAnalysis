@@ -1,3 +1,9 @@
+2010-05-03  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-09-01
+	* fix jet_apply_jec_x tool, example:
+	  jet_apply_jec_x -input JRAt.root -era Spring10 -output JRAt_jec.root
+
 2010-04-30  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-09-00
