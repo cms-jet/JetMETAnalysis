@@ -85,6 +85,7 @@ int main(int argc,char** argv)
   vector<string> formats   = cl.getVector<string>("formats",               "");
   bool           batch     = cl.getValue<bool>   ("batch",              false);
   bool           latex     = cl.getValue<bool>   ("latex",              false);
+  bool           latexcndf = cl.getValue<bool>   ("latexcndf",           true);
   int            residual  = cl.getValue<int>    ("residual",              -1);
 
   if (!cl.check()) return 0;
@@ -264,7 +265,13 @@ int main(int argc,char** argv)
 		    <<" $ & $ \\pm $ & "
 		    <<"$ "<<setprecision(5)<<fixed
 		    <<fitfnc->GetParError(fitfnc->GetNpar()-1)<<") $";
-
+	    //...last not least chi2/ndf
+	    if (latexcndf) {
+	      texinput<<" & $ ("<<setprecision(1)<<fixed
+		      <<fitfnc->GetChisquare()
+		      <<"/"
+		      <<fitfnc->GetNDF()<<") $";
+	    }
 	      texfile<<texinput.str().c_str()<<endl; texfile.close();
 	    cout<<"Created tex file with fit table: "<<texfilename.str()<<endl<<endl;
 	  }
@@ -294,11 +301,8 @@ int main(int argc,char** argv)
     mg->Draw("AP");
     set_axis_titles(mg->GetHistogram(),quantity,ymin,ymax);
 
-    // hh messing around
-
     draw_graph_residual((TPad*)gPad,mg,residual);
 
- 
     leg->SetLineColor(10);
     leg->SetFillColor(10);
     leg->SetBorderSize(0);
@@ -469,8 +473,6 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
   }
   
       
-  // draw this shit
-
   // first pad 1 to get the histogram
   pad->cd(1);
   mg->Draw("AP");

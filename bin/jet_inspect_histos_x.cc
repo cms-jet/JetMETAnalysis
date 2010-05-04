@@ -21,6 +21,7 @@
 #include <TText.h>
 #include <TLine.h>
 #include <TLegend.h>
+#include <TMath.h>
 
 #include <iostream>
 #include <iomanip>
@@ -61,6 +62,10 @@ void draw_residual(TPad* pad,TH1* hist,TF1* func,
 		   const string input="",
 		   const string alg="",
 		   const string variable="");
+
+double fnc_dscb(double*xx,double*pp);
+
+void draw_extrapolation(TH1* h);
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -272,15 +277,7 @@ int main(int argc,char** argv)
 	  if (peak)   draw_line_peak(h);
 
 	  TF1* f = (TF1*)h->GetListOfFunctions()->Last();
-	  if (fullfit&&(0!=f)){
-	    if (verbose) cout<<"Extrapolating "<<f->GetName()<<endl;
-	    TF1* ff = (TF1*)f->Clone("ff");
-	    ff->SetRange(h->GetXaxis()->GetXmin(),h->GetXaxis()->GetXmax());
-	    ff->SetLineColor(f->GetLineColor());
-	    ff->SetLineStyle(kDashed);
-	    ff->SetLineWidth(2);
-	    ff->Draw("SAME");
-	  }
+	  if (fullfit&&(0!=f)) draw_extrapolation(h); 
 	  
 	  ihisto++;
 	  
@@ -307,7 +304,47 @@ int main(int argc,char** argv)
 // implement local functions
 ////////////////////////////////////////////////////////////////////////////////
 
+//______________________________________________________________________________
+void draw_extrapolation(TH1* h)
+{	 
 
+  if (0==h) return;
+
+  TF1* f = (TF1*)h->GetListOfFunctions()->Last();
+
+  if (0==f) return;
+
+  string fname = f->GetName();
+
+  if (fname.find("fdscb")==string::npos) {
+    TF1* ff = (TF1*)f->Clone("ff");
+    ff->SetRange(h->GetXaxis()->GetXmin(),h->GetXaxis()->GetXmax());
+    ff->SetLineColor(f->GetLineColor());
+    ff->SetLineStyle(kDashed);
+    ff->SetLineWidth(2);
+    ff->Draw("SAME");
+  }
+  else {
+    string hname= h->GetName();
+    float  xmin = h->GetXaxis()->GetXmin();
+    float  xmax = h->GetXaxis()->GetXmax();
+    TF1* ff = new TF1(("ffdscb_"+hname).c_str(),fnc_dscb,xmin,xmax,7);
+
+    ff->SetParameter(0,f->GetParameter(0)); // N
+    ff->SetParameter(1,f->GetParameter(1)); // mean
+    ff->SetParameter(2,f->GetParameter(2));// sigma
+    ff->SetParameter(3,f->GetParameter(3)); // a1
+    ff->SetParameter(4,f->GetParameter(4)); // p1
+    ff->SetParameter(5,f->GetParameter(5)); // a2
+    ff->SetParameter(6,f->GetParameter(6)); // p2   
+
+    ff->SetLineColor(f->GetLineColor());
+    ff->SetLineStyle(kDashed);
+    ff->SetLineWidth(2);
+
+    ff->Draw("SAME");
+  }
+}
 
 //______________________________________________________________________________
 void draw_residual(TPad* pad,TH1* hist,TF1* func,
@@ -521,7 +558,32 @@ void draw_residual(TPad* pad,TH1* hist,TF1* func,
 
 }
 
+//______________________________________________________________________________
+double fnc_dscb(double*xx,double*pp)
+{
+  double x   = xx[0];
+  // gaussian core
+  double N   = pp[0];//norm
+  double mu  = pp[1];//mean
+  double sig = pp[2];//variance
+  // transition parameters
+  double a1  = pp[3];
+  double p1  = pp[4];
+  double a2  = pp[5];
+  double p2  = pp[6];
+  
+  double u   = (x-mu)/sig;
+  double A1  = TMath::Power(p1/TMath::Abs(a1),p1)*TMath::Exp(-a1*a1/2);
+  double A2  = TMath::Power(p2/TMath::Abs(a2),p2)*TMath::Exp(-a2*a2/2);
+  double B1  = p1/TMath::Abs(a1) - TMath::Abs(a1);
+  double B2  = p2/TMath::Abs(a2) - TMath::Abs(a2);
 
+  double result(N);
+  if      (u<-a1) result *= A1*TMath::Power(B1-u,-p1);
+  else if (u<a2)  result *= TMath::Exp(-u*u/2);
+  else            result *= A2*TMath::Power(B2+u,-p2);
+  return result;
+}
 
 
 //______________________________________________________________________________
