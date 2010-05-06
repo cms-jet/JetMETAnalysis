@@ -257,27 +257,27 @@ int main(int argc,char** argv)
 	    if (colors.empty() || (icolor>colors.size()-1)) 
 	      draw_stats(h,0.15,kBlue,kBlue);
 	    else draw_stats(h,0.15,colors[icolor],colors[icolor]);
+	    
 
-	    //TH1F* hdraw = (TH1F*)gPad->GetListOfPrimitives()->First();
+	    TH1F* h1(0); TH1F* r1(0); TH1F* r2(0);
+	    if (0!=hpad) h1 = (TH1F*) hpad->GetListOfPrimitives()->First();
+	    else         h1 = (TH1F*) gPad->GetListOfPrimitives()->First();
 
-	    TH1F* r1(0); TH1F* r2(0);
-	    TH1F* h1 = (TH1F*) hpad->GetListOfPrimitives()->First();
 	    if (0!=rpad) r1 = (TH1F*) rpad->GetListOfPrimitives()->First();
 	    if (0!=rpad) r2 = (TH1F*) rpad->GetListOfPrimitives()->Last();
 	    set_xaxis_range(h1,h,r1,r2);
-	    if (0!=rpad) rpad->cd();draw_zline(r1);hpad->cd();
-
-
+	    if (0!=rpad) {rpad->cd();draw_zline(r1);hpad->cd();}
+	    
 	    if (ymin!=-1 || ymax!=-1) set_yaxis_range(h1,ymin,ymax);
 	    if (h->GetMaximum()>h1->GetMaximum())
 	      h1->SetMaximum(1.2*h->GetMaximum());
+
+
 	  }
 	  if (mean)   draw_line_mean(h);
 	  if (median) draw_line_median(h);
 	  if (peak)   draw_line_peak(h);
-
-	  TF1* f = (TF1*)h->GetListOfFunctions()->Last();
-	  if (fullfit&&(0!=f)) draw_extrapolation(h); 
+	  if (fullfit)draw_extrapolation(h); 
 	  
 	  ihisto++;
 	  
@@ -332,7 +332,7 @@ void draw_extrapolation(TH1* h)
 
     ff->SetParameter(0,f->GetParameter(0)); // N
     ff->SetParameter(1,f->GetParameter(1)); // mean
-    ff->SetParameter(2,f->GetParameter(2));// sigma
+    ff->SetParameter(2,f->GetParameter(2)); // sigma
     ff->SetParameter(3,f->GetParameter(3)); // a1
     ff->SetParameter(4,f->GetParameter(4)); // p1
     ff->SetParameter(5,f->GetParameter(5)); // a2
@@ -589,6 +589,7 @@ double fnc_dscb(double*xx,double*pp)
 //______________________________________________________________________________
 void set_xaxis_range(TH1* h1,TH1* h2,TH1* h3,TH1* h4)
 {
+  if (0==h1) return;
   if (h1->GetEntries()==0) return;
   int binmin,binmax;
   get_xaxis_range(h1,binmin,binmax);

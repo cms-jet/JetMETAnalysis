@@ -228,6 +228,11 @@ int main(int argc,char** argv)
 	    for (int ipar=0;ipar<fitfnc->GetNpar();ipar++)
 	      cout<<fitfnc->GetParameter(ipar)<<" +- "
 		  <<fitfnc->GetParError(ipar)<<endl;
+	    if (latexcndf) {
+	      cout<<"->Chi2/NDF: "
+		  <<fitfnc->GetChisquare()<<"/"
+		  <<fitfnc->GetNDF()<<endl;
+	    }
 	  }
 
 	  // end print fit parameters
@@ -272,7 +277,7 @@ int main(int argc,char** argv)
 		      <<"/"
 		      <<fitfnc->GetNDF()<<") $";
 	    }
-	      texfile<<texinput.str().c_str()<<endl; texfile.close();
+	    texfile<<texinput.str().c_str()<<" \\\\ "<<endl; texfile.close();
 	    cout<<"Created tex file with fit table: "<<texfilename.str()<<endl<<endl;
 	  }
 	  else cout<<endl;
