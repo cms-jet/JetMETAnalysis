@@ -42,15 +42,19 @@ int main(int argc,char**argv)
   CommandLine cl;
   if (!cl.parse(argc,argv)) return 0;
   
-  vector<string> inputs   = cl.getVector<string>("inputs");
-  string         datapath = cl.getValue <string>("datapath",               "");
-  string         algorithm= cl.getValue <string>("algorithm",       "ak5calo");
-  string         variable = cl.getValue <string>("variable",          "refpt");
-  string         xtitle   = cl.getValue <string>("xtitle","p_{T}^{GEN} [GeV]");
-  bool           logx     = cl.getValue <bool>  ("logx",                false);
-  bool           logy     = cl.getValue <bool>  ("logy",                 true);
-  bool           batch    = cl.getValue <bool>  ("batch",               false);
-  vector<string> formats  = cl.getVector<string>("formats",                "");
+  vector<string> inputs    = cl.getVector<string>("inputs");
+  string         datapath  = cl.getValue <string>("datapath",               "");
+  string         algorithm = cl.getValue <string>("algorithm",       "ak5calo");
+  string         selection = cl.getValue <string>("selection",             "1");
+  string         variable  = cl.getValue <string>("variable",          "refpt");
+  string         xtitle    = cl.getValue <string>("xtitle","p_{T}^{GEN} [GeV]");
+  int            nbinsx    = cl.getValue <int>   ("nbinsx",               1000);
+  double         xmin      = cl.getValue <double>("xmin",                  0.0);
+  double         xmax      = cl.getValue <double>("xmax",               3500.0);
+  bool           logx      = cl.getValue <bool>  ("logx",                false);
+  bool           logy      = cl.getValue <bool>  ("logy",                 true);
+  bool           batch     = cl.getValue <bool>  ("batch",               false);
+  vector<string> formats   = cl.getVector<string>("formats",                "");
   
   if(!cl.check()) return 0;
   cl.print();
@@ -65,18 +69,13 @@ int main(int argc,char**argv)
   gStyle->SetOptStat(0);
   TColor::SetPalette(1,0);
   
-  TCanvas* c  = new TCanvas(variable.c_str(),
-			    variable.c_str(),        0,0,790,600);
-  TCanvas* cW = new TCanvas((variable+"W").c_str(),
-			    (variable+"W").c_str(),800,0,790,600);
-  
   TLegend* leg = new TLegend(0.835,0.96,1.0,0.145);
   leg->SetLineColor(10);
   leg->SetFillColor(10);
   leg->SetBorderSize(0);
   
-  THStack* stRefPt  = new THStack("RefPt", "");
-  THStack* stRefPtW = new THStack("RefPtW","");
+  THStack* st  = new THStack("st", "");
+  THStack* stW = new THStack("stW","");
   
   for (unsigned i=0;i<inputs.size();i++) {
     size_t pos      = inputs[i].find(":");
@@ -84,9 +83,6 @@ int main(int argc,char**argv)
     string filename = sample + ".root";
     float  weight   = 1.0;
     if (pos!=string::npos){stringstream ss;ss<<inputs[i].substr(pos+1);ss>>weight;}
-    
-    // DEBUG
-    cout<<"filename="<<filename<<", weight="<<weight<<endl;
     
     TFile* file = new TFile((datapath+"/"+filename).c_str(),"READ");
     if (!file->IsOpen()) { cout<<"Can't open file "<<filename<<endl; continue; }
@@ -97,51 +93,58 @@ int main(int argc,char**argv)
     TTree* tree = (TTree*)dir->Get("t");
     if (0==tree) {cout<<"No tree 't' in dir "<<algorithm<<endl; continue; }
     
-    TH1F* hRefPt  = new TH1F("RefPt", "",1000,0,4500);
-    TH1F* hRefPtW = new TH1F("RefPtW","",1000,0,4500);
+    cout<<"filename="<<filename<<", "<<tree->GetEntries()<<" events, xsec="<<weight
+	<<endl;
+    
+    string htitle = ";"+xtitle;
+    TH1F* h  = new TH1F("h", htitle.c_str(),nbinsx,xmin,xmax);
+    TH1F* hW = new TH1F("hW",htitle.c_str(),nbinsx,xmin,xmax);
     
     weight /= tree->GetEntries();
-    stringstream wsel; wsel<<weight<<"*(1)";
+    stringstream wsel; wsel<<weight<<"*("<<selection<<")";
 
-    tree->Project("RefPt", variable.c_str());
-    tree->Project("RefPtW",variable.c_str(),wsel.str().c_str());
+    tree->Project("h", variable.c_str());
+    tree->Project("hW",variable.c_str(),wsel.str().c_str());
     
     Color_t color = TColor::GetColorPalette(i);
 
-    hRefPt->SetLineWidth(1);
-    hRefPt->SetLineColor(color);
-    hRefPt->SetFillColor(color);
-    hRefPt->SetFillStyle(1001);
+    h->SetLineWidth(1);
+    h->SetLineColor(color);
+    h->SetFillColor(color);
+    h->SetFillStyle(1001);
 
-    hRefPtW->SetLineWidth(1);
-    hRefPtW->SetLineColor(color);
-    hRefPtW->SetFillColor(color);
-    hRefPtW->SetFillStyle(1001);
+    hW->SetLineWidth(1);
+    hW->SetLineColor(color);
+    hW->SetFillColor(color);
+    hW->SetFillStyle(1001);
     
-    leg->AddEntry(hRefPt,sample.c_str(),"f");
+    leg->AddEntry(h,sample.c_str(),"f");
     
-    stRefPt ->Add(hRefPt);
-    stRefPtW->Add(hRefPtW);
+    st ->Add(h);
+    stW->Add(hW);
   }
 
+  TCanvas* c = new TCanvas(variable.c_str(),variable.c_str(),0,0,790,600);
   c->cd();
   gPad->SetLeftMargin(0.1);
   gPad->SetRightMargin(0.17);
-  stRefPt->Draw();
-  stRefPt->GetXaxis()->SetTitle(xtitle.c_str());
-  stRefPt->SetMinimum(9.E-01);
+  st->Draw();
+  st->GetXaxis()->SetTitle(xtitle.c_str());
+  st->SetMinimum(9.E-01);
   if (logx) gPad->SetLogx();
   if (logy) gPad->SetLogy();
   leg->Clone()->Draw();
   c->Update();
-
+  
+  TCanvas* cW = new TCanvas((variable+"W").c_str(),
+			    (variable+"W").c_str(),800,0,790,600);
   cW->cd();
   gPad->SetLeftMargin(0.1);
   gPad->SetRightMargin(0.17);
-  stRefPtW->Draw();
-  stRefPtW->GetXaxis()->SetTitle(xtitle.c_str());
-  stRefPtW->SetMinimum(9E-11);
-  stRefPtW->SetMaximum(5.E09);
+  stW->Draw();
+  stW->GetXaxis()->SetTitle(xtitle.c_str());
+  stW->SetMinimum(9E-11);
+  stW->SetMaximum(5.E09);
   if (logx) gPad->SetLogx();
   if (logy) gPad->SetLogy();
   leg->Clone()->Draw();
