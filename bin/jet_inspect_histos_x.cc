@@ -113,7 +113,11 @@ int main(int argc,char** argv)
   if (!fillstyles.empty() && (colors.size()!=fillstyles.size())) {
     cout<<"Error: #Fillstyles has no corresponding colors!"<<endl;return 0;
   }
+
+  if (verbose) cout<<"Verbosity not implemented...:/"<<endl;
   
+  bool isSingular = (inputs.size()==1&&variables.size()==1&&algs.size()==1);
+
   argc = (batch) ? 2 : 1; if (batch) argv[1] = (char*)"-b";
   TApplication* app=new TApplication("jet_inspect_histos",&argc,argv);
   
@@ -166,7 +170,7 @@ int main(int argc,char** argv)
 	while ((h=hl.next_object(indices))) {
 
 	  if (norm) {
-	    //TF1* f = h->GetFunction("fit");
+	    if (ymin==-1) ymin=0.0;
 	    TF1* f = (TF1*)h->GetListOfFunctions()->Last();
 	    if (0!=f) f->SetParameter(0,f->GetParameter(0)/h->Integral());
 	    h->Sumw2();
@@ -195,6 +199,8 @@ int main(int argc,char** argv)
 	  int icnv = ihisto/npercanvas;
 	  int ipad = ihisto%npercanvas+1;
 	  c[icnv]->cd(ipad);
+
+
 	  
 	  if (ifile==0&&ialg==0&&ivar==0) {
 	    icolor=0;
@@ -208,29 +214,33 @@ int main(int argc,char** argv)
 	    if (ymin!=-1 || ymax!=-1) set_yaxis_range(h,ymin,ymax);
 	    if (colors.empty()) h->SetLineColor(kBlack);
 	    else h->SetLineColor(colors[icolor]);
-	    set_draw_attributes(h,icolor,fill,colors,fillstyles);
 
 	    h->SetMaximum(1.5*h->GetMaximum());
 	    if (logy&&(h->GetEntries()>0)) h->SetMaximum(10.*h->GetMaximum());
 
 	    TF1* fitfnc = (TF1*)h->GetListOfFunctions()->Last();
-	    if (verbose) cout<<"Detected function 1: "<<fitfnc->GetName()<<endl;
-	    TPad* hpad(0); TPad* rpad(0); //pointer to new histo/resi pads
+	    set_draw_attributes(h,icolor,fill,colors,fillstyles);
+	    if (isSingular) {
+	      h->SetLineColor(1);
+	      if (fitfnc!=0) fitfnc->SetLineColor(1);
+	    }
+
+
+
+	    TPad* hpad(0); TPad* rpad(0); 
 	    if (0!=fitfnc) draw_residual((TPad*)gPad,h,fitfnc,hpad,rpad,
 					 residual,true,input,alg,h->GetName());
-	    if (verbose) cout<<"Survived draw_residual() w/o crash"<<endl;
 
 	    TH1F* r1(0);
 	    if (0!=rpad) r1 = (TH1F*) rpad->GetListOfPrimitives()->First();
-	    if (verbose) cout<<"set_xaxis_range()"<<endl;
+
 	    set_xaxis_range(h,0,r1);
 	    if (0!=rpad) {rpad->cd();draw_zline(r1);hpad->cd();}
     
 	    if (0==hpad) h->Draw("EH");
 	    else hpad->cd();
 
-	    if (verbose) cout<<"draw_stats()"<<endl;
-	    if (colors.empty()) draw_stats(h,0.65,kBlack,kBlack);
+	    if (colors.empty() || isSingular) draw_stats(h,0.65,kBlack,kBlack);
 	    else draw_stats(h,0.65,colors[icolor],colors[icolor]);
 	    draw_range(hl,indices,(variables.size()==1));
 	    draw_line_legend(mean,median,peak);
@@ -246,7 +256,11 @@ int main(int argc,char** argv)
 	    set_draw_attributes(h,icolor,fill,colors,fillstyles);
 
 	    TF1* fitfnc = (TF1*)h->GetListOfFunctions()->Last();
-	    if (verbose) cout<<"Detected function 1: "<<fitfnc->GetName()<<endl;
+	    if (isSingular) {
+	      h->SetLineColor(1);
+	      if (fitfnc!=0) fitfnc->SetLineColor(1);
+	    }
+
 	    TPad* hpad(0); TPad* rpad(0);
 	    if (0!=fitfnc) draw_residual((TPad*)gPad,h,fitfnc,hpad,rpad,
 					 residual,false,input,alg,h->GetName()); 
@@ -321,14 +335,28 @@ void draw_extrapolation(TH1* h)
     ff->SetRange(h->GetXaxis()->GetXmin(),h->GetXaxis()->GetXmax());
     ff->SetLineColor(f->GetLineColor());
     ff->SetLineStyle(kDashed);
-    ff->SetLineWidth(2);
+    ff->SetLineWidth(1);
     ff->Draw("SAME");
   }
   else {
-    string hname= h->GetName();
-    float  xmin = h->GetXaxis()->GetXmin();
-    float  xmax = h->GetXaxis()->GetXmax();
-    TF1* ff = new TF1(("ffdscb_"+hname).c_str(),fnc_dscb,xmin,xmax,7);
+
+    string hname = h->GetName();
+    float xmin   = h->GetXaxis()->GetXmin();
+    float xmax   = h->GetXaxis()->GetXmax();
+    TF1* ff      = new TF1(("ffdscb_"+hname).c_str(),fnc_dscb,xmin,xmax,7);
+
+    TF1* fgaus   = (TF1*)h->GetFunction("fgaus");
+    
+    if (fgaus!=0) {
+      TF1* ffg = (TF1*)fgaus->Clone("ffg");
+      
+      ffg->SetRange(xmin,xmax);
+      ffg->SetLineColor(f->GetLineColor());
+      ffg->SetLineStyle(kDotted);
+      ffg->SetLineWidth(1);
+      ffg->Draw("SAME");
+
+    }
 
     ff->SetParameter(0,f->GetParameter(0)); // N
     ff->SetParameter(1,f->GetParameter(1)); // mean
@@ -340,7 +368,7 @@ void draw_extrapolation(TH1* h)
 
     ff->SetLineColor(f->GetLineColor());
     ff->SetLineStyle(kDashed);
-    ff->SetLineWidth(2);
+    ff->SetLineWidth(1);
 
     ff->Draw("SAME");
   }
@@ -421,13 +449,13 @@ void draw_residual(TPad* pad,TH1* hist,TF1* func,
   else resiHist->SetLineColor(kBlack);
 
   if ( errMode == 0 )
-    resiHist->SetYTitle( "#frac{(data - fit)}{#sqrt{data}}" );
+    resiHist->SetYTitle( "#frac{(data - fit)}{#sqrt{data}} [%]" );
   else if ( errMode == 1 )
-    resiHist->SetYTitle( "#frac{(data - fit)}{#sqrt{fit}}" );
+    resiHist->SetYTitle( "#frac{(data - fit)}{#sqrt{fit}} [%]" );
   else if (errMode == 2)
-    resiHist->SetYTitle( "#frac{(data - fit)}{binerror}" );
+    resiHist->SetYTitle( "#frac{(data - fit)}{binerror} [%]" );
   else 
-    resiHist->SetYTitle( "#frac{(data-fit)}{data}" );
+    resiHist->SetYTitle( "#frac{(data-fit)}{data} [%]" );
   
 
 
@@ -495,10 +523,10 @@ void draw_residual(TPad* pad,TH1* hist,TF1* func,
       chi2 += binChi2;
 	
       for( int jTmp = binStarted; jTmp <= i; jTmp++ ) {
-	if ( 3!=errMode) resiHist->SetBinContent( jTmp, ( nEvts - theory ) / evtErr );
+	if ( 3!=errMode) resiHist->SetBinContent( jTmp, ( nEvts - theory ) / evtErr *100.);
 	else {
-	  resiHist->SetBinContent( jTmp, (nEvts-theory)/nEvts );
-	  resiHist->SetBinError( jTmp, theory/nEvts/nEvts*evtErr);
+	  resiHist->SetBinContent( jTmp, (nEvts-theory)/nEvts*100. );
+	  resiHist->SetBinError( jTmp, theory/nEvts/nEvts*evtErr*100.);
 	}
       }
 	
@@ -527,8 +555,8 @@ void draw_residual(TPad* pad,TH1* hist,TF1* func,
     NDF = nBins - npar + fixed;
     
     float hmax = std::max(abs(resiHist->GetMaximum()),abs(resiHist->GetMinimum()));
-    hmax *=1.2;
-    if (hmax>=.5) hmax = .49999;
+    hmax *=1.15;
+    if (hmax>=50.) hmax = 49.999;
     resiHist->SetMaximum(1.*hmax);
     resiHist->SetMinimum(-1.*hmax);
     
@@ -543,11 +571,11 @@ void draw_residual(TPad* pad,TH1* hist,TF1* func,
     TH1F* rhist = (TH1F*)gPad->GetListOfPrimitives()->First();
     float hmax  = std::max(abs(resiHist->GetMaximum()),abs(resiHist->GetMinimum()));
     hmax *=1.2;
-    if (hmax>=.5) hmax = .49999;
+    if (hmax>=50.) hmax = 49.999;
     if (hmax>abs(rhist->GetMaximum())) {
       resiHist->SetMaximum(hmax);resiHist->SetMinimum(-1.*hmax);
-	  rhist->SetMaximum(resiHist->GetMaximum());
-	  rhist->SetMinimum(resiHist->GetMinimum());
+      rhist->SetMaximum(resiHist->GetMaximum());
+      rhist->SetMinimum(resiHist->GetMinimum());
     }
     resiHist->Draw("E1SAME");
   }
@@ -640,7 +668,7 @@ void set_draw_attributes(TH1* h,unsigned index,bool fill,
   }
   TF1* fitfnc = (TF1*)h->GetListOfFunctions()->Last();
   if (0!=fitfnc) {
-    fitfnc->SetLineWidth(2);
+    fitfnc->SetLineWidth(1);
     fitfnc->SetLineColor(h->GetLineColor());
   }
 }

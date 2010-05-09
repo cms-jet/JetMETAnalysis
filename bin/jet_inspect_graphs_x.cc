@@ -53,10 +53,18 @@ void   set_graph_style(TGraphErrors* g,unsigned int ngraph,bool nocolor);
 void   set_axis_titles(TH1*h,const string& quantity,float ymin,float ymax);
 
 void   draw_graph_residual(TPad* pad,TMultiGraph* mg,
-			   int errMode=-1);
+			   int errMode=-1,
+			   float xmin=-1.,
+			   float xmax=-1.,
+			   float ymin=-1.,
+			   float ymax=-1.);
+
+TH1F*  set_xaxis_range(TMultiGraph* mg, 
+		       float xmin=-1., float xmax=-1.,
+		       float ymin=-1., float ymax=-1.);
 
 
-void   draw_zline(TH1* h1);
+void   draw_zline(TH1* h1,float xmin=-1.,float xmax=-1.);
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -87,6 +95,9 @@ int main(int argc,char** argv)
   bool           latex     = cl.getValue<bool>   ("latex",              false);
   bool           latexcndf = cl.getValue<bool>   ("latexcndf",           true);
   int            residual  = cl.getValue<int>    ("residual",              -1);
+
+  float          xmin      = cl.getValue<float>  ("xmin",                -1.0);
+  float          xmax      = cl.getValue<float>  ("xmax",                -1.0);
 
   if (!cl.check()) return 0;
   cl.print();
@@ -306,7 +317,13 @@ int main(int argc,char** argv)
     mg->Draw("AP");
     set_axis_titles(mg->GetHistogram(),quantity,ymin,ymax);
 
-    draw_graph_residual((TPad*)gPad,mg,residual);
+    if (0!=mg->GetHistogram()) {
+      mg->GetHistogram()->GetXaxis()->SetMoreLogLabels(logx);
+      mg->GetHistogram()->GetXaxis()->SetNoExponent(logx);
+    }
+
+    set_xaxis_range(mg,xmin,xmax,ymin,ymax);
+    draw_graph_residual((TPad*)gPad,mg,residual,xmin,xmax,ymin,ymax);
 
     leg->SetLineColor(10);
     leg->SetFillColor(10);
@@ -342,7 +359,13 @@ int main(int argc,char** argv)
       //set_axis_titles(graphs[i]->GetHistogram(),quantity,ymin,ymax);
       set_axis_titles(mgind->GetHistogram(),quantity,ymin,ymax);
 
-      draw_graph_residual((TPad*)gPad,mgind,residual);
+      if (0!=mg->GetHistogram()) {
+	mg->GetHistogram()->GetXaxis()->SetMoreLogLabels(logx);
+	mg->GetHistogram()->GetXaxis()->SetNoExponent(logx);
+      }
+
+      set_xaxis_range(mgind,xmin,xmax,ymin,ymax);
+      draw_graph_residual((TPad*)gPad,mgind,residual,xmin,xmax,ymin,ymax);
       
       draw_range(ranges[i],residual);
       draw_text(text);
@@ -379,8 +402,69 @@ int main(int argc,char** argv)
 ////////////////////////////////////////////////////////////////////////////////
 
 //______________________________________________________________________________
+TH1F* set_xaxis_range(TMultiGraph* mg, 
+		      float xmin, float xmax,
+		      float ymin, float ymax)
+{
+  if (0==mg) return 0;
+  if (0==mg->GetHistogram()) return 0;
+
+  TH1F* holdaxis = mg->GetHistogram(); TH1F* hnewaxis(0);
+  if (xmin==-1.&&xmax==-1.&&ymin==-1.&&ymax==-1.) return holdaxis;
+
+  vector<float> borders;
+  borders.push_back(holdaxis->GetXaxis()->GetXmin());
+  borders.push_back(holdaxis->GetMinimum());
+  borders.push_back(holdaxis->GetXaxis()->GetXmax());
+  borders.push_back(holdaxis->GetMaximum());
+
+  if (xmin!=-1.0) borders[0]=xmin;
+  if (ymin!=-1.0) borders[1]=ymin;
+  if (xmax!=-1.0) borders[2]=xmax;
+  if (ymax!=-1.0) borders[3]=ymax;
+
+  if (xmin!=-1.0 || xmax!=-1.0 || ymin!=-1.0 || ymax!=-1.0)
+    hnewaxis = gPad->DrawFrame(borders[0],borders[1],borders[2],borders[3]);
+
+  // copy settings
+
+  hnewaxis->SetTitle(holdaxis->GetTitle());
+
+  hnewaxis->SetXTitle(holdaxis->GetXaxis()->GetTitle());
+  hnewaxis->GetXaxis()->CenterTitle(holdaxis->GetXaxis()->GetCenterTitle());
+  hnewaxis->GetXaxis()->SetTitleSize(holdaxis->GetXaxis()->GetTitleSize());
+  hnewaxis->GetXaxis()->SetLabelSize(holdaxis->GetXaxis()->GetLabelSize());
+  hnewaxis->GetXaxis()->SetTitleOffset(holdaxis->GetXaxis()->GetTitleOffset());
+  hnewaxis->GetXaxis()->SetLabelOffset(holdaxis->GetXaxis()->GetLabelOffset());
+  hnewaxis->GetXaxis()->SetNdivisions(holdaxis->GetXaxis()->GetNdivisions());
+  hnewaxis->GetXaxis()->SetTickLength(holdaxis->GetXaxis()->GetTickLength());  
+  hnewaxis->GetXaxis()->SetMoreLogLabels(holdaxis->GetXaxis()->GetMoreLogLabels());
+  hnewaxis->GetXaxis()->SetNoExponent(holdaxis->GetXaxis()->GetNoExponent());
+  hnewaxis->GetXaxis()->SetLabelSize(holdaxis->GetXaxis()->GetLabelSize());
+  hnewaxis->GetXaxis()->SetLabelOffset(holdaxis->GetXaxis()->GetLabelOffset());
+
+  hnewaxis->SetYTitle(holdaxis->GetYaxis()->GetTitle());
+  hnewaxis->GetYaxis()->CenterTitle(holdaxis->GetYaxis()->GetCenterTitle());
+  hnewaxis->GetYaxis()->SetTitleSize(holdaxis->GetYaxis()->GetTitleSize());
+  hnewaxis->GetYaxis()->SetLabelSize(holdaxis->GetYaxis()->GetLabelSize());
+  hnewaxis->GetYaxis()->SetTitleOffset(holdaxis->GetYaxis()->GetTitleOffset());
+  hnewaxis->GetYaxis()->SetLabelOffset(holdaxis->GetYaxis()->GetLabelOffset());
+  hnewaxis->GetYaxis()->SetNdivisions(holdaxis->GetYaxis()->GetNdivisions());
+  hnewaxis->GetYaxis()->SetTickLength(holdaxis->GetYaxis()->GetTickLength());  
+  hnewaxis->GetYaxis()->SetMoreLogLabels(holdaxis->GetYaxis()->GetMoreLogLabels());
+  hnewaxis->GetYaxis()->SetNoExponent(holdaxis->GetYaxis()->GetNoExponent());
+  hnewaxis->GetYaxis()->SetLabelSize(holdaxis->GetYaxis()->GetLabelSize());
+  hnewaxis->GetYaxis()->SetLabelOffset(holdaxis->GetYaxis()->GetLabelOffset());
+
+  mg->Draw("P");
+  return hnewaxis;
+}
+
+
+//______________________________________________________________________________
 void draw_graph_residual(TPad* pad,TMultiGraph* mg,
-			 int errMode)
+			 int errMode,
+			 float xmin,float xmax,float ymin,float ymax)
 {
   if (errMode<0) return;
   else if (errMode>3){
@@ -454,11 +538,11 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
       if (0==y) continue;
   
       if (errMode==3) {
-	resy  = (y-fy)/y;
-	resey = fy/y/y*ey;
+	resy  = (y-fy)/y*100.;
+	resey = fy/y/y*ey*100.;
       }
       else if (errMode==0) {
-	resy  = (y-fy)/sqrt(y);
+	resy  = (y-fy)/sqrt(y)*100.;
       }
 
       int n = rGraph->GetN();
@@ -478,14 +562,29 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
   }
   
       
-  // first pad 1 to get the histogram
   pad->cd(1);
   mg->Draw("AP");
-  mg->GetHistogram()->GetYaxis()->SetTitleOffset(1.2);
 
-  // then pad 2 for everything else
+  mg->GetHistogram()->GetYaxis()->SetTitleOffset(1.2);
+  if (0!=mg->GetHistogram()) {
+    mg->GetHistogram()->GetXaxis()->SetMoreLogLabels(pad->GetLogx());
+    mg->GetHistogram()->GetXaxis()->SetNoExponent(pad->GetLogx());
+    mg->GetHistogram()->GetXaxis()->SetLabelSize( 0.15 );
+    mg->GetHistogram()->GetXaxis()->SetLabelOffset( 0.005 );
+  }
+  set_xaxis_range(mg,xmin,xmax,ymin,ymax);
+
   pad->cd(2);
   rmg->Draw("AP");
+
+  float rmgymax = std::max(TMath::Abs(rmg->GetHistogram()->GetMinimum()),
+			TMath::Abs(rmg->GetHistogram()->GetMaximum()));
+
+  rmgymax = (rmgymax>50.) ? 50. : rmgymax;
+
+  rmg->GetHistogram()->SetMinimum(-1.15*rmgymax);
+  rmg->GetHistogram()->SetMaximum( 1.15*rmgymax);
+
   rmg->GetHistogram()->SetTitle("");
 
   rmg->GetHistogram()->GetYaxis()->CenterTitle(1);
@@ -502,41 +601,34 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
   rmg->GetHistogram()->GetXaxis()->SetNdivisions( 505 );
   rmg->GetHistogram()->GetXaxis()->SetTickLength(mg->GetHistogram()->GetXaxis()->GetTickLength()*3.);
 
-  // draw the zline already here:)
-  draw_zline(rmg->GetHistogram());
-
-  // set y title and
-  // calculate the residual value range
-
-  float ymax = std::max(TMath::Abs(rmg->GetHistogram()->GetMinimum()),
-			TMath::Abs(rmg->GetHistogram()->GetMaximum()));
-
-  ymax = (ymax>.5) ? .5 : ymax;
-
-  rmg->GetHistogram()->SetMinimum(-1.2*ymax);
-  rmg->GetHistogram()->SetMaximum( 1.2*ymax);
+  rmg->GetHistogram()->GetXaxis()->SetMoreLogLabels(pad->GetLogx());
+  rmg->GetHistogram()->GetXaxis()->SetNoExponent(pad->GetLogx());
+  rmg->GetHistogram()->GetXaxis()->SetLabelSize( 0.15 );
+  rmg->GetHistogram()->GetXaxis()->SetLabelOffset( 0.005 );
 
   if ( errMode == 0 )
-    rmg->GetHistogram()->SetYTitle( "#frac{(data - fit)}{#sqrt{data}}" );
+    rmg->GetHistogram()->SetYTitle( "#frac{(data - fit)}{#sqrt{data}} [%]" );
   else if ( errMode == 1 )
-    rmg->GetHistogram()->SetYTitle( "#frac{(data - fit)}{#sqrt{fit}}" );
+    rmg->GetHistogram()->SetYTitle( "#frac{(data - fit)}{#sqrt{fit}} [%]" );
   else if (errMode == 2)
-    rmg->GetHistogram()->SetYTitle( "#frac{(data - fit)}{binerror}" );
+    rmg->GetHistogram()->SetYTitle( "#frac{(data - fit)}{binerror} [%]" );
   else 
-    rmg->GetHistogram()->SetYTitle( "#frac{(data-fit)}{data}" );
+    rmg->GetHistogram()->SetYTitle( "#frac{(data-fit)}{data} [%]" );
 
-  // go back to the graph pad for the rest...
+  set_xaxis_range(rmg,xmin,xmax);  
+  draw_zline(rmg->GetHistogram(),xmin,xmax);
+
   pad->cd(1);
 }
 
 //______________________________________________________________________________
-void draw_zline(TH1* h1)
+void draw_zline(TH1* h1,float xmin,float xmax)
 {
   if (0==h1) return;
-  float xmin = h1->GetBinLowEdge(h1->GetXaxis()->GetFirst());
-  float xmax = h1->GetBinLowEdge(h1->GetXaxis()->GetLast()+1);
+  float min = (xmin!=-1.) ? xmin : h1->GetXaxis()->GetXmin();
+  float max = (xmax!=-1.) ? xmax : h1->GetXaxis()->GetXmax();
 
-  TLine* zline = new TLine(xmin,0,xmax,0);
+  TLine* zline = new TLine(min,0,max,0);
   zline->SetLineStyle(kDashed);
   zline->SetLineWidth(1);
   zline->Draw("SAME");
