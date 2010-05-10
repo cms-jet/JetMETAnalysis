@@ -57,7 +57,8 @@ void   draw_graph_residual(TPad* pad,TMultiGraph* mg,
 			   float xmin=-1.,
 			   float xmax=-1.,
 			   float ymin=-1.,
-			   float ymax=-1.);
+			   float ymax=-1.,
+			   int fullfit=-1);
 
 TH1F*  set_xaxis_range(TMultiGraph* mg, 
 		       float xmin=-1., float xmax=-1.,
@@ -65,6 +66,9 @@ TH1F*  set_xaxis_range(TMultiGraph* mg,
 
 
 void   draw_zline(TH1* h1,float xmin=-1.,float xmax=-1.);
+
+void   draw_extrapolation(TMultiGraph* mg,int fullfit=-1,
+			  float xmin=-1.,float xmax=-1.);
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -87,6 +91,7 @@ int main(int argc,char** argv)
   float          ymax      = cl.getValue<float>  ("ymax",                -1.0);
   bool           nocolor   = cl.getValue<bool>   ("nocolor",            false);
   bool           overlay   = cl.getValue<bool>   ("overlay",             true);
+  int            fullfit   = cl.getValue<int>    ("fullfit",               -1);
   string         prefix    = cl.getValue<string> ("prefix",                "");
   string         suffix    = cl.getValue<string> ("suffix",                "");
   string         opath     = cl.getValue<string> ("opath",                 "");
@@ -323,7 +328,8 @@ int main(int argc,char** argv)
     }
 
     set_xaxis_range(mg,xmin,xmax,ymin,ymax);
-    draw_graph_residual((TPad*)gPad,mg,residual,xmin,xmax,ymin,ymax);
+    draw_extrapolation(mg,fullfit,xmin,xmax);
+    draw_graph_residual((TPad*)gPad,mg,residual,xmin,xmax,ymin,ymax,fullfit);
 
     leg->SetLineColor(10);
     leg->SetFillColor(10);
@@ -365,7 +371,8 @@ int main(int argc,char** argv)
       }
 
       set_xaxis_range(mgind,xmin,xmax,ymin,ymax);
-      draw_graph_residual((TPad*)gPad,mgind,residual,xmin,xmax,ymin,ymax);
+      draw_extrapolation(mgind,fullfit,xmin,xmax);
+      draw_graph_residual((TPad*)gPad,mgind,residual,xmin,xmax,ymin,ymax,fullfit);
       
       draw_range(ranges[i],residual);
       draw_text(text);
@@ -400,6 +407,42 @@ int main(int argc,char** argv)
 ////////////////////////////////////////////////////////////////////////////////
 // implement local functions
 ////////////////////////////////////////////////////////////////////////////////
+
+//______________________________________________________________________________
+void draw_extrapolation(TMultiGraph* mg,int fullfit,float xmin,float xmax)
+{
+  if (fullfit<1||fullfit>3) return;
+  TIter next(mg->GetListOfGraphs());
+  TGraphErrors* g(0);vector<TGraphErrors*> vg;vector<TF1*>vf;
+
+  while (( g = (TGraphErrors*)next() )) {
+    vg.push_back(g);
+    vf.push_back((TF1*)g->GetListOfFunctions()->Last());
+  }
+  assert (vg.size()==vf.size());
+
+  if (0==vf.size()) return;
+
+  double ffmin(0.0),ffmax(0.0);
+  vf[0]->GetRange(ffmin,ffmax);
+
+  if (1==fullfit||2==fullfit)
+    ffmin = (xmin!=-1.) ? xmin : mg->GetHistogram()->GetXaxis()->GetXmin(); 
+  if (1==fullfit||3==fullfit)
+    ffmax = (xmax!=-1.) ? xmax : mg->GetHistogram()->GetXaxis()->GetXmax();
+
+  for (unsigned i(0);i<vf.size();i++) {
+    stringstream ssffname;
+    ssffname<<"ff_"<<mg->GetName()<<"_"<<i;
+    TF1* ff = (TF1*)vf[i]->Clone(ssffname.str().c_str());
+   
+    ff->SetRange(ffmin,ffmax);
+    ff->SetLineColor(vf[i]->GetLineColor());
+    ff->SetLineStyle(kDashed);
+    ff->SetLineWidth(1);
+    ff->Draw("SAME");
+  }
+}
 
 //______________________________________________________________________________
 TH1F* set_xaxis_range(TMultiGraph* mg, 
@@ -464,7 +507,8 @@ TH1F* set_xaxis_range(TMultiGraph* mg,
 //______________________________________________________________________________
 void draw_graph_residual(TPad* pad,TMultiGraph* mg,
 			 int errMode,
-			 float xmin,float xmax,float ymin,float ymax)
+			 float xmin,float xmax,float ymin,float ymax,
+			 int fullfit)
 {
   if (errMode<0) return;
   else if (errMode>3){
@@ -573,6 +617,7 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
     mg->GetHistogram()->GetXaxis()->SetLabelOffset( 0.005 );
   }
   set_xaxis_range(mg,xmin,xmax,ymin,ymax);
+  draw_extrapolation(mg,fullfit,xmin,xmax);
 
   pad->cd(2);
   rmg->Draw("AP");

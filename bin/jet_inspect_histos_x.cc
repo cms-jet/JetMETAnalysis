@@ -91,7 +91,7 @@ int main(int argc,char** argv)
   bool           logx       = cl.getValue<bool>   ("logx",              false);
   bool           logy       = cl.getValue<bool>   ("logy",              false);
   bool           fill       = cl.getValue<bool>   ("fill",               true);
-  bool           fullfit    = cl.getValue<int>    ("fullfit",            true);
+  bool           fullfit    = cl.getValue<bool>   ("fullfit",            true);
   vector<int>    colors     = cl.getVector<int>   ("colors",               "");
   vector<int>    fillstyles = cl.getVector<int>   ("fillstyles",           "");
   string         prefix     = cl.getValue<string> ("prefix",               "");
