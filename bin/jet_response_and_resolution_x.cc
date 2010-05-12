@@ -10,6 +10,8 @@
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 #include "JetMETAnalysis/JetUtilities/interface/ObjectLoader.h"
 
+#include "JERWriter.h"
+
 #include <TROOT.h>
 #include <TApplication.h>
 #include <TFile.h>
@@ -17,6 +19,7 @@
 #include <TH1F.h>
 #include <TF1.h>
 #include <TGraphErrors.h>
+#include <TVirtualFitter.h>
 
 #include <iostream>
 #include <sstream>
@@ -26,6 +29,9 @@
 #include <set>
 #include <map>
 #include <cmath>
+#include <cassert>
+
+
 
 
 using namespace std;
@@ -53,10 +59,24 @@ int main(int argc,char**argv)
   vector<string> flavors   = cl.getVector<string>("flavors",              "");
   vector<string> algs      = cl.getVector<string>("algs",                 "");
   bool           fitres    = cl.getValue<bool>   ("fitres",             true);
+  bool           verbose   = cl.getValue<bool>   ("verbose",           false);
+  bool           forcefit  = cl.getValue<bool>   ("forcefit",          false);
+  int            minentries= cl.getValue<int>    ("minentries",           -1);
+  bool           addminerr = cl.getValue<bool>   ("addminerr",         false);
+  bool           docbfits  = cl.getValue<bool>   ("docbfits",          false);
+  bool           dowrite   = cl.getValue<bool>   ("dowrite",           false);
+  string         fera      = cl.getValue<string> ("fera",                 "");
+  string         fprefix   = cl.getValue<string> ("fprefix",              "");
 
   if (!cl.check()) return 0;
   cl.print();
   
+  const string s_sigma="sqrt(((TMath::Sign(1,[0])*sq([0]/x))+(sq([1])*(x^([3]-1))))+sq([2]))";
+  const string s_aone ="[0]";
+  const string s_atwo ="[0]*x**[1]";
+  const string s_pone ="([0]-[3])/(1.+exp([1]*(x-[2])))+[3]";
+  const string s_ptwo ="([0]-[3])/(1.+exp([1]*(x-[2])))+[3]";
+
   
   //
   // construct variables vector
@@ -126,6 +146,10 @@ int main(int argc,char**argv)
   if (!ofile->IsOpen()) { cout<<"Can't create "<<output<<endl; return 0; }
   vector<TGraphErrors*> vrsp;
   vector<TGraphErrors*> vres;
+  vector<TGraphErrors*> vaone;
+  vector<TGraphErrors*> vatwo;
+  vector<TGraphErrors*> vpone;
+  vector<TGraphErrors*> vptwo;
   
   //
   // open input file and loop over input directories (=algorithms)
@@ -145,6 +169,10 @@ int main(int argc,char**argv)
   for (unsigned int ialg=0;ialg<algs.size();++ialg) {
     
     string alg = algs[ialg];
+
+    // for each algorithm use a JERWriter (PtResolution=true)
+    JERWriter resolutions(alg,fera,fprefix,true);
+
     TDirectory* idir = (TDirectory*)ifile->Get(alg.c_str());
     if (0==idir) { cout<<"No dir "<<alg<<" found"<<endl; return 0; }
     
@@ -166,17 +194,37 @@ int main(int argc,char**argv)
       hlvar.load_objects(idir,varexp);
       
       vector<unsigned int> indices;
+      // first the std resolution
       TH1F* hrsp(0); TGraphErrors* grsp(0); TGraphErrors* gres(0);
+      // then the other stuff
+      TGraphErrors* gaone(0);
+      TGraphErrors* gatwo(0);
+      TGraphErrors* gpone(0);
+      TGraphErrors* gptwo(0);
+
       hlrsp.begin_loop();
       while ((hrsp=hlrsp.next_object(indices))) {
 
 	// create new graphs for response & resolution
 	if (indices.back()==0) {
-	  grsp = new TGraphErrors(0); vrsp.push_back(grsp);
-	  gres = new TGraphErrors(0); vres.push_back(gres);
+	  grsp = new TGraphErrors(0);  vrsp.push_back(grsp);
+	  gres = new TGraphErrors(0);  vres.push_back(gres);
+
+	  gaone = new TGraphErrors(0); vaone.push_back(gaone);
+	  gatwo = new TGraphErrors(0); vatwo.push_back(gatwo);
+	  gpone = new TGraphErrors(0); vpone.push_back(gpone);
+	  gptwo = new TGraphErrors(0); vptwo.push_back(gptwo);
+
+	  // this is where the magic happens...
 	  string prefix = hlrsp.quantity().substr(0,3);
 	  string grsp_name=prefix+"RspVs"+hlrsp.variable(hlrsp.nvariables()-1);
 	  string gres_name=prefix+"ResVs"+hlrsp.variable(hlrsp.nvariables()-1);
+
+	  string gaone_name="AoneVs"+hlrsp.variable(hlrsp.nvariables()-1);
+	  string gatwo_name="AtwoVs"+hlrsp.variable(hlrsp.nvariables()-1);
+	  string gpone_name="PoneVs"+hlrsp.variable(hlrsp.nvariables()-1);
+	  string gptwo_name="PtwoVs"+hlrsp.variable(hlrsp.nvariables()-1);
+
 	  if (hlrsp.nvariables()>1) {
 	    for (unsigned int i=0;i<hlrsp.nvariables()-1;i++) {
 	      stringstream suffix;
@@ -185,10 +233,20 @@ int main(int argc,char**argv)
 		    <<hlrsp.maximum(i,indices[i]);
 	      grsp_name += suffix.str();
 	      gres_name += suffix.str();
+
+	      gaone_name += suffix.str();
+	      gatwo_name += suffix.str();
+	      gpone_name += suffix.str();
+	      gptwo_name += suffix.str();
 	    }
 	  }
 	  grsp->SetName(grsp_name.c_str());
 	  gres->SetName(gres_name.c_str());
+
+	  gaone->SetName(gaone_name.c_str());
+	  gatwo->SetName(gatwo_name.c_str());
+	  gpone->SetName(gpone_name.c_str());
+	  gptwo->SetName(gptwo_name.c_str());
 	}
 	
 	// add new points to current response & resolution graphs
@@ -206,12 +264,34 @@ int main(int argc,char**argv)
 	  double max = hlrsp.maximum(hlrsp.nvariables()-1,indices.back());
 	  x=0.5*(min+max);
 	}
+
+	TF1*   frsp    = (TF1*)hrsp->GetListOfFunctions()->Last();
+	bool   isFDSCB = (0==frsp) ? false : ("fdscb"==(string)frsp->GetName());
 	
-	TF1*   frsp = hrsp->GetFunction("fit");
+	if (minentries>0 && hrsp->GetEffectiveEntries()<minentries) continue;
+	if (forcefit && frsp==0) continue;
+
 	double y  = (frsp==0) ? hrsp->GetMean()      : frsp->GetParameter(1);
 	double ey = (frsp==0) ? hrsp->GetMeanError() : frsp->GetParError(1);
 	double e  = (frsp==0) ? hrsp->GetRMS()       : frsp->GetParameter(2);
 	double ee = (frsp==0) ? hrsp->GetRMSError()  : frsp->GetParError(2);
+
+	// declare the addtional pars for the CB function
+
+	double aone(0.0),eaone(.25),atwo(0.0),eatwo(.25);
+	double pone(0.0),epone(2.5),ptwo(0.0),eptwo(2.5);
+
+	if (isFDSCB) {
+	  aone  = frsp->GetParameter(3);
+	  //eaone = frsp->GetParError(3);
+	  atwo  = frsp->GetParameter(5);
+	  //eatwo = frsp->GetParError(5);
+
+	  pone  = frsp->GetParameter(4);
+	  //epone = frsp->GetParError(4);
+	  ptwo  = frsp->GetParameter(6);
+	  //eptwo = frsp->GetParError(6);
+	}
 	
 	if (hlrsp.quantity().find("AbsRsp")!=string::npos) {
 	  
@@ -219,7 +299,7 @@ int main(int argc,char**argv)
 	  double eyabs = std::abs(yabs-1)*std::sqrt(ey*ey/y/y+ex*ex/x/x);
 	  double eabs  = e/x;
 	  double eeabs = eabs*std::sqrt(ee*ee/e/e+ex*ex/x/x);
-	  
+	    
 	  y  = yabs;
 	  ey = eyabs;
 	  e  = eabs;
@@ -233,34 +313,258 @@ int main(int argc,char**argv)
 	  e  = erel;
 	  ee = eerel;
 	}
-	
+		
+	if (addminerr) {
+	  // add a minimal uncertainty of .5% in quadrature to each point
+	  ee    = std::sqrt(ee*ee+.0005*.0005);
+	  //eaone = std::sqrt(eaone*eaone+.0005*.0005);
+	  //eatwo = std::sqrt(eatwo*eatwo+.0005*.0005);
+	  //epone = std::sqrt(epone*epone+.0005*.0005);
+	  //eptwo = std::sqrt(eptwo*eptwo+.0005*.0005);
+	}
+
 	int n = grsp->GetN();
 	grsp->SetPoint(n,x,y);
 	grsp->SetPointError(n,ex,ey);
 	gres->SetPoint(n,x,e);
 	gres->SetPointError(n,ex,ee);
-      }
+
+	if (isFDSCB) {
+	  n = gaone->GetN();
+	  gaone->SetPoint(n,x,aone);
+	  gaone->SetPointError(n,ex,eaone);
+
+	  n = gatwo->GetN();
+	  gatwo->SetPoint(n,x,atwo);
+	  gatwo->SetPointError(n,ex,eatwo);
+	  	  
+	  n = gpone->GetN();
+	  gpone->SetPoint(n,x,pone);
+	  gpone->SetPointError(n,ex,epone);
+	  
+	  n = gptwo->GetN();
+	  gptwo->SetPoint(n,x,ptwo);
+	  gptwo->SetPointError(n,ex,eptwo);
+	  
+	}
+
+      } //while hrsp iteration 
+
       
+      // ---------------------------
       // fit resolution if requested
+      // ---------------------------
       if (fitres) {
+	
+	//TVirtualFitter::SetDefaultFitter("Minuit2");
+
+	// SIGMA
 	for (unsigned int igraph=0;igraph<vres.size();igraph++) {
+	  
 	  TGraphErrors* g = vres[igraph];
+
+
+
 	  if (g->GetN()==0) continue;
 	  double xmin(g->GetX()[0]);
 	  double xmax(-1e100);
 	  for (int ipoint=0;ipoint<g->GetN();ipoint++)
 	    if (g->GetX()[ipoint]>xmax) xmax = g->GetX()[ipoint];
-	  TF1* fnc=new TF1("fit","sqrt(([0]/x)**2+[1]**2/x+[2]**2)",xmin,xmax);
+
+	  TF1* fnc=new TF1("fit",
+			   s_sigma.c_str(),
+			   xmin,xmax);
+			   
 	  fnc->SetLineWidth(2);
 	  fnc->SetLineColor(g->GetLineColor());
-	  fnc->SetParameter(0,0.5);
+	  fnc->SetParameter(0,2.0);
 	  fnc->SetParameter(1,0.5);
 	  fnc->SetParameter(2,0.1);
-	  g->Fit(fnc,"QR");
-	}
-      }
-    }
+	  fnc->SetParameter(3,0.2);
+
+	  fnc->FixParameter(2,0.);
+	  
+
+	  int fitstatus = g->Fit(fnc,"QR");
+
+	  if (0==fitstatus) resolutions.addEntry(g->GetName(),fnc);
+
+	  if (0!=fitstatus) {
+	    if (verbose)
+	      cout<<"Fit failed: "<<fitstatus
+		  <<" alg: "<<alg
+		  <<" var: "<<variable
+		  <<" name: "<<g->GetName()<<endl;
+	    g->GetListOfFunctions()->Last()->Delete();
+	    if (verbose)
+	      cout<<"...fnc deleted!"<<endl;
+	  }
+	} // SIGMA
+
+	if (docbfits) {
+	  // AONE
+	  for (unsigned int igraph=0;igraph<vaone.size();igraph++) {
+	  
+	    TGraphErrors* g = vaone[igraph];
+
+	    if (g->GetN()==0) continue;
+	    double xmin(g->GetX()[0]);
+	    double xmax(-1e100);
+	    for (int ipoint=0;ipoint<g->GetN();ipoint++)
+	      if (g->GetX()[ipoint]>xmax) xmax = g->GetX()[ipoint];
+
+	    TF1* fnc=new TF1("fit",
+			     s_aone.c_str(),
+			     xmin,xmax);
+
+	    fnc->SetLineWidth(2);
+	    fnc->SetLineColor(g->GetLineColor());
+	    fnc->SetParameter(0,2.);
+
+	    int fitstatus = g->Fit(fnc,"QR");
+
+	    if (0==fitstatus) resolutions.addEntry(g->GetName(),fnc);
+
+	    if (0!=fitstatus) {
+	      if (verbose)
+		cout<<"Fit failed: "<<fitstatus
+		    <<" alg: "<<alg
+		    <<" var: "<<variable
+		    <<" name: "<<g->GetName()<<endl;
+	      g->GetListOfFunctions()->Last()->Delete();
+	      if (verbose)
+		cout<<"...fnc deleted!"<<endl;
+	    }
+	  } // AONE
+
+	  // ATWO
+	  for (unsigned int igraph=0;igraph<vatwo.size();igraph++) {
+	  
+	    TGraphErrors* g = vatwo[igraph];
+
+	    if (g->GetN()==0) continue;
+	    double xmin(g->GetX()[0]);
+	    double xmax(-1e100);
+	    for (int ipoint=0;ipoint<g->GetN();ipoint++)
+	      if (g->GetX()[ipoint]>xmax) xmax = g->GetX()[ipoint];
+
+	    TF1* fnc=new TF1("fit",
+			     s_atwo.c_str(),
+			     xmin,xmax);
+
+	    fnc->SetLineWidth(2);
+	    fnc->SetLineColor(g->GetLineColor());
+	    fnc->SetParameter(0,2.);
+	    fnc->SetParameter(1,0.7);
+
+	    int fitstatus = g->Fit(fnc,"QR");
+
+	    if (0==fitstatus) resolutions.addEntry(g->GetName(),fnc);
+
+	    if (0!=fitstatus) {
+	      if (verbose)
+		cout<<"Fit failed: "<<fitstatus
+		    <<" alg: "<<alg
+		    <<" var: "<<variable
+		    <<" name: "<<g->GetName()<<endl;
+	      g->GetListOfFunctions()->Last()->Delete();
+	      if (verbose)
+		cout<<"...fnc deleted!"<<endl;
+	    }
+	  } // ATWO
+
+	  // PONE
+	  for (unsigned int igraph=0;igraph<vpone.size();igraph++) {
+	  
+	    TGraphErrors* g = vpone[igraph];
+
+	    if (g->GetN()==0) continue;
+	    double xmin(g->GetX()[0]);
+	    double xmax(-1e100);
+	    for (int ipoint=0;ipoint<g->GetN();ipoint++)
+	      if (g->GetX()[ipoint]>xmax) xmax = g->GetX()[ipoint];
+
+	    TF1* fnc=new TF1("fit",
+			     s_pone.c_str(),
+			     xmin,xmax);
+
+	    fnc->SetLineWidth(2);
+	    fnc->SetLineColor(g->GetLineColor());
+
+	    fnc->FixParameter(0,25);
+	    fnc->SetParameter(1,.05);
+	    fnc->SetParameter(2,100);
+	    fnc->SetParameter(3,3);
+	    
+	    int fitstatus = g->Fit(fnc,"QR");
+
+	    if (0==fitstatus) resolutions.addEntry(g->GetName(),fnc);
+
+	    if (0!=fitstatus) {
+	      if (verbose)
+		cout<<"Fit failed: "<<fitstatus
+		    <<" alg: "<<alg
+		    <<" var: "<<variable
+		    <<" name: "<<g->GetName()<<endl;
+	      g->GetListOfFunctions()->Last()->Delete();
+	      if (verbose)
+		cout<<"...fnc deleted!"<<endl;
+	    }
+	  } // PONE
+
+	  // PTWO
+	  for (unsigned int igraph=0;igraph<vptwo.size();igraph++) {
+	  
+	    TGraphErrors* g = vptwo[igraph];
+
+	    if (g->GetN()==0) continue;
+	    double xmin(g->GetX()[0]);
+	    double xmax(-1e100);
+	    for (int ipoint=0;ipoint<g->GetN();ipoint++)
+	      if (g->GetX()[ipoint]>xmax) xmax = g->GetX()[ipoint];
+
+	    TF1* fnc=new TF1("fit",
+			     s_ptwo.c_str(),
+			     xmin,xmax);
+
+	    fnc->SetLineWidth(2);
+	    fnc->SetLineColor(g->GetLineColor());
+
+	    fnc->FixParameter(0,25);
+	    fnc->SetParameter(1,.05);
+	    fnc->SetParameter(2,100);
+	    fnc->SetParameter(3,3);
+
+	    int fitstatus = g->Fit(fnc,"QR");
+
+	    if (0==fitstatus) resolutions.addEntry(g->GetName(),fnc);
+
+	    if (0!=fitstatus) {
+	      if (verbose)
+		cout<<"Fit failed: "<<fitstatus
+		    <<" alg: "<<alg
+		    <<" var: "<<variable
+		    <<" name: "<<g->GetName()<<endl;
+	      g->GetListOfFunctions()->Last()->Delete();
+	      if (verbose)
+		cout<<"...fnc deleted!"<<endl;
+	    }
+	  } // PTWO
+	} 
+ 
+      } // if (fitres)
+
+      // ------------------
+      // fit resolution end
+      // ------------------
+
+    } // variables
+
+
+    cout<<" DONE."<<endl;
     
+    if (dowrite) resolutions.writeJER();
+
     // write response & resolution graphs to output root file
     odir->cd();
 
@@ -268,10 +572,19 @@ int main(int argc,char**argv)
       vrsp[igraph]->Write();
     for (unsigned int igraph=0;igraph<vres.size();igraph++)
       vres[igraph]->Write();
+
+    for (unsigned int igraph=0;igraph<vaone.size();igraph++)
+      if (vaone[igraph]->GetN()>0) vaone[igraph]->Write();
+    for (unsigned int igraph=0;igraph<vatwo.size();igraph++)
+      if (vatwo[igraph]->GetN()>0) vatwo[igraph]->Write();
+    for (unsigned int igraph=0;igraph<vpone.size();igraph++)
+      if (vpone[igraph]->GetN()>0) vpone[igraph]->Write();
+    for (unsigned int igraph=0;igraph<vptwo.size();igraph++)
+      if (vptwo[igraph]->GetN()>0) vptwo[igraph]->Write();
     
     vrsp.clear(); vres.clear();
-    
-    cout<<" DONE."<<endl;
+    vaone.clear();vatwo.clear();vpone.clear();vptwo.clear();
+
   }
   
   
