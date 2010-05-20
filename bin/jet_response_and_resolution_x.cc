@@ -74,8 +74,8 @@ int main(int argc,char**argv)
   const string s_sigma="sqrt(((TMath::Sign(1,[0])*sq([0]/x))+(sq([1])*(x^([3]-1))))+sq([2]))";
   const string s_aone ="[0]";
   const string s_atwo ="[0]*x**[1]";
-  const string s_pone ="([0]-[3])/(1.+exp([1]*(x-[2])))+[3]";
-  const string s_ptwo ="([0]-[3])/(1.+exp([1]*(x-[2])))+[3]";
+  const string s_pone ="TMath::Max(0.0,([0]-[3])/(1.+exp([1]*(x-[2])))+[3])";
+  const string s_ptwo ="TMath::Max(0.0,([0]-[3])/(1.+exp([1]*(x-[2])))+[3])";
 
   
   //
