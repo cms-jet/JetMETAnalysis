@@ -102,7 +102,7 @@ struct JERWriter
 
 	ssfile<<"[mean]\n"
 	      <<"{1 "<<(*itbins).first<<" 1 RefPt [0] PAR0 \\mu}\n"
-	      <<"-5. 5. 3 0. 99999. 1.\n";
+	      <<"-9.9 9.9 3 0. 99999. 1.\n";
 
 
 	for (unsigned i=1;i<dscb.size();i++) {
@@ -147,9 +147,9 @@ struct JERWriter
 	      ssfunc<<(*dscb2pars.find(dscb[i])).second;
 	      ssfunc<<"VsRefPt_"+(*itbins).first; 
 	      ssfunc<<(*rithelper)<<"to";
-	      var1 *= (*ritvars);
+	      var1 *= ((*ritvars)==5.) ? (9.9) : (*ritvars);
 	      ssfunc<<(*ritvars);
-	      var2 *= (*rithelper);
+	      var2 *= ((*rithelper)==5.) ? (9.9) : (*rithelper);
 	      itfunc = name2func.find(ssfunc.str());
 
 	      TF1* f = (itfunc==name2func.end()) ? 0 : (*itfunc).second;
@@ -183,10 +183,10 @@ struct JERWriter
 	    ssfunc<<(*dscb2pars.find(dscb[i])).second;
 	    ssfunc<<"VsRefPt_"+(*itbins).first; 
 	    ssfunc<<(*itvars)<<"to";
-	    var1 *= (*itvars);
+	    var1 *= ((*itvars)==5.) ? (9.9) : (*itvars);
 	    set<float>::iterator ithelper = itvars; ithelper++;
 	    ssfunc<<(*ithelper);
-	    var2 *= (*ithelper);
+	    var2 *= ((*ithelper)==5.) ? (9.9) : (*ithelper);
 	    itfunc = name2func.find(ssfunc.str());
 
 	    TF1* f = (itfunc==name2func.end()) ? 0 : (*itfunc).second;
@@ -226,14 +226,14 @@ struct JERWriter
 
       string algname;
 
-      if      (alg.find("ak5pfl2l3")!=string::npos) algname="AK5PF";
-      else if (alg.find("AK5PFL2L3")!=string::npos) algname="AK5PF";
-      else if (alg.find("ak5calol2l3")!=string::npos) algname="AK5CALO";
-      else if (alg.find("AK5CALOL2L3")!=string::npos) algname="AK5CALO";
-      else if (alg.find("ak5jptl2l3")!=string::npos) algname="AK5JPT";
-      else if (alg.find("AK5JPTL2L3")!=string::npos) algname="AK5JPT";
-      else if (alg.find("ak5genl2l3")!=string::npos) algname="AK5GEN";
-      else if (alg.find("AK5GENL2L3")!=string::npos) algname="AK5GEN";
+      if      (alg.find("ak5pfl2l3")!=string::npos)   algname="AK5PF";
+      else if (alg.find("AK5PFL2L3")!=string::npos)   algname="AK5PF";
+      else if (alg.find("ak5calol2l3")!=string::npos) algname="AK5Calo";
+      else if (alg.find("AK5CALOL2L3")!=string::npos) algname="AK5Calo";
+      else if (alg.find("ak5jptl2l3")!=string::npos)  algname="AK5JPT";
+      else if (alg.find("AK5JPTL2L3")!=string::npos)  algname="AK5JPT";
+      else if (alg.find("ak5genl2l3")!=string::npos)  algname="AK5GEN";
+      else if (alg.find("AK5GENL2L3")!=string::npos)  algname="AK5GEN";
       else algname=alg;
 
 
@@ -241,8 +241,11 @@ struct JERWriter
       if (!era.empty()) ssfilename<<era<<"_";
 
       ssfilename<<"PtResolution_"
-		<<algname<<"_"
-		<<(*itbins).first<<".txt";
+		<<algname;
+      if ((*itbins).first.find("JetEta")==string::npos)
+	ssfilename<<"_"<<(*itbins).first;
+		  
+      ssfilename<<".txt";
 
       jerfile.open(ssfilename.str().c_str(), ofstream::trunc);
       if (!jerfile.is_open()) {
