@@ -1,3 +1,9 @@
+2010-05-28  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-09-02
+	* add config/jra_dr_finebinning.config, provided by Ricardo.
+	* remove config/fine_binning.config
+
 2010-05-03  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-09-01
