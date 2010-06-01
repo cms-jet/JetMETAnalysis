@@ -43,14 +43,19 @@ using namespace std;
 // declare local functions
 ////////////////////////////////////////////////////////////////////////////////
 void   draw_range(const string& range,const int residual=-1);
-void   draw_text(const string& text);
+
 string get_range(const ObjectLoader<TGraphErrors>& gl,
 		 const vector<unsigned int>& indices,
 		 bool  addFixedVars=true);
 string get_legend_label_from_alg(const string& alg);
 string get_legend_label_from_input(const string& input);
-void   set_graph_style(TGraphErrors* g,unsigned int ngraph,bool nocolor);
-void   set_axis_titles(TH1*h,const string& quantity,float ymin,float ymax);
+void   set_graph_style(TGraphErrors* g,unsigned int ngraph,bool nocolor,
+		       const vector<unsigned int>& vcolors,
+		       const vector<unsigned int>& vmarkers,
+		       const vector<float>& vsizes);
+
+void   set_axis_titles(TH1*h,const string& quantity,float ymin,float ymax,
+		       string xtitle,string ytitle);
 
 void   draw_graph_residual(TPad* pad,TMultiGraph* mg,
 			   int errMode=-1,
@@ -70,6 +75,8 @@ void   draw_zline(TH1* h1,float xmin=-1.,float xmax=-1.);
 void   draw_extrapolation(TMultiGraph* mg,int fullfit=-1,
 			  float xmin=-1.,float xmax=-1.);
 
+void draw_labels(const vector<string>& labels,bool leginplot,bool tdrautobins);
+
 ////////////////////////////////////////////////////////////////////////////////
 // main
 ////////////////////////////////////////////////////////////////////////////////
@@ -83,7 +90,26 @@ int main(int argc,char** argv)
   vector<string> inputs    = cl.getVector<string>("inputs");
   vector<string> algs      = cl.getVector<string>("algs",           "ak5calo");
   vector<string> variables = cl.getVector<string>("variables","RelRspVsRefPt");
-  vector<string> labels    = cl.getVector<string>("labels",                "");
+
+  vector<string> leglabels = cl.getVector<string>("leglabels",             "");
+
+  vector<string> tdrlabels = cl.getVector<string>("tdrlabels",             "");
+  bool           tdrautobins=cl.getValue<bool>   ("tdrautobins",        false);
+  bool           drawrange = cl.getValue<bool>   ("drawrange",           true); 
+  bool           leginplot = cl.getValue<bool>   ("leginplot",           true);
+
+  bool           drawlegend= cl.getValue<bool>   ("drawlegend",          true);
+  double         legx      = cl.getValue <double>("legx",                0.5);
+  double         legy      = cl.getValue <double>("legy",                0.9);
+  double         legw      = cl.getValue <double>("legw",                0.4);
+
+  string         xtitle    = cl.getValue<string> ("xtitle",                "");
+  string         ytitle    = cl.getValue<string> ("ytitle",                "");
+
+  vector<unsigned int>colors = cl.getVector<unsigned int>("colors",        "");
+  vector<unsigned int>markers= cl.getVector<unsigned int>("markers",       "");
+  vector<float>       sizes  = cl.getVector<float>       ("sizes",         "");
+
   string         text      = cl.getValue<string> ("text",                  "");
   bool           logx      = cl.getValue<bool>   ("logx",               false);
   bool           logy      = cl.getValue<bool>   ("logy",               false);
@@ -116,6 +142,12 @@ int main(int argc,char** argv)
     return 0;
   }
   
+  if (!text.empty()){cout<<"option -text depreciated; use -tdrlabels!"<<endl;return 0;}
+  if (0==tdrlabels.size()&&tdrautobins) {
+    cout<<"Found no tdrlabels - resetting tdrautobins = false"<<endl;
+    tdrautobins = false;
+  }
+  
   if (ymin<0.0&&logy) ymin = 0.01;
 
   if (batch&&formats.size()==0) formats.push_back("pdf");
@@ -141,38 +173,38 @@ int main(int argc,char** argv)
   
   // determine legend labels
   if (algs.size()>1) {
-    if (labels.size()>0) {
-      if (labels.size()!=algs.size()) {
-	cout<<"ERROR: labels / algs mismatch!"<<endl;
+    if (leglabels.size()>0) {
+      if (leglabels.size()!=algs.size()) {
+	cout<<"ERROR: leglabels / algs mismatch!"<<endl;
 	return 0;
       }
     }
     else {
       for (unsigned int ialg=0;ialg<algs.size();ialg++)
-	labels.push_back(get_legend_label_from_alg(algs[ialg]));
+	leglabels.push_back(get_legend_label_from_alg(algs[ialg]));
     }
   }
   else if (inputs.size()>1) {
-    if (labels.size()>0) {
-      if (labels.size()!=inputs.size()) {
-	cout<<"ERROR: labels / inputs mismatch!"<<endl;
+    if (leglabels.size()>0) {
+      if (leglabels.size()!=inputs.size()) {
+	cout<<"ERROR: leglabels / inputs mismatch!"<<endl;
       }
     }
     else {
       for (unsigned int iinput=0;iinput<inputs.size();iinput++)
-	labels.push_back(get_legend_label_from_input(inputs[iinput]));
+	leglabels.push_back(get_legend_label_from_input(inputs[iinput]));
     }
   }
   else if (variables.size()>1) {
-    if (labels.size()>0) {
-      if (labels.size()!=variables.size()) {
-	cout<<"ERROR: labels / variables mismatch!"<<endl;
+    if (leglabels.size()>0) {
+      if (leglabels.size()!=variables.size()) {
+	cout<<"ERROR: leglabels / variables mismatch!"<<endl;
 	return 0;
       }
     }
   }
   else {
-    labels.push_back(get_legend_label_from_alg(algs[0]));
+    leglabels.push_back(get_legend_label_from_alg(algs[0]));
   }
 
   TMultiGraph*          mg(0);
@@ -210,7 +242,7 @@ int main(int argc,char** argv)
 
 	  graphs.push_back(g);
 	  ranges.push_back(get_range(gl,indices,variables.size()==1));
-	  
+
 	  if (0==mg) {
 	    stringstream sscname;
 	    if (!prefix.empty()) sscname<<prefix<<"_";
@@ -222,19 +254,30 @@ int main(int argc,char** argv)
 		     <<gl.maximum(i,indices[i]);
 	    }
 	    if (!suffix.empty()) sscname<<"_"<<suffix;
-	    int nlabels=(labels.size()>0)?labels.size():variables.size();
+	    int nleglabels=(leglabels.size()>0)?leglabels.size():variables.size();
 	    mg=new TMultiGraph(sscname.str().c_str(),"");
-	    double ymax=(quantity.find("Rsp")==string::npos)?0.85:0.4;
-	    leg=new TLegend(0.5,ymax,0.9,ymax-nlabels*0.06);
+
+	    //double ymax=(quantity.find("Rsp")==string::npos)?0.85:0.4;
+
+	    double legxmin = (leginplot) ? legx : 0.825;
+	    double legymin = legy;
+	    double legxmax = (leginplot) ? legx+legw : 1.03;
+	    double legymax = legymin - (nleglabels)*0.055;
+
+	    leg = new TLegend(legxmin,legymin,legxmax,legymax);
+	    leg->SetFillColor(10); leg->SetLineColor(10); leg->SetBorderSize(0);
+
+
+	    //leg=new TLegend(0.5,ymax,0.9,ymax-nleglabels*0.06);
 	    //range=get_range(gl,indices,variables.size()==1);
 	  }
 
 	  int   ilabel=(inputs.size()>1) ? iinput:(algs.size()>1) ? ialg:ivar;
-	  string label=(variables.size()>1&&labels.size()==0) ?
-	    get_range(gl,indices,true) : labels[ilabel];
+	  string label=(variables.size()>1&&leglabels.size()==0) ?
+	    get_range(gl,indices,true) : leglabels[ilabel];
 	  
 	  mg->Add(g);
-	  set_graph_style(g,overlay*(graphs.size()-1),nocolor);
+	  set_graph_style(g,overlay*(graphs.size()-1),nocolor,colors,markers,sizes);
 	  leg->AddEntry(g,label.c_str(),"lp");
 
 	  // print fit parameters
@@ -320,7 +363,7 @@ int main(int argc,char** argv)
     gPad->SetLogy(logy);
 
     mg->Draw("AP");
-    set_axis_titles(mg->GetHistogram(),quantity,ymin,ymax);
+    set_axis_titles(mg->GetHistogram(),quantity,ymin,ymax,xtitle,ytitle);
 
     if (0!=mg->GetHistogram()) {
       mg->GetHistogram()->GetXaxis()->SetMoreLogLabels(logx);
@@ -334,9 +377,11 @@ int main(int argc,char** argv)
     leg->SetLineColor(10);
     leg->SetFillColor(10);
     leg->SetBorderSize(0);
-    leg->Draw();
-    draw_range(ranges.front(),residual);
-    draw_text(text);
+    if (drawlegend) leg->Draw();
+    if (drawrange) draw_range(ranges.front(),residual);
+    if (tdrautobins) tdrlabels.push_back(ranges.front());
+    draw_labels(tdrlabels,leginplot,tdrautobins);
+    if (tdrautobins) tdrlabels.pop_back();
 
   }
   else {
@@ -363,7 +408,7 @@ int main(int argc,char** argv)
       //graphs[i]->Draw("AP");
       mgind->Draw("AP");
       //set_axis_titles(graphs[i]->GetHistogram(),quantity,ymin,ymax);
-      set_axis_titles(mgind->GetHistogram(),quantity,ymin,ymax);
+      set_axis_titles(mgind->GetHistogram(),quantity,ymin,ymax,xtitle,ytitle);
 
       if (0!=mg->GetHistogram()) {
 	mg->GetHistogram()->GetXaxis()->SetMoreLogLabels(logx);
@@ -374,9 +419,11 @@ int main(int argc,char** argv)
       draw_extrapolation(mgind,fullfit,xmin,xmax);
       draw_graph_residual((TPad*)gPad,mgind,residual,xmin,xmax,ymin,ymax,fullfit);
       
-      draw_range(ranges[i],residual);
-      draw_text(text);
-      set_axis_titles(graphs[i]->GetHistogram(),quantity,ymin,ymax);
+      if (drawrange) draw_range(ranges[i],residual);
+      if (tdrautobins) tdrlabels.push_back(ranges[i]);
+      draw_labels(tdrlabels,leginplot,tdrautobins);
+      if (tdrautobins) tdrlabels.pop_back();
+      set_axis_titles(graphs[i]->GetHistogram(),quantity,ymin,ymax,xtitle,ytitle);
 
       if (algs.size()>1||inputs.size()>1) {
 	TLatex tex;
@@ -407,6 +454,60 @@ int main(int argc,char** argv)
 ////////////////////////////////////////////////////////////////////////////////
 // implement local functions
 ////////////////////////////////////////////////////////////////////////////////
+//______________________________________________________________________________
+
+void draw_labels(const vector<string>& labels,bool leginplot,bool tdrautobins)
+{
+  for (unsigned ilabel=0;ilabel<labels.size();ilabel++) {
+    string tmp(labels[ilabel]);
+    size_t pos;
+    if (tdrautobins&&ilabel>0&&(ilabel==labels.size()-1)) tmp=labels[ilabel-1];
+    pos = tmp.find(':'); assert(pos!=string::npos);
+    string x_as_str = tmp.substr(0,pos); tmp = tmp.substr(pos+1);
+    pos = tmp.find(':'); assert(pos!=string::npos);
+    string y_as_str = tmp.substr(0,pos); tmp = tmp.substr(pos+1);
+    pos = tmp.find(':');
+    string font_as_str;
+    string size_as_str;
+    string text;
+    if (pos==string::npos) {
+      font_as_str = "42";
+      size_as_str = "0.04";
+      text = tmp;
+    }
+    else {
+      font_as_str = tmp.substr(0,pos); tmp = tmp.substr(pos+1);
+      pos = tmp.find(':');
+      if (pos==string::npos) {
+	size_as_str = "0.04";
+	text = tmp; 
+      }
+      else {
+	size_as_str = tmp.substr(0,pos);
+	text = tmp.substr(pos+1);
+      }
+    }
+    
+    stringstream ssx; ssx<<x_as_str;    double x; ssx>>x;
+    stringstream ssy; ssy<<y_as_str;    double y; ssy>>y;
+    stringstream ssf; ssf<<font_as_str; int    f; ssf>>f;
+    stringstream sss; sss<<size_as_str; double s; sss>>s;
+
+    if (tdrautobins&&ilabel>0&&(ilabel==labels.size()-1)) { 
+      y -= 0.05;
+      text = labels[labels.size()-1]; 
+    } 
+   
+    if (!leginplot) { double scale = 800.0*0.93/1000./0.82;  x *= scale; }
+
+    TLatex tex;
+    tex.SetTextSize(s);
+    tex.SetTextFont(f);
+    tex.SetNDC(true);
+    tex.DrawLatex(x,y,text.c_str());
+  }
+}
+
 
 //______________________________________________________________________________
 void draw_extrapolation(TMultiGraph* mg,int fullfit,float xmin,float xmax)
@@ -575,6 +676,12 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
       double x  = vg[i]->GetX()[ip];
       double ex = vg[i]->GetEX()[ip];
       
+      double ffxmin(0.0),ffxmax(0.0);
+
+      if (0==vf[i]) continue;
+      vf[i]->GetRange(ffxmin,ffxmax);
+      if (x<ffxmin || x>ffxmax) continue;
+
       double fy = (0==vf[i]) ? 0.0 : vf[i]->Eval(x);
 
       double resy(0.0),resey(0.0);
@@ -602,7 +709,7 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
     if (0!=vf[i]) rGraph->SetLineColor(vf[i]->GetLineColor());
     rGraph->SetLineWidth(1);
       
-    rmg->Add(rGraph);
+    if (rGraph->GetN()!=0) rmg->Add(rGraph);
   }
   
       
@@ -619,11 +726,14 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
   set_xaxis_range(mg,xmin,xmax,ymin,ymax);
   draw_extrapolation(mg,fullfit,xmin,xmax);
 
+  xmin = mg->GetHistogram()->GetXaxis()->GetXmin();
+  xmax = mg->GetHistogram()->GetXaxis()->GetXmax();
+
   pad->cd(2);
   rmg->Draw("AP");
 
   float rmgymax = std::max(TMath::Abs(rmg->GetHistogram()->GetMinimum()),
-			TMath::Abs(rmg->GetHistogram()->GetMaximum()));
+			   TMath::Abs(rmg->GetHistogram()->GetMaximum()));
 
   rmgymax = (rmgymax>50.) ? 50. : rmgymax;
 
@@ -690,32 +800,6 @@ void draw_range(const string& range, const int residual)
   tex.SetTextFont(42);
   if (residual<0) tex.DrawLatex(0.18,0.98,range.c_str());
   else tex.DrawLatex(0.15,0.96,range.c_str());
-}
-
-
-//______________________________________________________________________________
-void draw_text(const string& text)
-{
-  if (text.empty()) return;
-  double x(0.22);
-  double y(0.88);
-  string tmp(text);
-  size_t pos = tmp.find(':');
-  if (pos!=string::npos) {
-    string x_as_str = tmp.substr(0,pos);
-    tmp = tmp.substr(pos+1);
-    pos = tmp.find(':'); assert(pos!=string::npos);
-    string y_as_str = tmp.substr(0,pos);
-    tmp = tmp.substr(pos+1);
-    stringstream ssx; ssx<<x_as_str; ssx>>x;
-    stringstream ssy; ssy<<y_as_str; ssy>>y;
-  }
-  TLatex tex;
-  tex.SetNDC(true);
-  tex.SetTextAlign(13);
-  tex.SetTextSize(0.045);
-  tex.SetTextFont(42);
-  tex.DrawLatex(x,y,tmp.c_str());
 }
 
 
@@ -815,7 +899,10 @@ string get_legend_label_from_input(const string& input)
 
 
 //______________________________________________________________________________
-void set_graph_style(TGraphErrors* g, unsigned int ngraph,bool nocolor)
+void set_graph_style(TGraphErrors* g, unsigned int ngraph,bool nocolor,
+		     const vector<unsigned int>& vcolors,
+		     const vector<unsigned int>& vmarkers,
+		     const vector<float>&        vsizes)
 {
   Color_t colors[10] = {
     kBlue+1,kRed+1,kGreen+2,kMagenta+2,kCyan+3,
@@ -840,13 +927,19 @@ void set_graph_style(TGraphErrors* g, unsigned int ngraph,bool nocolor)
   Color_t color = colors[std::min(ngraph,(unsigned)9)];
   Style_t line  = lines[std::min(ngraph,(unsigned)9)];
   Style_t marker = markers[std::min(ngraph,(unsigned)9)];
-  
+  Float_t msize (0.8);
+
+  if (ngraph<vcolors.size())  color   = vcolors[ngraph];
+  //if (ngraph<vmarkers.size()) markers = vmarkers[ngraph];
+  if (ngraph<vsizes.size())   msize   = vsizes[ngraph];
+
   if (nocolor) color = kBlack;
   
   g->SetLineColor(color);
   g->SetMarkerColor(color);
   g->SetMarkerStyle(marker);
-  g->SetMarkerSize(0.8);
+  if (ngraph<vmarkers.size()) g->SetMarkerStyle(vmarkers[ngraph]);
+  g->SetMarkerSize(msize);
   
   TF1* f(0);
   if (g->GetListOfFunctions()->GetEntries()>0) {
@@ -861,7 +954,8 @@ void set_graph_style(TGraphErrors* g, unsigned int ngraph,bool nocolor)
 
 
 //______________________________________________________________________________
-void set_axis_titles(TH1* h,const string& quantity,float ymin,float ymax)
+void set_axis_titles(TH1* h,const string& quantity,float ymin,float ymax,
+		     string xtitle,string ytitle)
 {
   if (0==h) {
     cout<<"set_axis_title ERROR: h is NULL!"<<endl;
@@ -872,51 +966,52 @@ void set_axis_titles(TH1* h,const string& quantity,float ymin,float ymax)
   ymin = (ymin<0.0) ? 0.0 : ymin;
   h->SetMinimum(ymin);
   
-  string xtitle("");
-  string ytitle("");
+  //string xtitle("");
+  //string ytitle("");
   size_t pos = quantity.find("Vs");
   if (pos!=string::npos) {
-    string ystr=quantity.substr(0,pos);
-    string xstr=quantity.substr(pos+2);
-    
-    if (ystr=="Rsp"||ystr=="RelRsp"||ystr=="AbsRsp") {
-      ytitle="p_{T} / p_{T}^{REF}";
-      ymax = (ymax<0.0) ? 1.2 : ymax;
-      h->SetMaximum(ymax);
-    }
-    else if (ystr=="Res"||ystr=="RelRes"||ystr=="AbsRes") {
-      ytitle="#sigma(p_{T}/p_{T}^{REF}) / <p_{T}/p_{T}^{REF}>";
-      if (ymax>0.0) h->SetMaximum(ymax);
-    }
-    else if (ystr=="Asym") {
-      ytitle="#sqrt{2}#sigma_{A}";
-      ymax = (ymax<0.0) ? 1.3*h->GetMaximum() : ymax;
-      h->SetMaximum(ymax);
-    }
-    else if (ystr=="Aone") {
-      ytitle="a_{1}";
-    }
-    else if (ystr=="Atwo") {
-      ytitle="a_{2}";
-    }
-    else if (ystr=="Pone") {
-      ytitle="p_{1}";
-    }
-    else if (ystr=="Ptwo") {
-      ytitle="p_{2}";
+
+    if (ytitle.empty()) {
+      string ystr=quantity.substr(0,pos);
+      if (ystr=="Rsp"||ystr=="RelRsp"||ystr=="AbsRsp") {
+	ytitle="p_{T} / p_{T}^{REF}";
+	ymax = (ymax<0.0) ? 1.2 : ymax;
+	h->SetMaximum(ymax);
+      }
+      else if (ystr=="Res"||ystr=="RelRes"||ystr=="AbsRes") {
+	ytitle="#sigma(p_{T}/p_{T}^{REF}) / <p_{T}/p_{T}^{REF}>";
+	if (ymax>0.0) h->SetMaximum(ymax);
+      }
+      else if (ystr=="Asym") {
+	ytitle="#sqrt{2}#sigma_{A}";
+	ymax = (ymax<0.0) ? 1.3*h->GetMaximum() : ymax;
+	h->SetMaximum(ymax);
+      }
+      else if (ystr=="Aone") {
+	ytitle="a_{1}";
+      }
+      else if (ystr=="Atwo") {
+	ytitle="a_{2}";
+      }
+      else if (ystr=="Pone") {
+	ytitle="p_{1}";
+      }
+      else if (ystr=="Ptwo") {
+	ytitle="p_{2}";
+      }
     }
 
-
-    
-    if (xstr=="RefPt")    xtitle="p_{T}^{REF} [GeV]";
-    if (xstr=="JetPt")    xtitle="p_{T} [GeV]";
-    if (xstr=="JetEta")   xtitle="#eta";
-    if (xstr=="JetPhi")   xtitle="#varphi";
-    if (xstr=="JetY")     xtitle="y";
-    if (xstr=="PtRel")    xtitle="p_{T}^{rel} [GeV]";
-    if (xstr=="RelLepPt") xtitle="p_{T}^{l} / p_{T}^{jet}";
-    if (xstr=="ThreshPt") xtitle="p_{T,max}^{3^{rd}}";
-    
+    if (xtitle.empty()) {
+      string xstr=quantity.substr(pos+2);    
+      if (xstr=="RefPt")    xtitle="p_{T}^{REF} [GeV]";
+      if (xstr=="JetPt")    xtitle="p_{T} [GeV]";
+      if (xstr=="JetEta")   xtitle="#eta";
+      if (xstr=="JetPhi")   xtitle="#varphi";
+      if (xstr=="JetY")     xtitle="y";
+      if (xstr=="PtRel")    xtitle="p_{T}^{rel} [GeV]";
+      if (xstr=="RelLepPt") xtitle="p_{T}^{l} / p_{T}^{jet}";
+      if (xstr=="ThreshPt") xtitle="p_{T,max}^{3^{rd}}";
+    }
   }
   
   h->SetXTitle(xtitle.c_str());
