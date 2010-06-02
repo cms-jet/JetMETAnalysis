@@ -65,7 +65,7 @@ void   draw_graph_residual(TPad* pad,TMultiGraph* mg,
 			   float ymax=-1.,
 			   int fullfit=-1);
 
-TH1F*  set_xaxis_range(TMultiGraph* mg, 
+TH1F*  set_axis_range(TMultiGraph* mg, 
 		       float xmin=-1., float xmax=-1.,
 		       float ymin=-1., float ymax=-1.);
 
@@ -370,7 +370,7 @@ int main(int argc,char** argv)
       mg->GetHistogram()->GetXaxis()->SetNoExponent(logx);
     }
 
-    set_xaxis_range(mg,xmin,xmax,ymin,ymax);
+    set_axis_range(mg,xmin,xmax,ymin,ymax);
     draw_extrapolation(mg,fullfit,xmin,xmax);
     draw_graph_residual((TPad*)gPad,mg,residual,xmin,xmax,ymin,ymax,fullfit);
 
@@ -415,7 +415,7 @@ int main(int argc,char** argv)
 	mg->GetHistogram()->GetXaxis()->SetNoExponent(logx);
       }
 
-      set_xaxis_range(mgind,xmin,xmax,ymin,ymax);
+      set_axis_range(mgind,xmin,xmax,ymin,ymax);
       draw_extrapolation(mgind,fullfit,xmin,xmax);
       draw_graph_residual((TPad*)gPad,mgind,residual,xmin,xmax,ymin,ymax,fullfit);
       
@@ -524,15 +524,20 @@ void draw_extrapolation(TMultiGraph* mg,int fullfit,float xmin,float xmax)
 
   if (0==vf.size()) return;
 
-  double ffmin(0.0),ffmax(0.0);
-  vf[0]->GetRange(ffmin,ffmax);
 
-  if (1==fullfit||2==fullfit)
-    ffmin = (xmin!=-1.) ? xmin : mg->GetHistogram()->GetXaxis()->GetXmin(); 
-  if (1==fullfit||3==fullfit)
-    ffmax = (xmax!=-1.) ? xmax : mg->GetHistogram()->GetXaxis()->GetXmax();
 
   for (unsigned i(0);i<vf.size();i++) {
+
+    if (0==vf[i]) continue;
+
+    double ffmin(0.0),ffmax(0.0);
+    vf[i]->GetRange(ffmin,ffmax);
+    
+    if (1==fullfit||2==fullfit)
+      ffmin = (xmin!=-1.) ? xmin : mg->GetHistogram()->GetXaxis()->GetXmin(); 
+    if (1==fullfit||3==fullfit)
+      ffmax = (xmax!=-1.) ? xmax : mg->GetHistogram()->GetXaxis()->GetXmax();
+
     stringstream ssffname;
     ssffname<<"ff_"<<mg->GetName()<<"_"<<i;
     TF1* ff = (TF1*)vf[i]->Clone(ssffname.str().c_str());
@@ -546,7 +551,7 @@ void draw_extrapolation(TMultiGraph* mg,int fullfit,float xmin,float xmax)
 }
 
 //______________________________________________________________________________
-TH1F* set_xaxis_range(TMultiGraph* mg, 
+TH1F* set_axis_range(TMultiGraph* mg, 
 		      float xmin, float xmax,
 		      float ymin, float ymax)
 {
@@ -723,11 +728,11 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
     mg->GetHistogram()->GetXaxis()->SetLabelSize( 0.15 );
     mg->GetHistogram()->GetXaxis()->SetLabelOffset( 0.005 );
   }
-  set_xaxis_range(mg,xmin,xmax,ymin,ymax);
+  set_axis_range(mg,xmin,xmax,ymin,ymax);
   draw_extrapolation(mg,fullfit,xmin,xmax);
 
-  xmin = mg->GetHistogram()->GetXaxis()->GetXmin();
-  xmax = mg->GetHistogram()->GetXaxis()->GetXmax();
+  xmin = (xmin!=-1.) ? xmin: mg->GetHistogram()->GetXaxis()->GetXmin();
+  xmax = (xmax!=-1.) ? xmax: mg->GetHistogram()->GetXaxis()->GetXmax();
 
   pad->cd(2);
   rmg->Draw("AP");
@@ -770,7 +775,7 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
   else 
     rmg->GetHistogram()->SetYTitle( "#frac{(data-fit)}{data} [%]" );
 
-  set_xaxis_range(rmg,xmin,xmax);  
+  set_axis_range(rmg,xmin,xmax);  
   draw_zline(rmg->GetHistogram(),xmin,xmax);
 
   pad->cd(1);
