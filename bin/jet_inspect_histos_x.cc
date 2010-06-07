@@ -46,9 +46,7 @@ void set_draw_attributes(TH1* h,
 			 const vector<int>& colors,
 			 const vector<int>& fillstyles);
 void draw_stats(TH1* h,double xoffset,Color_t color,Color_t fitColor);
-void draw_range(const ObjectLoader<TH1F>& hl,
-		const vector<unsigned int>& indices,
-		bool  addFixedVars=true);
+
 void draw_line_mean(TH1* h);
 void draw_line_median(TH1* h);
 void draw_line_peak(TH1* h);
@@ -67,6 +65,14 @@ double fnc_dscb(double*xx,double*pp);
 
 void draw_extrapolation(TH1* h);
 
+void draw_labels(const vector<string>& labels,bool leginplot,bool tdrautobins);
+
+string get_range(const ObjectLoader<TH1F>& hl,
+		 const vector<unsigned int>& indices,
+		 bool  addFixedVars);
+
+void draw_range(const string& range, const int residual);
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -82,6 +88,23 @@ int main(int argc,char** argv)
   vector<string> algs       = cl.getVector<string>("algs",          "kt4calo");
   vector<string> variables  = cl.getVector<string>("variables","RelRsp:RefPt");
   int            npercanvas = cl.getValue<int>    ("npercanvas",            0);
+
+  vector<string> tdrlabels  = cl.getVector<string>("tdrlabels",            "");
+  bool           tdrautobins= cl.getValue<bool>   ("tdrautobins",       false);
+  bool           drawrange  = cl.getValue<bool>   ("drawrange",          true);
+  bool           drawstats  = cl.getValue<bool>   ("drawstats",          true);
+
+  vector<string> leglabels  = cl.getVector<string>("leglabels",            "");
+  bool           drawlegend = cl.getValue<bool>   ("drawlegend",        false);
+  double         legx       = cl.getValue <double>("legx",                0.5);
+  double         legy       = cl.getValue <double>("legy",                0.9);
+  double         legw       = cl.getValue <double>("legw",                0.4);
+  bool           leginplot  = cl.getValue<bool>   ("leginplot",          true);
+
+  string         xtitle    = cl.getValue<string> ("xtitle",                "");
+  string         ytitle    = cl.getValue<string> ("ytitle",                "");
+
+
   float          ymin       = cl.getValue<float>  ("ymin",                 -1);
   float          ymax       = cl.getValue<float>  ("ymax",                 -1);
   bool           norm       = cl.getValue<bool>   ("norm",              false);
@@ -115,6 +138,13 @@ int main(int argc,char** argv)
   }
 
   if (verbose) cout<<"Verbosity not implemented...:/"<<endl;
+
+  if (0==tdrlabels.size()&&tdrautobins) {
+    cout<<"Found no tdrlabels - resetting tdrautobins = false"<<endl;
+    tdrautobins = false;
+  }
+
+  if (ymin<0.0&&logy) ymin = 0.0001;
   
   bool isSingular = (inputs.size()==1&&variables.size()==1&&algs.size()==1);
 
@@ -128,6 +158,9 @@ int main(int argc,char** argv)
   gStyle->SetOptTitle(0);//hh 11.04.2010
   
   vector<TCanvas*> c; int nx(1),ny(1);
+
+  TLegend* leg(0);
+  vector<string> ranges;
   
   /// LOOP OVER FILES
   for (unsigned int ifile=0;ifile<inputs.size();ifile++) {
@@ -162,6 +195,10 @@ int main(int argc,char** argv)
 	  if (nx*ny<npercanvas) nx++;
 	  if (nx*ny<npercanvas) ny++;
 	}
+
+
+
+	
 	
 	hl.begin_loop();
 	
@@ -176,6 +213,9 @@ int main(int argc,char** argv)
 	    h->Sumw2();
 	    h->Scale(1./h->Integral());
 	  }
+
+	  if (!xtitle.empty()) h->GetXaxis()->SetTitle(xtitle.c_str());
+	  if (!ytitle.empty()) h->GetYaxis()->SetTitle(ytitle.c_str());
 	  
 
 	  if (ifile==0&&ialg==0&&ivar==0&&
@@ -200,8 +240,22 @@ int main(int argc,char** argv)
 	  int ipad = ihisto%npercanvas+1;
 	  c[icnv]->cd(ipad);
 
-
+	  // implement a legend
+	  int nleglabels = leglabels.size();
 	  
+	  double legxmin = (leginplot) ? legx : 0.825;
+	  double legymin = legy;
+	  double legxmax = (leginplot) ? legx+legw : 1.03;
+	  double legymax = legymin - (nleglabels)*0.055;
+	  
+	  leg = new TLegend(legxmin,legymin,legxmax,legymax);
+	  leg->SetFillColor(10); leg->SetLineColor(10); leg->SetBorderSize(0);
+
+	  int   ilabel=(inputs.size()>1) ? ifile:(algs.size()>1) ? ialg:ivar;
+	  string label=(leglabels.size()==0||(unsigned)ilabel>=leglabels.size()) ? 
+	    "ERROR" : leglabels[ilabel];
+	  
+
 	  if (ifile==0&&ialg==0&&ivar==0) {
 	    icolor=0;
 	    if (logx&&(h->GetEntries()>0)) gPad->SetLogx();
@@ -225,7 +279,7 @@ int main(int argc,char** argv)
 	      if (fitfnc!=0) fitfnc->SetLineColor(1);
 	    }
 
-
+	    
 
 	    TPad* hpad(0); TPad* rpad(0); 
 	    if (0!=fitfnc) draw_residual((TPad*)gPad,h,fitfnc,hpad,rpad,
@@ -240,10 +294,17 @@ int main(int argc,char** argv)
 	    if (0==hpad) h->Draw("EH");
 	    else hpad->cd();
 
-	    if (colors.empty() || isSingular) draw_stats(h,0.65,kBlack,kBlack);
-	    else draw_stats(h,0.65,colors[icolor],colors[icolor]);
-	    draw_range(hl,indices,(variables.size()==1));
+	    if (drawstats) {
+	      if (colors.empty() || isSingular) draw_stats(h,0.65,kBlack,kBlack);
+	      else draw_stats(h,0.65,colors[icolor],colors[icolor]); 
+	    }
+
+	    ranges.push_back(get_range(hl,indices,(variables.size()==1)));
+	    if (drawrange) draw_range(ranges.back(),residual);
 	    draw_line_legend(mean,median,peak);
+
+	    
+
 	  }
 	  else {
 	    icolor=ifile+ialg+ivar;
@@ -268,10 +329,11 @@ int main(int argc,char** argv)
 	    if (0==hpad) h->Draw("EHSAME");
 	    else hpad->cd();
 
-	    if (colors.empty() || (icolor>colors.size()-1)) 
-	      draw_stats(h,0.15,kBlue,kBlue);
-	    else draw_stats(h,0.15,colors[icolor],colors[icolor]);
-	    
+	    if (drawstats) {
+	      if (colors.empty() || (icolor>colors.size()-1)) 
+		draw_stats(h,0.15,kBlue,kBlue);
+	      else draw_stats(h,0.15,colors[icolor],colors[icolor]);
+	    }
 
 	    TH1F* h1(0); TH1F* r1(0); TH1F* r2(0);
 	    if (0!=hpad) h1 = (TH1F*) hpad->GetListOfPrimitives()->First();
@@ -292,6 +354,11 @@ int main(int argc,char** argv)
 	  if (median) draw_line_median(h);
 	  if (peak)   draw_line_peak(h);
 	  if (fullfit)draw_extrapolation(h); 
+	  if (drawlegend) {leg->AddEntry(h,label.c_str(),"l");leg->Draw("SAME");}
+
+	  if (tdrautobins) tdrlabels.push_back(ranges.back());
+	  draw_labels(tdrlabels,leginplot,tdrautobins);
+	  if (tdrautobins) tdrlabels.pop_back();
 	  
 	  ihisto++;
 	  
@@ -317,6 +384,63 @@ int main(int argc,char** argv)
 ////////////////////////////////////////////////////////////////////////////////
 // implement local functions
 ////////////////////////////////////////////////////////////////////////////////
+
+
+void draw_labels(const vector<string>& labels,bool leginplot,bool tdrautobins)
+{
+  for (unsigned ilabel=0;ilabel<labels.size();ilabel++) {
+    string tmp(labels[ilabel]);
+    size_t pos;
+    if (tdrautobins&&ilabel>0&&(ilabel==labels.size()-1)) tmp=labels[ilabel-1];
+    pos = tmp.find(':'); assert(pos!=string::npos);
+    string x_as_str = tmp.substr(0,pos); tmp = tmp.substr(pos+1);
+    pos = tmp.find(':'); assert(pos!=string::npos);
+    string y_as_str = tmp.substr(0,pos); tmp = tmp.substr(pos+1);
+    pos = tmp.find(':');
+    string font_as_str;
+    string size_as_str;
+    string text;
+    if (pos==string::npos) {
+      font_as_str = "42";
+      size_as_str = "0.04";
+      text = tmp;
+    }
+    else {
+      font_as_str = tmp.substr(0,pos); tmp = tmp.substr(pos+1);
+      pos = tmp.find(':');
+      if (pos==string::npos) {
+	size_as_str = "0.04";
+	text = tmp; 
+      }
+      else {
+	size_as_str = tmp.substr(0,pos);
+	text = tmp.substr(pos+1);
+      }
+    }
+    
+    stringstream ssx; ssx<<x_as_str;    double x; ssx>>x;
+    stringstream ssy; ssy<<y_as_str;    double y; ssy>>y;
+    stringstream ssf; ssf<<font_as_str; int    f; ssf>>f;
+    stringstream sss; sss<<size_as_str; double s; sss>>s;
+
+    if (tdrautobins&&ilabel>0&&(ilabel==labels.size()-1)) { 
+      y -= 0.05;
+      text = labels[labels.size()-1]; 
+    } 
+   
+    if (!leginplot) { double scale = 800.0*0.93/1000./0.82;  x *= scale; }
+
+    TLatex tex;
+    tex.SetTextSize(s);
+    tex.SetTextFont(f);
+    tex.SetNDC(true);
+    tex.DrawLatex(x,y,text.c_str());
+  }
+}
+
+
+
+
 
 //______________________________________________________________________________
 void draw_extrapolation(TH1* h)
@@ -721,18 +845,23 @@ void draw_stats(TH1* h,double xoffset,Color_t color,Color_t fitColor)
 
 
 //______________________________________________________________________________
-void draw_range(const ObjectLoader<TH1F>& hl,
+void draw_range(const string& range, const int residual)
+{
+  TLatex tex;
+  tex.SetNDC(true);
+  tex.SetTextAlign(13);
+  tex.SetTextSize(0.055);
+  tex.SetTextFont(42);
+
+  if (residual<0) tex.DrawLatex(0.18,0.98,range.c_str());
+  else tex.DrawLatex(0.15,0.96,range.c_str());
+}
+
+//______________________________________________________________________________
+string get_range(const ObjectLoader<TH1F>& hl,
 		const vector<unsigned int>& indices,
 		bool  addFixedVars)
 {
-  TLatex range;
-  range.SetNDC(true);
-  range.SetTextAlign(13);
-  range.SetTextSize(0.055);
-  range.SetTextFont(42);
-
-  if (hl.nvariables()>2) range.SetTextSize(0.055-(hl.nvariables()*.0055));
-
   string varnameEta = "#eta";
   for (unsigned int i=0;i<hl.nvariables();i++)
     if (hl.variable(i)=="JetEta"&&hl.minimum(i,0)>=0) varnameEta="|#eta|";
@@ -767,8 +896,9 @@ void draw_range(const ObjectLoader<TH1F>& hl,
     else ssrange<<varmin<<" < "<<varname<<" < "<<varmax<<unit<<"    ";
   }
   
-  range.DrawLatex(0.13,0.96,ssrange.str().c_str());
+  return ssrange.str();
 }
+
 
 
 //______________________________________________________________________________

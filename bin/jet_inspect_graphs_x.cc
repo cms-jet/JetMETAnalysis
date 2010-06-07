@@ -95,7 +95,9 @@ int main(int argc,char** argv)
 
   vector<string> tdrlabels = cl.getVector<string>("tdrlabels",             "");
   bool           tdrautobins=cl.getValue<bool>   ("tdrautobins",        false);
-  bool           drawrange = cl.getValue<bool>   ("drawrange",           true); 
+  bool           drawrange = cl.getValue<bool>   ("drawrange",           true);
+
+
   bool           leginplot = cl.getValue<bool>   ("leginplot",           true);
 
   bool           drawlegend= cl.getValue<bool>   ("drawlegend",          true);
