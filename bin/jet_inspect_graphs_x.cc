@@ -52,7 +52,9 @@ string get_legend_label_from_input(const string& input);
 void   set_graph_style(TGraphErrors* g,unsigned int ngraph,bool nocolor,
 		       const vector<unsigned int>& vcolors,
 		       const vector<unsigned int>& vmarkers,
-		       const vector<float>& vsizes);
+		       const vector<unsigned int>& vlstyles,
+		       const vector<float>& vsizes,
+		       const vector<float>& vlsizes);
 
 void   set_axis_titles(TH1*h,const string& quantity,float ymin,float ymax,
 		       string xtitle,string ytitle);
@@ -110,7 +112,10 @@ int main(int argc,char** argv)
 
   vector<unsigned int>colors = cl.getVector<unsigned int>("colors",        "");
   vector<unsigned int>markers= cl.getVector<unsigned int>("markers",       "");
+  vector<unsigned int>lstyles= cl.getVector<unsigned int>("lstyles",       "");
   vector<float>       sizes  = cl.getVector<float>       ("sizes",         "");
+  vector<float>       lsizes = cl.getVector<float>       ("lsizes",        "");
+
 
   string         text      = cl.getValue<string> ("text",                  "");
   bool           logx      = cl.getValue<bool>   ("logx",               false);
@@ -279,7 +284,7 @@ int main(int argc,char** argv)
 	    get_range(gl,indices,true) : leglabels[ilabel];
 	  
 	  mg->Add(g);
-	  set_graph_style(g,overlay*(graphs.size()-1),nocolor,colors,markers,sizes);
+	  set_graph_style(g,overlay*(graphs.size()-1),nocolor,colors,markers,lstyles,sizes,lsizes);
 	  leg->AddEntry(g,label.c_str(),"lp");
 
 	  // print fit parameters
@@ -909,7 +914,9 @@ string get_legend_label_from_input(const string& input)
 void set_graph_style(TGraphErrors* g, unsigned int ngraph,bool nocolor,
 		     const vector<unsigned int>& vcolors,
 		     const vector<unsigned int>& vmarkers,
-		     const vector<float>&        vsizes)
+		     const vector<unsigned int>& vlstyles,
+		     const vector<float>&        vsizes,
+		     const vector<float>&        vlsizes)
 {
   Color_t colors[10] = {
     kBlue+1,kRed+1,kGreen+2,kMagenta+2,kCyan+3,
@@ -953,7 +960,9 @@ void set_graph_style(TGraphErrors* g, unsigned int ngraph,bool nocolor,
     f=(TF1*)(g->GetListOfFunctions()->At(0));
     f->SetLineColor(color);
     f->SetLineStyle(line);
+    if (ngraph<vlstyles.size()) f->SetLineStyle(vlstyles[ngraph]);
     f->SetLineWidth(1);
+    if (ngraph<vlsizes.size()) f->SetLineWidth(vlsizes[ngraph]);
   }
   
   return;
