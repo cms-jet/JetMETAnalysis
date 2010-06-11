@@ -159,7 +159,8 @@ int main(int argc,char** argv)
   
   vector<TCanvas*> c; int nx(1),ny(1);
 
-  TLegend* leg(0);
+  vector<TLegend**> vleg;
+
   vector<string> ranges;
   
   /// LOOP OVER FILES
@@ -196,10 +197,6 @@ int main(int argc,char** argv)
 	  if (nx*ny<npercanvas) ny++;
 	}
 
-
-
-	
-	
 	hl.begin_loop();
 	
 	vector<unsigned int> indices; TH1F* h(0); unsigned int ihisto(0);
@@ -234,29 +231,35 @@ int main(int argc,char** argv)
 				    sscname.str().c_str(),
 				    1000,1000));
 	    c.back()->Divide(nx,ny,1e-04,1e-04);
+
+	    vleg.push_back(new TLegend*[nx*ny]);
+
+
 	  }
 
 	  int icnv = ihisto/npercanvas;
 	  int ipad = ihisto%npercanvas+1;
 	  c[icnv]->cd(ipad);
 
-	  // implement a legend
-	  int nleglabels = leglabels.size();
-	  
-	  double legxmin = (leginplot) ? legx : 0.825;
-	  double legymin = legy;
-	  double legxmax = (leginplot) ? legx+legw : 1.03;
-	  double legymax = legymin - (nleglabels)*0.055;
-	  
-	  leg = new TLegend(legxmin,legymin,legxmax,legymax);
-	  leg->SetFillColor(10); leg->SetLineColor(10); leg->SetBorderSize(0);
-
 	  int   ilabel=(inputs.size()>1) ? ifile:(algs.size()>1) ? ialg:ivar;
 	  string label=(leglabels.size()==0||(unsigned)ilabel>=leglabels.size()) ? 
 	    "ERROR" : leglabels[ilabel];
-	  
 
 	  if (ifile==0&&ialg==0&&ivar==0) {
+
+	    // implement a legend
+	    int nleglabels = leglabels.size();
+	    
+	    double legxmin = (leginplot) ? legx : 0.825;
+	    double legymin = legy;
+	    double legxmax = (leginplot) ? legx+legw : 1.03;
+	    double legymax = legymin - (nleglabels)*0.055;
+
+	    vleg[icnv][ipad] = new TLegend(legxmin,legymin,legxmax,legymax);
+	    vleg[icnv][ipad]->SetFillColor(10); 
+	    vleg[icnv][ipad]->SetLineColor(10); 
+	    vleg[icnv][ipad]->SetBorderSize(0);
+	  
 	    icolor=0;
 	    if (logx&&(h->GetEntries()>0)) gPad->SetLogx();
 	    if (logy&&(h->GetEntries()>0)) gPad->SetLogy();
@@ -303,7 +306,9 @@ int main(int argc,char** argv)
 	    if (drawrange) draw_range(ranges.back(),residual);
 	    draw_line_legend(mean,median,peak);
 
-	    
+	    if (tdrautobins) tdrlabels.push_back(ranges.back());
+	    draw_labels(tdrlabels,leginplot,tdrautobins);
+	    if (tdrautobins) tdrlabels.pop_back();
 
 	  }
 	  else {
@@ -350,15 +355,18 @@ int main(int argc,char** argv)
 
 
 	  }
+
 	  if (mean)   draw_line_mean(h);
 	  if (median) draw_line_median(h);
 	  if (peak)   draw_line_peak(h);
 	  if (fullfit)draw_extrapolation(h); 
-	  if (drawlegend) {leg->AddEntry(h,label.c_str(),"l");leg->Draw("SAME");}
 
-	  if (tdrautobins) tdrlabels.push_back(ranges.back());
-	  draw_labels(tdrlabels,leginplot,tdrautobins);
-	  if (tdrautobins) tdrlabels.pop_back();
+	  string legstyle = (h->GetFillStyle()>0) ? "f" : "lp";
+
+	  if (drawlegend) {vleg[icnv][ipad]->AddEntry(h,label.c_str(),legstyle.c_str());}
+	  if (drawlegend) {vleg[icnv][ipad]->Draw("SAME");
+
+	  }
 	  
 	  ihisto++;
 	  
