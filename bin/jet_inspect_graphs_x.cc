@@ -65,7 +65,8 @@ void   draw_graph_residual(TPad* pad,TMultiGraph* mg,
 			   float xmax=-1.,
 			   float ymin=-1.,
 			   float ymax=-1.,
-			   int fullfit=-1);
+			   int fullfit=-1,
+			   float yresmax=-1.);
 
 TH1F*  set_axis_range(TMultiGraph* mg, 
 		       float xmin=-1., float xmax=-1.,
@@ -132,10 +133,14 @@ int main(int argc,char** argv)
   bool           batch     = cl.getValue<bool>   ("batch",              false);
   bool           latex     = cl.getValue<bool>   ("latex",              false);
   bool           latexcndf = cl.getValue<bool>   ("latexcndf",           true);
+  bool           fittofile = cl.getValue<bool>   ("fittofile",          false);
   int            residual  = cl.getValue<int>    ("residual",              -1);
+  float          yresmax   = cl.getValue<float>  ("yresmax",               -1);
 
   float          xmin      = cl.getValue<float>  ("xmin",                -1.0);
   float          xmax      = cl.getValue<float>  ("xmax",                -1.0);
+
+
 
   if (!cl.check()) return 0;
   cl.print();
@@ -279,9 +284,13 @@ int main(int argc,char** argv)
 	    //range=get_range(gl,indices,variables.size()==1);
 	  }
 
-	  int   ilabel=(inputs.size()>1) ? iinput:(algs.size()>1) ? ialg:ivar;
+	  int   ilabel=(inputs.size()>1) ? 
+	                iinput : (algs.size()>1) ? 
+	                ialg   : (variables.size()>1) ? 
+	                ivar   : indices.back();
+
 	  string label=(variables.size()>1&&leglabels.size()==0) ?
-	    get_range(gl,indices,true) : leglabels[ilabel];
+	    get_range(gl,indices,true) : (leglabels.size()>(unsigned)ilabel) ? leglabels[ilabel] : "error";
 	  
 	  mg->Add(g);
 	  set_graph_style(g,overlay*(graphs.size()-1),nocolor,colors,markers,lstyles,sizes,lsizes);
@@ -320,6 +329,7 @@ int main(int argc,char** argv)
 	    if (alg.find("pf")!=string::npos)texinput<<"\\pfjets & ";
 	    else if (alg.find("calo")!=string::npos)texinput<<"\\calojets & ";
 	    else if (alg.find("jpt")!=string::npos)texinput<<"\\jptjets & ";
+	    else if (alg.find("btag")!=string::npos)texinput<<"\\btag & ";
 	    else {
 	      cout<<"tex-ERROR: Did not recognize alg "<<alg<<endl;continue;
 	    }
@@ -350,6 +360,27 @@ int main(int argc,char** argv)
 
 	  // end latex table //hh
 
+	  if (fittofile&&0!=fitfnc) {
+
+	    ofstream fitfile; stringstream fitfilename; stringstream fitinput;
+
+	    if (!opath.empty()) fitfilename<<opath<<"/";
+	    fitfilename<<alg<<"_"<<mg->GetName()<<".txt";
+	    fitfile.open(fitfilename.str().c_str(),ofstream::trunc);
+	    if (!fitfile.is_open()) {
+	      cout<<"txt-ERROR: Could not create "<<fitfilename.str()<<endl;continue;
+	    }
+	    fitinput<<fitfnc->GetExpFormula()<<" "<<fitfnc->GetNpar()<<endl;
+	    for (int ipar=0;ipar<fitfnc->GetNpar();ipar++) {
+	      fitinput<<setprecision(10)<<fixed
+		      <<fitfnc->GetParameter(ipar)<<" ";
+	    }
+	    fitinput<<endl;
+	    fitfile<<fitinput.str().c_str(); fitfile.close();
+	    cout<<"Created fit file with fit table: "<<fitfilename.str()<<endl<<endl;	    
+	  }
+
+
 	  
 	} // graphs
       } // variables
@@ -379,7 +410,7 @@ int main(int argc,char** argv)
 
     set_axis_range(mg,xmin,xmax,ymin,ymax);
     draw_extrapolation(mg,fullfit,xmin,xmax);
-    draw_graph_residual((TPad*)gPad,mg,residual,xmin,xmax,ymin,ymax,fullfit);
+    draw_graph_residual((TPad*)gPad,mg,residual,xmin,xmax,ymin,ymax,fullfit,yresmax);
 
     leg->SetLineColor(10);
     leg->SetFillColor(10);
@@ -424,7 +455,7 @@ int main(int argc,char** argv)
 
       set_axis_range(mgind,xmin,xmax,ymin,ymax);
       draw_extrapolation(mgind,fullfit,xmin,xmax);
-      draw_graph_residual((TPad*)gPad,mgind,residual,xmin,xmax,ymin,ymax,fullfit);
+      draw_graph_residual((TPad*)gPad,mgind,residual,xmin,xmax,ymin,ymax,fullfit,yresmax);
       
       if (drawrange) draw_range(ranges[i],residual);
       if (tdrautobins) tdrlabels.push_back(ranges[i]);
@@ -621,7 +652,7 @@ TH1F* set_axis_range(TMultiGraph* mg,
 void draw_graph_residual(TPad* pad,TMultiGraph* mg,
 			 int errMode,
 			 float xmin,float xmax,float ymin,float ymax,
-			 int fullfit)
+			 int fullfit,float yresmax)
 {
   if (errMode<0) return;
   else if (errMode>3){
@@ -748,9 +779,10 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
 			   TMath::Abs(rmg->GetHistogram()->GetMaximum()));
 
   rmgymax = (rmgymax>50.) ? 50. : rmgymax;
+  rmgymax = (yresmax>0. ) ? yresmax : (rmgymax*1.15);
 
-  rmg->GetHistogram()->SetMinimum(-1.15*rmgymax);
-  rmg->GetHistogram()->SetMaximum( 1.15*rmgymax);
+  rmg->GetHistogram()->SetMinimum(-1.*rmgymax);
+  rmg->GetHistogram()->SetMaximum( 1.*rmgymax);
 
   rmg->GetHistogram()->SetTitle("");
 
