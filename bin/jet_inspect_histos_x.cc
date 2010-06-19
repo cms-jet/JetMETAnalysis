@@ -69,7 +69,7 @@ void draw_labels(const vector<string>& labels,bool leginplot,bool tdrautobins);
 
 string get_range(const ObjectLoader<TH1F>& hl,
 		 const vector<unsigned int>& indices,
-		 bool  addFixedVars);
+		 bool  addFixedVars,string refpt="");
 
 void draw_range(const string& range, const int residual);
 
@@ -103,6 +103,7 @@ int main(int argc,char** argv)
 
   string         xtitle    = cl.getValue<string> ("xtitle",                "");
   string         ytitle    = cl.getValue<string> ("ytitle",                "");
+  string         refpt     = cl.getValue<string> ("refpt",                 "");
 
 
   float          ymin       = cl.getValue<float>  ("ymin",                 -1);
@@ -302,7 +303,7 @@ int main(int argc,char** argv)
 	      else draw_stats(h,0.65,colors[icolor],colors[icolor]); 
 	    }
 
-	    ranges.push_back(get_range(hl,indices,(variables.size()==1)));
+	    ranges.push_back(get_range(hl,indices,(variables.size()==1),refpt ) );
 	    if (drawrange) draw_range(ranges.back(),residual);
 	    draw_line_legend(mean,median,peak);
 
@@ -868,7 +869,7 @@ void draw_range(const string& range, const int residual)
 //______________________________________________________________________________
 string get_range(const ObjectLoader<TH1F>& hl,
 		const vector<unsigned int>& indices,
-		bool  addFixedVars)
+		 bool  addFixedVars,string refpt)
 {
   string varnameEta = "#eta";
   for (unsigned int i=0;i<hl.nvariables();i++)
@@ -890,7 +891,8 @@ string get_range(const ObjectLoader<TH1F>& hl,
     double varmax  = hl.maximum(i,indices[i]);
     bool   threshold(false);
     
-    if (varname=="RefPt")    { varname = "p_{T}^{REF}"; unit = " GeV"; }
+    if (varname=="RefPt")    { varname = refpt.empty() ? "p_{T}^{REF}" : refpt.c_str(); 
+                                                        unit = " GeV"; }
     if (varname=="JetPt")    { varname = "p_{T}";       unit = " GeV"; }
     if (varname=="JetEta")   { varname = varnameEta;    unit =     ""; }
     if (varname=="JetY")     { varname = varnameY;      unit =     ""; }

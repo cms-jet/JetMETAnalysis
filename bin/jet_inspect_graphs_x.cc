@@ -46,7 +46,7 @@ void   draw_range(const string& range,const int residual=-1);
 
 string get_range(const ObjectLoader<TGraphErrors>& gl,
 		 const vector<unsigned int>& indices,
-		 bool  addFixedVars=true);
+		 bool  addFixedVars=true,string refpt="");
 string get_legend_label_from_alg(const string& alg);
 string get_legend_label_from_input(const string& input);
 void   set_graph_style(TGraphErrors* g,unsigned int ngraph,bool nocolor,
@@ -57,7 +57,7 @@ void   set_graph_style(TGraphErrors* g,unsigned int ngraph,bool nocolor,
 		       const vector<float>& vlsizes);
 
 void   set_axis_titles(TH1*h,const string& quantity,float ymin,float ymax,
-		       string xtitle,string ytitle);
+		       string xtitle,string ytitle,string refpt="");
 
 void   draw_graph_residual(TPad* pad,TMultiGraph* mg,
 			   int errMode=-1,
@@ -66,7 +66,8 @@ void   draw_graph_residual(TPad* pad,TMultiGraph* mg,
 			   float ymin=-1.,
 			   float ymax=-1.,
 			   int fullfit=-1,
-			   float yresmax=-1.);
+			   float yresmax=-1.,
+			   bool resmcdata=false);
 
 TH1F*  set_axis_range(TMultiGraph* mg, 
 		       float xmin=-1., float xmax=-1.,
@@ -110,6 +111,7 @@ int main(int argc,char** argv)
 
   string         xtitle    = cl.getValue<string> ("xtitle",                "");
   string         ytitle    = cl.getValue<string> ("ytitle",                "");
+  string         refpt     = cl.getValue<string> ("refpt",                 "");
 
   vector<unsigned int>colors = cl.getVector<unsigned int>("colors",        "");
   vector<unsigned int>markers= cl.getVector<unsigned int>("markers",       "");
@@ -136,6 +138,7 @@ int main(int argc,char** argv)
   bool           fittofile = cl.getValue<bool>   ("fittofile",          false);
   int            residual  = cl.getValue<int>    ("residual",              -1);
   float          yresmax   = cl.getValue<float>  ("yresmax",               -1);
+  bool           resmcdata = cl.getValue<bool>   ("resmcdata",          false);
 
   float          xmin      = cl.getValue<float>  ("xmin",                -1.0);
   float          xmax      = cl.getValue<float>  ("xmax",                -1.0);
@@ -253,7 +256,7 @@ int main(int argc,char** argv)
 	while ((g=gl.next_object(indices))) {
 
 	  graphs.push_back(g);
-	  ranges.push_back(get_range(gl,indices,variables.size()==1));
+	  ranges.push_back(get_range(gl,indices,variables.size()==1,refpt));
 
 	  if (0==mg) {
 	    stringstream sscname;
@@ -290,7 +293,7 @@ int main(int argc,char** argv)
 	                ivar   : indices.back();
 
 	  string label=(variables.size()>1&&leglabels.size()==0) ?
-	    get_range(gl,indices,true) : (leglabels.size()>(unsigned)ilabel) ? leglabels[ilabel] : "error";
+	    get_range(gl,indices,true,refpt) : (leglabels.size()>(unsigned)ilabel) ? leglabels[ilabel] : "error";
 	  
 	  mg->Add(g);
 	  set_graph_style(g,overlay*(graphs.size()-1),nocolor,colors,markers,lstyles,sizes,lsizes);
@@ -401,7 +404,7 @@ int main(int argc,char** argv)
     gPad->SetLogy(logy);
 
     mg->Draw("AP");
-    set_axis_titles(mg->GetHistogram(),quantity,ymin,ymax,xtitle,ytitle);
+    set_axis_titles(mg->GetHistogram(),quantity,ymin,ymax,xtitle,ytitle,refpt);
 
     if (0!=mg->GetHistogram()) {
       mg->GetHistogram()->GetXaxis()->SetMoreLogLabels(logx);
@@ -410,7 +413,7 @@ int main(int argc,char** argv)
 
     set_axis_range(mg,xmin,xmax,ymin,ymax);
     draw_extrapolation(mg,fullfit,xmin,xmax);
-    draw_graph_residual((TPad*)gPad,mg,residual,xmin,xmax,ymin,ymax,fullfit,yresmax);
+    draw_graph_residual((TPad*)gPad,mg,residual,xmin,xmax,ymin,ymax,fullfit,yresmax,resmcdata);
 
     leg->SetLineColor(10);
     leg->SetFillColor(10);
@@ -446,7 +449,7 @@ int main(int argc,char** argv)
       //graphs[i]->Draw("AP");
       mgind->Draw("AP");
       //set_axis_titles(graphs[i]->GetHistogram(),quantity,ymin,ymax);
-      set_axis_titles(mgind->GetHistogram(),quantity,ymin,ymax,xtitle,ytitle);
+      set_axis_titles(mgind->GetHistogram(),quantity,ymin,ymax,xtitle,ytitle,refpt);
 
       if (0!=mg->GetHistogram()) {
 	mg->GetHistogram()->GetXaxis()->SetMoreLogLabels(logx);
@@ -455,13 +458,13 @@ int main(int argc,char** argv)
 
       set_axis_range(mgind,xmin,xmax,ymin,ymax);
       draw_extrapolation(mgind,fullfit,xmin,xmax);
-      draw_graph_residual((TPad*)gPad,mgind,residual,xmin,xmax,ymin,ymax,fullfit,yresmax);
+      draw_graph_residual((TPad*)gPad,mgind,residual,xmin,xmax,ymin,ymax,fullfit,yresmax,resmcdata);
       
       if (drawrange) draw_range(ranges[i],residual);
       if (tdrautobins) tdrlabels.push_back(ranges[i]);
       draw_labels(tdrlabels,leginplot,tdrautobins);
       if (tdrautobins) tdrlabels.pop_back();
-      set_axis_titles(graphs[i]->GetHistogram(),quantity,ymin,ymax,xtitle,ytitle);
+      set_axis_titles(graphs[i]->GetHistogram(),quantity,ymin,ymax,xtitle,ytitle,refpt);
 
       if (algs.size()>1||inputs.size()>1) {
 	TLatex tex;
@@ -652,7 +655,7 @@ TH1F* set_axis_range(TMultiGraph* mg,
 void draw_graph_residual(TPad* pad,TMultiGraph* mg,
 			 int errMode,
 			 float xmin,float xmax,float ymin,float ymax,
-			 int fullfit,float yresmax)
+			 int fullfit,float yresmax,bool resmcdata)
 {
   if (errMode<0) return;
   else if (errMode>3){
@@ -673,6 +676,34 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
     vf.push_back((TF1*)g->GetListOfFunctions()->Last());
   }
   assert (vg.size()==vf.size());
+
+  bool nofits = true;
+  for (unsigned i=0;i<vf.size()&&nofits;i++) {
+    if (0!=vf[i]) nofits = false;
+  }
+  if (nofits) return;
+
+  if (resmcdata) {
+    // now this is pretty bad, but should do the job...
+
+    if (vg.size()!=2 || vf.size()<1) {
+      cout<<"ERROR: resmcdata==true, but !=2 graphs in the residual calculation!!!"<<endl
+	  <<" -> Need input 1: MC (with fit) and input 2: data"<<endl; return;
+    }
+    
+    if (vg.size()==2 && 0==vg[0]->GetListOfFunctions()->Last()) return;
+
+    TF1* mcfit(0);
+
+    vf.clear();
+    vf.push_back(mcfit);
+
+    mcfit = (TF1*)vg[0]->GetListOfFunctions()->Last();
+    
+    //mcfit->SetLineColor(vg[1]->GetLineColor());
+    vf.push_back(mcfit);
+  }
+
   
   stringstream rmgname;
   rmgname<<"rmg_"<<mg->GetName();
@@ -750,6 +781,9 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
     if (errMode==3) rGraph->SetMarkerSize(.5); else rGraph->SetMarkerSize(1.);
     if (0!=vf[i]) rGraph->SetMarkerColor(vf[i]->GetLineColor());
     if (0!=vf[i]) rGraph->SetLineColor(vf[i]->GetLineColor());
+    if (resmcdata)  rGraph->SetMarkerColor(vg[1]->GetLineColor());
+    if (resmcdata)  rGraph->SetLineColor(vg[1]->GetLineColor());
+
     rGraph->SetLineWidth(1);
       
     if (rGraph->GetN()!=0) rmg->Add(rGraph);
@@ -805,14 +839,31 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
   rmg->GetHistogram()->GetXaxis()->SetLabelSize( 0.15 );
   rmg->GetHistogram()->GetXaxis()->SetLabelOffset( 0.005 );
 
-  if ( errMode == 0 )
-    rmg->GetHistogram()->SetYTitle( "#frac{(data - fit)}{#sqrt{data}} [%]" );
-  else if ( errMode == 1 )
-    rmg->GetHistogram()->SetYTitle( "#frac{(data - fit)}{#sqrt{fit}} [%]" );
-  else if (errMode == 2)
-    rmg->GetHistogram()->SetYTitle( "#frac{(data - fit)}{binerror} [%]" );
-  else 
-    rmg->GetHistogram()->SetYTitle( "#frac{(data-fit)}{data} [%]" );
+  if (!resmcdata) {
+
+    if ( errMode == 0 )
+      rmg->GetHistogram()->SetYTitle( "#frac{(point - fit)}{#sqrt{point}} [%]" );
+    else if ( errMode == 1 )
+      rmg->GetHistogram()->SetYTitle( "#frac{(point - fit)}{#sqrt{fit}} [%]" );
+    else if (errMode == 2)
+      rmg->GetHistogram()->SetYTitle( "#frac{(point - fit)}{binerror} [%]" );
+    else 
+      rmg->GetHistogram()->SetYTitle( "#frac{(point-fit)}{point} [%]" );
+
+  }
+  else {
+
+    if ( errMode == 0 )
+      rmg->GetHistogram()->SetYTitle( "#frac{(data - MC)}{#sqrt{data}} [%]" );
+    else if ( errMode == 1 )
+      rmg->GetHistogram()->SetYTitle( "#frac{(data - MC)}{#sqrt{MC}} [%]" );
+    else if (errMode == 2)
+      rmg->GetHistogram()->SetYTitle( "#frac{(data - MC)}{binerror} [%]" );
+    else 
+      rmg->GetHistogram()->SetYTitle( "#frac{(data-MC)}{data} [%]" );
+
+  }
+  
 
   set_axis_range(rmg,xmin,xmax);  
   draw_zline(rmg->GetHistogram(),xmin,xmax);
@@ -841,7 +892,7 @@ void draw_range(const string& range, const int residual)
   tex.SetNDC(true);
   tex.SetTextAlign(13);
   tex.SetTextSize(0.055);
-  tex.SetTextFont(42);
+  tex.SetTextFont(42);     
   if (residual<0) tex.DrawLatex(0.18,0.98,range.c_str());
   else tex.DrawLatex(0.15,0.96,range.c_str());
 }
@@ -850,7 +901,7 @@ void draw_range(const string& range, const int residual)
 //______________________________________________________________________________
 string get_range(const ObjectLoader<TGraphErrors>& gl,
 		 const vector<unsigned int>& indices,
-		 bool  addFixedVars)
+		 bool  addFixedVars, string refpt)
 {
   string varnameEta = "#eta";
   for (unsigned int i=0;i<gl.nvariables();i++)
@@ -873,7 +924,8 @@ string get_range(const ObjectLoader<TGraphErrors>& gl,
     double varmax  = gl.maximum(i,indices[i]);
     bool   threshold(false);
 
-    if (varname=="RefPt")    { varname = "p_{T}^{REF}"; unit = " GeV"; }
+    if (varname=="RefPt")    { varname = refpt.empty() ? "p_{T}^{REF}" : refpt.c_str(); 
+                                                        unit = " GeV"; }
     if (varname=="JetPt")    { varname = "p_{T}";       unit = " GeV"; }
     if (varname=="JetEta")   { varname = varnameEta;    unit =     ""; }
     if (varname=="JetY")     { varname = varnameY;      unit =     ""; }
@@ -1003,7 +1055,7 @@ void set_graph_style(TGraphErrors* g, unsigned int ngraph,bool nocolor,
 
 //______________________________________________________________________________
 void set_axis_titles(TH1* h,const string& quantity,float ymin,float ymax,
-		     string xtitle,string ytitle)
+		     string xtitle,string ytitle,string refpt)
 {
   if (0==h) {
     cout<<"set_axis_title ERROR: h is NULL!"<<endl;
@@ -1022,12 +1074,13 @@ void set_axis_titles(TH1* h,const string& quantity,float ymin,float ymax,
     if (ytitle.empty()) {
       string ystr=quantity.substr(0,pos);
       if (ystr=="Rsp"||ystr=="RelRsp"||ystr=="AbsRsp") {
-	ytitle="p_{T} / p_{T}^{REF}";
+	ytitle=refpt.empty() ? "p_{T} / p_{T}^{REF}" : ("p_{T} / "+refpt).c_str();
 	ymax = (ymax<0.0) ? 1.2 : ymax;
 	h->SetMaximum(ymax);
       }
       else if (ystr=="Res"||ystr=="RelRes"||ystr=="AbsRes") {
-	ytitle="#sigma(p_{T}/p_{T}^{REF}) / <p_{T}/p_{T}^{REF}>";
+	ytitle= refpt.empty() ? "#sigma(p_{T}/p_{T}^{REF}) / <p_{T}/p_{T}^{REF}>" :
+	  ("#sigma(p_{T}/"+refpt+") / <p_{T}/"+refpt+">").c_str();
 	if (ymax>0.0) h->SetMaximum(ymax);
       }
       else if (ystr=="Asym") {
@@ -1051,7 +1104,7 @@ void set_axis_titles(TH1* h,const string& quantity,float ymin,float ymax,
 
     if (xtitle.empty()) {
       string xstr=quantity.substr(pos+2);    
-      if (xstr=="RefPt")    xtitle="p_{T}^{REF} [GeV]";
+      if (xstr=="RefPt")    xtitle=refpt.empty() ? "p_{T}^{REF} [GeV]" : (refpt+" [GeV]").c_str();
       if (xstr=="JetPt")    xtitle="p_{T} [GeV]";
       if (xstr=="JetEta")   xtitle="#eta";
       if (xstr=="JetPhi")   xtitle="#varphi";
