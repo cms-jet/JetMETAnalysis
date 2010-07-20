@@ -237,16 +237,20 @@ int fit_dscb(TH1F*& hrsp,
   string histname = hrsp->GetName();
   double ptRefMax(1.0),rspMax(0.0);
 
-  int pos1     = histname.find("RefPt");
-  int pos2     = histname.find("to",pos1);
-  string ss    = histname.substr(pos1+5,pos2);
-  if (from_string(ptRefMax,ss,std::dec)) {
-    if (histname.find("RelRsp")==0)
-      rspMax = jtptmin/ptRefMax;
-    if (histname.find("AbsRsp")==0)
-      rspMax = jtptmin-ptRefMax;
+  if (histname.find("RefDiPt")==string::npos&&
+      histname.find("JetDiPt")==string::npos) {
+
+    int pos1     = histname.find("RefPt");
+    int pos2     = histname.find("to",pos1);
+    string ss    = histname.substr(pos1+5,pos2);
+    if (from_string(ptRefMax,ss,std::dec)) {
+      if (histname.find("RelRsp")==0)
+	rspMax = jtptmin/ptRefMax;
+      if (histname.find("AbsRsp")==0)
+	rspMax = jtptmin-ptRefMax;
+    }
   }
-  
+
   double fitrange_min(0.0);
   if (alg.find("pf")!=string::npos) fitrange_min = std::max(rspMax,0.3);
   else if (alg.find("PF")!=string::npos) fitrange_min = std::max(rspMax,0.3);
@@ -370,14 +374,18 @@ void fit_gaussian(TH1F*& hrsp,
   double norm  = hrsp->GetMaximumStored();
   double peak  = mean;
   double sigma = rms;
-  int pos1     = histname.find("RefPt");
-  int pos2     = histname.find("to",pos1);
-  string ss    = histname.substr(pos1+5,pos2);
-  if (from_string(ptRefMax,ss,std::dec)) {
-    if (histname.find("RelRsp")==0)
-      rspMax = jtptmin/ptRefMax;
-    if (histname.find("AbsRsp")==0)
-      rspMax = jtptmin-ptRefMax;
+
+  if (histname.find("RefDiPt")==string::npos&&
+      histname.find("JetDiPt")==string::npos) {
+    int pos1     = histname.find("RefPt");
+    int pos2     = histname.find("to",pos1);
+    string ss    = histname.substr(pos1+5,pos2);
+    if (from_string(ptRefMax,ss,std::dec)) {
+      if (histname.find("RelRsp")==0)
+	rspMax = jtptmin/ptRefMax;
+      if (histname.find("AbsRsp")==0)
+	rspMax = jtptmin-ptRefMax;
+    }
   }
   double xmin  = hrsp->GetXaxis()->GetXmin();
   double xmax  = hrsp->GetXaxis()->GetXmax();

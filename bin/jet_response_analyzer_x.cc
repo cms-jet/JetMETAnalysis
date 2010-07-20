@@ -31,6 +31,7 @@
 #include <string>
 #include <map>
 #include <cmath>
+#include <cassert>
 
 
 using namespace std;
@@ -67,6 +68,14 @@ void fill_histo(int pdgid,float value,float weight,float x,float y,
 /// check if a vector of strings contains a certain element
 bool contains(const vector<string>& collection,const string& element);
 
+/// compute deltaPhi between two jets - copied from DataFormats/Math/interface/
+inline float deltaPhi(float phi1, float phi2) { 
+  float result = phi1 - phi2;
+  while (result > float(M_PI)) result -= float(2*M_PI);
+  while (result <= -float(M_PI)) result += float(2*M_PI);
+  return result;
+}
+
 
 //______________________________________________________________________________
 int main(int argc,char**argv)
@@ -82,12 +91,14 @@ int main(int argc,char**argv)
   vector<float>  binseta      = cl.getVector<float> ("binseta",       "");
   vector<float>  binsphi      = cl.getVector<float> ("binsphi",       "");
   vector<float>  binsy        = cl.getVector<float> ("binsy",         "");
+  vector<float>  binsdipt     = cl.getVector<float> ("binsdipt",      "");
   string         treename     = cl.getValue<string> ("treename",     "t");
   string         output       = cl.getValue<string> ("output","jra.root");
   bool           useweight    = cl.getValue<bool>   ("useweight",  false);
   float          xsection     = cl.getValue<float>  ("xsection",     0.0);
   int            nrefmax      = cl.getValue<int>    ("nrefmax",        0);
   int            nbinspt      = cl.getValue<int>    ("nbinspt",       50);
+  int            nbinsdipt    = cl.getValue<int>    ("nbinsdipt",     50);
   int            nbinseta     = cl.getValue<int>    ("nbinseta",      25);
   int            nbinsphi     = cl.getValue<int>    ("nbinsphi",      25);
   int            nbinsy       = cl.getValue<int>    ("nbinsy",        25);
@@ -97,8 +108,11 @@ int main(int argc,char**argv)
   bool           doflavor     = cl.getValue<bool>   ("doflavor",   false);
   float          drmax        = cl.getValue<float>  ("drmax",        0.3);
   float          dphimin      = cl.getValue<float>  ("dphimin",      2.7);
+  float          jetrecdidphimin = cl.getValue<float>  ("jetrecdidphimin",-1.0);
   bool           dojetpt      = cl.getValue<bool>   ("dojetpt",    false);
   bool           dorefpt      = cl.getValue<bool>   ("dorefpt",     true);
+  bool           dojetdipt    = cl.getValue<bool>   ("dojetdipt",  false);
+  bool           dorefdipt    = cl.getValue<bool>   ("dorefdipt",  false);
   int            nbinsrelrsp  = cl.getValue<int>    ("nbinsrelrsp",   50);
   float          relrspmin    = cl.getValue<float>  ("relrspmin",    0.0);
   float          relrspmax    = cl.getValue<float>  ("relrspmax",    2.0);
@@ -113,9 +127,19 @@ int main(int argc,char**argv)
   float          phirspmax    = cl.getValue<float>  ("phirspmax",    1.0);
   float          jtptmin      = cl.getValue<float>  ("jtptmin",      1.0);
   vector<string> algs         = cl.getVector<string>("algs",          "");
+  float          maxextrarefpt= cl.getValue<float>  ("maxextrarefpt",-1.0);
+  float          minextrarefpt= cl.getValue<float>  ("minextrarefpt",-1.0);
+  float          maxextrajetpt= cl.getValue<float>  ("maxextrajetpt",-1.0);
+  float          minextrajetpt= cl.getValue<float>  ("minextrajetpt",-1.0);
+  float          mindijetpt   = cl.getValue<float>  ("mindijetpt",  -1.0);
 
   if (!cl.check()) return 0;
   cl.print();
+
+  if (maxextrarefpt!=-1.0 && minextrarefpt!=-1.0) {cout<<"Error; min & max extrapt are set"<<endl;return 0;}
+
+  if (maxextrajetpt!=-1. && nrefmax!=2) {cout<<"Error; maxextrajetpt option so far only for dijets!"<<endl; return 0;}
+  if (minextrajetpt!=-1. && nrefmax!=2) {cout<<"Error; minextrajetpt option so far only for dijets!"<<endl; return 0;}
 
   bool dorelrsp=(nbinsrelrsp>0);
   bool doabsrsp=(nbinsabsrsp>0);
@@ -228,58 +252,123 @@ int main(int argc,char**argv)
     if (0==odir) { cout<<"failed to create directory."<<endl; continue; }
     odir->cd();
     
+
+
     // declare histograms
     vector<TH1F**>  jetPtVsJetPt;
     vector<TH1F**>  refPtVsRefPt;
     vector<TH1F**>  jetPtVsRefPt;
+    //hh
+    vector<TH1F**>  jetDiPtVsJetDiPt;
+    vector<TH1F**>  refDiPtVsRefDiPt;
+    vector<TH1F**>  jetDiPtVsRefDiPt;
+
     vector<TH1F**>  refPtVsRefPtBarrel;
     vector<TH1F**>  jetPtVsRefPtBarrel;
+    //hh
+    vector<TH1F**>  refDiPtVsRefDiPtBarrel;
+    vector<TH1F**>  jetDiPtVsRefDiPtBarrel;
+
     vector<TH1F**>  jetEtaVsJetEta;
     vector<TH1F**>  jetPhiVsJetPhi;
     vector<TH1F**>  jetYVsJetY;
+
+
     vector<TH1F***> jetPtVsJetEtaJetPt;
     vector<TH1F***> refPtVsJetEtaRefPt;
     vector<TH1F***> jetPtVsJetEtaRefPt;
+    //hh
+    vector<TH1F***> jetDiPtVsJetEtaJetDiPt;
+    vector<TH1F***> refDiPtVsJetEtaRefDiPt;
+    vector<TH1F***> jetDiPtVsJetEtaRefDiPt;
+
     vector<TH1F***> jetPtVsJetYJetPt;
     vector<TH1F***> refPtVsJetYRefPt;
     vector<TH1F***> jetPtVsJetYRefPt;
-    
+    //hh
+    vector<TH1F***> jetDiPtVsJetYJetDiPt;
+    vector<TH1F***> refDiPtVsJetYRefDiPt;
+    vector<TH1F***> jetDiPtVsJetYRefDiPt;
+
+
     vector<TH1F**>  relRspVsJetPt;
     vector<TH1F**>  relRspVsRefPt;
     vector<TH1F**>  relRspVsRefPtBarrel;
+    //hh
+    vector<TH1F**>  relRspVsJetDiPt;
+    vector<TH1F**>  relRspVsRefDiPt;
+    vector<TH1F**>  relRspVsRefDiPtBarrel;
+
     vector<TH1F**>  relRspVsJetEta;
     vector<TH1F**>  relRspVsJetPhi;
     vector<TH1F**>  relRspVsJetY;
+
     vector<TH1F***> relRspVsJetEtaJetPt;
     vector<TH1F***> relRspVsJetEtaRefPt;
+    //hh
+    vector<TH1F***> relRspVsJetEtaJetDiPt;
+    vector<TH1F***> relRspVsJetEtaRefDiPt;
+
     vector<TH1F***> relRspVsJetYJetPt;
     vector<TH1F***> relRspVsJetYRefPt;
+    //hh
+    vector<TH1F***> relRspVsJetYJetDiPt;
+    vector<TH1F***> relRspVsJetYRefDiPt;
+
     
     vector<TH1F**>  absRspVsJetPt;
     vector<TH1F**>  absRspVsRefPt;
     vector<TH1F**>  absRspVsRefPtBarrel;
+    //hh
+    vector<TH1F**>  absRspVsJetDiPt;
+    vector<TH1F**>  absRspVsRefDiPt;
+    vector<TH1F**>  absRspVsRefDiPtBarrel;
+
     vector<TH1F**>  absRspVsJetEta;
     vector<TH1F**>  absRspVsJetPhi;
     vector<TH1F**>  absRspVsJetY;
+
     vector<TH1F***> absRspVsJetEtaJetPt;
     vector<TH1F***> absRspVsJetEtaRefPt;
+    //hh
+    vector<TH1F***> absRspVsJetEtaJetDiPt;
+    vector<TH1F***> absRspVsJetEtaRefDiPt;
+
     vector<TH1F***> absRspVsJetYJetPt;
     vector<TH1F***> absRspVsJetYRefPt;
+    //hh
+    vector<TH1F***> absRspVsJetYJetDiPt;
+    vector<TH1F***> absRspVsJetYRefDiPt;
+
 
     vector<TH1F**>  etaRspVsJetPt;
     vector<TH1F**>  etaRspVsRefPt;
+    //hh
+    vector<TH1F**>  etaRspVsJetDiPt;
+    vector<TH1F**>  etaRspVsRefDiPt;
+
     vector<TH1F**>  etaRspVsJetEta;
     vector<TH1F**>  etaRspVsJetPhi;
     vector<TH1F***> etaRspVsJetEtaJetPt;
     vector<TH1F***> etaRspVsJetEtaRefPt;
+    //hh
+    vector<TH1F***> etaRspVsJetEtaJetDiPt;
+    vector<TH1F***> etaRspVsJetEtaRefDiPt;
 
     vector<TH1F**>  phiRspVsJetPt;
     vector<TH1F**>  phiRspVsRefPt;
+    //hh
+    vector<TH1F**>  phiRspVsJetDiPt;
+    vector<TH1F**>  phiRspVsRefDiPt;
+
     vector<TH1F**>  phiRspVsJetEta;
     vector<TH1F**>  phiRspVsJetPhi;
     vector<TH1F***> phiRspVsJetEtaJetPt;
     vector<TH1F***> phiRspVsJetEtaRefPt;
-    
+    //hh
+    vector<TH1F***> phiRspVsJetEtaJetDiPt;
+    vector<TH1F***> phiRspVsJetEtaRefDiPt;
+
 
     // define flavors
     vector<string> flavor;
@@ -293,6 +382,7 @@ int main(int argc,char**argv)
       flavor.push_back("slb_");
     }
     
+
     // book pT histograms
     if (binspt.size()>=2) {
       for (unsigned int ipt=0;ipt<binspt.size()-1;++ipt) {
@@ -453,6 +543,174 @@ int main(int argc,char**argv)
 	
       }
     }
+
+
+
+    // book DI-pT histograms
+    if (binsdipt.size()>=2) {
+
+      for (unsigned int idipt=0;idipt<binsdipt.size()-1;++idipt) {
+	
+	string hname; float diptmin=binsdipt[idipt]; float diptmax=binsdipt[idipt+1];
+	
+	if (dojetdipt) {jetDiPtVsJetDiPt.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"JetDiPt_"+get_suffix("JetDiPt",idipt,binsdipt);
+	    jetDiPtVsJetDiPt.back()[iflv]=new TH1F(hname.c_str(),";p_{T}^{ave} [GeV]",
+						   nbinsdipt,diptmin,diptmax);
+	  }
+	}
+	
+	if (dorefdipt) {
+	  refDiPtVsRefDiPt.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"RefDiPt_"+get_suffix("RefDiPt",idipt,binsdipt);
+	    refDiPtVsRefDiPt.back()[iflv]=new TH1F(hname.c_str(),";p_{T}^{ave,ref} [GeV]",
+						   nbinsdipt,diptmin,diptmax);
+	  }
+	}
+	
+	if (dorefdipt) {
+	  jetDiPtVsRefDiPt.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"JetDiPt_"+get_suffix("RefDiPt",idipt,binsdipt);
+	    jetDiPtVsRefDiPt.back()[iflv]=new TH1F(hname.c_str(),";p_{T}^{ave} [GeV]",
+						   3*nbinsdipt,
+						   0,
+						   3.0*diptmax);
+	  }
+	}
+	
+	if (dorefdipt) {
+	  refDiPtVsRefDiPtBarrel.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"RefDiPt_Barrel_"+get_suffix("RefDiPt",idipt,binsdipt);
+	    refDiPtVsRefDiPtBarrel.back()[iflv]=new TH1F(hname.c_str(),
+							 ";p_{T}^{ave,ref} [GeV]",
+							 nbinsdipt,diptmin,diptmax);
+	  }
+	}
+	
+	if (dorefdipt) {
+	  jetDiPtVsRefDiPtBarrel.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"JetPt_Barrel_"+get_suffix("RefDiPt",idipt,binsdipt);
+	    jetDiPtVsRefDiPtBarrel.back()[iflv]=new TH1F(hname.c_str(),
+							 ";p_{T}^{ave} [GeV]",
+							 3*nbinsdipt,
+							 0,
+							 3.0*diptmax);
+	  }
+	}
+	
+	if (dorelrsp&&dojetdipt) {
+	  relRspVsJetDiPt.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"RelRsp_"+get_suffix("JetDiPt",idipt,binsdipt);
+	    relRspVsJetDiPt.back()[iflv]=new TH1F(hname.c_str(),";p_{T}/p_{T}^{ref}",
+						  nbinsrelrsp,relrspmin,relrspmax);
+	  }
+	}
+
+	if (dorelrsp&&dorefdipt) {
+	  relRspVsRefDiPt.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"RelRsp_"+get_suffix("RefDiPt",idipt,binsdipt);
+	    relRspVsRefDiPt.back()[iflv]=new TH1F(hname.c_str(),";p_{T}/p_{T}^{ref}",
+						  nbinsrelrsp,relrspmin,relrspmax);
+	  }
+	}
+
+	if (dorelrsp&&dorefdipt) {
+	  relRspVsRefDiPtBarrel.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"RelRsp_Barrel_"+get_suffix("RefDiPt",idipt,binsdipt);
+	    relRspVsRefDiPtBarrel.back()[iflv]=new TH1F(hname.c_str(),
+							";p_{T}/p_{T}^{ref}",
+							nbinsrelrsp,
+							relrspmin,relrspmax);
+	  }
+	}
+	
+	if (doabsrsp&&dojetdipt) {
+	  absRspVsJetDiPt.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"AbsRsp_"+get_suffix("JetDiPt",idipt,binsdipt);
+	    absRspVsJetDiPt.back()[iflv]=new TH1F(hname.c_str(),
+						  ";p_{T}-p_{T}^{ref} [GeV]",
+						  nbinsabsrsp,absrspmin,absrspmax);
+	  }
+	}
+	
+	if (doabsrsp&&dorefdipt) {
+	  absRspVsRefDiPt.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"AbsRsp_"+get_suffix("RefDiPt",idipt,binsdipt);
+	    absRspVsRefDiPt.back()[iflv]=new TH1F(hname.c_str(),
+						  ";p_{T}-p_{T}^{ref} [GeV]",
+						  nbinsabsrsp,absrspmin,absrspmax);
+	  }
+	}
+	
+	if (doabsrsp&&dorefdipt) {
+	  absRspVsRefDiPtBarrel.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"AbsRsp_Barrel_"+get_suffix("RefDiPt",idipt,binsdipt);
+	    absRspVsRefDiPtBarrel.back()[iflv]=new TH1F(hname.c_str(),
+							";p_{T}-p_{T}^{ref} [GeV]",
+							nbinsabsrsp,
+							absrspmin,absrspmax);
+	  }
+	}
+
+	if (doetarsp&&dojetdipt) {
+	  etaRspVsJetDiPt.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"EtaRsp_"+get_suffix("JetDiPt",idipt,binsdipt);
+	    etaRspVsJetDiPt.back()[iflv]=new TH1F(hname.c_str(),
+						  ";|#eta|-|#eta^{ref}|",
+						  nbinsetarsp,etarspmin,etarspmax);
+	  }
+	}
+	
+	if (doetarsp&&dorefdipt) {
+	  etaRspVsRefDiPt.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"EtaRsp_"+get_suffix("RefDiPt",idipt,binsdipt);
+	    etaRspVsRefDiPt.back()[iflv]=new TH1F(hname.c_str(),
+						  ";|#eta|-|#eta^{ref}|",
+						  nbinsetarsp,etarspmin,etarspmax);
+	  }
+	}
+	
+	if (dophirsp&&dojetdipt) {
+	  phiRspVsJetDiPt.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"PhiRsp_"+get_suffix("JetDiPt",idipt,binsdipt);
+	    phiRspVsJetDiPt.back()[iflv]=new TH1F(hname.c_str(),
+						  ";#phi-#phi^{ref}",
+						  nbinsphirsp,phirspmin,phirspmax);
+	  }
+	}
+	
+	if (dophirsp&&dorefdipt) {
+	  phiRspVsRefDiPt.push_back(new TH1F*[flavor.size()]);
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    hname=flavor[iflv]+"PhiRsp_"+get_suffix("RefDiPt",idipt,binsdipt);
+	    phiRspVsRefDiPt.back()[iflv]=new TH1F(hname.c_str(),
+						  ";#phi-#phi^{ref}",
+						  nbinsphirsp,phirspmin,phirspmax);
+	  }
+	}
+	
+	
+      }
+    }
+
+
+
+    
+
     
     // book eta histograms
     if (binseta.size()>=2) {
@@ -768,6 +1026,13 @@ int main(int argc,char**argv)
 					      ";#phi-#phi^{ref}",
 					      nbinsphirsp,phirspmin,phirspmax);
 	    }
+
+	    if (dophirsp&&dojetpt) {
+	      hname=flavor[iflv]+"PhiRsp_"+jetEtaSuffix+"_"+jetPtSuffix;
+	      phiRspJetPt[ipt][iflv]=new TH1F(hname.c_str(),
+					      ";#phi-#phi^{ref}",
+					      nbinsphirsp,phirspmin,phirspmax);
+	    }
 	  }
 	}
 	if (dojetpt)           jetPtVsJetEtaJetPt .push_back(jetPtJetPt);
@@ -784,6 +1049,210 @@ int main(int argc,char**argv)
       }
     }
     
+
+
+
+    // book eta/DI-pT histograms
+    if (binsdipt.size()>=2&&binseta.size()>=2) {
+      for (unsigned int ieta=0;ieta<binseta.size()-1;++ieta) {
+	
+	TH1F*** jetDiPtJetDiPt(0);
+	TH1F*** refDiPtRefDiPt(0);
+	TH1F*** jetDiPtRefDiPt(0);
+	TH1F*** relRspJetDiPt(0);
+	TH1F*** relRspRefDiPt(0);
+	TH1F*** absRspJetDiPt(0);
+	TH1F*** absRspRefDiPt(0);
+	TH1F*** etaRspJetDiPt(0);
+	TH1F*** etaRspRefDiPt(0);	
+	TH1F*** phiRspJetDiPt(0);
+	TH1F*** phiRspRefDiPt(0);
+	
+	if (dojetdipt) {
+	  jetDiPtJetDiPt=new TH1F**[binsdipt.size()-1];
+	  for (unsigned int ipt=0;ipt<binsdipt.size()-1;ipt++)
+	    jetDiPtJetDiPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	if (dorefdipt) {
+	  refDiPtRefDiPt =new TH1F**[binsdipt.size()];
+	  for (unsigned int ipt=0;ipt<binsdipt.size()-1;ipt++)
+	    refDiPtRefDiPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	if (dorefdipt) {
+	  jetDiPtRefDiPt =new TH1F**[binsdipt.size()];
+	  for (unsigned int ipt=0;ipt<binsdipt.size()-1;ipt++)
+	    jetDiPtRefDiPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	if (dorelrsp&&dojetdipt) {
+	  relRspJetDiPt=new TH1F**[binsdipt.size()-1];
+	  for (unsigned int ipt=0;ipt<binsdipt.size()-1;ipt++)
+	    relRspJetDiPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	if (dorelrsp&&dorefdipt) {
+	  relRspRefDiPt=new TH1F**[binsdipt.size()-1];
+	  for (unsigned int ipt=0;ipt<binsdipt.size()-1;ipt++)
+	    relRspRefDiPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	if (doabsrsp&&dojetdipt) {
+	  absRspJetDiPt=new TH1F**[binsdipt.size()-1];
+	  for (unsigned int ipt=0;ipt<binsdipt.size()-1;ipt++)
+	    absRspJetDiPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	if (doabsrsp&&dorefdipt) {
+	  absRspRefDiPt=new TH1F**[binsdipt.size()-1];
+	  for (unsigned int ipt=0;ipt<binsdipt.size()-1;ipt++)
+	    absRspRefDiPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	if (doetarsp&&dojetdipt) {
+	  etaRspJetDiPt=new TH1F**[binsdipt.size()-1];
+	  for (unsigned int ipt=0;ipt<binsdipt.size()-1;ipt++)
+	    etaRspJetDiPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	if (doetarsp&&dorefdipt) {
+	  etaRspRefDiPt=new TH1F**[binsdipt.size()-1];
+	  for (unsigned int ipt=0;ipt<binsdipt.size()-1;ipt++)
+	    etaRspRefDiPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	if (dophirsp&&dojetdipt) {
+	  phiRspJetDiPt=new TH1F**[binsdipt.size()-1];
+	  for (unsigned int ipt=0;ipt<binsdipt.size()-1;ipt++)
+	    phiRspJetDiPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	if (dophirsp&&dorefdipt) {
+	  phiRspRefDiPt=new TH1F**[binsdipt.size()-1];
+	  for (unsigned int ipt=0;ipt<binsdipt.size()-1;ipt++)
+	    phiRspRefDiPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	string jetEtaSuffix=get_suffix("JetEta",ieta,binseta);
+	
+	for (unsigned int ipt=0;ipt<binsdipt.size()-1;ipt++) {
+
+	  string hname; float ptmin=binsdipt[ipt]; float ptmax=binsdipt[ipt+1];
+
+	  string jetDiPtSuffix=get_suffix("JetDiPt",ipt,binsdipt);
+	  string refDiPtSuffix=get_suffix("RefDiPt",ipt,binsdipt);
+	  
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    
+	    if (dojetdipt) {
+	      hname=flavor[iflv]+"JetDiPt_"+jetEtaSuffix+"_"+jetDiPtSuffix;
+	      jetDiPtJetDiPt[ipt][iflv]=new TH1F(hname.c_str(),";p_{T}",
+						 nbinsdipt,ptmin,ptmax);
+	    }
+	    
+	    if (dorefdipt) {
+	      hname=flavor[iflv]+"RefDiPt_"+jetEtaSuffix+"_"+refDiPtSuffix;
+	      refDiPtRefDiPt[ipt][iflv]=new TH1F(hname.c_str(),";p_{T}^{ref}",
+						 nbinsdipt,ptmin,ptmax);
+	    }
+	    
+	    if (dorefdipt) {
+	      hname=flavor[iflv]+"JetDiPt_"+jetEtaSuffix+"_"+refDiPtSuffix;
+	      jetDiPtRefDiPt[ipt][iflv]=new TH1F(hname.c_str(),";p_{T}",
+						 3*nbinsdipt,
+						 0,
+						 3.0*ptmax);
+	    }
+	    
+	    if (dorelrsp&&dojetdipt) {
+	      hname=flavor[iflv]+"RelRsp_"+jetEtaSuffix+"_"+jetDiPtSuffix;
+	      relRspJetDiPt[ipt][iflv]=new TH1F(hname.c_str(),";p_{T}/p_{T}^{ref}",
+						nbinsrelrsp,relrspmin,relrspmax);
+	    }
+	    
+	    if (dorelrsp&&dorefdipt) {
+	      hname=flavor[iflv]+"RelRsp_"+jetEtaSuffix+"_"+refDiPtSuffix;
+	      relRspRefDiPt[ipt][iflv]=new TH1F(hname.c_str(),";p_{T}/p_{T}^{ref}",
+						nbinsrelrsp,relrspmin,relrspmax);
+	    }
+	    
+	    if (doabsrsp&&dojetdipt) {
+	      hname=flavor[iflv]+"AbsRsp_"+jetEtaSuffix+"_"+jetDiPtSuffix;
+	      absRspJetDiPt[ipt][iflv]=new TH1F(hname.c_str(),
+						";p_{T}-p_{T}^{ref} [GeV]",
+						nbinsabsrsp,absrspmin,absrspmax);
+	    }
+	    
+	    if (doabsrsp&&dorefdipt) {
+	      hname=flavor[iflv]+"AbsRsp_"+jetEtaSuffix+"_"+refDiPtSuffix;
+	      absRspRefDiPt[ipt][iflv]=new TH1F(hname.c_str(),
+						";p_{T}-p_{T}^{ref} [GeV]",
+						nbinsabsrsp,absrspmin,absrspmax);
+	    }
+	    if (doabsrsp&&dojetdipt) {
+	      hname=flavor[iflv]+"AbsRsp_"+jetEtaSuffix+"_"+jetDiPtSuffix;
+	      absRspJetDiPt[ipt][iflv]=new TH1F(hname.c_str(),
+						";|#eta|-|#eta^{ref}|",
+						nbinsabsrsp,absrspmin,absrspmax);
+	    }
+	    
+	    if (doetarsp&&dorefdipt) {
+	      hname=flavor[iflv]+"EtaRsp_"+jetEtaSuffix+"_"+refDiPtSuffix;
+	      etaRspRefDiPt[ipt][iflv]=new TH1F(hname.c_str(),
+						";|#eta|-|#eta^{ref}|",
+						nbinsetarsp,etarspmin,etarspmax);
+	    }
+
+	    if (doetarsp&&dojetdipt) {
+	      hname=flavor[iflv]+"EtaRsp_"+jetEtaSuffix+"_"+jetDiPtSuffix;
+	      etaRspJetDiPt[ipt][iflv]=new TH1F(hname.c_str(),
+						";#phi-#phi^{ref}",
+						nbinsetarsp,etarspmin,etarspmax);
+	    }
+	    
+	    if (dophirsp&&dorefdipt) {
+	      hname=flavor[iflv]+"PhiRsp_"+jetEtaSuffix+"_"+refDiPtSuffix;
+	      phiRspRefDiPt[ipt][iflv]=new TH1F(hname.c_str(),
+						";#phi-#phi^{ref}",
+						nbinsphirsp,phirspmin,phirspmax);
+	    }
+
+	    if (dophirsp&&dojetdipt) {
+	      hname=flavor[iflv]+"PhiRsp_"+jetEtaSuffix+"_"+jetDiPtSuffix;
+	      phiRspJetDiPt[ipt][iflv]=new TH1F(hname.c_str(),
+						";#phi-#phi^{ref}",
+						nbinsphirsp,phirspmin,phirspmax);
+	    }
+
+	  }
+	}
+	if (dojetdipt)           jetDiPtVsJetEtaJetDiPt .push_back(jetDiPtJetDiPt);
+	if (dorefdipt)           refDiPtVsJetEtaRefDiPt .push_back(refDiPtRefDiPt);
+	if (dorefdipt)           jetDiPtVsJetEtaRefDiPt .push_back(jetDiPtRefDiPt);
+	if (dorelrsp&&dojetdipt) relRspVsJetEtaJetDiPt.push_back(relRspJetDiPt);
+	if (dorelrsp&&dorefdipt) relRspVsJetEtaRefDiPt.push_back(relRspRefDiPt);
+	if (doabsrsp&&dojetdipt) absRspVsJetEtaJetDiPt.push_back(absRspJetDiPt);
+	if (doabsrsp&&dorefdipt) absRspVsJetEtaRefDiPt.push_back(absRspRefDiPt);
+	if (doetarsp&&dojetdipt) etaRspVsJetEtaJetDiPt.push_back(etaRspJetDiPt);
+	if (doetarsp&&dorefdipt) etaRspVsJetEtaRefDiPt.push_back(etaRspRefDiPt);
+	if (dophirsp&&dojetdipt) phiRspVsJetEtaJetDiPt.push_back(phiRspJetDiPt);
+	if (dophirsp&&dorefdipt) phiRspVsJetEtaRefDiPt.push_back(phiRspRefDiPt);
+      }
+    }
+    
+
+
+
+
+
+
+
+
+
+
+
+
     
     // book y/pT histograms
     if (binspt.size()>=2&&binsy.size()>=2) {
@@ -911,7 +1380,145 @@ int main(int argc,char**argv)
 	if (doabsrsp&&dorefpt) absRspVsJetYRefPt.push_back(absRspRefPt);
       }
     }
+
+
+
+
+
+
+
+
+
+
     
+    // book y/DI-pT histograms
+    if (binsdipt.size()>=2&&binsy.size()>=2) {
+      for (unsigned int iy=0;iy<binsy.size()-1;++iy) {
+	
+	TH1F*** jetDiPtJetDiPt(0);
+	TH1F*** refDiPtRefDiPt(0);
+	TH1F*** jetDiPtRefDiPt(0);
+	TH1F*** relRspJetDiPt(0);
+	TH1F*** relRspRefDiPt(0);
+	TH1F*** absRspJetDiPt(0);
+	TH1F*** absRspRefDiPt(0);
+	
+	if (dojetpt) {
+	  jetDiPtJetDiPt=new TH1F**[binsdipt.size()-1];
+	  for (unsigned int ipt=0;ipt<binsdipt.size()-1;ipt++)
+	    jetDiPtJetDiPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	if (dorefpt) {
+	  refDiPtRefDiPt =new TH1F**[binsdipt.size()];
+	  for (unsigned int ipt=0;ipt<binsdipt.size()-1;ipt++)
+	    refDiPtRefDiPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	if (dorefpt) {
+	  jetDiPtRefDiPt =new TH1F**[binsdipt.size()];
+	  for (unsigned int ipt=0;ipt<binsdipt.size()-1;ipt++)
+	    jetDiPtRefDiPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	if (dorelrsp&&dojetpt) {
+	  relRspJetDiPt=new TH1F**[binsdipt.size()-1];
+	  for (unsigned int ipt=0;ipt<binsdipt.size()-1;ipt++)
+	    relRspJetDiPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	if (dorelrsp&&dorefpt) {
+	  relRspRefDiPt=new TH1F**[binsdipt.size()-1];
+	  for (unsigned int ipt=0;ipt<binsdipt.size()-1;ipt++)
+	    relRspRefDiPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	if (doabsrsp&&dojetpt) {
+	  absRspJetDiPt=new TH1F**[binsdipt.size()-1];
+	  for (unsigned int ipt=0;ipt<binsdipt.size()-1;ipt++)
+	    absRspJetDiPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	if (doabsrsp&&dorefpt) {
+	  absRspRefDiPt=new TH1F**[binsdipt.size()-1];
+	  for (unsigned int ipt=0;ipt<binsdipt.size()-1;ipt++)
+	    absRspRefDiPt[ipt]=new TH1F*[flavor.size()];
+	}
+	
+	string jetYSuffix=get_suffix("JetY",iy,binsy);
+	
+	for (unsigned int ipt=0;ipt<binsdipt.size()-1;ipt++) {
+	  
+	  string hname; float ptmin=binsdipt[ipt]; float ptmax=binsdipt[ipt+1];
+	  
+	  string jetDiPtSuffix=get_suffix("JetDiPt",ipt,binsdipt);
+	  string refDiPtSuffix=get_suffix("RefDiPt",ipt,binsdipt);
+	  
+	  for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
+	    
+	    if (dojetpt) {
+	      hname=flavor[iflv]+"JetDiPt_"+jetYSuffix+"_"+jetDiPtSuffix;
+	      jetDiPtJetDiPt[ipt][iflv]=new TH1F(hname.c_str(),";p_{T}",
+						 nbinsdipt,ptmin,ptmax);
+	    }
+	    
+	    if (dorefpt) {
+	      hname=flavor[iflv]+"RefDiPt_"+jetYSuffix+"_"+refDiPtSuffix;
+	      refDiPtRefDiPt[ipt][iflv]=new TH1F(hname.c_str(),";p_{T}^{ref}",
+						 nbinsdipt,ptmin,ptmax);
+	    }
+	    
+	    if (dorefpt) {
+	      hname=flavor[iflv]+"JetDiPt_"+jetYSuffix+"_"+refDiPtSuffix;
+	      jetDiPtRefDiPt[ipt][iflv]=new TH1F(hname.c_str(),";p_{T}",
+						 3*nbinsdipt,0,3.0*ptmax);
+	    }
+	    
+	    if (dorelrsp&&dojetpt) {
+	      hname=flavor[iflv]+"RelRsp_"+jetYSuffix+"_"+jetDiPtSuffix;
+	      relRspJetDiPt[ipt][iflv]=new TH1F(hname.c_str(),";p_{T}/p_{T}^{ref}",
+						nbinsrelrsp,relrspmin,relrspmax);
+	    }
+	    
+	    if (dorelrsp&&dorefpt) {
+	      hname=flavor[iflv]+"RelRsp_"+jetYSuffix+"_"+refDiPtSuffix;
+	      relRspRefDiPt[ipt][iflv]=new TH1F(hname.c_str(),";p_{T}/p_{T}^{ref}",
+						nbinsrelrsp,relrspmin,relrspmax);
+	    }
+	    
+	    if (doabsrsp&&dojetpt) {
+	      hname=flavor[iflv]+"AbsRsp_"+jetYSuffix+"_"+jetDiPtSuffix;
+	      absRspJetDiPt[ipt][iflv]=new TH1F(hname.c_str(),
+						";p_{T}-p_{T}^{ref} [GeV]",
+						nbinsabsrsp,absrspmin,absrspmax);
+	    }
+	    
+	    if (doabsrsp&&dorefpt) {
+	      hname=flavor[iflv]+"AbsRsp_"+jetYSuffix+"_"+refDiPtSuffix;
+	      absRspRefDiPt[ipt][iflv]=new TH1F(hname.c_str(),
+						";p_{T}-p_{T}^{ref} [GeV]",
+						nbinsabsrsp,absrspmin,absrspmax);
+	    }
+	    if (doabsrsp&&dojetpt) {
+	      hname=flavor[iflv]+"AbsRsp_"+jetYSuffix+"_"+jetDiPtSuffix;
+	      absRspJetDiPt[ipt][iflv]=new TH1F(hname.c_str(),
+						";|#y|-|#y^{ref}|",
+						nbinsabsrsp,absrspmin,absrspmax);
+	    }
+
+	  }
+	}
+	if (dojetpt)           jetDiPtVsJetYJetDiPt .push_back(jetDiPtJetDiPt);
+	if (dorefpt)           refDiPtVsJetYRefDiPt .push_back(refDiPtRefDiPt);
+	if (dorefpt)           jetDiPtVsJetYRefDiPt .push_back(jetDiPtRefDiPt);
+	if (dorelrsp&&dojetpt) relRspVsJetYJetDiPt.push_back(relRspJetDiPt);
+	if (dorelrsp&&dorefpt) relRspVsJetYRefDiPt.push_back(relRspRefDiPt);
+	if (doabsrsp&&dojetpt) absRspVsJetYJetDiPt.push_back(absRspJetDiPt);
+	if (doabsrsp&&dorefpt) absRspVsJetYRefDiPt.push_back(absRspRefDiPt);
+      }
+    }
+
+
 
     //
     // fill histograms
@@ -919,12 +1526,113 @@ int main(int argc,char**argv)
     unsigned int nevt = (unsigned int)tree->GetEntries();
     for (unsigned int ievt=0;ievt<nevt;ievt++) {
       tree->GetEntry(ievt);
+
+      if (0==nref) continue;
+
+
+      //find the 3 leading reco jets and index
+
+      unsigned char recjt0=0; float jt0pt = 0.0; bool hasfirstjet = false;
+      unsigned char recjt1=0; float jt1pt = 0.0; bool hassecondjet= false;
+      unsigned char recjt2=0; float jt2pt = 0.0; bool hasthirdjet = false;
+
+      if (!dobalance) {
+	for (unsigned char ij0=0;ij0<nref;ij0++) 
+	  if (jt0pt<jtpt[ij0]&&refdrjt[ij0]<=drmax_alg&&jtpt[ij0]>=jtptmin) 
+	    {hasfirstjet=true;recjt0=ij0;jt0pt=jtpt[recjt0];}
+	for (unsigned char ij1=0;ij1<nref;ij1++) {
+	  if (recjt0==ij1) continue;
+	  if (jt1pt<jtpt[ij1]&&refdrjt[ij1]<=drmax_alg&&jtpt[ij1]>=jtptmin) 
+	    {hassecondjet=true;recjt1=ij1;jt1pt=jtpt[recjt1];}
+	}
+	for (unsigned char ij2=0;ij2<nref;ij2++) {
+	  if (recjt0==ij2 || recjt1==ij2) continue;
+	  if (jt2pt<jtpt[ij2]&&refdrjt[ij2]<=drmax_alg) 
+	    {hasthirdjet=true;recjt2=ij2;jt2pt=jtpt[recjt2];}
+	}
+      }
+
+      // constrain extra jet activity - first for ref jets
+      if ( (int) nref>0 ) {
+	unsigned char nprobe = nrefmax;
+	if ( maxextrarefpt>=0.0&&nrefmax>0&&nprobe<nref ) {
+	  if (refpt[nprobe]>maxextrarefpt) continue;
+	}
+	if ( minextrarefpt>=0.0&&nrefmax>0 ) {
+	  if (nprobe>=nref) continue;
+	  else if (nprobe<nref ) {
+	    if (refpt[nprobe]<minextrarefpt) continue;
+	    assert (jtpt[nprobe]>0.0);
+	  }
+	}
+	// then for reco jets; but here only the dijet case...!
+	if ( maxextrajetpt>=0.0&&nrefmax>0&&nprobe<nref ) {
+	  if (nprobe!=2) continue;
+	  if (hasthirdjet && jtpt[recjt2]>maxextrajetpt) continue;
+	}
+	if ( minextrajetpt>=0.0&&nrefmax>0 ) {
+	  if (nprobe!=2) continue;
+	  if (!hasthirdjet) continue;
+	  if (jtpt[recjt2]<minextrajetpt) continue;
+	}
+      }
+
+      
+
+      bool isdijet = (hasfirstjet&&hassecondjet);
+      bool isdiref = (nref>1&&refdrjt[0]<=drmax_alg&&refdrjt[1]<=drmax_alg
+		      &&jtpt[0]>=jtptmin&&jtpt[1]>=jtptmin);
+
+
+      // dijet values ordered in REC jet pt
+      float jtrecdipt  = (isdijet) ? .5*(jtpt[recjt0]+jtpt[recjt1]) : 0.0;
+      float jtrecdidphi= (isdijet) ? deltaPhi(jtphi[recjt0],jtphi[recjt1]) :0.0;
+
+      // dijet values ordered in GEN jet pt
+      float refgendipt = (isdiref) ? (.5*(refpt[0]+refpt[1]))     : 0.0;
+
+      float diabsrspgen[2];
+      diabsrspgen[0] = (isdiref) ? jtpt[0]-refpt[0]           : 0.0;
+      diabsrspgen[1] = (isdiref) ? jtpt[1]-refpt[1]           : 0.0;
+      float diabsrsprec[2];
+      diabsrsprec[0] = (isdijet) ? jtpt[recjt0]-refpt[recjt0] : 0.0;
+      diabsrsprec[1] = (isdijet) ? jtpt[recjt1]-refpt[recjt1] : 0.0;
+
+      float direlrspgen[2];
+      direlrspgen[0] = (isdiref) ? jtpt[0]/refpt[0]           : 0.0;
+      direlrspgen[1] = (isdiref) ? jtpt[1]/refpt[1]           : 0.0;
+      float direlrsprec[0];
+      direlrsprec[0] = (isdijet) ? jtpt[recjt0]/refpt[recjt0] : 0.0;
+      direlrsprec[1] = (isdijet) ? jtpt[recjt1]/refpt[recjt1] : 0.0;
+
+      float dietarspgen[2];
+      dietarspgen[0] = (isdiref) ? jteta[0]-refeta[0]           : 0.0;
+      dietarspgen[1] = (isdiref) ? jteta[1]-refeta[1]           : 0.0;
+      float dietarsprec[2];
+      dietarsprec[0] = (isdijet) ? jteta[recjt0]-refeta[recjt0] : 0.0;
+      dietarsprec[1] = (isdijet) ? jteta[recjt1]-refeta[recjt1] : 0.0;
+
+      float diphirspgen[2];
+      diphirspgen[0] = (isdiref) ? fmod(jtphi[0]-refphi[0]+3*M_PI,2*M_PI)-M_PI : 0.0;
+      diphirspgen[1] = (isdiref) ? fmod(jtphi[1]-refphi[1]+3*M_PI,2*M_PI)-M_PI : 0.0;
+      float diphirsprec[2];
+      diphirsprec[0] = (isdijet) ? fmod(jtphi[recjt0]-refphi[recjt0]+3*M_PI,2*M_PI)-M_PI : 0.0;
+      diphirsprec[1] = (isdijet) ? fmod(jtphi[recjt1]-refphi[recjt1]+3*M_PI,2*M_PI)-M_PI : 0.0;
+
+      int refrecpdgid[2];
+      refrecpdgid[0] = (isdijet) ? refpdgid[recjt0] : 0;
+      refrecpdgid[1] = (isdijet) ? refpdgid[recjt1] : 0;
+      
+      if (jetrecdidphimin!=-1. && (jtrecdidphi < jetrecdidphimin)) continue;
+      if (mindijetpt!=-1. && (jtrecdipt < mindijetpt)) continue;
+
       if (nrefmax>0) nref = std::min((int)nref,nrefmax);
+
       for (unsigned char iref=0;iref<nref;iref++) {
 
 	if (( dobalance&&refdphijt[iref]<dphimin)||
 	    (!dobalance&&refdrjt[iref]>drmax_alg)) continue;
-	
+
 	if (jtpt[iref]<jtptmin) continue;
 	
 	float eta    =
@@ -936,6 +1644,9 @@ int main(int argc,char**argv)
 	float relrsp = jtpt[iref]/refpt[iref];
 	float etarsp = jteta[iref]-refeta[iref];
 	float phirsp = fmod(jtphi[iref]-refphi[iref]+3*M_PI,2*M_PI)-M_PI;
+
+
+
 
 	if (eta>=etabarrelmin&&eta<=etabarrelmax) {
 	  if (dorefpt) {
@@ -966,6 +1677,7 @@ int main(int argc,char**argv)
 	    fill_histo(refpdgid[iref],jtpt[iref],weight,
 		       jtpt[iref],binspt,jetPtVsJetPt);
 	}
+
 	if (dorefpt) {
 	  fill_histo(refpt[iref],weight,refpt[iref],binspt,refPtVsRefPt);
 	  fill_histo(jtpt [iref],weight,refpt[iref],binspt,jetPtVsRefPt);
@@ -1196,7 +1908,275 @@ int main(int argc,char**argv)
 	  }
 	}
 	
-      }
+
+	//hh
+
+	if (iref<2&&nref>=2&&(dojetdipt||dorefdipt)) {
+
+	  if (eta>=etabarrelmin&&eta<=etabarrelmax) {
+	    if (dorefdipt&&isdiref) {
+	      fill_histo(refgendipt,weight,refgendipt,binsdipt,refDiPtVsRefDiPtBarrel);
+	      fill_histo(jtrecdipt,weight,refgendipt,binsdipt,jetDiPtVsRefDiPtBarrel);
+	      if (doflavor) {
+		fill_histo(refpdgid[iref],refgendipt,weight,
+			   refgendipt,binsdipt,refDiPtVsRefDiPtBarrel);
+		fill_histo(refpdgid[iref],jtrecdipt,weight,
+			   refgendipt,binsdipt,jetDiPtVsRefDiPtBarrel);
+	      }
+	    }
+	    if (dorelrsp&&dorefdipt&&isdiref) {
+	      fill_histo(direlrspgen[iref],weight,refgendipt,binsdipt,relRspVsRefDiPtBarrel);
+	      if (doflavor) fill_histo(refpdgid[iref],direlrspgen[iref],weight,
+				       refgendipt,binsdipt,relRspVsRefDiPtBarrel);
+	    }
+	    if (doabsrsp&&dorefdipt&&isdiref) {
+	      fill_histo(diabsrspgen[iref],weight,refgendipt,binsdipt,absRspVsRefDiPtBarrel);
+	      if (doflavor) fill_histo(refpdgid[iref],diabsrspgen[iref],weight,
+				       refgendipt,binsdipt,absRspVsRefDiPtBarrel);
+	    }
+	  }
+	
+	  if (dojetdipt&&isdijet) {
+	    fill_histo(jtrecdipt,weight,jtrecdipt, binsdipt,jetDiPtVsJetDiPt);
+	    if (doflavor)
+	      fill_histo(refrecpdgid[iref],jtrecdipt,weight,
+			 jtrecdipt,binsdipt,jetDiPtVsJetDiPt);
+	  }
+
+	  if (dorefdipt&&isdiref) {
+	    fill_histo(refgendipt,weight,refgendipt,binsdipt,refDiPtVsRefDiPt);
+	    fill_histo(jtrecdipt,weight,refgendipt,binsdipt,jetDiPtVsRefDiPt);
+	    if (doflavor) {
+	      fill_histo(refpdgid[iref],refgendipt,weight,
+			 refgendipt,binsdipt,refDiPtVsRefDiPt);
+	      fill_histo(refpdgid[iref],jtrecdipt,weight,
+			 refgendipt,binsdipt,jetDiPtVsRefDiPt);
+	    }
+	  }
+	
+	  //fill_histo(eta,weight,eta,binseta,jetEtaVsJetEta);
+	  //if (doflavor) fill_histo(refpdgid[iref],eta,weight,
+	  //			   eta,binseta,jetEtaVsJetEta);
+	
+	  //fill_histo(jtphi[iref],weight,jtphi[iref],binsphi,jetPhiVsJetPhi);
+	  //if (doflavor) fill_histo(refpdgid[iref],jtphi[iref],weight,
+	  //			   jtphi[iref],binsphi,jetPhiVsJetPhi);
+ 
+	  //fill_histo(jty[iref],weight,jty[iref],binsy,jetYVsJetY);
+	  //if (doflavor) fill_histo(refpdgid[iref],jty[iref],weight,
+	  //			   jty[iref],binsy,jetYVsJetY);
+ 
+	  if (dojetdipt&&isdijet) {
+	    fill_histo(jtrecdipt,weight,eta,jtrecdipt,
+		       binseta,binsdipt,jetDiPtVsJetEtaJetDiPt);
+	    fill_histo(jtrecdipt,weight,y,jtrecdipt,
+		       binsy,binsdipt,jetDiPtVsJetYJetDiPt);
+
+	    if (doflavor) {
+	      fill_histo(refrecpdgid[iref],jtrecdipt,weight,
+			 eta,jtrecdipt,binseta,binsdipt,jetDiPtVsJetEtaJetDiPt);
+	      fill_histo(refrecpdgid[iref],jtrecdipt,weight,
+			 y,jtrecdipt,binsy,binsdipt,jetDiPtVsJetYJetDiPt);
+	    }
+	  }
+
+	  if (dorefdipt&&isdiref) {
+	    fill_histo(refgendipt,weight,eta,refgendipt,
+		       binseta,binsdipt,refDiPtVsJetEtaRefDiPt);
+	    fill_histo(jtrecdipt,weight,eta,refgendipt,
+		       binseta,binsdipt,jetDiPtVsJetEtaRefDiPt);
+	    fill_histo(refgendipt,weight,y,refgendipt,
+		       binsy,binsdipt,refDiPtVsJetYRefDiPt);
+	    fill_histo(jtrecdipt,weight,y,refgendipt,
+		       binsy,binsdipt,jetDiPtVsJetYRefDiPt);
+	    if (doflavor) {
+	      fill_histo(refpdgid[iref],refgendipt,weight,
+			 eta,refgendipt,binseta,binsdipt,refDiPtVsJetEtaRefDiPt);
+	      fill_histo(refpdgid[iref],jtrecdipt,weight,
+			 eta,refgendipt,binseta,binsdipt,jetDiPtVsJetEtaRefDiPt);
+	      fill_histo(refpdgid[iref],refgendipt,weight,
+			 y,refgendipt,binsy,binsdipt,refDiPtVsJetYRefDiPt);
+	      fill_histo(refpdgid[iref],jtrecdipt,weight,
+			 y,refgendipt,binsy,binsdipt,jetDiPtVsJetYRefDiPt);
+	    }
+	  }
+	
+	  if (dorelrsp) {
+	    if (dojetdipt&&isdijet) {
+	      fill_histo(direlrsprec[iref],weight,jtrecdipt,binsdipt,relRspVsJetDiPt);
+	      if (doflavor) fill_histo(refrecpdgid[iref],direlrsprec[iref],weight,
+				       jtrecdipt, binsdipt,relRspVsJetDiPt);
+	    }
+	    if (dorefdipt&&isdiref) {
+	      fill_histo(direlrspgen[iref],weight,refgendipt,binsdipt,relRspVsRefDiPt);
+	      if (doflavor) fill_histo(refpdgid[iref],direlrspgen[iref],weight,
+				       refgendipt,binsdipt,relRspVsRefDiPt);
+	    }
+
+	    //fill_histo(direlrspgen[iref],weight,eta,binseta,relRspVsJetEta);
+	    //if (doflavor) fill_histo(refpdgid[iref],direlrspgen[iref],weight,
+	    //			     eta,binseta,relRspVsJetEta);
+	  
+	    //fill_histo(direlrspgen[iref],weight,jtphi[iref],binsphi,relRspVsJetPhi);
+	    //if (doflavor) fill_histo(refpdgid[iref],direlrspgen[iref],weight,
+	    //			     jtphi[iref],binsphi,relRspVsJetPhi);
+	  
+	    //fill_histo(direlrspgen[iref],weight,jty[iref],binsy,relRspVsJetY);
+	    //if (doflavor) fill_histo(refpdgid[iref],direlrspgen[iref],weight,
+	    //			     jty[iref],binsy,relRspVsJetY);
+	  
+	    if (dojetdipt&&isdijet) {
+	      fill_histo(direlrsprec[iref],weight,eta,jtrecdipt,
+			 binseta,binsdipt,relRspVsJetEtaJetDiPt);
+	      fill_histo(direlrsprec[iref],weight,y,jtrecdipt,
+			 binsy,binsdipt,relRspVsJetYJetDiPt);
+	      if (doflavor) {
+		fill_histo(refrecpdgid[iref],direlrsprec[iref],weight,eta,jtrecdipt,
+			   binseta,binsdipt,relRspVsJetEtaJetDiPt);
+		fill_histo(refrecpdgid[iref],direlrsprec[iref],weight,y,jtrecdipt,
+			   binsy,binsdipt,relRspVsJetYJetDiPt);
+	      }
+	    }
+	    if (dorefdipt&&isdiref) {
+	      fill_histo(direlrspgen[iref],weight,eta,refgendipt,
+			 binseta,binsdipt,relRspVsJetEtaRefDiPt);
+	      fill_histo(direlrspgen[iref],weight,y,refgendipt,
+			 binsy,binsdipt,relRspVsJetYRefDiPt);
+	      if (doflavor) {
+		fill_histo(refpdgid[iref],direlrspgen[iref],weight,eta,refgendipt,
+			   binseta,binsdipt,relRspVsJetEtaRefDiPt);
+		fill_histo(refpdgid[iref],direlrspgen[iref],weight,y,refgendipt,
+			   binsy,binsdipt,relRspVsJetYRefDiPt);
+	      }
+	    }
+	  }
+	
+	  if (doabsrsp) {
+	    if (dojetdipt&&isdijet) {
+	      fill_histo(diabsrsprec[iref],weight,jtrecdipt, binsdipt,absRspVsJetDiPt);
+	      if (doflavor) fill_histo(refrecpdgid[iref],diabsrsprec[iref],weight,
+				       jtrecdipt,binsdipt,absRspVsJetDiPt);
+	    }
+	    if (dorefdipt&&isdiref) {
+	      fill_histo(diabsrspgen[iref],weight,refgendipt,binsdipt,absRspVsRefDiPt);
+	      if (doflavor) fill_histo(refpdgid[iref],diabsrspgen[iref],weight,
+				       refgendipt,binsdipt,absRspVsRefDiPt);
+	    }
+	  
+	    //fill_histo(diabsrspgen[iref],weight,eta,binseta,absRspVsJetEta);
+	    //if (doflavor) fill_histo(refpdgid[iref],diabsrspgen[iref],weight,
+	    //			     eta,binseta,absRspVsJetEta);
+
+	    //fill_histo(diabsrspgen[iref],weight,jtphi[iref],binsphi,absRspVsJetPhi);
+	    //if (doflavor) fill_histo(refpdgid[iref],diabsrspgen[iref],weight,
+	    //			     jtphi[iref],binsphi,absRspVsJetPhi);
+	  
+	    //fill_histo(diabsrspgen[iref],weight,jty[iref],binsy,absRspVsJetY);
+	    //if (doflavor) fill_histo(refpdgid[iref],diabsrspgen[iref],weight,
+	    //			     jty[iref],binsy,absRspVsJetY);
+	  
+	    if (dojetdipt&&isdijet) {
+	      fill_histo(diabsrsprec[iref],weight,eta,jtrecdipt,
+			 binseta,binsdipt,absRspVsJetEtaJetDiPt);
+	      fill_histo(diabsrsprec[iref],weight,y,jtrecdipt,
+			 binsy,binsdipt,absRspVsJetYJetDiPt);
+	      if (doflavor) {
+		fill_histo(refrecpdgid[iref],diabsrsprec[iref],weight,eta,jtrecdipt,
+			   binseta,binsdipt,absRspVsJetEtaJetDiPt);
+		fill_histo(refrecpdgid[iref],diabsrsprec[iref],weight,y,jtrecdipt,
+			   binsy,binsdipt,absRspVsJetYJetDiPt);
+	      }
+	    }
+	    if (dorefdipt&&isdiref) {
+	      fill_histo(diabsrspgen[iref],weight,eta,refgendipt,
+			 binseta,binsdipt,absRspVsJetEtaRefDiPt);
+	      fill_histo(diabsrspgen[iref],weight,y,refgendipt,
+			 binsy,binsdipt,absRspVsJetYRefDiPt);
+	      if (doflavor) {
+		fill_histo(refpdgid[iref],diabsrspgen[iref],weight,eta,refgendipt,
+			   binseta,binsdipt,absRspVsJetEtaRefDiPt);
+		fill_histo(refpdgid[iref],diabsrspgen[iref],weight,y,refgendipt,
+			   binsy,binsdipt,absRspVsJetYRefDiPt);
+	      }
+	    }
+	  }
+	
+	  if (doetarsp) {
+	    if (dojetdipt&&isdijet) {
+	      fill_histo(dietarsprec[iref],weight,jtrecdipt, binsdipt,etaRspVsJetDiPt);
+	      if (doflavor) fill_histo(refrecpdgid[iref],dietarsprec[iref],weight,
+				       jtrecdipt,binsdipt,etaRspVsJetDiPt);
+	    }
+	    if (dorefdipt&&isdiref) {
+	      fill_histo(dietarspgen[iref],weight,refgendipt,binsdipt,etaRspVsRefDiPt);
+	      if (doflavor) fill_histo(refpdgid[iref],dietarspgen[iref],weight,
+				       refgendipt,binsdipt,etaRspVsRefDiPt);
+	    }
+	  
+	    //fill_histo(dietarspgen[iref],weight,eta,binseta,etaRspVsJetEta);
+	    //if (doflavor) fill_histo(refpdgid[iref],dietarspgen[iref],weight,
+	    //			     eta,binseta,etaRspVsJetEta);
+	  
+	    //fill_histo(dietarspgen[iref],weight,jtphi[iref],binsphi,etaRspVsJetPhi);
+	    //if (doflavor) fill_histo(refpdgid[iref],dietarspgen[iref],weight,
+	    //			     jtphi[iref],binsphi,etaRspVsJetPhi);
+	  
+	    if (dojetdipt&&isdijet) {
+	      fill_histo(dietarsprec[iref],weight,eta,jtrecdipt,
+			 binseta,binsdipt,etaRspVsJetEtaJetDiPt);
+	      if (doflavor) fill_histo(refrecpdgid[iref],dietarsprec[iref],weight,
+				       eta,jtrecdipt,
+				       binseta,binsdipt,etaRspVsJetEtaJetDiPt);
+	    }
+	    if (dorefdipt&&isdiref) {
+	      fill_histo(dietarspgen[iref],weight,eta,refgendipt,
+			 binseta,binsdipt,etaRspVsJetEtaRefDiPt);
+	      if (doflavor) fill_histo(refpdgid[iref],dietarspgen[iref],weight,
+				       eta,refgendipt,
+				       binseta,binsdipt,etaRspVsJetEtaRefDiPt);
+	    }
+	  }
+	
+	  if (dophirsp) {
+	    if (dojetdipt&&isdijet) {
+	      fill_histo(diphirsprec[iref],weight,jtrecdipt, binsdipt,phiRspVsJetDiPt);
+	      if (doflavor) fill_histo(refrecpdgid[iref],diphirsprec[iref],weight,
+				       jtrecdipt,binsdipt,phiRspVsJetDiPt);
+	    }
+	    if (dorefdipt&&isdiref) {
+	      fill_histo(diphirspgen[iref],weight,refgendipt,binsdipt,phiRspVsRefDiPt);
+	      if (doflavor) fill_histo(refpdgid[iref],diphirspgen[iref],weight,
+				       refgendipt,binsdipt,phiRspVsRefDiPt);
+	    }
+	  
+	    //fill_histo(diphirspgen[iref],weight,eta,binseta,phiRspVsJetEta);
+	    //if (doflavor) fill_histo(refpdgid[iref],diphirspgen[iref],weight,
+	    //			     eta,binseta,phiRspVsJetEta);
+	  
+	    //fill_histo(diphirspgen[iref],weight,jtphi[iref],binsphi,phiRspVsJetPhi);
+	    //if (doflavor) fill_histo(refpdgid[iref],diphirspgen[iref],weight,
+	    //			     jtphi[iref],binsphi,phiRspVsJetPhi);
+	  
+	    if (dojetdipt&&isdijet) {
+	      fill_histo(diphirsprec[iref],weight,eta,jtrecdipt,
+			 binseta,binsdipt,phiRspVsJetEtaJetDiPt);
+	      if (doflavor) fill_histo(refrecpdgid[iref],diphirsprec[iref],weight,
+				       eta,jtrecdipt,
+				       binseta,binsdipt,phiRspVsJetEtaJetDiPt);
+	    }
+	    if (dorefdipt&&isdiref) {
+	      fill_histo(diphirspgen[iref],weight,eta,refgendipt,
+			 binseta,binsdipt,phiRspVsJetEtaRefDiPt);
+	      if (doflavor) fill_histo(refpdgid[iref],diphirspgen[iref],weight,
+				       eta,refgendipt,
+				       binseta,binsdipt,phiRspVsJetEtaRefDiPt);
+	    }
+	  }
+
+	} //hh
+
+      } // for iref
+
     }
     
     cout<<" DONE."<<endl;
@@ -1318,3 +2298,11 @@ bool contains(const vector<string>& collection,const string& element)
     if ((*it)==element) return true;
   return false;
 }
+
+//_______________________________________________________________________________
+//inline float deltaPhi(float phi1, float phi2) { 
+//    float result = phi1 - phi2;
+//    while (result > float(M_PI)) result -= float(2*M_PI);
+//    while (result <= -float(M_PI)) result += float(2*M_PI);
+//    return result;
+//}

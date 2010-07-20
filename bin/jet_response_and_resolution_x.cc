@@ -68,6 +68,17 @@ int main(int argc,char**argv)
   string         fera      = cl.getValue<string> ("fera",                 "");
   string         fprefix   = cl.getValue<string> ("fprefix",              "");
 
+  float          calomin   = cl.getValue<float>  ("calomin",             -1.);
+  float          jptmin    = cl.getValue<float>  ("jptmin",              -1.);
+  float          pfmin     = cl.getValue<float>  ("pfmin",               -1.);
+
+  float          calofitmin= cl.getValue<float>  ("calofitmin",          -1.);
+  float          jptfitmin = cl.getValue<float>  ("jptfitmin",           -1.);
+  float          pffitmin  = cl.getValue<float>  ("pffitmin",            -1.);
+
+  bool           dodijetpt = cl.getValue<bool>   ("dodijetpt",         false);
+  bool           dodirefpt = cl.getValue<bool>   ("dodirefpt",         false);
+
   if (!cl.check()) return 0;
   cl.print();
   
@@ -114,6 +125,24 @@ int main(int argc,char**argv)
     variables.push_back("PhiRsp:JetEta:RefPt");
     variables.push_back("PhiRsp:JetEta#1:RefPt");
   }
+  if (dodirefpt&&dorelrsp) {
+    variables.push_back("RelRsp:RefDiPt");
+    variables.push_back("RelRsp:JetEta:RefDiPt");
+    variables.push_back("RelRsp:JetEta#1:RefDiPt");
+    variables.push_back("RelRsp:JetY:RefDiPt");
+    variables.push_back("RelRsp:JetY#1:RefDiPt");
+  }
+  if (dodijetpt&&dorelrsp) {
+    variables.push_back("RelRsp:JetDiPt");
+    variables.push_back("RelRsp:JetEta:JetDiPt");
+    variables.push_back("RelRsp:JetEta#1:JetDiPt");
+    variables.push_back("RelRsp:JetY:JetDiPt");
+    variables.push_back("RelRsp:JetY#1:JetDiPt");
+  }
+
+
+
+
   if (flavors.size()>0) {
     if (flavors.front()=="all") {
       flavors.clear();
@@ -265,6 +294,13 @@ int main(int argc,char**argv)
 	  x=0.5*(min+max);
 	}
 
+	//exclude points outside the physics range of the reco-algs
+
+	if      ( (alg.find("calo")!=string::npos)&&(x<calomin) ) continue;
+	else if ( (alg.find("jpt")!=string::npos)&&(x<jptmin) )   continue;
+	else if ( (alg.find("pf")!=string::npos)&&(x<pfmin) )     continue;
+	
+
 	TF1*   frsp    = (TF1*)hrsp->GetListOfFunctions()->Last();
 	bool   isFDSCB = (0==frsp) ? false : ("fdscb"==(string)frsp->GetName());
 	
@@ -358,18 +394,24 @@ int main(int argc,char**argv)
 	
 	//TVirtualFitter::SetDefaultFitter("Minuit2");
 
+	double fitmin(0.0);
+
+	if (calofitmin!=-1. && alg.find("calo")!=string::npos)fitmin = calofitmin;
+	if (jptfitmin!=-1. && alg.find("jpt")!=string::npos)  fitmin = jptfitmin;
+	if (pffitmin!=-1. && alg.find("pf")!=string::npos)    fitmin = pffitmin;
+
 	// SIGMA
 	for (unsigned int igraph=0;igraph<vres.size();igraph++) {
 	  
 	  TGraphErrors* g = vres[igraph];
-
-
 
 	  if (g->GetN()==0) continue;
 	  double xmin(g->GetX()[0]);
 	  double xmax(-1e100);
 	  for (int ipoint=0;ipoint<g->GetN();ipoint++)
 	    if (g->GetX()[ipoint]>xmax) xmax = g->GetX()[ipoint];
+
+	  if (fitmin!=0.0) xmin = fitmin;
 
 	  TF1* fnc=new TF1("fit",
 			   s_sigma.c_str(),
