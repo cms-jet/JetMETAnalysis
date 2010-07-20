@@ -60,14 +60,17 @@ void   set_axis_titles(TH1*h,const string& quantity,float ymin,float ymax,
 		       string xtitle,string ytitle,string refpt="");
 
 void   draw_graph_residual(TPad* pad,TMultiGraph* mg,
-			   int errMode=-1,
+			   const int errMode,
+			   const bool resmcdata,
+			   const vector<int>& defmcdata,
+			   const float yresmax=-1.,
+			   const string& restitle="",
+			   const float restitlesize=.11,
 			   float xmin=-1.,
 			   float xmax=-1.,
 			   float ymin=-1.,
 			   float ymax=-1.,
-			   int fullfit=-1,
-			   float yresmax=-1.,
-			   bool resmcdata=false);
+			   int fullfit=-1);
 
 TH1F*  set_axis_range(TMultiGraph* mg, 
 		       float xmin=-1., float xmax=-1.,
@@ -136,9 +139,13 @@ int main(int argc,char** argv)
   bool           latex     = cl.getValue<bool>   ("latex",              false);
   bool           latexcndf = cl.getValue<bool>   ("latexcndf",           true);
   bool           fittofile = cl.getValue<bool>   ("fittofile",          false);
+
   int            residual  = cl.getValue<int>    ("residual",              -1);
+  string         restitle  = cl.getValue<string> ("restitle",              "");
+  float          restitlesize=cl.getValue<float> ("restitlesize",         .11); 
   float          yresmax   = cl.getValue<float>  ("yresmax",               -1);
   bool           resmcdata = cl.getValue<bool>   ("resmcdata",          false);
+  vector<int>    defmcdata = cl.getVector<int>   ("defmcdata",             "");
 
   float          xmin      = cl.getValue<float>  ("xmin",                -1.0);
   float          xmax      = cl.getValue<float>  ("xmax",                -1.0);
@@ -154,6 +161,12 @@ int main(int argc,char** argv)
       (inputs.size()>1&&variables.size()>1)) {
     cout<<"Provide more than one value only for one of inputs/algs/variables!"
 	<<endl;
+    return 0;
+  }
+
+  if (resmcdata && defmcdata.size()!=2) {
+    cout<<"If using residual for MC to data comparison you MUST provide"<<endl
+	<<"in defmcdata: 1) number of graph with MC (+fit) 2) number of data graph"<<endl;
     return 0;
   }
   
@@ -413,7 +426,9 @@ int main(int argc,char** argv)
 
     set_axis_range(mg,xmin,xmax,ymin,ymax);
     draw_extrapolation(mg,fullfit,xmin,xmax);
-    draw_graph_residual((TPad*)gPad,mg,residual,xmin,xmax,ymin,ymax,fullfit,yresmax,resmcdata);
+    draw_graph_residual((TPad*)gPad,mg,residual,
+			resmcdata,defmcdata,yresmax,restitle,restitlesize,
+			xmin,xmax,ymin,ymax,fullfit);
 
     leg->SetLineColor(10);
     leg->SetFillColor(10);
@@ -458,7 +473,9 @@ int main(int argc,char** argv)
 
       set_axis_range(mgind,xmin,xmax,ymin,ymax);
       draw_extrapolation(mgind,fullfit,xmin,xmax);
-      draw_graph_residual((TPad*)gPad,mgind,residual,xmin,xmax,ymin,ymax,fullfit,yresmax,resmcdata);
+      draw_graph_residual((TPad*)gPad,mgind,residual,
+			  resmcdata,defmcdata,yresmax,restitle,restitlesize,
+			  xmin,xmax,ymin,ymax,fullfit);
       
       if (drawrange) draw_range(ranges[i],residual);
       if (tdrautobins) tdrlabels.push_back(ranges[i]);
@@ -653,9 +670,12 @@ TH1F* set_axis_range(TMultiGraph* mg,
 
 //______________________________________________________________________________
 void draw_graph_residual(TPad* pad,TMultiGraph* mg,
-			 int errMode,
+			 const int errMode,
+			 const bool resmcdata,const vector<int>& defmcdata,
+			 const float yresmax, const string& restitle,
+			 const float restitlesize,
 			 float xmin,float xmax,float ymin,float ymax,
-			 int fullfit,float yresmax,bool resmcdata)
+			 int fullfit)
 {
   if (errMode<0) return;
   else if (errMode>3){
@@ -667,6 +687,8 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
   if (errMode==1 || errMode==2){
     cout<<"DAMN: residual "<<errMode<<" not implemented:/"<<endl;return;
   }
+
+
 
   TIter next(mg->GetListOfGraphs());
   TGraphErrors* g(0);vector<TGraphErrors*> vg;vector<TF1*>vf;
@@ -681,27 +703,39 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
   for (unsigned i=0;i<vf.size()&&nofits;i++) {
     if (0!=vf[i]) nofits = false;
   }
-  if (nofits) return;
+  if (nofits) {
+    cout<<"draw_graph_residual() did not find ANY fits..., skipping"<<endl;
+    return;
+  }
 
   if (resmcdata) {
-    // now this is pretty bad, but should do the job...
 
-    if (vg.size()!=2 || vf.size()<1) {
-      cout<<"ERROR: resmcdata==true, but !=2 graphs in the residual calculation!!!"<<endl
-	  <<" -> Need input 1: MC (with fit) and input 2: data"<<endl; return;
+    if (defmcdata.size()!=2) {
+      cout<<"DAMN: resmcdata==1, but defmcdata.size()!=2 -> skipping!"<<endl;return;
     }
-    
-    if (vg.size()==2 && 0==vg[0]->GetListOfFunctions()->Last()) return;
+    // now this is pretty nasty, but should do the job...
+
+    if (vg.size()<(unsigned)std::max(defmcdata[0],defmcdata[1])) {
+      cout<<"DAMN: defmcdata contains graphs which DO NOT EXIST in this multigraph!"<<endl;
+      return;
+    }
+
+    if (0==vg[defmcdata[0]]) {
+      cout<<"DAMN: the MC-graph defined in defmcdata[0] does not have a fit -> skipping!"<<endl;
+      return;
+    }
 
     TF1* mcfit(0);
 
     vf.clear();
+    for (unsigned i=0;i<(unsigned)defmcdata[1];i++) vf.push_back(mcfit);
+    mcfit = (TF1*)vg[defmcdata[0]]->GetListOfFunctions()->Last();
     vf.push_back(mcfit);
 
-    mcfit = (TF1*)vg[0]->GetListOfFunctions()->Last();
-    
-    //mcfit->SetLineColor(vg[1]->GetLineColor());
-    vf.push_back(mcfit);
+    mcfit = 0;
+    for (unsigned i=defmcdata[1]+1;i<vg.size();i++) vf.push_back(mcfit);
+
+    assert(vg.size()==vf.size());
   }
 
   
@@ -778,11 +812,11 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
 
     rGraph->SetTitle("");
     if (errMode==3) rGraph->SetMarkerStyle(20); else rGraph->SetMarkerStyle(2);
-    if (errMode==3) rGraph->SetMarkerSize(.5); else rGraph->SetMarkerSize(1.);
+    if (errMode==3) rGraph->SetMarkerSize(.75); else rGraph->SetMarkerSize(1.);
     if (0!=vf[i]) rGraph->SetMarkerColor(vf[i]->GetLineColor());
     if (0!=vf[i]) rGraph->SetLineColor(vf[i]->GetLineColor());
-    if (resmcdata)  rGraph->SetMarkerColor(vg[1]->GetLineColor());
-    if (resmcdata)  rGraph->SetLineColor(vg[1]->GetLineColor());
+    if (resmcdata)  rGraph->SetMarkerColor(vg[defmcdata[1]]->GetLineColor());
+    if (resmcdata)  rGraph->SetLineColor(vg[defmcdata[1]]->GetLineColor());
 
     rGraph->SetLineWidth(1);
       
@@ -807,6 +841,9 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
   xmax = (xmax!=-1.) ? xmax: mg->GetHistogram()->GetXaxis()->GetXmax();
 
   pad->cd(2);
+
+  //  rmg->SaveAs("residual.root");
+
   rmg->Draw("AP");
 
   float rmgymax = std::max(TMath::Abs(rmg->GetHistogram()->GetMinimum()),
@@ -821,7 +858,7 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
   rmg->GetHistogram()->SetTitle("");
 
   rmg->GetHistogram()->GetYaxis()->CenterTitle(1);
-  rmg->GetHistogram()->GetYaxis()->SetTitleSize( 0.11 );
+  rmg->GetHistogram()->GetYaxis()->SetTitleSize( restitlesize );
   rmg->GetHistogram()->GetYaxis()->SetTitleOffset( 0.6 );
   rmg->GetHistogram()->GetYaxis()->SetLabelSize( 0.13 );
   rmg->GetHistogram()->GetYaxis()->SetNdivisions( 505 );
@@ -839,31 +876,31 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
   rmg->GetHistogram()->GetXaxis()->SetLabelSize( 0.15 );
   rmg->GetHistogram()->GetXaxis()->SetLabelOffset( 0.005 );
 
-  if (!resmcdata) {
-
-    if ( errMode == 0 )
-      rmg->GetHistogram()->SetYTitle( "#frac{(point - fit)}{#sqrt{point}} [%]" );
-    else if ( errMode == 1 )
-      rmg->GetHistogram()->SetYTitle( "#frac{(point - fit)}{#sqrt{fit}} [%]" );
-    else if (errMode == 2)
-      rmg->GetHistogram()->SetYTitle( "#frac{(point - fit)}{binerror} [%]" );
-    else 
-      rmg->GetHistogram()->SetYTitle( "#frac{(point-fit)}{point} [%]" );
-
+  if (restitle.empty()){
+    if (!resmcdata) {
+      if ( errMode == 0 )
+	rmg->GetHistogram()->SetYTitle( "#frac{(point - fit)}{#sqrt{point}} [%]" );
+      else if ( errMode == 1 )
+	rmg->GetHistogram()->SetYTitle( "#frac{(point - fit)}{#sqrt{fit}} [%]" );
+      else if (errMode == 2)
+	rmg->GetHistogram()->SetYTitle( "#frac{(point - fit)}{binerror} [%]" );
+      else 
+	rmg->GetHistogram()->SetYTitle( "#frac{(point-fit)}{point} [%]" );
+    }
+    else {
+      if ( errMode == 0 )
+	rmg->GetHistogram()->SetYTitle( "#frac{(data - MC)}{#sqrt{data}} [%]" );
+      else if ( errMode == 1 )
+	rmg->GetHistogram()->SetYTitle( "#frac{(data - MC)}{#sqrt{MC}} [%]" );
+      else if (errMode == 2)
+	rmg->GetHistogram()->SetYTitle( "#frac{(data - MC)}{binerror} [%]" );
+      else 
+	rmg->GetHistogram()->SetYTitle( "#frac{(data-MC)}{data} [%]" );
+    }
   }
-  else {
+  else rmg->GetHistogram()->SetYTitle( restitle.c_str() );
 
-    if ( errMode == 0 )
-      rmg->GetHistogram()->SetYTitle( "#frac{(data - MC)}{#sqrt{data}} [%]" );
-    else if ( errMode == 1 )
-      rmg->GetHistogram()->SetYTitle( "#frac{(data - MC)}{#sqrt{MC}} [%]" );
-    else if (errMode == 2)
-      rmg->GetHistogram()->SetYTitle( "#frac{(data - MC)}{binerror} [%]" );
-    else 
-      rmg->GetHistogram()->SetYTitle( "#frac{(data-MC)}{data} [%]" );
 
-  }
-  
 
   set_axis_range(rmg,xmin,xmax);  
   draw_zline(rmg->GetHistogram(),xmin,xmax);

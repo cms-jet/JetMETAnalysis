@@ -37,7 +37,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 // declare local functions
 ////////////////////////////////////////////////////////////////////////////////
-void set_xaxis_range(TH1* h1,TH1* h2=0,TH1* h3=0,TH1* h4=0);
+void set_xaxis_range(TH1* h1,TH1* h2=0,TH1* h3=0,TH1* h4=0,float xmin=-1.,float xmax=-2.);
 void get_xaxis_range(TH1* h,int& binmin,int& binmax);
 void set_yaxis_range(TH1* h1,float ymin=-1.,float ymax=-1.);
 void set_draw_attributes(TH1* h,
@@ -106,8 +106,11 @@ int main(int argc,char** argv)
   string         refpt     = cl.getValue<string> ("refpt",                 "");
 
 
+
   float          ymin       = cl.getValue<float>  ("ymin",                 -1);
   float          ymax       = cl.getValue<float>  ("ymax",                 -1);
+  float          xmin       = cl.getValue<float>  ("xmin",                 -1);
+  float          xmax       = cl.getValue<float>  ("xmax",                 -1);
   bool           norm       = cl.getValue<bool>   ("norm",              false);
   bool           mean       = cl.getValue<bool>   ("mean",              false);
   bool           median     = cl.getValue<bool>   ("median",            false);
@@ -292,7 +295,7 @@ int main(int argc,char** argv)
 	    TH1F* r1(0);
 	    if (0!=rpad) r1 = (TH1F*) rpad->GetListOfPrimitives()->First();
 
-	    set_xaxis_range(h,0,r1);
+	    set_xaxis_range(h,0,r1,0,xmin,xmax);
 	    if (0!=rpad) {rpad->cd();draw_zline(r1);hpad->cd();}
     
 	    if (0==hpad) h->Draw("EH");
@@ -347,7 +350,7 @@ int main(int argc,char** argv)
 
 	    if (0!=rpad) r1 = (TH1F*) rpad->GetListOfPrimitives()->First();
 	    if (0!=rpad) r2 = (TH1F*) rpad->GetListOfPrimitives()->Last();
-	    set_xaxis_range(h1,h,r1,r2);
+	    set_xaxis_range(h1,h,r1,r2,xmin,xmax);
 	    if (0!=rpad) {rpad->cd();draw_zline(r1);hpad->cd();}
 	    
 	    if (ymin!=-1 || ymax!=-1) set_yaxis_range(h1,ymin,ymax);
@@ -748,7 +751,7 @@ double fnc_dscb(double*xx,double*pp)
 
 
 //______________________________________________________________________________
-void set_xaxis_range(TH1* h1,TH1* h2,TH1* h3,TH1* h4)
+void set_xaxis_range(TH1* h1,TH1* h2,TH1* h3,TH1* h4,float xmin,float xmax)
 {
   if (0==h1) return;
   if (h1->GetEntries()==0) return;
@@ -764,6 +767,22 @@ void set_xaxis_range(TH1* h1,TH1* h2,TH1* h3,TH1* h4)
   if (0!=h2) h2->GetXaxis()->SetRange(binmin,binmax);
   if (0!=h3) h3->GetXaxis()->SetRange(binmin,binmax);
   if (0!=h4) h4->GetXaxis()->SetRange(binmin,binmax);
+
+  if (xmin!=-1 || xmax!=-1) {
+
+    float oldmin = h1->GetXaxis()->GetXmin();
+    float oldmax = h1->GetXaxis()->GetXmax();
+
+    xmin = (xmin==-1) ? oldmin : xmin;
+    xmax = (xmax==-1) ? oldmax : xmax;
+
+    h1->GetXaxis()->SetRangeUser(xmin,xmax);
+    if (0!=h2) h2->GetXaxis()->SetRangeUser(xmin,xmax);
+    if (0!=h3) h3->GetXaxis()->SetRangeUser(xmin,xmax);
+    if (0!=h4) h4->GetXaxis()->SetRangeUser(xmin,xmax);
+
+  }
+
 }
 
 //______________________________________________________________________________
@@ -813,7 +832,8 @@ void draw_stats(TH1* h,double xoffset,Color_t color,Color_t fitColor)
   TF1* fitfnc = (TF1*)h->GetListOfFunctions()->Last();
   stringstream ssentries;
   ssentries<<setw(6) <<setiosflags(ios::left)<<"N:"
-	   <<setw(10)<<resetiosflags(ios::left)<<setprecision(4)<<h->GetEffectiveEntries();
+	   <<setw(10)<<resetiosflags(ios::left)<<setprecision(4)<<h->GetEntries();
+//h->GetEffectiveEntries();
   
   stringstream ssmean;
   ssmean<<setw(6)<<setiosflags(ios::left)<<"Mean:"
