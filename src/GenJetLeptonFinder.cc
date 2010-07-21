@@ -103,9 +103,9 @@ bool GenJetLeptonFinder::run(const vector<int>& absPdgIds,bool fromB)
     const reco::Candidate* mother = lepcand->mother(); assert(0!=mother);
     const reco::Candidate* bcand(mother);
     while (0!=bcand&&abs(bcand->pdgId())>100&&!foundB) {
-      if (abs(bcand->pdgId())>  500 && abs(bcand->pdgId())<  550) foundB=true;
-      if (abs(bcand->pdgId())>10500 && abs(bcand->pdgId())<10550) foundB=true;
-      if (abs(bcand->pdgId())>20500 && abs(bcand->pdgId())<20550) foundB=true;
+      if (abs(bcand->pdgId())>  500 && abs(bcand->pdgId())<  550) { foundB=true; break; }
+      if (abs(bcand->pdgId())>10500 && abs(bcand->pdgId())<10550) { foundB=true; break; }
+      if (abs(bcand->pdgId())>20500 && abs(bcand->pdgId())<20550) { foundB=true; break; }
       bcand=bcand->mother();
     }
     if (fromB&&!foundB) continue;
