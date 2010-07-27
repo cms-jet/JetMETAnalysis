@@ -595,10 +595,10 @@ void draw_residual(TPad* pad,TH1* hist,TF1* func,
   
 
 
-  int    NDF   = 0;
-  int    chi2  = 0;
-  double nEvts = 0;
-  int    nBins = 0;
+  int    NDF   =   0;
+  double chi2  = 0.0;
+  double nEvts = 0.0;
+  int    nBins =   0;
 
   double evtThresh = 0.0;
   if ( errMode != 1 ) {
