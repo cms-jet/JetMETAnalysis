@@ -70,11 +70,15 @@ jet_inspect_graphs:
 	$(CXX) $(CXXFLAGS) bin/jet_inspect_graphs_x.cc $(LIBS) $(ROOTLIBS) \
         -o $(BINDIR)/jet_inspect_graphs_x
 
+CommandLine: lib
+	$(CXX) $(CXXFLAGS) bin/CommandLine_t.cc $(LIBS) -o $(BINDIR)/CommandLine_t
+
 clean:
 	rm -rf $(OBJS) $(LIBDIR)/$(LIB) JetMETAnalysis \
                $(BINDIR)/jet_inspect_profiles_x \
                $(BINDIR)/jet_inspect_histos_x \
-               $(BINDIR)/jet_inspect_graphs_x
+               $(BINDIR)/jet_inspect_graphs_x \
+	       $(BINDIR)/CommandLine_t
 
 
 ################################################################################

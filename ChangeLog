@@ -1,3 +1,12 @@
+2010-07-30  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-08-00
+	* CommandLine: the elements passed to a vector-type parameters
+	must from now on be passed separated by blanks (spaces), NOT
+	commas!
+	* This means on the other hand that single string elements of a
+	vector can contain commas
+
 2010-04-26  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-07-05
