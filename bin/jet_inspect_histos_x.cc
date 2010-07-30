@@ -675,7 +675,7 @@ void draw_residual(TPad* pad,TH1* hist,TF1* func,
 
   if (0!=func) {
 
-    // Why ?
+    // Why ? HH was here ...
     nBins -= 1;
     
     int npar = func->GetNpar();
