@@ -148,10 +148,10 @@ std::vector<T> CommandLine::getVector(const std::string& name)
     size_t pos;
     if (!tmp.empty()) {
       do {
-	pos = tmp.find(",");
+	pos = tmp.find(":::");
 	std::stringstream ss;
 	ss<<tmp.substr(0,pos);
-	tmp.erase(0,pos+1);
+	tmp.erase(0,pos+3);
 	T element;
 	ssToVal(ss,element);
 	result.push_back(element);

@@ -77,7 +77,7 @@ bool CommandLine::parse(int argc,char**argv)
     if (i<argc-1) {
       next=argv[i+1];
       while (next.find("-")!=0) {
-	_options[opt].first += ","+next;
+	_options[opt].first += ":::"+next;
 	i++;
 	next = (i<argc-1) ? argv[i+1] : "-";
       }
@@ -122,12 +122,12 @@ void CommandLine::print()
        itvec!=_ordered_options.end();++itvec) {
     OptionMap_t::const_iterator it=_options.find(*itvec);
     assert(it!=_options.end());
-    if (it->second.first.find(",")<string::npos) {
+    if (it->second.first.find(":::")<string::npos) {
       string tmp=it->second.first;
       size_t length = tmp.length();
       size_t pos;
       do {
-	pos = tmp.find(",");
+	pos = tmp.find(":::");
 	if (tmp.length()==length) {
 	  cout<<setiosflags(ios::left)<<setw(22)
 	      <<it->first
@@ -144,7 +144,7 @@ void CommandLine::print()
 	      <<resetiosflags(ios::right)
 	      <<endl;
 	}
-	tmp.erase(0,pos+1);
+	tmp.erase(0,pos+3);
       }
       while (pos!=string::npos);
     }
@@ -200,13 +200,13 @@ bool CommandLine::parse_file(const string& file_name)
       if (last_token.find("\"")==0) {
 	if (last_token.rfind("\"")==last_token.length()-1) {
 	  last_token=last_token.substr(1,last_token.length()-2);
-	  value+=(value!="")?","+last_token:last_token;
+	  value+=(value!="")?":::"+last_token:last_token;
 	  last_token=token;
 	}
 	else last_token+=" "+token;
       }
       else {
-	value+=(value!="")?","+last_token:last_token;
+	value+=(value!="")?":::"+last_token:last_token;
 	last_token=(token=="=")?"":token;
       }
     }
@@ -216,7 +216,7 @@ bool CommandLine::parse_file(const string& file_name)
   if (last_token!="") {
     if (last_token.find("\"")==0&&last_token.rfind("\"")==last_token.length()-1)
       last_token=last_token.substr(1,last_token.length()-2);
-    value+=(value!="")?","+last_token:last_token;
+    value+=(value!="")?":::"+last_token:last_token;
   }
   if (key!=""&&value!="") _options[key] = make_pair(value,false);
 

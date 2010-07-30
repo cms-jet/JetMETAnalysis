@@ -1083,7 +1083,7 @@ void set_graph_style(TGraphErrors* g, unsigned int ngraph,bool nocolor,
     f->SetLineStyle(line);
     if (ngraph<vlstyles.size()) f->SetLineStyle(vlstyles[ngraph]);
     f->SetLineWidth(1);
-    if (ngraph<vlsizes.size()) f->SetLineWidth(vlsizes[ngraph]);
+    if (ngraph<vlsizes.size()) f->SetLineWidth((Width_t)vlsizes[ngraph]);
   }
   
   return;
