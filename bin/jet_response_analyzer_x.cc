@@ -30,6 +30,7 @@
 #include <sstream>
 #include <string>
 #include <map>
+#include <cstdlib> //for abs(int) to work...
 #include <cmath>
 #include <cassert>
 
