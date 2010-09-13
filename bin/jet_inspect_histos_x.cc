@@ -44,7 +44,8 @@ void set_draw_attributes(TH1* h,
 			 unsigned index,
 			 bool fill,
 			 const vector<int>& colors,
-			 const vector<int>& fillstyles);
+			 const vector<int>& fillstyles,
+			 const vector<int>& markstyles);
 void draw_stats(TH1* h,double xoffset,Color_t color,Color_t fitColor);
 
 void draw_line_mean(TH1* h);
@@ -121,6 +122,7 @@ int main(int argc,char** argv)
   bool           fullfit    = cl.getValue<bool>   ("fullfit",            true);
   vector<int>    colors     = cl.getVector<int>   ("colors",               "");
   vector<int>    fillstyles = cl.getVector<int>   ("fillstyles",           "");
+  vector<int>    markstyles = cl.getVector<int>   ("markstyles",           "");
   string         prefix     = cl.getValue<string> ("prefix",               "");
   string         suffix     = cl.getValue<string> ("suffix",               "");
   string         opath      = cl.getValue<string> ("opath",                "");
@@ -140,6 +142,9 @@ int main(int argc,char** argv)
   if (!fillstyles.empty() && (colors.size()!=fillstyles.size())) {
     cout<<"Error: #Fillstyles has no corresponding colors!"<<endl;return 0;
   }
+
+  assert (fillstyles.size()==markstyles.size());
+  //bool usemarkers = !(markstyles.empty());
 
   if (verbose) cout<<"Verbosity not implemented...:/"<<endl;
 
@@ -280,7 +285,7 @@ int main(int argc,char** argv)
 	    if (logy&&(h->GetEntries()>0)) h->SetMaximum(10.*h->GetMaximum());
 
 	    TF1* fitfnc = (TF1*)h->GetListOfFunctions()->Last();
-	    set_draw_attributes(h,icolor,fill,colors,fillstyles);
+	    set_draw_attributes(h,icolor,fill,colors,fillstyles,markstyles);
 	    if (isSingular) {
 	      h->SetLineColor(1);
 	      if (fitfnc!=0) fitfnc->SetLineColor(1);
@@ -298,7 +303,9 @@ int main(int argc,char** argv)
 	    set_xaxis_range(h,0,r1,0,xmin,xmax);
 	    if (0!=rpad) {rpad->cd();draw_zline(r1);hpad->cd();}
     
-	    if (0==hpad) h->Draw("EH");
+	    bool usemarkers = (1!=(h->GetMarkerStyle()));
+
+	    if (0==hpad) (usemarkers) ? h->Draw("EP") :  h->Draw("EH");
 	    else hpad->cd();
 
 	    if (drawstats) {
@@ -323,7 +330,7 @@ int main(int argc,char** argv)
 	      h->SetLineColor(kBlue);
 	    }
 	    else h->SetLineColor(colors[icolor]);
-	    set_draw_attributes(h,icolor,fill,colors,fillstyles);
+	    set_draw_attributes(h,icolor,fill,colors,fillstyles,markstyles);
 
 	    TF1* fitfnc = (TF1*)h->GetListOfFunctions()->Last();
 	    if (isSingular) {
@@ -335,7 +342,9 @@ int main(int argc,char** argv)
 	    if (0!=fitfnc) draw_residual((TPad*)gPad,h,fitfnc,hpad,rpad,
 					 residual,false,input,alg,h->GetName()); 
     
-	    if (0==hpad) h->Draw("EHSAME");
+	    bool usemarkers = (1!=(h->GetMarkerStyle()));
+
+	    if (0==hpad) (usemarkers) ? h->Draw("EPSAME") : h->Draw("EHSAME");
 	    else hpad->cd();
 
 	    if (drawstats) {
@@ -593,7 +602,7 @@ void draw_residual(TPad* pad,TH1* hist,TF1* func,
   else 
     resiHist->SetYTitle( "#frac{(data-fit)}{data} [%]" );
   
-
+  bool usemarkers = (1!=(hist->GetMarkerStyle()));
 
   int    NDF   =   0;
   double chi2  = 0.0;
@@ -717,8 +726,8 @@ void draw_residual(TPad* pad,TH1* hist,TF1* func,
   }
   pad->cd(1);
   hpad = (TPad*)gPad;
-  if (firstHisto) hist->Draw("EH");
-  else hist->Draw("EHSAME");
+  if (firstHisto) (usemarkers) ? hist->Draw("EP") : hist->Draw("EH");
+  else (usemarkers) ? hist->Draw("EPSAME") : hist->Draw("EHSAME");
 
 }
 
@@ -810,8 +819,16 @@ void get_xaxis_range(TH1* h,int& binmin,int &binmax)
 //______________________________________________________________________________
 void set_draw_attributes(TH1* h,unsigned index,bool fill,
 			 const vector<int>& colors,
-			 const vector<int>& fillstyles)
+			 const vector<int>& fillstyles,
+			 const vector<int>& markstyles)
 {
+  if (0==h) return;
+
+  Style_t markstyle = (markstyles.empty() || (index>markstyles.size()-1)) ? 
+    h->GetMarkerStyle() : markstyles[index];
+
+  h->SetMarkerStyle(markstyle);
+
   if (fill) {
     Style_t fillstyle = (fillstyles.empty() || (index>fillstyles.size()-1)) ? 
       (3001+index) : fillstyles[index];
