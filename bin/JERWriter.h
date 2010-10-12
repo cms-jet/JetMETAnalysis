@@ -122,7 +122,7 @@ struct JERWriter
 
 	  TF1* ff = (itfunc==name2func.end()) ? 0 : (*itfunc).second;
 	  
-	  if (0==ff) {cout<<"ERROR: did not find func "<<ssfirstgraph.str()<<endl;return;}
+	  if (0==ff) {cout<<"WARNING: did not find func "<<ssfirstgraph.str()<<endl;continue;}
 	  
 	  ssfile<<"{1 "<<(*itbins).first<<" 1 RefPt "
 		<<ff->GetTitle()<<" PAR"<<i<<" "
