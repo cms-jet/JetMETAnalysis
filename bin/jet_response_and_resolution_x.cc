@@ -76,9 +76,6 @@ int main(int argc,char**argv)
   float          jptfitmin = cl.getValue<float>  ("jptfitmin",           -1.);
   float          pffitmin  = cl.getValue<float>  ("pffitmin",            -1.);
 
-  bool           dodijetpt = cl.getValue<bool>   ("dodijetpt",         false);
-  bool           dodirefpt = cl.getValue<bool>   ("dodirefpt",         false);
-
   if (!cl.check()) return 0;
   cl.print();
   
@@ -125,22 +122,6 @@ int main(int argc,char**argv)
     variables.push_back("PhiRsp:JetEta:RefPt");
     variables.push_back("PhiRsp:JetEta#1:RefPt");
   }
-  if (dodirefpt&&dorelrsp) {
-    variables.push_back("RelRsp:RefDiPt");
-    variables.push_back("RelRsp:JetEta:RefDiPt");
-    variables.push_back("RelRsp:JetEta#1:RefDiPt");
-    variables.push_back("RelRsp:JetY:RefDiPt");
-    variables.push_back("RelRsp:JetY#1:RefDiPt");
-  }
-  if (dodijetpt&&dorelrsp) {
-    variables.push_back("RelRsp:JetDiPt");
-    variables.push_back("RelRsp:JetEta:JetDiPt");
-    variables.push_back("RelRsp:JetEta#1:JetDiPt");
-    variables.push_back("RelRsp:JetY:JetDiPt");
-    variables.push_back("RelRsp:JetY#1:JetDiPt");
-  }
-
-
 
 
   if (flavors.size()>0) {

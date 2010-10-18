@@ -41,25 +41,25 @@ process = cms.Process("JRA")
 #! INPUT
 #!
 qcdFiles = cms.untracked.vstring(
-    '/store/relval/CMSSW_3_5_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_3XY_V26-v1/0013/B6AAFEE4-6849-DF11-A42F-0026189437FD.root',
-    '/store/relval/CMSSW_3_5_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_3XY_V26-v1/0012/FE3569A8-5849-DF11-B926-0018F3D09652.root',
-    '/store/relval/CMSSW_3_5_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_3XY_V26-v1/0012/625514A2-5849-DF11-ACEA-0018F3D096A4.root',
-    '/store/relval/CMSSW_3_5_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_3XY_V26-v1/0012/221C3CAC-5949-DF11-8847-003048678F02.root',
-    '/store/relval/CMSSW_3_5_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_3XY_V26-v1/0012/20A090C0-5A49-DF11-B921-001A92810ADC.root',
-    '/store/relval/CMSSW_3_5_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_3XY_V26-v1/0012/1281AF09-5749-DF11-B389-001A92971B26.root',
-    '/store/relval/CMSSW_3_5_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_3XY_V26-v1/0012/082A389B-5749-DF11-8421-001A92810ACA.root'
+    '/store/relval/CMSSW_3_8_5/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_38Y_V12-v1/0040/90D11926-23D2-DF11-90AA-0018F3D0965E.root',
+    '/store/relval/CMSSW_3_8_5/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_38Y_V12-v1/0040/7C03C61F-23D2-DF11-94BA-003048678AF4.root',
+    '/store/relval/CMSSW_3_8_5/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_38Y_V12-v1/0040/10AF2CAB-B9D2-DF11-8564-002618943870.root',
+    '/store/relval/CMSSW_3_8_5/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_38Y_V12-v1/0039/D8419BA5-D8D1-DF11-9E15-003048678FF2.root',
+    '/store/relval/CMSSW_3_8_5/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_38Y_V12-v1/0039/745F327F-CCD1-DF11-949F-001A9281170A.root',
+    '/store/relval/CMSSW_3_8_5/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_38Y_V12-v1/0039/66D95526-D7D1-DF11-AF48-0026189438A9.root',
+    '/store/relval/CMSSW_3_8_5/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_38Y_V12-v1/0039/42622E31-D5D1-DF11-891A-001A928116D2.root'
     )
 
 ttbarFiles = cms.untracked.vstring(
-    '/store/relval/CMSSW_3_5_7/RelValTTbar/GEN-SIM-RECO/START3X_V26-v1/0013/C452DA3E-6949-DF11-8457-002618943975.root',
-    '/store/relval/CMSSW_3_5_7/RelValTTbar/GEN-SIM-RECO/START3X_V26-v1/0012/F8624D39-5349-DF11-A757-001A92971B36.root',
-    '/store/relval/CMSSW_3_5_7/RelValTTbar/GEN-SIM-RECO/START3X_V26-v1/0012/F4252D9B-5249-DF11-A065-001A92810AC4.root',
-    '/store/relval/CMSSW_3_5_7/RelValTTbar/GEN-SIM-RECO/START3X_V26-v1/0012/E2BA50BC-5D49-DF11-B108-003048678CA2.root',
-    '/store/relval/CMSSW_3_5_7/RelValTTbar/GEN-SIM-RECO/START3X_V26-v1/0012/DE696E91-5149-DF11-A286-003048679266.root',
-    '/store/relval/CMSSW_3_5_7/RelValTTbar/GEN-SIM-RECO/START3X_V26-v1/0012/AE690A9A-5049-DF11-BE2D-003048679294.root',
-    '/store/relval/CMSSW_3_5_7/RelValTTbar/GEN-SIM-RECO/START3X_V26-v1/0012/849A6B50-5A49-DF11-932C-001A92810ADC.root',
-    '/store/relval/CMSSW_3_5_7/RelValTTbar/GEN-SIM-RECO/START3X_V26-v1/0012/5A2E40BB-5B49-DF11-B20A-003048679076.root',
-    '/store/relval/CMSSW_3_5_7/RelValTTbar/GEN-SIM-RECO/START3X_V26-v1/0012/06E0961F-6149-DF11-BF10-003048678EE2.root'
+    '/store/relval/CMSSW_3_8_5/RelValTTbar/GEN-SIM-RECO/START38_V12-v1/0040/AA852471-22D2-DF11-ADFA-0026189438EF.root',
+    '/store/relval/CMSSW_3_8_5/RelValTTbar/GEN-SIM-RECO/START38_V12-v1/0040/9CDDD25C-E9D1-DF11-BE39-001A92971B5E.root',
+    '/store/relval/CMSSW_3_8_5/RelValTTbar/GEN-SIM-RECO/START38_V12-v1/0040/4A1F8072-22D2-DF11-8BA3-002618943885.root',
+    '/store/relval/CMSSW_3_8_5/RelValTTbar/GEN-SIM-RECO/START38_V12-v1/0040/3667674E-EAD1-DF11-8507-002618943933.root',
+    '/store/relval/CMSSW_3_8_5/RelValTTbar/GEN-SIM-RECO/START38_V12-v1/0040/1A487D44-23D2-DF11-9DB4-003048678B0C.root',
+    '/store/relval/CMSSW_3_8_5/RelValTTbar/GEN-SIM-RECO/START38_V12-v1/0040/16B7DF72-22D2-DF11-9901-002618943943.root',
+    '/store/relval/CMSSW_3_8_5/RelValTTbar/GEN-SIM-RECO/START38_V12-v1/0040/0840E1E4-B5D2-DF11-8F73-002618943870.root',
+    '/store/relval/CMSSW_3_8_5/RelValTTbar/GEN-SIM-RECO/START38_V12-v1/0039/DAAAA626-E6D1-DF11-8EF4-0018F3D096E4.root',
+    '/store/relval/CMSSW_3_8_5/RelValTTbar/GEN-SIM-RECO/START38_V12-v1/0039/D4505BAD-E7D1-DF11-B96A-00261894386B.root'
     )
 
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1000))
@@ -83,7 +83,7 @@ process.TFileService = cms.Service("TFileService",
 #! CHOOSE JET ENERGY CORRECTION SET
 #!
 from JetMETCorrections.Configuration.JetCorrectionEra_cff import JetCorrectionEra
-JetCorrectionEra.era = 'Summer09_7TeV_ReReco332'
+JetCorrectionEra.era = 'Spring10'
 
 
 #!
@@ -115,10 +115,10 @@ algorithms.append('kt6pfl2l3')
 algorithms.append('ic5pf')
 algorithms.append('ic5pfl2l3')
 
-algorithms.append('ak5jpt')
-algorithms.append('ak5jptl2l3')
-algorithms.append('ic5jpt')
-algorithms.append('ic5jptl2l3')
+#algorithms.append('ak5jpt')
+#algorithms.append('ak5jptl2l3')
+#algorithms.append('ic5jpt')
+#algorithms.append('ic5jptl2l3')
 
 
 

@@ -412,7 +412,7 @@ def addAlgorithm(process,alg_size_type_corr,reco):
     ## filter / map partons only if flavor information is requested
     if Defaults.JetResponseParameters.doFlavor.value() :
         setattr(process,'partons',partons)
-        genToParton = cms.EDFilter(
+        genToParton = cms.EDProducer(
             'MatchRecToGen',
             srcRec = cms.InputTag(refPtEta.label()),
             srcGen = cms.InputTag(partons.label())
@@ -421,7 +421,7 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         sequence = sequence * partons * genToParton
         
     ## reference to jet matching
-    jetToRef = cms.EDFilter(
+    jetToRef = cms.EDProducer(
         'MatchRecToGen',
         srcGen = cms.InputTag(refPtEta.label()),
         srcRec = cms.InputTag(jetPtEta.label())
