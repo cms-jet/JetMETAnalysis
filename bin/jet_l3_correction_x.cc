@@ -285,7 +285,7 @@ int main(int argc,char**argv)
     string txtfilename = era+"_L3Absolute_"+get_algorithm_suffix(alg)+".txt";
     ofstream fout(txtfilename.c_str());
     fout.setf(ios::left);
-    fout<<"{1 JetEta 1 JetPt "<<fitcor_as_str<<" Correction}"<<endl;
+    fout<<"{1 JetEta 1 JetPt "<<fitcor_as_str<<" Correction L3Absolute}"<<endl;
     if ((int)alg.find("pf")>0) {
       fout<<setw(12)<<-5.191                  // eta_min
 	  <<setw(12)<<+5.191                  // eta_max

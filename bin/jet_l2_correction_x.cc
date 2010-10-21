@@ -348,7 +348,7 @@ int main(int argc,char**argv)
     string txtfilename = era+"_L2Relative_"+get_algorithm_suffix(alg)+".txt";
     ofstream fout(txtfilename.c_str());
     fout.setf(ios::right);
-    fout<<"{1 JetEta 1 JetPt "<<fnc_as_str<<" Correction}"<<endl;
+    fout<<"{1 JetEta 1 JetPt "<<fnc_as_str<<" Correction L2Relative}"<<endl;
     for (unsigned int ieta=0;ieta<vrelcor_eta.size();ieta++) {
       TGraph* grelcor = vrelcor_eta[ieta];
       TF1*    frelcor = (TF1*)grelcor->GetListOfFunctions()->First();

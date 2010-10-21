@@ -49,10 +49,11 @@ int main(int argc,char**argv)
   
   string         input    = cl.getValue<string> ("input");
   string         era      = cl.getValue<string> ("era");
+  vector<int>    levels   = cl.getVector<int>   ("levels");
   string         output   = cl.getValue<string> ("output",   "");
   string         jecpath  = cl.getValue<string> ("jecpath",  "");
   vector<string> algs     = cl.getVector<string>("algs",     "");
-  vector<int>    levels   = cl.getVector<int>   ("levels","2,3");
+
   
   if(!cl.check()) return 0;
   cl.print();

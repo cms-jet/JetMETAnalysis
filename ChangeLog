@@ -1,3 +1,20 @@
+2010-10-21  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-10-01
+	* transition to 38X, not quite completed yet
+	* on top of CMSSW_3_8_5, the following tags are required:
+	  V00-08-01 JetMETAnalysis/JetUtilities
+	  V03-01-02 CondFormats/JetMETObjects
+	  V02-01-01 JetMETCorrections/Algorithms
+	  V03-01-01 JetMETCorrections/Configuration
+	  V05-00-01 JetMETCorrections/Modules
+	* JetCorrection_cff.py: switch off CondDB until available
+	* jet_apply_jec_x: 'levels' parameter must be explicitely provided
+	* jet_l2_correction_x/jet_l3correction_x: adapt to change in text
+	file format
+	
+
+
 2010-05-28  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-09-02
