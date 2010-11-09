@@ -1,3 +1,9 @@
+2010-11-09  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-08-02
+	* CommandLine: alrady defined vector parameters can now be
+	extended. Example: prog_x -vec 0 1 2 -vec+ 3
+
 2010-10-18  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-08-01
