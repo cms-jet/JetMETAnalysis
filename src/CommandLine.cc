@@ -59,7 +59,7 @@ bool CommandLine::parse(int argc,char**argv)
 	continue;
       }
       else {
-	cout<<"CommandLine ERROR: options must start with '-'!"<<endl;
+	cerr<<"CommandLine ERROR: options must start with '-'!"<<endl;
 	return false;
       }
     }
@@ -69,10 +69,22 @@ bool CommandLine::parse(int argc,char**argv)
     opt.erase(0,1);
     string next=argv[i+1];
     if (i+1>=argc) {
-      cout<<"ERROR: option '"<<opt<<"' requires value!"<<endl;
+      cerr<<"ERROR: option '"<<opt<<"' requires value!"<<endl;
       return false;
     }
-    _options[opt] = make_pair(next,false);
+    
+    if (opt.find('+')==opt.length()-1) {
+      opt.erase(opt.length()-1);
+      if (_options.find(opt)==_options.end()) {
+	cerr<<"CommandLine ERROR: try to extend vector which is not defined!"<<endl;
+	return false;
+      }
+      _options[opt].first += ":::"+next;
+    }
+    else{
+      _options[opt] = make_pair(next,false);
+    }
+    
     i++;
     if (i<argc-1) {
       next=argv[i+1];
