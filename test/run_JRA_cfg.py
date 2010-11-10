@@ -112,7 +112,6 @@ algorithms.append('ak5jpt')
 algorithms.append('ak5jptl2l3')
 
 
-
 # set to False to use jets from the input file (NOT RECOMMENDED)
 doJetReco = True
 

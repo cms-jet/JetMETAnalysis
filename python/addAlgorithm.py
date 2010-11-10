@@ -88,6 +88,7 @@ genJetsDict = {
     'ca6trk':      ('ca6GenJetsNoNu',     ca6GenJetsNoNu),
     'ca7trk':      ('ca7GenJetsNoNu',     ca7GenJetsNoNu),
     'ak5jpt':      ('ak5GenJetsNoNu',     ak5GenJetsNoNu),
+    'ak7jpt':      ('ak7GenJetsNoNu',     ak7GenJetsNoNu),
     'ic5jpt':      ('ic5GenJetsNoNu',     ic5GenJetsNoNu)
     }
 
@@ -114,6 +115,7 @@ stdRecJetsDict = {
     'kt4trk':     'kt4TrackJets',
 #    'kt6trk':     'kt6TrackJets',
     'ak5jpt':      'ak5JPTJets',
+    'ak7jpt':      'ak7JPTJets',
     'ic5jpt':      'ic5JPTJets'
     }
 
@@ -158,6 +160,7 @@ recJetsDict = {
 #    'ca6trk':      ('ca6TrackJets',     ca6TrackJets),
 #    'ca7trk':      ('ca7TrackJets',     ca7TrackJets),
     'ak5jpt':      ('ak5JPTJets',       ak5JPTJets),
+    'ak7jpt':      ('ak7JPTJets',       ak7JPTJets),
     'ic5jpt':      ('ic5JPTJets',       ic5JPTJets)
     }
 
@@ -176,6 +179,7 @@ corrJetsDict = {
     'ca6calol1':     ('ca6CaloJetsL1',    ca6CaloJetsL1),
     'ca7calol1':     ('ca7CaloJetsL1',    ca7CaloJetsL1),
     'ak5jptl1':      ('ak5JPTJetsL1',     ak5JPTJetsL1), # *
+    'ak7jptl1':      ('ak7JPTJetsL1',     ak7JPTJetsL1), # *
     'ak5pfl1':       ('ak5PFJetsL1',      ak5PFJetsL1),
     'ak7pfl1':       ('ak7PFJetsL1',      ak7PFJetsL1),
 #    'sc5pfl1':       ('sc5PFJetsL1',      sc5PFJetsL1),
@@ -203,6 +207,7 @@ corrJetsDict = {
     'ca6calol2l3':   ('ca6CaloJetsL2L3',  ca6CaloJetsL2L3),
     'ca7calol2l3':   ('ca7CaloJetsL2L3',  ca7CaloJetsL2L3),
     'ak5jptl2l3':    ('ak5JPTJetsL2L3',   ak5JPTJetsL2L3),
+    'ak7jptl2l3':    ('ak7JPTJetsL2L3',   ak7JPTJetsL2L3),
     'ic5jptl2l3':    ('ic5JPTJetsL2L3',   ic5JPTJetsL2L3),
     'ak5pfl2l3':     ('ak5PFJetsL2L3',    ak5PFJetsL2L3),
     'ak7pfl2l3':     ('ak7PFJetsL2L3',    ak7PFJetsL2L3),
@@ -243,7 +248,8 @@ corrJetsDict = {
     'ca5calol1l2l3': ('ca5CaloJetsL1L2L3',ca5CaloJetsL1L2L3),
     'ca6calol1l2l3': ('ca6CaloJetsL1L2L3',ca6CaloJetsL1L2L3),
     'ca7calol1l2l3': ('ca7CaloJetsL1L2L3',ca7CaloJetsL1L2L3),
-    'ak5jptl1l2l3':   ('ak5JPTJetsL1L2L3',ak5JPTJetsL1L2L3), #*
+    'ak5jptl1l2l3':  ('ak5JPTJetsL1L2L3', ak5JPTJetsL1L2L3), #*
+    'ak7jptl1l2l3':  ('ak7JPTJetsL1L2L3', ak7JPTJetsL1L2L3), #*
     'ak5pfl1l2l3':   ('ak5PFJetsL1L2L3',  ak5PFJetsL1L2L3),
     'ak7pfl1l2l3':   ('ak7PFJetsL1L2L3',  ak7PFJetsL1L2L3),
 #    'sc5pfl1l2l3':   ('sc5PFJetsL1L2L3',  sc5PFJetsL1L2L3),
@@ -371,6 +377,8 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         process.load('JetMETAnalysis.JetAnalyzers.JPTReconstruction_cff')
         if   alg_size == 'ak5':
             sequence = process.ak5JPTJetsSequence * sequence
+        elif   alg_size == 'ak7':
+            sequence = process.ak7JPTJetsSequence * sequence
         elif alg_size == 'ic5':
             sequence = process.ic5JPTJetsSequence * sequence
         else:
