@@ -175,6 +175,7 @@ corrJetsDict = {
     'ca5calol1':     ('ca5CaloJetsL1',    ca5CaloJetsL1),
     'ca6calol1':     ('ca6CaloJetsL1',    ca6CaloJetsL1),
     'ca7calol1':     ('ca7CaloJetsL1',    ca7CaloJetsL1),
+    'ak5jptl1':      ('ak5JPTJetsL1',     ak5JPTJetsL1), # *
     'ak5pfl1':       ('ak5PFJetsL1',      ak5PFJetsL1),
     'ak7pfl1':       ('ak7PFJetsL1',      ak7PFJetsL1),
 #    'sc5pfl1':       ('sc5PFJetsL1',      sc5PFJetsL1),
@@ -242,6 +243,7 @@ corrJetsDict = {
     'ca5calol1l2l3': ('ca5CaloJetsL1L2L3',ca5CaloJetsL1L2L3),
     'ca6calol1l2l3': ('ca6CaloJetsL1L2L3',ca6CaloJetsL1L2L3),
     'ca7calol1l2l3': ('ca7CaloJetsL1L2L3',ca7CaloJetsL1L2L3),
+    'ak5jptl1l2l3':   ('ak5JPTJetsL1L2L3',ak5JPTJetsL1L2L3), #*
     'ak5pfl1l2l3':   ('ak5PFJetsL1L2L3',  ak5PFJetsL1L2L3),
     'ak7pfl1l2l3':   ('ak7PFJetsL1L2L3',  ak7PFJetsL1L2L3),
 #    'sc5pfl1l2l3':   ('sc5PFJetsL1L2L3',  sc5PFJetsL1L2L3),

@@ -62,7 +62,7 @@ ttbarFiles = cms.untracked.vstring(
     '/store/relval/CMSSW_3_8_5/RelValTTbar/GEN-SIM-RECO/START38_V12-v1/0039/D4505BAD-E7D1-DF11-B96A-00261894386B.root'
     )
 
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1000))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(100))
 process.source = cms.Source("PoolSource", fileNames = qcdFiles )
 
 

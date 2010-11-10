@@ -30,6 +30,12 @@ kt6PFL3Absolute.useCondDB = False
 ic5PFL3Absolute.useCondDB = False
 
 
+# configure l1 services and producers for jpt jets
+ak5JPTJetsL1.src        = 'ak5JPTJets'
+ak5JPTJetsL1.correctors = ['ak5JPTL1Offset']
+ak5JPTJetsL1L2L3.src    = 'ak5JPTJets'
+
+
 # extra l1 producers for kt jets
 kt5CaloJetsL1 = kt4CaloJetsL1.clone( src = 'kt5CaloJets' )
 kt7CaloJetsL1 = kt6CaloJetsL1.clone( src = 'kt7CaloJets' )
