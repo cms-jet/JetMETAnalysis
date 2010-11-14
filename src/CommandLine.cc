@@ -203,7 +203,19 @@ bool CommandLine::parse_file(const string& file_name)
   ss>>token;
   while (!ss.eof()) {
     if (token=="=") {
-      if (key!=""&&value!="") _options[key] = make_pair(value,false);
+      if (key!=""&&value!="") {
+	if (key.find('+')==key.length()-1) {
+	  key.erase(key.length()-1);
+	  if (_options.find(key)==_options.end()) {
+	    cerr<<"CommandLine ERROR: can't extend undefined vector!"<<endl;
+	    return false;
+	  }
+	  _options[key].first += ":::"+value;
+	}
+	else {
+	  _options[key] = make_pair(value,false);
+	}
+      }
       key=last_token;
       last_token="";
       value="";
@@ -220,6 +232,18 @@ bool CommandLine::parse_file(const string& file_name)
       else {
 	value+=(value!="")?":::"+last_token:last_token;
 	last_token=(token=="=")?"":token;
+      } {
+	if (key.find('+')==key.length()-1) {
+	  key.erase(key.length()-1);
+	  if (_options.find(key)==_options.end()) {
+	    cerr<<"CommandLine ERROR: can't extend undefined vector!"<<endl;
+	    return false;
+	  }
+	  _options[key].first += ":::"+value;
+	}
+	else {
+	  _options[key] = make_pair(value,false);
+	}
       }
     }
     else last_token=(token=="=")?"":token;
@@ -230,7 +254,20 @@ bool CommandLine::parse_file(const string& file_name)
       last_token=last_token.substr(1,last_token.length()-2);
     value+=(value!="")?":::"+last_token:last_token;
   }
-  if (key!=""&&value!="") _options[key] = make_pair(value,false);
-
+  if (key!=""&&value!="")  {
+    if (key.find('+')==key.length()-1) {
+      key.erase(key.length()-1);
+      if (_options.find(key)==_options.end()) {
+	cerr<<"CommandLine ERROR: can't extend undefined vector!"<<endl;
+	return false;
+      }
+      _options[key].first += ":::"+value;
+    }
+    else {
+      _options[key] = make_pair(value,false);
+    }
+  }
+  //_options[key] = make_pair(value,false);
+  
   return true;
 }

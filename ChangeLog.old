@@ -1,3 +1,8 @@
+2010-11-14  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-08-03
+	* vector parameter extension now also works in config files
+
 2010-11-09  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-08-02
