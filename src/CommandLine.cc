@@ -202,7 +202,13 @@ bool CommandLine::parse_file(const string& file_name)
   string token,last_token,key,value;
   ss>>token;
   while (!ss.eof()) {
-    if (token=="=") {
+    if (token=="include") {
+      string cfgfile; ss>>cfgfile;
+      cout<<"include configuration file: "<<cfgfile<<endl;
+      bool success = parse_file(cfgfile);
+      if (!success) return false;
+    }
+    else if (token=="=") {
       if (key!=""&&value!="") {
 	if (key.find('+')==key.length()-1) {
 	  key.erase(key.length()-1);

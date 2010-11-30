@@ -1,3 +1,9 @@
+2010-11-30  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-08-04
+	* allow include statements in configuration files parsed by
+	CommandLine.
+
 2010-11-14  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-08-03
