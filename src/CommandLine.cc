@@ -13,6 +13,7 @@
 #include <cassert>
 #include <fstream>
 #include <iomanip>
+#include <deque>
 
 
 using namespace std;
@@ -184,96 +185,49 @@ bool CommandLine::parse_file(const string& file_name)
     return false;
   }
 
-  stringstream ss;
+  deque<string> tokens;
+  tokens.push_back("");
   bool filter(false);
   bool instr(false);
-  while(!fin.eof()){
+  while (!fin.eof()) {
     char next;
     fin.get(next);
     if (!filter&&!instr&&next=='$') filter=true;
     if (next=='"') instr=(!instr);
-    if(!filter) {
-      if (!instr&&next=='=') ss<<" "<<next<<" ";
-      else ss<<next;
+    else if (!filter) {
+      if ((next=='\n'||(!instr&&next==' '))&&!tokens.back().empty()) tokens.push_back("");
+      else if (instr||(next!=' '&&next!='\n'))tokens.back()=tokens.back()+next;
     }
     if (filter&&next=='\n') filter=false;
   }
-  
-  string token,last_token,key,value;
-  ss>>token;
-  while (!ss.eof()) {
+
+  string token, last_token, key;
+  while (tokens.size()) {
+    if (token!="") last_token = token;
+    token = tokens.front(); tokens.pop_front();
     if (token=="include") {
-      string cfgfile; ss>>cfgfile;
-      cout<<"include configuration file: "<<cfgfile<<endl;
+      key="";
+      string cfgfile = tokens.front(); tokens.pop_front();
+      cout<<"CommandLine INFO: include configuration file: "<<cfgfile<<endl;
       bool success = parse_file(cfgfile);
       if (!success) return false;
     }
     else if (token=="=") {
-      if (key!=""&&value!="") {
-	if (key.find('+')==key.length()-1) {
-	  key.erase(key.length()-1);
-	  if (_options.find(key)==_options.end()) {
-	    cerr<<"CommandLine ERROR: can't extend undefined vector!"<<endl;
-	    return false;
-	  }
-	  _options[key].first += ":::"+value;
-	}
-	else {
-	  _options[key] = make_pair(value,false);
-	}
-      }
-      key=last_token;
-      last_token="";
-      value="";
-    }
-    else if (last_token!="") {
-      if (last_token.find("\"")==0) {
-	if (last_token.rfind("\"")==last_token.length()-1) {
-	  last_token=last_token.substr(1,last_token.length()-2);
-	  value+=(value!="")?":::"+last_token:last_token;
-	  last_token=token;
-	}
-	else last_token+=" "+token;
+      key = last_token;
+      string value = tokens.front(); tokens.pop_front();
+      if (key.find('+')==key.length()-1) {
+	key.erase(key.length()-1);
+	if (_options.find(key)==_options.end())_options[key] = make_pair(value,false);
+	else _options[key].first += ":::"+value;
       }
       else {
-	value+=(value!="")?":::"+last_token:last_token;
-	last_token=(token=="=")?"":token;
-      } {
-	if (key.find('+')==key.length()-1) {
-	  key.erase(key.length()-1);
-	  if (_options.find(key)==_options.end()) {
-	    cerr<<"CommandLine ERROR: can't extend undefined vector!"<<endl;
-	    return false;
-	  }
-	  _options[key].first += ":::"+value;
-	}
-	else {
-	  _options[key] = make_pair(value,false);
-	}
+	_options[key] = make_pair(value,false);
       }
     }
-    else last_token=(token=="=")?"":token;
-    ss>>token;
-  }
-  if (last_token!="") {
-    if (last_token.find("\"")==0&&last_token.rfind("\"")==last_token.length()-1)
-      last_token=last_token.substr(1,last_token.length()-2);
-    value+=(value!="")?":::"+last_token:last_token;
-  }
-  if (key!=""&&value!="")  {
-    if (key.find('+')==key.length()-1) {
-      key.erase(key.length()-1);
-      if (_options.find(key)==_options.end()) {
-	cerr<<"CommandLine ERROR: can't extend undefined vector!"<<endl;
-	return false;
-      }
-      _options[key].first += ":::"+value;
-    }
-    else {
-      _options[key] = make_pair(value,false);
+    else if (!key.empty()&&!token.empty()&&(tokens.size()==0||tokens.front()!="=")) {
+      _options[key].first += ":::"+token;
     }
   }
-  //_options[key] = make_pair(value,false);
   
   return true;
 }
