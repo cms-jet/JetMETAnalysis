@@ -195,12 +195,15 @@ bool CommandLine::parse_file(const string& file_name)
     if (!filter&&!instr&&next=='$') filter=true;
     if (next=='"') instr=(!instr);
     else if (!filter) {
-      if ((next=='\n'||(!instr&&next==' '))&&!tokens.back().empty()) tokens.push_back("");
-      else if (instr||(next!=' '&&next!='\n'))tokens.back()=tokens.back()+next;
+      if ((next=='\n'||(!instr&&next==' '))&&!tokens.back().empty())
+	tokens.push_back("");
+      else if (instr||(next!=' '&&next!='\n'&&next!='\t'))
+	tokens.back()=tokens.back()+next;
     }
     if (filter&&next=='\n') filter=false;
   }
-
+  if (tokens.back().empty()) tokens.pop_back();
+  
   string token, last_token, key;
   while (tokens.size()) {
     if (token!="") last_token = token;
@@ -217,7 +220,7 @@ bool CommandLine::parse_file(const string& file_name)
       string value = tokens.front(); tokens.pop_front();
       if (key.find('+')==key.length()-1) {
 	key.erase(key.length()-1);
-	if (_options.find(key)==_options.end())_options[key] = make_pair(value,false);
+	if (_options.find(key)==_options.end())_options[key]=make_pair(value,false);
 	else _options[key].first += ":::"+value;
       }
       else {
