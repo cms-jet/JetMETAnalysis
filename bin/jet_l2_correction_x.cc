@@ -227,7 +227,7 @@ int main(int argc,char**argv)
           fabscor->SetParameter(2,0.0);
         } 
 	else {
-          if ((int)alg.find("pf")>0) {
+          if (alg.find("pf")!=string::npos) {
             fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",xmin,xmax);
 	    fabscor->SetParameter(0,0.5);
 	    fabscor->SetParameter(1,9.0);
@@ -236,7 +236,7 @@ int main(int argc,char**argv)
             fabscor->SetParameter(4,0.6);
 	    fabscor->SetParameter(5,1.0);
           }
-          else if ((int)alg.find("trk")>0) {
+          else if (alg.find("trk")!=string::npos) {
             fabscor=new TF1("fit","[0]+[1]*pow(x/500.0,[2])+[3]/log10(x)+[4]*log10(x)",xmin,xmax);
 	    fabscor->SetParameter(0,1.7);
 	    fabscor->SetParameter(1,0.7);

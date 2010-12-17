@@ -176,7 +176,7 @@ int main(int argc,char**argv)
 
     // response
     TF1* fitrsp;
-    if ((int)alg.find("pf")>0) {
+    if (alg.find("pf")!=string::npos) {
       fitrsp = new TF1("fitrsp","[0]-[1]/(pow(log10(x),2)+[2])-[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",
 			  1.0,grsp->GetX()[grsp->GetN()-1]);
       fitrsp->SetParameter(0,1.0);
@@ -186,7 +186,7 @@ int main(int argc,char**argv)
       fitrsp->SetParameter(4,1.0);
       fitrsp->SetParameter(5,1.0);
     }
-    else if ((int)alg.find("trk")>0) {
+    else if (alg.find("trk")!=string::npos) {
       fitrsp = new TF1("fitrsp","[0]-[1]*pow(x/500.0,[2])",
 		       1.0,grsp->GetX()[grsp->GetN()-1]);
       fitrsp->SetParameter(0,1.0);
@@ -233,14 +233,14 @@ int main(int argc,char**argv)
     // correction
     string fitcor_as_str;
     
-    if ((int)alg.find("pf")>0) fitcor_as_str = "[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))";
-    else if ((int)alg.find("trk")>0) fitcor_as_str = "[0]+[1]*pow(x/500.0,[2])";
+    if (alg.find("pf")!=string::npos) fitcor_as_str = "[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))";
+    else if (alg.find("trk")!=string::npos) fitcor_as_str = "[0]+[1]*pow(x/500.0,[2])";
     else                         fitcor_as_str = "[0]+[1]/(pow(log10(x),[2])+[3])";
     
     TF1* fitcor = new TF1("fitcor",fitcor_as_str.c_str(),
 			  2.0,gcor->GetX()[gcor->GetN()-1]);
     
-    if ((int)alg.find("pf")>0) {
+    if (alg.find("pf")!=string::npos) {
       fitcor->SetParameter(0,1.0);
       fitcor->SetParameter(1,1.0);
       fitcor->SetParameter(2,1.0);
@@ -248,7 +248,7 @@ int main(int argc,char**argv)
       fitcor->SetParameter(4,1.0);
       fitcor->SetParameter(5,1.0);
     }
-    else if ((int)alg.find("trk")>0) {
+    else if (alg.find("trk")!=string::npos) {
       fitcor->SetParameter(0,1.7);
       fitcor->SetParameter(1,0.2);
       fitcor->SetParameter(2,0.3);
@@ -286,7 +286,7 @@ int main(int argc,char**argv)
     ofstream fout(txtfilename.c_str());
     fout.setf(ios::left);
     fout<<"{1 JetEta 1 JetPt "<<fitcor_as_str<<" Correction L3Absolute}"<<endl;
-    if ((int)alg.find("pf")>0) {
+    if (alg.find("pf")!=string::npos) {
       fout<<setw(12)<<-5.191                  // eta_min
 	  <<setw(12)<<+5.191                  // eta_max
 	  <<setw(12)<<8                       // number of parameters + 2
@@ -299,7 +299,7 @@ int main(int argc,char**argv)
 	  <<setw(12)<<fitcor->GetParameter(4) // p4
 	  <<setw(12)<<fitcor->GetParameter(5);// p5
     }
-    else if ((int)alg.find("trk")>0) {
+    else if (alg.find("trk")!=string::npos) {
       fout<<setw(12)<<-2.5                    // eta_min
 	  <<setw(12)<<+2.5                    // eta_max
 	  <<setw(12)<<5                       // number of parameters + 2
