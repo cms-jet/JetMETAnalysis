@@ -1,3 +1,9 @@
+2011-01-12  Hauke Held  <held@cern.ch>
+
+	* tag V00-10-05
+	* introduced truncated RMS for jet_response_and_resolution
+	* bugfixes and changes to the jet_scale_resolution
+
 2010-12-17  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-10-04

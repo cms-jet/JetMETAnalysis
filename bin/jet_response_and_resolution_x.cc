@@ -36,6 +36,8 @@
 
 using namespace std;
 
+/// set histo range to correspond to a specific fraction of events
+void set_range_truncatedRMS(TH1* hist,float frac);
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -67,6 +69,11 @@ int main(int argc,char**argv)
   bool           dowrite   = cl.getValue<bool>   ("dowrite",           false);
   string         fera      = cl.getValue<string> ("fera",                 "");
   string         fprefix   = cl.getValue<string> ("fprefix",              "");
+
+  float          fractionRMS=cl.getValue<float>  ("fractionRMS",          1.);
+  float          fracRMSpf  = cl.getValue<float> ("fracRMSpf",            1.);
+  float          fracRMSjpt = cl.getValue<float> ("fracRMSjpt",           1.);
+  float          fracRMScalo= cl.getValue<float> ("fracRMScalo",          1.);
 
   float          calomin   = cl.getValue<float>  ("calomin",             -1.);
   float          jptmin    = cl.getValue<float>  ("jptmin",              -1.);
@@ -180,6 +187,21 @@ int main(int argc,char**argv)
     
     string alg = algs[ialg];
 
+    // truncation of RMS is algo specific...
+
+    if (fracRMSpf<1. && alg.find("pf")!=string::npos) {
+      fractionRMS = fracRMSpf;
+      cout<<" Overriding fractionRMS with PF specific: "<<fracRMSpf<<endl;
+    }
+    else if (fracRMSjpt<1. && alg.find("jpt")!=string::npos) {
+      fractionRMS = fracRMSjpt;
+    cout<<" Overriding fractionRMS with JPT specific: "<<fracRMSjpt<<endl;
+    }
+    else if (fracRMScalo<1. && alg.find("calo")!=string::npos) {
+      fractionRMS = fracRMScalo;
+      cout<<" Overriding fractionRMS with CALO specific: "<<fracRMScalo<<endl;
+    }
+
     // for each algorithm use a JERWriter (PtResolution=true)
     JERWriter resolutions(alg,fera,fprefix,true);
 
@@ -287,6 +309,8 @@ int main(int argc,char**argv)
 	
 	if (minentries>0 && hrsp->GetEffectiveEntries()<minentries) continue;
 	if (forcefit && frsp==0) continue;
+	
+	if (fractionRMS<1.) set_range_truncatedRMS(hrsp,fractionRMS);
 
 	double y  = (frsp==0) ? hrsp->GetMean()      : frsp->GetParameter(1);
 	double ey = (frsp==0) ? hrsp->GetMeanError() : frsp->GetParError(1);
@@ -622,4 +646,27 @@ int main(int argc,char**argv)
   delete ifile;
 
   return 0;
+}
+
+
+
+//______________________________________________________________________________
+void set_range_truncatedRMS(TH1* hist,float frac)
+{
+  if (0==hist) return;
+
+  const float nevts = hist->Integral(); if (0==nevts) return;
+  const int   nbins = hist->GetNbinsX();
+
+  if (frac<=0.0 || frac==1.) return;
+
+  for (int ibin=1;ibin<nbins;++ibin) {
+    int binx1   = ibin;
+    int binx2   = nbins+1-ibin;
+    float ievts = hist->Integral(binx1,binx2);
+
+    if ( (ievts/nevts)>frac ) continue;
+    else { hist->GetXaxis()->SetRange(binx1,binx2); break; }
+  }
+  return;
 }
