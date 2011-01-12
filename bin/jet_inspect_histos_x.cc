@@ -106,8 +106,6 @@ int main(int argc,char** argv)
   string         ytitle    = cl.getValue<string> ("ytitle",                "");
   string         refpt     = cl.getValue<string> ("refpt",                 "");
 
-
-
   float          ymin       = cl.getValue<float>  ("ymin",                 -1);
   float          ymax       = cl.getValue<float>  ("ymax",                 -1);
   float          xmin       = cl.getValue<float>  ("xmin",                 -1);
@@ -130,6 +128,7 @@ int main(int argc,char** argv)
   bool           batch      = cl.getValue<bool>   ("batch",             false);
   int            residual   = cl.getValue<int>    ("residual",             -1);
   bool           verbose    = cl.getValue<bool>   ("verbose",           false);
+  int            rebin      = cl.getValue<int>    ("rebin",                 1);
 
 
   if (!cl.check()) return 0;
@@ -143,7 +142,7 @@ int main(int argc,char** argv)
     cout<<"Error: #Fillstyles has no corresponding colors!"<<endl;return 0;
   }
 
-  assert (fillstyles.size()==markstyles.size());
+  //assert (fillstyles.size()==markstyles.size());
   //bool usemarkers = !(markstyles.empty());
 
   if (verbose) cout<<"Verbosity not implemented...:/"<<endl;
@@ -211,6 +210,11 @@ int main(int argc,char** argv)
 	vector<unsigned int> indices; TH1F* h(0); unsigned int ihisto(0);
 	unsigned int icolor(0);
 	while ((h=hl.next_object(indices))) {
+
+	  if (1!=rebin) { 
+	    h->Rebin(rebin);
+	    h->GetListOfFunctions()->Delete();
+	  }
 
 	  if (norm) {
 	    if (ymin==-1) ymin=0.0;
@@ -303,7 +307,7 @@ int main(int argc,char** argv)
 	    set_xaxis_range(h,0,r1,0,xmin,xmax);
 	    if (0!=rpad) {rpad->cd();draw_zline(r1);hpad->cd();}
     
-	    bool usemarkers = (1!=(h->GetMarkerStyle()));
+	    bool usemarkers = (0<(h->GetMarkerStyle()));
 
 	    if (0==hpad) (usemarkers) ? h->Draw("EP") :  h->Draw("EH");
 	    else hpad->cd();
@@ -342,7 +346,7 @@ int main(int argc,char** argv)
 	    if (0!=fitfnc) draw_residual((TPad*)gPad,h,fitfnc,hpad,rpad,
 					 residual,false,input,alg,h->GetName()); 
     
-	    bool usemarkers = (1!=(h->GetMarkerStyle()));
+	    bool usemarkers = (0<(h->GetMarkerStyle()));
 
 	    if (0==hpad) (usemarkers) ? h->Draw("EPSAME") : h->Draw("EHSAME");
 	    else hpad->cd();
@@ -406,7 +410,7 @@ int main(int argc,char** argv)
 // implement local functions
 ////////////////////////////////////////////////////////////////////////////////
 
-
+//______________________________________________________________________________
 void draw_labels(const vector<string>& labels,bool leginplot,bool tdrautobins)
 {
   for (unsigned ilabel=0;ilabel<labels.size();ilabel++) {
@@ -936,7 +940,8 @@ string get_range(const ObjectLoader<TH1F>& hl,
     if (varname=="JetPhi")   { varname = "#varphi";     unit =     ""; }
     if (varname=="PtRel")    { varname = "p_{T}^{rel}", unit = " GeV"; }
     if (varname=="RelLepPt") { varname = "p_{T}^{l}/p_{T}^{jet}",unit = ""; }
-    if (varname=="ThreshPt") { varname = "p_{T}^{3rd}", unit = " GeV"; 
+    //if (varname=="ThreshPt") { varname = "p_{T}^{3rd}", unit = " GeV"; 
+    if (varname=="ThreshPt") { varname = "p^{cut}", unit = ""; 
       threshold = true; }
 
     if (threshold) ssrange<<varname<<" < "<<varmax<<unit<<"    ";

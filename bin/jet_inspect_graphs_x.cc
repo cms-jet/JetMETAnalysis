@@ -252,6 +252,7 @@ int main(int argc,char** argv)
     for (unsigned int ialg=0;ialg<algs.size();ialg++) {
 
       string alg=algs[ialg];
+      
       TDirectory* dir =(TDirectory*)file->Get(alg.c_str());
       if (0==dir) { cout<<"No dir "<<algs[ialg]<<" found"<<endl; return 0; }
 
@@ -259,7 +260,7 @@ int main(int argc,char** argv)
       for (unsigned int ivar=0;ivar<variables.size();ivar++) {
 	
 	string variable=variables[ivar];
-	
+
 	ObjectLoader<TGraphErrors> gl;
 	gl.load_objects(dir,variable);
 	
@@ -295,27 +296,28 @@ int main(int argc,char** argv)
 	    leg = new TLegend(legxmin,legymin,legxmax,legymax);
 	    leg->SetFillColor(10); leg->SetLineColor(10); leg->SetBorderSize(0);
 
-
 	    //leg=new TLegend(0.5,ymax,0.9,ymax-nleglabels*0.06);
 	    //range=get_range(gl,indices,variables.size()==1);
 	  }
 
+	  //cout<<"indices back: "<<indices.back()<<endl;
+
 	  int   ilabel=(inputs.size()>1) ? 
 	                iinput : (algs.size()>1) ? 
 	                ialg   : (variables.size()>1) ? 
-	                ivar   : indices.back();
+	                ivar   : (indices.size()>0) ? indices.back() : 0;
 
 	  string label=(variables.size()>1&&leglabels.size()==0) ?
-	    get_range(gl,indices,true,refpt) : (leglabels.size()>(unsigned)ilabel) ? leglabels[ilabel] : "error";
-	  
-	  mg->Add(g);
+	    get_range(gl,indices,true,refpt) : (leglabels.size()>(unsigned)ilabel) ? 
+	    leglabels[ilabel] : "error";
+
+	  mg->Add(g); 
 	  set_graph_style(g,overlay*(graphs.size()-1),nocolor,colors,markers,lstyles,sizes,lsizes);
 	  leg->AddEntry(g,label.c_str(),"lp");
 
 	  // print fit parameters
 	  TF1* fitfnc = (TF1*)g->GetFunction("fit");
 	  if (0!=fitfnc) {
-	    cout<<label<<":"<<endl;
 	    for (int ipar=0;ipar<fitfnc->GetNpar();ipar++)
 	      cout<<fitfnc->GetParameter(ipar)<<" +- "
 		  <<fitfnc->GetParError(ipar)<<endl;
