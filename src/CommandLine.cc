@@ -227,7 +227,7 @@ bool CommandLine::parse_file(const string& file_name)
 	_options[key] = make_pair(value,false);
       }
     }
-    else if (!key.empty()&&!token.empty()&&(tokens.size()==0||tokens.front()!="=")) {
+    else if (!key.empty()&&!token.empty()&&(tokens.size()==0||tokens.front()!="=")){
       _options[key].first += ":::"+token;
     }
   }
