@@ -1,3 +1,10 @@
+2011-02-15  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-08-08
+	* change JetViewCleaner according to request by Matthias Edelhoff:
+	* added maxDeltaR to clean non hadronic tau decay jets (i.e. q/g
+	jets in Z-> tautau events)
+
 2011-01-12  Hauke Held  <held@cern.ch>
 
 	* tag V00-08-07
