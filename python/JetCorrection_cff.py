@@ -4,32 +4,6 @@ from JetMETCorrections.Configuration.JetCorrectionServicesAllAlgos_cff import *
 from JetMETCorrections.Configuration.JetCorrectionProducersAllAlgos_cff import *
 
 
-# don't use CondDB (yet) ...
-ak5CaloL2Relative.useCondDB = False
-ak7CaloL2Relative.useCondDB = False
-kt4CaloL2Relative.useCondDB = False
-kt6CaloL2Relative.useCondDB = False
-ic5CaloL2Relative.useCondDB = False
-ak5JPTL2Relative.useCondDB  = False
-ak5PFL2Relative.useCondDB   = False
-ak7PFL2Relative.useCondDB   = False
-kt4PFL2Relative.useCondDB   = False
-kt6PFL2Relative.useCondDB   = False
-ic5PFL2Relative.useCondDB   = False
-
-ak5CaloL3Absolute.useCondDB = False
-ak7CaloL3Absolute.useCondDB = False
-kt4CaloL3Absolute.useCondDB = False
-kt6CaloL3Absolute.useCondDB = False
-ic5CaloL3Absolute.useCondDB = False
-ak5JPTL3Absolute.useCondDB  = False
-ak5PFL3Absolute.useCondDB   = False
-ak7PFL3Absolute.useCondDB   = False
-kt4PFL3Absolute.useCondDB   = False
-kt6PFL3Absolute.useCondDB   = False
-ic5PFL3Absolute.useCondDB   = False
-
-
 # configure missing services / producers for jpt jets
 ak5JPTJetsL1.src        = 'ak5JPTJets'
 ak5JPTJetsL1.correctors = ['ak5JPTL1Offset']

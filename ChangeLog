@@ -1,5 +1,10 @@
 2011-02-16  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
+	* tag V00-11-01
+	* switch to retrieving JEC from the DB
+	* this means that the correct global tag needs to be chosen in
+	run_JRA_cfg.py
+
 	* tag V00-11-00
 	* integrated tau-developments contributed by Matthias Edelhoff
 	* Note that these require (for CMSSW_3_8_6) additional tags:

@@ -23,18 +23,19 @@ Defaults.RefPtEta = cms.PSet(
 import JetMETAnalysis.JetAnalyzers.TreeDefaults_cff as Tree;
 Defaults.JetResponseParameters = Tree.JetResponseParameters
 
-#!
-#! JRA PARAMETERS: HISTO MODE
-#!
-# import JetMETAnalysis.JetAnalyzers.HistoDefaults_cff as Histos;
-# Defaults.JetResponseParameters = Histos.JetResponseParameters
-
 
 #!
 #! PROCESS
 #!
 process = cms.Process("JRA")
 
+
+#!
+#! CONDITIONS (DELIVERING JEC BY DEFAULT!)
+#!
+process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
+process.GlobalTag.globaltag = "START38_V14::All"
+# process.GlobalTag.globaltag = "START39_V8::All"
 
 
 #!
