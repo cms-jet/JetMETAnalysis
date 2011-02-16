@@ -10,24 +10,24 @@ ak7CaloL2Relative.useCondDB = False
 kt4CaloL2Relative.useCondDB = False
 kt6CaloL2Relative.useCondDB = False
 ic5CaloL2Relative.useCondDB = False
-ak5JPTL2Relative.useCondDB = False
-ak5PFL2Relative.useCondDB = False
-ak7PFL2Relative.useCondDB = False
-kt4PFL2Relative.useCondDB = False
-kt6PFL2Relative.useCondDB = False
-ic5PFL2Relative.useCondDB = False
+ak5JPTL2Relative.useCondDB  = False
+ak5PFL2Relative.useCondDB   = False
+ak7PFL2Relative.useCondDB   = False
+kt4PFL2Relative.useCondDB   = False
+kt6PFL2Relative.useCondDB   = False
+ic5PFL2Relative.useCondDB   = False
 
 ak5CaloL3Absolute.useCondDB = False
 ak7CaloL3Absolute.useCondDB = False
 kt4CaloL3Absolute.useCondDB = False
 kt6CaloL3Absolute.useCondDB = False
 ic5CaloL3Absolute.useCondDB = False
-ak5JPTL3Absolute.useCondDB = False
-ak5PFL3Absolute.useCondDB = False
-ak7PFL3Absolute.useCondDB = False
-kt4PFL3Absolute.useCondDB = False
-kt6PFL3Absolute.useCondDB = False
-ic5PFL3Absolute.useCondDB = False
+ak5JPTL3Absolute.useCondDB  = False
+ak5PFL3Absolute.useCondDB   = False
+ak7PFL3Absolute.useCondDB   = False
+kt4PFL3Absolute.useCondDB   = False
+kt6PFL3Absolute.useCondDB   = False
+ic5PFL3Absolute.useCondDB   = False
 
 
 # configure missing services / producers for jpt jets
@@ -37,10 +37,10 @@ ak5JPTJetsL1L2L3.src    = 'ak5JPTJets'
 
 ak7JPTL2Relative = ak5JPTL2Relative.clone( algorithm = 'AK5JPT' )
 ak7JPTL3Absolute = ak5JPTL3Absolute.clone( algorithm = 'AK5JPT' )
-ak7JPTJetsL1 = ak5JPTJetsL1.clone( src = 'ak7JPTJets' )
-ak7JPTL2L3 = ak5JPTL2L3.clone( correctors = ['ak7JPTL2Relative','ak7JPTL3Absolute'] )
-ak7JPTJetsL2L3 = ak5JPTJetsL2L3.clone( src = 'ak7JPTJets', correctors = ['ak7JPTL2L3'] )
-ak7JPTL1L2L3 = ak5JPTL1L2L3.clone( correctors = ['ak5JPTL1Offset','ak7JPTL2Relative','ak7JPTL3Absolute'] )
+ak7JPTJetsL1     = ak5JPTJetsL1.clone( src = 'ak7JPTJets' )
+ak7JPTL2L3       = ak5JPTL2L3.clone( correctors = ['ak7JPTL2Relative','ak7JPTL3Absolute'] )
+ak7JPTJetsL2L3   = ak5JPTJetsL2L3.clone( src = 'ak7JPTJets', correctors = ['ak7JPTL2L3'] )
+ak7JPTL1L2L3     = ak5JPTL1L2L3.clone( correctors = ['ak5JPTL1Offset','ak7JPTL2Relative','ak7JPTL3Absolute'] )
 ak7JPTJetsL1L2L3 = ak5JPTJetsL1L2L3.clone( src = 'ak7JPTJets', correctors = ['ak7JPTL1L2L3'] )
 
 

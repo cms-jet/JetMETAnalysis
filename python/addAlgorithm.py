@@ -18,40 +18,48 @@ partons = cms.EDFilter(
 ## jet reconstruction
 ################################################################################
 from JetMETAnalysis.JetAnalyzers.JetReconstruction_cff import *
+from JetMETAnalysis.JetAnalyzers.TauReconstruction_cff import *
 from JetMETAnalysis.JetAnalyzers.JPTReconstruction_cff import *
 from JetMETAnalysis.JetAnalyzers.JetCorrection_cff     import *
 
+tauDiscriminatorDict = {
+    "ak5tauHpsLoose":"hpsPFTauDiscriminationByLooseIsolation",
+    "ak5tauHpsMedium":"hpsPFTauDiscriminationByMediumIsolation",
+    "ak5tauHpsTight":"hpsPFTauDiscriminationByTightIsolation",
+    "ak5tauTaNCLoose":"shrinkingConePFTauDiscriminationByTaNCfrOnePercent",
+    "ak5tauTaNCMedium":"shrinkingConePFTauDiscriminationByTaNCfrHalfPercent",
+    "ak5tauTaNCTight":"shrinkingConePFTauDiscriminationByTaNCfrQuarterPercent",
+    "ak5tauCombinedLoose":"hpsTancTausDiscriminationByTancLoose",
+    "ak5tauCombinedMedium":"hpsTancTausDiscriminationByTancMedium",
+    "ak5tauCombinedTight":"hpsTancTausDiscriminationByTancTight",
+}
+
 stdGenJetsDict = {
-    'ak5calo': 'ak5GenJets',
-    'ak7calo': 'ak7GenJets',
-#    'sc5calo': 'sisCone5GenJets',
-#    'sc7calo': 'sisCone7GenJets',
-    'ic5calo': 'iterativeCone5GenJets',
-    'kt4calo': 'kt4GenJets',
-    'kt6calo': 'kt6GenJets',
-    'ak5pf':   'ak5GenJets',
-    'ak7pf':   'ak7GenJets',
-#    'sc5pf':   'sisCone5GenJets',
-#    'sc7pf':   'sisCone7GenJets',
-    'ic5pf':   'iterativeCone5GenJets',
-    'kt4pf':   'kt4GenJets',
-    'kt6pf':   'kt6GenJets',
-    'ak5trk': 'ak5GenJets',
-    'ak7trk': 'ak7GenJets',
-#    'sc5trk': 'sisCone5GenJets',
-#    'sc7trk': 'sisCone7GenJets',
-    'ic5trk': 'iterativeCone5GenJets',
-    'kt4trk': 'kt4GenJets',
-    'kt6trk': 'kt6GenJets',
-    'ak5jpt':  'ak5GenJets',
-    'ic5jpt':  'ak5GenJets'
+    'ak5calo':   'ak5GenJets',
+    'ak7calo':   'ak7GenJets',
+    'ic5calo':   'iterativeCone5GenJets',
+    'kt4calo':   'kt4GenJets',
+    'kt6calo':   'kt6GenJets',
+    'ak5pf':     'ak5GenJets',
+    'ak7pf':     'ak7GenJets',
+    'ic5pf':     'iterativeCone5GenJets',
+    'kt4pf':     'kt4GenJets',
+    'kt6pf':     'kt6GenJets',
+    'ak5trk':    'ak5GenJets',
+    'ak7trk':    'ak7GenJets',
+    'ic5trk':    'iterativeCone5GenJets',
+    'kt4trk':    'kt4GenJets',
+    'kt6trk':    'kt6GenJets',
+    'ak5jpt':    'ak5GenJets',
+    'ic5jpt':    'ak5GenJets',
+    'ak5tauAll': 'tauHadronicGenJets',
     }
+for i in tauDiscriminatorDict:
+    stdGenJetsDict[i] = stdGenJetsDict["ak5tauAll"] 
 
 genJetsDict = {
     'ak5calo':     ('ak5GenJetsNoMuNoNu', ak5GenJetsNoMuNoNu),
     'ak7calo':     ('ak7GenJetsNoMuNoNu', ak7GenJetsNoMuNoNu),
-#    'sc5calo':     ('sc5GenJetsNoMuNoNu', sc5GenJetsNoMuNoNu),
-#    'sc7calo':     ('sc7GenJetsNoMuNoNu', sc7GenJetsNoMuNoNu),
     'ic5calo':     ('ic5GenJetsNoMuNoNu', ic5GenJetsNoMuNoNu),
     'kt4calo':     ('kt4GenJetsNoMuNoNu', kt4GenJetsNoMuNoNu),
     'kt5calo':     ('kt5GenJetsNoMuNoNu', kt5GenJetsNoMuNoNu),
@@ -63,8 +71,6 @@ genJetsDict = {
     'ca7calo':     ('ca7GenJetsNoMuNoNu', ca7GenJetsNoMuNoNu),
     'ak5pf':       ('ak5GenJetsNoNu',     ak5GenJetsNoNu),
     'ak7pf':       ('ak7GenJetsNoNu',     ak7GenJetsNoNu),
-#    'sc5pf':       ('sc5GenJetsNoNu',     sc5GenJetsNoNu),
-#    'sc7pf':       ('sc7GenJetsNoNu',     sc7GenJetsNoNu),
     'ic5pf':       ('ic5GenJetsNoNu',     ic5GenJetsNoNu),
     'kt4pf':       ('kt4GenJetsNoNu',     kt4GenJetsNoNu),
     'kt5pf':       ('kt5GenJetsNoNu',     kt5GenJetsNoNu),
@@ -76,8 +82,6 @@ genJetsDict = {
     'ca7pf':       ('ca7GenJetsNoNu',     ca7GenJetsNoNu),
     'ak5trk':      ('ak5GenJetsNoNu',     ak5GenJetsNoNu),
     'ak7trk':      ('ak7GenJetsNoNu',     ak7GenJetsNoNu),
-#    'sc5trk':      ('sc5GenJetsNoNu',     sc5GenJetsNoNu),
-#    'sc7trk':      ('sc7GenJetsNoNu',     sc7GenJetsNoNu),
     'ic5trk':      ('ic5GenJetsNoNu',     ic5GenJetsNoNu),
     'kt4trk':      ('kt4GenJetsNoNu',     kt4GenJetsNoNu),
     'kt5trk':      ('kt5GenJetsNoNu',     kt5GenJetsNoNu),
@@ -89,86 +93,75 @@ genJetsDict = {
     'ca7trk':      ('ca7GenJetsNoNu',     ca7GenJetsNoNu),
     'ak5jpt':      ('ak5GenJetsNoNu',     ak5GenJetsNoNu),
     'ak7jpt':      ('ak7GenJetsNoNu',     ak7GenJetsNoNu),
-    'ic5jpt':      ('ic5GenJetsNoNu',     ic5GenJetsNoNu)
+    'ic5jpt':      ('ic5GenJetsNoNu',     ic5GenJetsNoNu),
+    'ak5tauAll':   ('tauHadronicGenJets', tauHadronicGenJets),
+}    
+for i in tauDiscriminatorDict:
+    genJetsDict[i] = genJetsDict["ak5tauAll"] 
+    
+    stdRecJetsDict = {
+    'ak5calo':   'ak5CaloJets',
+    'ak7calo':   'ak7CaloJets',
+    'sc5calo':   'sisCone5CaloJets',
+    'sc7calo':   'sisCone7CaloJets',
+    'ic5calo':   'iterativeCone5CaloJets',
+    'kt4calo':   'kt4CaloJets',
+    'kt6calo':   'kt6CaloJets',
+    'ak5pf':     'ak5PFJets',
+    'ak7pf':     'ak7PFJets',
+    'ic5pf':     'iterativeCone5PFJets',
+    'kt4pf':     'kt4PFJets',
+    'kt6pf':     'kt6PFJets',
+    'ak5trk':    'ak5TrackJets',
+    'kt4trk':    'kt4TrackJets',
+    'ak5jpt':    'ak5JPTJets',
+    'ak7jpt':    'ak7JPTJets',
+    'ic5jpt':    'ic5JPTJets',
+    'ak5tauAll': 'ak5PFJets',
     }
+for i in tauDiscriminatorDict:
+    stdRecJetsDict[i] = stdRecJetsDict["ak5tauAll"] 
 
-stdRecJetsDict = {
-    'ak5calo':     'ak5CaloJets',
-    'ak7calo':     'ak7CaloJets',
-    'sc5calo':     'sisCone5CaloJets',
-    'sc7calo':     'sisCone7CaloJets',
-    'ic5calo':     'iterativeCone5CaloJets',
-    'kt4calo':     'kt4CaloJets',
-    'kt6calo':     'kt6CaloJets',
-    'ak5pf':       'ak5PFJets',
-    'ak7pf':       'ak7PFJets',
- #   'sc5pf':       'sisCone5PFJets',
- #   'sc7pf':       'sisCone7PFJets',
-    'ic5pf':       'iterativeCone5PFJets',
-    'kt4pf':       'kt4PFJets',
-    'kt6pf':       'kt6PFJets',
-    'ak5trk':     'ak5TrackJets',
-#    'ak7trk':     'ak7TrackJets',
-#    'sc5trk':     'sisCone5TrackJets',
-#    'sc7trk':     'sisCone7TrackJets',
-#    'ic5trk':     'iterativeCone5TrackJets',
-    'kt4trk':     'kt4TrackJets',
-#    'kt6trk':     'kt6TrackJets',
-    'ak5jpt':      'ak5JPTJets',
-    'ak7jpt':      'ak7JPTJets',
-    'ic5jpt':      'ic5JPTJets'
-    }
 
 recJetsDict = {
-    'ak5calo':     ('ak5CaloJets',      ak5CaloJets),
-    'ak7calo':     ('ak7CaloJets',      ak7CaloJets),
-    'sc5calo':     ('sc5CaloJets',      sc5CaloJets),
-    'sc7calo':     ('sc7CaloJets',      sc7CaloJets),
-    'ic5calo':     ('ic5CaloJets',      ic5CaloJets),
-    'kt4calo':     ('kt4CaloJets',      kt4CaloJets),
-    'kt5calo':     ('kt5CaloJets',      kt5CaloJets),
-    'kt6calo':     ('kt6CaloJets',      kt6CaloJets),
-    'kt7calo':     ('kt7CaloJets',      kt7CaloJets),
-    'ca4calo':     ('ca4CaloJets',      ca4CaloJets),
-    'ca5calo':     ('ca5CaloJets',      ca5CaloJets),
-    'ca6calo':     ('ca6CaloJets',      ca6CaloJets),
-    'ca7calo':     ('ca7CaloJets',      ca7CaloJets),
-    'ak5pf':       ('ak5PFJets',        ak5PFJets),
-    'ak7pf':       ('ak7PFJets',        ak7PFJets),
-#    'sc5pf':       ('sc5PFJets',        sc5PFJets),
-#    'sc7pf':       ('sc7PFJets',        sc7PFJets),
-    'ic5pf':       ('ic5PFJets',        ic5PFJets),
-    'kt4pf':       ('kt4PFJets',        kt4PFJets),
-    'kt5pf':       ('kt5PFJets',        kt5PFJets),
-    'kt6pf':       ('kt6PFJets',        kt6PFJets),
-    'kt7pf':       ('kt7PFJets',        kt7PFJets),
-    'ca4pf':       ('ca4PFJets',        ca4PFJets),
-    'ca5pf':       ('ca5PFJets',        ca5PFJets),
-    'ca6pf':       ('ca6PFJets',        ca6PFJets),
-    'ca7pf':       ('ca7PFJets',        ca7PFJets),
-    'ak5trk':      ('ak5TrackJets',     ak5TrackJets),
-#    'ak7trk':      ('ak7TrackJets',     ak7TrackJets),
-#    'sc5trk':      ('sisCone5TrackJets',     sisCone5TrackJets),
-#    'sc7trk':      ('sc7TrackJets',     sc7TrackJets),
-#    'ic5trk':      ('ic5TrackJets',     ic5TrackJets),
-    'kt4trk':      ('kt4TrackJets',     kt4TrackJets),
-#    'kt5trk':      ('kt5TrackJets',     kt5TrackJets),
-#    'kt6trk':      ('kt6TrackJets',     kt6TrackJets),
-#    'kt7trk':      ('kt7TrackJets',     kt7TrackJets),
-#    'ca4trk':      ('ca4TrackJets',     ca4TrackJets),
-#    'ca5trk':      ('ca5TrackJets',     ca5TrackJets),
-#    'ca6trk':      ('ca6TrackJets',     ca6TrackJets),
-#    'ca7trk':      ('ca7TrackJets',     ca7TrackJets),
-    'ak5jpt':      ('ak5JPTJets',       ak5JPTJets),
-    'ak7jpt':      ('ak7JPTJets',       ak7JPTJets),
-    'ic5jpt':      ('ic5JPTJets',       ic5JPTJets)
+    'ak5calo':     ('ak5CaloJets',  ak5CaloJets),
+    'ak7calo':     ('ak7CaloJets',  ak7CaloJets),
+    'sc5calo':     ('sc5CaloJets',  sc5CaloJets),
+    'sc7calo':     ('sc7CaloJets',  sc7CaloJets),
+    'ic5calo':     ('ic5CaloJets',  ic5CaloJets),
+    'kt4calo':     ('kt4CaloJets',  kt4CaloJets),
+    'kt5calo':     ('kt5CaloJets',  kt5CaloJets),
+    'kt6calo':     ('kt6CaloJets',  kt6CaloJets),
+    'kt7calo':     ('kt7CaloJets',  kt7CaloJets),
+    'ca4calo':     ('ca4CaloJets',  ca4CaloJets),
+    'ca5calo':     ('ca5CaloJets',  ca5CaloJets),
+    'ca6calo':     ('ca6CaloJets',  ca6CaloJets),
+    'ca7calo':     ('ca7CaloJets',  ca7CaloJets),
+    'ak5pf':       ('ak5PFJets',    ak5PFJets),
+    'ak7pf':       ('ak7PFJets',    ak7PFJets),
+    'ic5pf':       ('ic5PFJets',    ic5PFJets),
+    'kt4pf':       ('kt4PFJets',    kt4PFJets),
+    'kt5pf':       ('kt5PFJets',    kt5PFJets),
+    'kt6pf':       ('kt6PFJets',    kt6PFJets),
+    'kt7pf':       ('kt7PFJets',    kt7PFJets),
+    'ca4pf':       ('ca4PFJets',    ca4PFJets),
+    'ca5pf':       ('ca5PFJets',    ca5PFJets),
+    'ca6pf':       ('ca6PFJets',    ca6PFJets),
+    'ca7pf':       ('ca7PFJets',    ca7PFJets),
+    'ak5trk':      ('ak5TrackJets', ak5TrackJets),
+    'kt4trk':      ('kt4TrackJets', kt4TrackJets),
+    'ak5jpt':      ('ak5JPTJets',   ak5JPTJets),
+    'ak7jpt':      ('ak7JPTJets',   ak7JPTJets),
+    'ic5jpt':      ('ic5JPTJets',   ic5JPTJets),
+    'ak5tauAll':   ('ak5PFJets',    ak5PFJets),
     }
+for i in tauDiscriminatorDict:
+    recJetsDict[i] = recJetsDict["ak5tauAll"] 
+
 
 corrJetsDict = {
     'ak5calol1':     ('ak5CaloJetsL1',    ak5CaloJetsL1),
     'ak7calol1':     ('ak7CaloJetsL1',    ak7CaloJetsL1),
-#    'sc5calol1':     ('sc5CaloJetsL1',    sc5CaloJetsL1),
-#    'sc7calol1':     ('sc7CaloJetsL1',    sc7CaloJetsL1),
     'ic5calol1':     ('ic5CaloJetsL1',    ic5CaloJetsL1),
     'kt4calol1':     ('kt4CaloJetsL1',    kt4CaloJetsL1),
     'kt5calol1':     ('kt5CaloJetsL1',    kt5CaloJetsL1),
@@ -182,8 +175,6 @@ corrJetsDict = {
     'ak7jptl1':      ('ak7JPTJetsL1',     ak7JPTJetsL1), # *
     'ak5pfl1':       ('ak5PFJetsL1',      ak5PFJetsL1),
     'ak7pfl1':       ('ak7PFJetsL1',      ak7PFJetsL1),
-#    'sc5pfl1':       ('sc5PFJetsL1',      sc5PFJetsL1),
-#    'sc7pfl1':       ('sc7PFJetsL1',      sc7PFJetsL1),
     'ic5pfl1':       ('ic5PFJetsL1',      ic5PFJetsL1),
     'kt4pfl1':       ('kt4PFJetsL1',      kt4PFJetsL1),
     'kt5pfl1':       ('kt5PFJetsL1',      kt5PFJetsL1),
@@ -195,8 +186,6 @@ corrJetsDict = {
     'ca7pfl1':       ('ca7PFJetsL1',      ca7PFJetsL1),
     'ak5calol2l3':   ('ak5CaloJetsL2L3',  ak5CaloJetsL2L3),
     'ak7calol2l3':   ('ak7CaloJetsL2L3',  ak7CaloJetsL2L3),
-#    'sc5calol2l3':   ('sc5CaloJetsL2L3',  sc5CaloJetsL2L3),
-#    'sc7calol2l3':   ('sc7CaloJetsL2L3',  sc7CaloJetsL2L3),
     'ic5calol2l3':   ('ic5CaloJetsL2L3',  ic5CaloJetsL2L3),
     'kt4calol2l3':   ('kt4CaloJetsL2L3',  kt4CaloJetsL2L3),
     'kt5calol2l3':   ('kt5CaloJetsL2L3',  kt5CaloJetsL2L3),
@@ -211,8 +200,6 @@ corrJetsDict = {
     'ic5jptl2l3':    ('ic5JPTJetsL2L3',   ic5JPTJetsL2L3),
     'ak5pfl2l3':     ('ak5PFJetsL2L3',    ak5PFJetsL2L3),
     'ak7pfl2l3':     ('ak7PFJetsL2L3',    ak7PFJetsL2L3),
-#    'sc5pfl2l3':     ('sc5PFJetsL2L3',    sc5PFJetsL2L3),
-#    'sc7pfl2l3':     ('sc7PFJetsL2L3',    sc7PFJetsL2L3),
     'ic5pfl2l3':     ('ic5PFJetsL2L3',    ic5PFJetsL2L3),
     'kt4pfl2l3':     ('kt4PFJetsL2L3',    kt4PFJetsL2L3),
     'kt5pfl2l3':     ('kt5PFJetsL2L3',    kt5PFJetsL2L3),
@@ -222,23 +209,8 @@ corrJetsDict = {
     'ca5pfl2l3':     ('ca5PFJetsL2L3',    ca5PFJetsL2L3),
     'ca6pfl2l3':     ('ca6PFJetsL2L3',    ca6PFJetsL2L3),
     'ca7pfl2l3':     ('ca7PFJetsL2L3',    ca7PFJetsL2L3),
-#    'ak5trkl2l3':   ('ak5TrackJetsL2L3',  ak5TrackJetsL2L3),
-#    'ak7trkl2l3':   ('ak7TrackJetsL2L3',  ak7TrackJetsL2L3),
-#    'sc5trkl2l3':   ('sc5TrackJetsL2L3',  sc5TrackJetsL2L3),
-#    'sc7trkl2l3':   ('sc7TrackJetsL2L3',  sc7TrackJetsL2L3),
-#    'ic5trkl2l3':   ('ic5TrackJetsL2L3',  ic5TrackJetsL2L3),
-#    'kt4trkl2l3':   ('kt4TrackJetsL2L3',  kt4TrackJetsL2L3),
-#    'kt5trkl2l3':   ('kt5TrackJetsL2L3',  kt5TrackJetsL2L3),
-#    'kt6trkl2l3':   ('kt6TrackJetsL2L3',  kt6TrackJetsL2L3),
-#    'kt7trkl2l3':   ('kt7TrackJetsL2L3',  kt7TrackJetsL2L3),
-#    'ca4trkl2l3':   ('ca4TrackJetsL2L3',  ca4TrackJetsL2L3),
-#    'ca5trkl2l3':   ('ca5TrackJetsL2L3',  ca5TrackJetsL2L3),
-#    'ca6trkl2l3':   ('ca6TrackJetsL2L3',  ca6TrackJetsL2L3),
-#    'ca7trkl2l3':   ('ca7TrackJetsL2L3',  ca7TrackJetsL2L3),
     'ak5calol1l2l3': ('ak5CaloJetsL1L2L3',ak5CaloJetsL1L2L3),
     'ak7calol1l2l3': ('ak7CaloJetsL1L2L3',ak7CaloJetsL1L2L3),
-#    'sc5calol1l2l3': ('sc5CaloJetsL1L2L3',sc5CaloJetsL1L2L3),
-#    'sc7calol1l2l3': ('sc7CaloJetsL1L2L3',sc7CaloJetsL1L2L3),
     'ic5calol1l2l3': ('ic5CaloJetsL1L2L3',ic5CaloJetsL1L2L3),
     'kt4calol1l2l3': ('kt4CaloJetsL1L2L3',kt4CaloJetsL1L2L3),
     'kt5calol1l2l3': ('kt5CaloJetsL1L2L3',kt5CaloJetsL1L2L3),
@@ -252,8 +224,6 @@ corrJetsDict = {
     'ak7jptl1l2l3':  ('ak7JPTJetsL1L2L3', ak7JPTJetsL1L2L3), #*
     'ak5pfl1l2l3':   ('ak5PFJetsL1L2L3',  ak5PFJetsL1L2L3),
     'ak7pfl1l2l3':   ('ak7PFJetsL1L2L3',  ak7PFJetsL1L2L3),
-#    'sc5pfl1l2l3':   ('sc5PFJetsL1L2L3',  sc5PFJetsL1L2L3),
-#    'sc7pfl1l2l3':   ('sc7PFJetsL1L2L3',  sc7PFJetsL1L2L3),
     'ic5pfl1l2l3':   ('ic5PFJetsL1L2L3',  ic5PFJetsL1L2L3),
     'kt4pfl1l2l3':   ('kt4PFJetsL1L2L3',  kt4PFJetsL1L2L3),
     'kt5pfl1l2l3':   ('kt5PFJetsL1L2L3',  kt5PFJetsL1L2L3),
@@ -264,7 +234,6 @@ corrJetsDict = {
     'ca6pfl1l2l3':   ('ca6PFJetsL1L2L3',  ca6PFJetsL1L2L3),
     'ca7pfl1l2l3':   ('ca7PFJetsL1L2L3',  ca7PFJetsL1L2L3),
     }
-
 
 
 ################################################################################
@@ -283,7 +252,7 @@ def addAlgorithm(process,alg_size_type_corr,reco):
     to kinematically select references and jets, select partons and match
     them to the references, match references and jets, and finally execute
     the JetResponseAnalyzer.
-    """
+    """ 
     ## deterine algorithm, size, type (Calo|PF|Track|JPT), and wether to apply jec
     alg_size      = ''
     type          = ''
@@ -298,6 +267,16 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('pf')]
         type          = 'PF'
         alg_size_type = alg_size + 'pf'
+    elif (alg_size_type_corr.find('tau') > 0) :
+        alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('tau')]
+        type          = 'TAU'
+        if "tauAll" in alg_size_type_corr:
+            alg_size_type = alg_size + 'tauAll'
+        else:
+            for i in tauDiscriminatorDict:
+                if i in alg_size_type_corr: 
+                    alg_size_type = i
+                    
     elif (alg_size_type_corr.find('jpt') > 0) :
         alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('jpt')]
         type          = 'JPT'
@@ -396,20 +375,102 @@ def addAlgorithm(process,alg_size_type_corr,reco):
             jetPtEta.src = recLabel
         setattr(process,recLabel,recJets)
         sequence = recJets * sequence
-        #if type == 'PF':
-        #    process.load('JetMETAnalysis.JetAnalyzers.PFParticlesForJets_cff')
-        #    recJets.src = 'pfNoElectron'
-        #    sequence = process.pfParticlesForJets * sequence
-        #elif type =='Track':
         if type =='Track':
             process.load('JetMETAnalysis.JetAnalyzers.TrackJetReconstruction_cff')
             sequence = trackJetSequence * sequence
+        elif type =="TAU":
+            from PhysicsTools.PatAlgos.tools.helpers import massSearchReplaceParam
+            from RecoTauTag.TauTagTools.PFTauSelector_cfi import pfTauSelector
+            #get event sources
+#            process.load("Configuration.StandardSequences.MagneticField_38T_cff")
+#            process.load("Configuration.StandardSequences.Geometry_cff") 
+            process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
+            process.GlobalTag.globaltag = "auto:startup"
+            process.load("TrackingTools/TransientTrack/TransientTrackBuilder_cfi")
+            
+            #get producers
+            process.load("RecoTauTag.RecoTau.RecoTauPiZeroProducer_cfi")        
+            from RecoTauTag.RecoTau.RecoTauCombinatoricProducer_cfi import combinatoricRecoTaus
+            
+            tauRecoSequence = None
+            if "Hps" in alg_size_type:
+                process.ak5PFJetsLegacyHPSPiZeros.src = jetPtEta.src.value()                
+                process.combinatoricRecoTausHps = combinatoricRecoTaus.clone(
+                    jetSrc = jetPtEta.src.value(),
+                    piZeroSrc = "ak5PFJetsLegacyHPSPiZeros",
+                )
+                process.load("RecoTauTag.Configuration.HPSPFTaus_cfi")
+                massSearchReplaceParam(process.produceAndDiscriminateHPSPFTaus, "PFTauProducer", 
+                                       cms.InputTag("combinatoricRecoTaus"), cms.InputTag("combinatoricRecoTausHps") )
+                process.hpsPFTauProducer.src = "combinatoricRecoTausHps"
+                selectedTaus = pfTauSelector.clone( src = "hpsPFTauProducer",
+                    discriminators = cms.VPSet( cms.PSet( discriminator=cms.InputTag("hpsPFTauDiscriminationAgainstElectron"),selectionCut=cms.double(0.5)),
+                                                cms.PSet( discriminator=cms.InputTag("hpsPFTauDiscriminationAgainstMuon"),selectionCut=cms.double(0.5)),
+                                                cms.PSet( discriminator=cms.InputTag(tauDiscriminatorDict[alg_size_type]),selectionCut=cms.double(0.5)),
+                    )
+                )
+                setattr(process, alg_size_type+"Selected", selectedTaus)
+                jetPtEta.src = alg_size_type+"Selected"
+                tauRecoSequence = process.ak5PFJetsLegacyHPSPiZeros * process.combinatoricRecoTausHps * process.produceAndDiscriminateHPSPFTaus * getattr(process, alg_size_type+"Selected")
+            elif "TaNC" in alg_size_type or "All" in alg_size_type:
+                process.ak5PFJetsLegacyTaNCPiZeros.src = jetPtEta.src.value()
+                process.load("RecoTauTag.Configuration.ShrinkingConePFTaus_cfi")
+                process.shrinkingConePFTauProducer.jetSrc = jetPtEta.src.value()
+                process.shrinkingConePFTauProducer.piZeroSrc = "ak5PFJetsLegacyTaNCPiZeros"
+                jetPtEta.src = process.shrinkingConePFTauProducer.label()
+                tauRecoSequence = process.ak5PFJetsLegacyTaNCPiZeros * process.produceAndDiscriminateShrinkingConePFTaus * process.produceShrinkingConeDiscriminationByTauNeuralClassifier
+                if "TaNC" in alg_size_type:
+                    selectedTaus = pfTauSelector.clone( src = "shrinkingConePFTauProducer",
+                        discriminators = cms.VPSet( cms.PSet( discriminator=cms.InputTag("shrinkingConePFTauDiscriminationAgainstElectron"),selectionCut=cms.double(0.5)),
+                                                    cms.PSet( discriminator=cms.InputTag("shrinkingConePFTauDiscriminationAgainstMuon"),selectionCut=cms.double(0.5)),
+                                                    cms.PSet( discriminator=cms.InputTag(tauDiscriminatorDict[alg_size_type]),selectionCut=cms.double(0.5)),
+                        )
+                    )
+                    setattr(process, alg_size_type+"Selected", selectedTaus)
+                    jetPtEta.src = alg_size_type+"Selected"
+                    tauRecoSequence *= getattr(process, alg_size_type+"Selected")
+                
+            elif "Combined" in alg_size_type:
+                process.ak5PFJetsRecoTauPiZeros.src = jetPtEta.src.value()
+                process.combinatoricRecoTausHpsTanc = combinatoricRecoTaus.clone(
+                    jetSrc = jetPtEta.src.value(),
+                    piZeroSrc = "ak5PFJetsRecoTauPiZeros",
+                )
+                process.load("RecoTauTag.Configuration.HPSTancTaus_cfi")
+                massSearchReplaceParam( process.hpsTancTauSequence, "PFTauProducer",
+                                        cms.InputTag("combinatoricRecoTaus"), cms.InputTag("combinatoricRecoTausHpsTanc") )
+                massSearchReplaceParam( process.hpsTancTauSequence, "PFTauProducer",
+                                        cms.InputTag("combinatoricRecoTausHps"), cms.InputTag("combinatoricRecoTausHpsTanc") )
+#                ME: bug in massSearchReplaceParam prevents usage (VInputTags are considered InputTags )
+#                massSearchReplaceParam( process.hpsTancTauSequence, "src",
+#                                        cms.InputTag("combinatoricRecoTaus"), cms.InputTag("combinatoricRecoTausHpsTanc") )
+                process.combinatoricRecoTausHPSSelector.src =  "combinatoricRecoTausHpsTanc"
+                process.combinatoricTaus1prong0pi0.src = "combinatoricRecoTausHpsTanc"
+                process.combinatoricTaus1prong1pi0.src = "combinatoricRecoTausHpsTanc"
+                process.combinatoricTaus1prong2pi0.src = "combinatoricRecoTausHpsTanc"
+                process.combinatoricTaus3prong0pi0.src = "combinatoricRecoTausHpsTanc"
+                
+                selectedTaus = pfTauSelector.clone( src = "hpsTancTaus",
+                    discriminators = cms.VPSet( cms.PSet( discriminator=cms.InputTag("hpsTancTausDiscriminationAgainstElectron"),selectionCut=cms.double(0.5)),
+                                                cms.PSet( discriminator=cms.InputTag("hpsTancTausDiscriminationAgainstMuon"),selectionCut=cms.double(0.5)),
+                                                cms.PSet( discriminator=cms.InputTag(tauDiscriminatorDict[alg_size_type]),selectionCut=cms.double(0.5)),
+                    )
+                )
+                setattr(process, alg_size_type+"Selected", selectedTaus)
+                jetPtEta.src = alg_size_type+"Selected"
+                tauRecoSequence = process.ak5PFJetsRecoTauPiZeros * process.combinatoricRecoTausHpsTanc * process.hpsTancTauSequence * getattr(process, alg_size_type+"Selected")
+                
+            process.load("PhysicsTools.JetMCAlgos.TauGenJets_cfi")
+
+            sequence = tauRecoSequence * process.tauGenJets * sequence
 
     # reconstruct genjets
     if reco:
         (genLabel,genJets) = genJetsDict[alg_size_type]
         setattr(process,genLabel,genJets)
-        sequence = genJets * sequence
+        
+        sequence._replace(refPtEta, genJets * refPtEta)
+        #sequence = genJets * sequence
         if type == 'Calo':
             setattr(process,'genParticlesForJetsNoMuNoNu',
                     genParticlesForJetsNoMuNoNu)
