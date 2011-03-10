@@ -1,7 +1,0 @@
-<use name=DataFormats/JetReco>
-<use name=DataFormats/Math>
-<use name=root>
-
-<export>
-  <lib name=JetMETAnalysisJetUtilities>
-</export>
