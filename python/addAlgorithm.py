@@ -339,7 +339,7 @@ def addAlgorithm(process,alg_size_type_corr,reco):
     setattr(process, alg_size_type_corr + 'PtEta', jetPtEta)
     
     ## create the sequence
-    sequence = refPtEta * jetPtEta
+    sequence = cms.Sequence(refPtEta * jetPtEta)
     
     ## correct jets
     corrLabel = ''
@@ -347,7 +347,7 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         process.load('JetMETAnalysis.JetAnalyzers.JetCorrection_cff')
         (corrLabel,corrJets) = corrJetsDict[alg_size_type_corr]
         setattr(process,corrLabel,corrJets)
-        sequence = corrJets * sequence
+        sequence = cms.Sequence(corrJets * sequence)
         
     ## reconstruct jets
     if type == 'JPT':
@@ -355,11 +355,11 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         process.load('Configuration.StandardSequences.MagneticField_cff')
         process.load('JetMETAnalysis.JetAnalyzers.JPTReconstruction_cff')
         if   alg_size == 'ak5':
-            sequence = process.ak5JPTJetsSequence * sequence
+            sequence = cms.Sequence(process.ak5JPTJetsSequence * sequence)
         elif   alg_size == 'ak7':
-            sequence = process.ak7JPTJetsSequence * sequence
+            sequence = cms.Sequence(process.ak7JPTJetsSequence * sequence)
         elif alg_size == 'ic5':
-            sequence = process.ic5JPTJetsSequence * sequence
+            sequence = cms.Sequence(process.ic5JPTJetsSequence * sequence)
         else:
             raise ValueError(alg_size + " not supported for JPT!")
         if correctl1 or correctl2l3:
@@ -374,18 +374,14 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         else:
             jetPtEta.src = recLabel
         setattr(process,recLabel,recJets)
-        sequence = recJets * sequence
+        sequence = cms.Sequence(recJets * sequence)
         if type =='Track':
             process.load('JetMETAnalysis.JetAnalyzers.TrackJetReconstruction_cff')
-            sequence = trackJetSequence * sequence
+            sequence = cms.Sequence(trackJetSequence * sequence)
         elif type =="TAU":
             from PhysicsTools.PatAlgos.tools.helpers import massSearchReplaceParam
             from RecoTauTag.TauTagTools.PFTauSelector_cfi import pfTauSelector
             #get event sources
-#            process.load("Configuration.StandardSequences.MagneticField_38T_cff")
-#            process.load("Configuration.StandardSequences.Geometry_cff") 
-            process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-            process.GlobalTag.globaltag = "auto:startup"
             process.load("TrackingTools/TransientTrack/TransientTrackBuilder_cfi")
             
             #get producers
@@ -462,22 +458,22 @@ def addAlgorithm(process,alg_size_type_corr,reco):
                 
             process.load("PhysicsTools.JetMCAlgos.TauGenJets_cfi")
 
-            sequence = tauRecoSequence * process.tauGenJets * sequence
+            sequence = cms.Sequence(tauRecoSequence * process.tauGenJets * sequence)
 
     # reconstruct genjets
     if reco:
         (genLabel,genJets) = genJetsDict[alg_size_type]
         setattr(process,genLabel,genJets)
         
-        sequence._replace(refPtEta, genJets * refPtEta)
-        #sequence = genJets * sequence
+        sequence.replace(refPtEta, genJets * refPtEta)
+
         if type == 'Calo':
             setattr(process,'genParticlesForJetsNoMuNoNu',
                     genParticlesForJetsNoMuNoNu)
-            sequence = genParticlesForJetsNoMuNoNu * sequence
+            sequence = cms.Sequence(genParticlesForJetsNoMuNoNu * sequence)
         else:
             setattr(process,'genParticlesForJetsNoNu',genParticlesForJetsNoNu)
-            sequence = genParticlesForJetsNoNu * sequence
+            sequence = cms.Sequence(genParticlesForJetsNoNu * sequence)
         refPtEta.src = genJets.label()
         
     ## filter / map partons only if flavor information is requested
@@ -489,7 +485,7 @@ def addAlgorithm(process,alg_size_type_corr,reco):
             srcGen = cms.InputTag(partons.label())
             )
         setattr(process,alg_size_type + 'GenToParton', genToParton)
-        sequence = sequence * partons * genToParton
+        sequence = cms.Sequence(sequence * partons * genToParton)
         
     ## reference to jet matching
     jetToRef = cms.EDProducer(
@@ -498,7 +494,7 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         srcRec = cms.InputTag(jetPtEta.label())
         )
     setattr(process,alg_size_type_corr + 'JetToRef', jetToRef)
-    sequence = sequence * jetToRef
+    sequence = cms.Sequence(sequence * jetToRef)
     
     ## jet response analyzer
     jra = cms.EDAnalyzer(
@@ -510,7 +506,7 @@ def addAlgorithm(process,alg_size_type_corr,reco):
     if Defaults.JetResponseParameters.doFlavor.value():
         jra.srcRefToPartonMap = cms.InputTag(genToParton.label(),'rec2gen')
     setattr(process,alg_size_type_corr,jra)
-    sequence = sequence * jra
+    sequence = cms.Sequence(sequence * jra)
     
     ## create the path and put in the sequence
     sequence = cms.Sequence(sequence)

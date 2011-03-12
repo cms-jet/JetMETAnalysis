@@ -34,34 +34,18 @@ process = cms.Process("JRA")
 #! CONDITIONS (DELIVERING JEC BY DEFAULT!)
 #!
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-process.GlobalTag.globaltag = "START38_V14::All"
-# process.GlobalTag.globaltag = "START39_V8::All"
+process.GlobalTag.globaltag = "START311_V2::All"
 
 
 #!
 #! INPUT
 #!
 qcdFiles = cms.untracked.vstring(
-    '/store/relval/CMSSW_3_8_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_38Y_V13-v1/0017/D6537BBF-99FC-DF11-B625-001A92810ADE.root',
-    '/store/relval/CMSSW_3_8_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_38Y_V13-v1/0017/9A95A153-9DFC-DF11-8E53-0018F3D09676.root',
-    '/store/relval/CMSSW_3_8_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_38Y_V13-v1/0017/90930ECB-9CFC-DF11-A619-002354EF3BD2.root',
-    '/store/relval/CMSSW_3_8_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_38Y_V13-v1/0017/0A1C9C2C-A6FC-DF11-B6CC-001A92971B8C.root',
-    '/store/relval/CMSSW_3_8_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_38Y_V13-v1/0016/8ED89570-91FC-DF11-A865-002618943832.root',
-    '/store/relval/CMSSW_3_8_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_38Y_V13-v1/0016/2A7FF391-93FC-DF11-9E9A-0018F3D0970C.root',
-    '/store/relval/CMSSW_3_8_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_38Y_V13-v1/0016/1034E06F-92FC-DF11-8804-0026189438DE.root',
-    '/store/relval/CMSSW_3_8_7/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_38Y_V13-v1/0016/04E1957A-90FC-DF11-A98A-001A92810A96.root'
-    )
-
-ttbarFiles = cms.untracked.vstring(
-    '/store/relval/CMSSW_3_8_7/RelValTTbar/GEN-SIM-RECO/MC_38Y_V13-v1/0017/6E197082-93FC-DF11-9205-00261894392C.root',
-    '/store/relval/CMSSW_3_8_7/RelValTTbar/GEN-SIM-RECO/MC_38Y_V13-v1/0016/FAB6D480-84FC-DF11-8F1A-00304867915A.root',
-    '/store/relval/CMSSW_3_8_7/RelValTTbar/GEN-SIM-RECO/MC_38Y_V13-v1/0016/F2E75DCF-83FC-DF11-8095-003048679228.root',
-    '/store/relval/CMSSW_3_8_7/RelValTTbar/GEN-SIM-RECO/MC_38Y_V13-v1/0016/C8725806-7EFC-DF11-842E-003048D42D92.root',
-    '/store/relval/CMSSW_3_8_7/RelValTTbar/GEN-SIM-RECO/MC_38Y_V13-v1/0016/C846A888-7DFC-DF11-B7A0-002618943984.root',
-    '/store/relval/CMSSW_3_8_7/RelValTTbar/GEN-SIM-RECO/MC_38Y_V13-v1/0016/C6DD4C8F-83FC-DF11-8998-0018F3D0965A.root',
-    '/store/relval/CMSSW_3_8_7/RelValTTbar/GEN-SIM-RECO/MC_38Y_V13-v1/0016/86015F0D-7EFC-DF11-8C48-0026189438CF.root',
-    '/store/relval/CMSSW_3_8_7/RelValTTbar/GEN-SIM-RECO/MC_38Y_V13-v1/0016/5605E388-7DFC-DF11-B572-0026189438B3.root',
-    '/store/relval/CMSSW_3_8_7/RelValTTbar/GEN-SIM-RECO/MC_38Y_V13-v1/0016/02C6B001-7FFC-DF11-A6F2-0026189438E9.root'
+    '/store/relval/CMSSW_3_11_2/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_311_V2-v1/0004/B47EA9F2-BE44-E011-8C0B-00261894383C.root',
+    '/store/relval/CMSSW_3_11_2/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_311_V2-v1/0001/FA74E93C-3F44-E011-B0FD-00261894398D.root',
+    '/store/relval/CMSSW_3_11_2/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_311_V2-v1/0001/C0A9CEFC-3F44-E011-8834-00261894389E.root',
+    '/store/relval/CMSSW_3_11_2/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_311_V2-v1/0001/7C73B75E-3D44-E011-B567-00248C55CC62.root',
+    '/store/relval/CMSSW_3_11_2/RelValQCD_FlatPt_15_3000/GEN-SIM-RECO/MC_311_V2-v1/0001/6EF4FDD7-3C44-E011-A7C3-002618FDA237.root'
     )
 
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(100))
@@ -122,6 +106,8 @@ algorithms.append('ak5jptl2l3')
 # V01-00-11 RecoTauTag/Configuration
 # V01-00-19 RecoTauTag/RecoTau
 # V01-00-03 RecoTauTag/TauTagTools
+#
+# [runs but does not wirk in CMSSW_3_11_2]
 #
 #algorithms.append('ak5tauAll')
 #algorithms.append('ak5tauHpsLoose')
