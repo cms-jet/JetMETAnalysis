@@ -1,5 +1,8 @@
 2011-03-12  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
+	* tag V00-09-01
+	* fix for slc5_amd64_gcc434 arch
+
 	* tag V00-09-00
 	* transition to CMSSW_3_11_X
 
