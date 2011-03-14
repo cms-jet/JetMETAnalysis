@@ -1,81 +1,47 @@
 import FWCore.ParameterSet.Config as cms
 
 from JetMETCorrections.Configuration.JetCorrectionServicesAllAlgos_cff import *
-from JetMETCorrections.Configuration.JetCorrectionProducersAllAlgos_cff import *
+from JetMETCorrections.Configuration.DefaultJEC_cff import *
 
 
-# configure missing services / producers for jpt jets
-ak5JPTJetsL1.src        = 'ak5JPTJets'
-ak5JPTJetsL1.correctors = ['ak5JPTL1Offset']
-ak5JPTJetsL1L2L3.src    = 'ak5JPTJets'
+# FIX RHO INPUT COLLECTION FOR CALO L1FAST CORRECTORS (CALO NOT PF)
+ak5CaloL1Fastjet.srcRho = 'kt6CaloJets:rho'
+ak7CaloL1Fastjet.srcRho = 'kt6CaloJets:rho'
+kt4CaloL1Fastjet.srcRho = 'kt6CaloJets:rho'
+kt6CaloL1Fastjet.srcRho = 'kt6CaloJets:rho'
 
-ak7JPTL2Relative = ak5JPTL2Relative.clone( algorithm = 'AK5JPT' )
-ak7JPTL3Absolute = ak5JPTL3Absolute.clone( algorithm = 'AK5JPT' )
-ak7JPTJetsL1     = ak5JPTJetsL1.clone( src = 'ak7JPTJets' )
-ak7JPTL2L3       = ak5JPTL2L3.clone( correctors = ['ak7JPTL2Relative','ak7JPTL3Absolute'] )
-ak7JPTJetsL2L3   = ak5JPTJetsL2L3.clone( src = 'ak7JPTJets', correctors = ['ak7JPTL2L3'] )
-ak7JPTL1L2L3     = ak5JPTL1L2L3.clone( correctors = ['ak5JPTL1Offset','ak7JPTL2Relative','ak7JPTL3Absolute'] )
-ak7JPTJetsL1L2L3 = ak5JPTJetsL1L2L3.clone( src = 'ak7JPTJets', correctors = ['ak7JPTL1L2L3'] )
+# L1FAST JEC PRODUCERS NOT DEFINED IN DEFAULTJEC_CFF
+ak5CaloJetsL1Fast = cms.EDProducer(
+    'CaloJetCorrectionProducer',
+    src         = cms.InputTag('ak5CaloJets'),
+    correctors  = cms.vstring('ak5CaloL1Fastjet')
+    )
+ak7CaloJetsL1Fast = ak5CaloJetsL1Fast.clone(src='ak7CaloJets', correctors=['ak7CaloL1Fastjet'])
+kt4CaloJetsL1Fast = ak5CaloJetsL1Fast.clone(src='kt4CaloJets', correctors=['kt4CaloL1Fastjet'])
+kt6CaloJetsL1Fast = ak5CaloJetsL1Fast.clone(src='kt6CaloJets', correctors=['kt6CaloL1Fastjet'])
 
+ak5PFJetsL1Fast = cms.EDProducer(
+    'PFJetCorrectionProducer',
+    src         = cms.InputTag('ak5PFJets'),
+    correctors  = cms.vstring('ak5PFL1Fastjet')
+    )
+ak7PFJetsL1Fast = ak5PFJetsL1Fast.clone(src='ak7PFJets', correctors=['ak7PFL1Fastjet'])
+kt4PFJetsL1Fast = ak5PFJetsL1Fast.clone(src='kt4PFJets', correctors=['kt4PFL1Fastjet'])
+kt6PFJetsL1Fast = ak5PFJetsL1Fast.clone(src='kt6PFJets', correctors=['kt6PFL1Fastjet'])
 
-# extra l1 producers for kt jets
-kt5CaloJetsL1 = kt4CaloJetsL1.clone( src = 'kt5CaloJets' )
-kt7CaloJetsL1 = kt6CaloJetsL1.clone( src = 'kt7CaloJets' )
-kt5PFJetsL1   = kt4PFJetsL1.clone( src  = 'kt5PFJets' )
-kt7PFJetsL1   = kt6PFJetsL1.clone( src  = 'kt7PFJets' )
-
-# extra l1 producers for ca jets
-ca4CaloJetsL1 = kt4CaloJetsL1.clone( src = 'ca4CaloJets' )
-ca5CaloJetsL1 = ca4CaloJetsL1.clone( src = 'ca5CaloJets' )
-ca6CaloJetsL1 = ca4CaloJetsL1.clone( src = 'ca6CaloJets' )
-ca7CaloJetsL1 = ca6CaloJetsL1.clone( src = 'ca7CaloJets' )
-
-ca4PFJetsL1   = kt4PFJetsL1.clone( src = 'ca4PFJets' )
-ca5PFJetsL1   = ca4PFJetsL1.clone( src = 'ca5PFJets' )
-ca6PFJetsL1   = ca4PFJetsL1.clone( src = 'ca6PFJets' )
-ca7PFJetsL1   = ca6PFJetsL1.clone( src = 'ca7PFJets' )
-
-
-# extra l2l3 producers for jpt jets
-ak5JPTJetsL2L3  = cms.EDProducer(
+# L1OFFSET JEC PRODUCERS NOT DEFINED IN DEFAULTJEC_CFF
+ak5JPTJetsL1   = cms.EDProducer(
     'JPTJetCorrectionProducer',
     src         = cms.InputTag('ak5JPTJets'),
-    correctors  = cms.vstring('ak5JPTL2L3')
+    correctors  = cms.vstring('ak5JPTL1Offset')
     )
-ic5JPTJetsL2L3 = ak5JPTJetsL2L3.clone(src='ic5JPTJets', correctors=['ic5JPTL2L3'])
+ak7JPTJetsL1 = ak5JPTJetsL1.clone(src='ak7JPTJets', correctors=['ak7JPTL1Offset'])
 
 
-# extra l2l3 producers for kt jets
-kt5CaloJetsL2L3 = kt4CaloJetsL2L3.clone( src = 'kt5CaloJets' )
-kt7CaloJetsL2L3 = kt6CaloJetsL2L3.clone( src = 'kt7CaloJets' )
-kt5PFJetsL2L3   = kt4PFJetsL2L3.clone( src  = 'kt5PFJets' )
-kt7PFJetsL2L3   = kt6PFJetsL2L3.clone( src  = 'kt7PFJets' )
+# JPT L2L3
+ak5JPTJetsL2L3.src = 'ak5JPTJets'
+ak7JPTJetsL2L3 = ak5JPTJetsL2L3.clone(src='ak7JPTJets',correctors=['ak7JPTL2L3'])
 
-# extra l2l3 producers for ca jets
-ca4CaloJetsL2L3 = kt4CaloJetsL2L3.clone( src = 'ca4CaloJets' )
-ca5CaloJetsL2L3 = ca4CaloJetsL2L3.clone( src = 'ca5CaloJets' )
-ca6CaloJetsL2L3 = ca4CaloJetsL2L3.clone( src = 'ca6CaloJets' )
-ca7CaloJetsL2L3 = ca6CaloJetsL2L3.clone( src = 'ca7CaloJets' )
-
-ca4PFJetsL2L3   = kt4PFJetsL2L3.clone( src = 'ca4PFJets' )
-ca5PFJetsL2L3   = ca4PFJetsL2L3.clone( src = 'ca5PFJets' )
-ca6PFJetsL2L3   = ca4PFJetsL2L3.clone( src = 'ca6PFJets' )
-ca7PFJetsL2L3   = ca6PFJetsL2L3.clone( src = 'ca7PFJets' )
-
-
-# extra l1l2l3 producers for kt jets
-kt5CaloJetsL1L2L3 = kt4CaloJetsL1L2L3.clone( src = 'kt5CaloJets' )
-kt7CaloJetsL1L2L3 = kt6CaloJetsL1L2L3.clone( src = 'kt7CaloJets' )
-kt5PFJetsL1L2L3   = kt4PFJetsL1L2L3.clone( src  = 'kt5PFJets' )
-kt7PFJetsL1L2L3   = kt6PFJetsL1L2L3.clone( src  = 'kt7PFJets' )
-
-# extra l1l2l3 producers for ca jets
-ca4CaloJetsL1L2L3 = kt4CaloJetsL1L2L3.clone( src = 'ca4CaloJets' )
-ca5CaloJetsL1L2L3 = ca4CaloJetsL1L2L3.clone( src = 'ca5CaloJets' )
-ca6CaloJetsL1L2L3 = ca4CaloJetsL1L2L3.clone( src = 'ca6CaloJets' )
-ca7CaloJetsL1L2L3 = ca6CaloJetsL1L2L3.clone( src = 'ca7CaloJets' )
-
-ca4PFJetsL1L2L3   = kt4PFJetsL1L2L3.clone( src = 'ca4PFJets' )
-ca5PFJetsL1L2L3   = ca4PFJetsL1L2L3.clone( src = 'ca5PFJets' )
-ca6PFJetsL1L2L3   = ca4PFJetsL1L2L3.clone( src = 'ca6PFJets' )
-ca7PFJetsL1L2L3   = ca6PFJetsL1L2L3.clone( src = 'ca7PFJets' )
+# JPT L1L2L3
+ak5JPTJetsL1L2L3.src = 'ak5JPTJets'
+ak7JPTJetsL1L2L3 = ak5JPTJetsL1L2L3.clone(src='ak7JPTJets',correctors=['ak7JPTL1L2L3'])

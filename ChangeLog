@@ -1,3 +1,13 @@
+2011-03-14  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-13-00
+	* addAlgorithm properly deals with L1 corrections now (L1Fastjet
+	for Calo & PF, L1Offset for JPT; JPT situation not exactly clear)
+	* addAlgorithm does not support SISCone or ItCone anymore
+	* addAlgorithm does not support non-standard algorithms anymore,
+	like ca or kt5
+	* JetCorrection_cff.py updated to work with DefaultJEC_cff.py
+
 2011-03-12  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
 	* tag V00-12-00
