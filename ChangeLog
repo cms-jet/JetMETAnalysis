@@ -1,5 +1,8 @@
 2011-03-14  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
+	* tag V01-00-01
+	* fix to assure that jtjec is properly filled for JPTJets
+
 	* tag V01-00-00
 	* remove doHisto mode of JRA, and all associated parameters
 	* add doComposition (bool) flag (default: False)

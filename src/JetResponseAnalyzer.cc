@@ -22,7 +22,7 @@
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Candidate/interface/CandidateFwd.h"
 #include "DataFormats/Candidate/interface/CandMatchMap.h"
-#include "DataFormats/JetReco/interface/Jet.h"
+#include "DataFormats/JetReco/interface/JPTJet.h"
 #include "DataFormats/JetReco/interface/CaloJet.h"
 #include "DataFormats/JetReco/interface/PFJet.h"
 #include "DataFormats/Math/interface/deltaR.h"
@@ -343,11 +343,18 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
 
     if (0!=jetCorrector_) {
       if (!jetCorrector_->vectorialCorrection()) {
-	if (jetCorrector_->eventRequired()) {
+	if (jetCorrector_->eventRequired()||isJPTJet_) {
 	  if (isCaloJet_) {
 	    reco::CaloJetRef caloJetRef;
 	    caloJetRef=jet.castTo<reco::CaloJetRef>();
 	    jtjec_[nref_]=jetCorrector_->correction(*caloJetRef,
+						    edm::RefToBase<reco::Jet>(),
+						    iEvent,iSetup);
+	  }
+	  else if (isJPTJet_) {
+	    reco::JPTJetRef jptJetRef;
+	    jptJetRef=jet.castTo<reco::JPTJetRef>();
+	    jtjec_[nref_]=jetCorrector_->correction(*jptJetRef,
 						    edm::RefToBase<reco::Jet>(),
 						    iEvent,iSetup);
 	  }
