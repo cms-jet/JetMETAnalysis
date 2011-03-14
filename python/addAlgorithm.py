@@ -426,7 +426,10 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         Defaults.JetResponseParameters,
         srcRefToJetMap    = cms.InputTag(jetToRef.label(),'gen2rec'),
         srcRef            = cms.InputTag(refPtEta.label()),
+        jecLabel          = cms.string('')            
         )
+    if correctl1 or correctl2l3:
+        jra.jecLabel = corrJets.correctors[0]
     if Defaults.JetResponseParameters.doFlavor.value():
         jra.srcRefToPartonMap = cms.InputTag(genToParton.label(),'rec2gen')
     setattr(process,alg_size_type_corr,jra)

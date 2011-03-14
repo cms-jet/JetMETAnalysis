@@ -1,5 +1,14 @@
 2011-03-14  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
+	* tag V01-00-00
+	* remove doHisto mode of JRA, and all associated parameters
+	* add doComposition (bool) flag (default: False)
+	* add jecLabel (string) option, and support in addAlgorithm.py
+	* add npu branch (true number of admixed PU events in MC)
+	* add jtjec branch (total jet energy correction factor)
+	* add jet composition variables for CaloJets and PFJets, *if*
+	doComposition is set to True
+
 	* tag V00-13-00
 	* addAlgorithm properly deals with L1 corrections now (L1Fastjet
 	for Calo & PF, L1Offset for JPT; JPT situation not exactly clear)

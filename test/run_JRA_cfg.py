@@ -15,13 +15,7 @@ Defaults.RefPtEta = cms.PSet(
     etaMax = cms.double(5.0),
     ptMin = cms.double(10.0)
 )
-
-
-#!
-#! JRA PARAMETERS: TREE MODE
-#!
-import JetMETAnalysis.JetAnalyzers.TreeDefaults_cff as Tree;
-Defaults.JetResponseParameters = Tree.JetResponseParameters
+Defaults.JetResponseParameters.doComposition = True
 
 
 #!
@@ -55,14 +49,10 @@ process.source = cms.Source("PoolSource", fileNames = qcdFiles )
 #!
 #! SERVICES
 #!
-process.MessageLogger = cms.Service("MessageLogger",
-    destinations = cms.untracked.vstring('cout'),
-    cout         = cms.untracked.PSet(threshold = cms.untracked.string('WARNING'))
-)
-process.TFileService = cms.Service("TFileService",
-    fileName      = cms.string('JRA.root'),
-    closeFileFast = cms.untracked.bool(True)
-)
+process.load('FWCore.MessageLogger.MessageLogger_cfi')
+process.MessageLogger.cerr.FwkReport.reportEvery = 100
+process.load('CommonTools.UtilAlgos.TFileService_cfi')
+process.TFileService.fileName=cms.string('JRA.root')
 
 
 #!
@@ -81,16 +71,6 @@ algorithms.append('ak7pf')
 algorithms.append('kt4pf')
 algorithms.append('kt6pf')
 algorithms.append('ak5jpt')
-
-algorithms.append('ak5calol1')
-algorithms.append('ak7calol1')
-algorithms.append('kt4calol1')
-algorithms.append('kt6calol1')
-algorithms.append('ak5pfl1')
-algorithms.append('ak7pfl1')
-algorithms.append('kt4pfl1')
-algorithms.append('kt6pfl1')
-algorithms.append('ak5jptl1')
 
 algorithms.append('ak5calol2l3')
 algorithms.append('ak7calol2l3')
@@ -111,6 +91,7 @@ algorithms.append('ak7pfl1l2l3')
 algorithms.append('kt4pfl1l2l3')
 algorithms.append('kt6pfl1l2l3')
 algorithms.append('ak5jptl1l2l3')
+
 
 #
 # taus

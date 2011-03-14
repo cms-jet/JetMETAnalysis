@@ -22,4 +22,16 @@ RefPtEta = cms.PSet(
 #!
 #! DEFAULT RESPONSE ANALYSIS PARAMETERS
 #!
-JetResponseParameters = cms.PSet()
+JetResponseParameters = cms.PSet(
+    # record flavor information, consider both RefPt and JetPt
+    doComposition   = cms.bool(False),
+    doFlavor        = cms.bool(True),
+    doRefPt         = cms.bool(True),
+    doJetPt         = cms.bool(True),
+    # MATCHING MODE: deltaR(ref,jet)
+    deltaRMax       = cms.double(99.9),
+    # deltaR(ref,parton) IF doFlavor is True
+    deltaRPartonMax = cms.double(0.25),
+    # consider all matched references
+    nRefMax         = cms.uint32(0)
+    )

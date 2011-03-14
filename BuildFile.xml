@@ -6,6 +6,7 @@
 <use   name="DataFormats/JetReco"/>
 <use   name="DataFormats/Math"/>
 <use   name="DataFormats/HepMCCandidate"/>
+<use   name="JetMETCorrections/Objects"/>
 <use   name="SimDataFormats/GeneratorProducts"/>
 <use   name="root"/>
 <flags   EDM_PLUGIN="1"/>
