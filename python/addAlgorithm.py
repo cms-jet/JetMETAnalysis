@@ -6,12 +6,21 @@ import JetMETAnalysis.JetAnalyzers.Defaults_cff as Defaults
 ################################################################################
 ## filter final state partons (define globaly)
 ################################################################################
-partons = cms.EDFilter(
-    'PdgIdAndStatusCandViewSelector',
-    src    = cms.InputTag('genParticles'),
-    status = cms.vint32(3),
-    pdgId  = cms.vint32(1, 2, 3, 4, 5, 21)
+
+partons = cms.EDProducer(
+    'PartonSelector',
+    src = cms.InputTag('genParticles'),
+    withLeptons = cms.bool(False)
     )
+
+# OLD
+# ===
+#partons = cms.EDFilter(
+#    'PdgIdAndStatusCandViewSelector',
+#    src    = cms.InputTag('genParticles'),
+#    status = cms.vint32(3),
+#    pdgId  = cms.vint32(1, 2, 3, 4, 5, 21)
+#    )
 
 
 ################################################################################
@@ -404,10 +413,18 @@ def addAlgorithm(process,alg_size_type_corr,reco):
     if Defaults.JetResponseParameters.doFlavor.value() :
         setattr(process,'partons',partons)
         genToParton = cms.EDProducer(
-            'MatchRecToGen',
-            srcRec = cms.InputTag(refPtEta.label()),
-            srcGen = cms.InputTag(partons.label())
+            'JetPartonMatcher',
+            jets = cms.InputTag(genJets.label()),
+            coneSizeToAssociate = cms.double(0.3),
+            partons = cms.InputTag('partons')
             )
+        # OLD
+        # ===
+        #genToParton = cms.EDProducer(
+        #    'MatchRecToGen',
+        #    srcRec = cms.InputTag(refPtEta.label()),
+        #    srcGen = cms.InputTag(partons.label())
+        #    )
         setattr(process,alg_size_type + 'GenToParton', genToParton)
         sequence = cms.Sequence(sequence * partons * genToParton)
         
@@ -431,7 +448,10 @@ def addAlgorithm(process,alg_size_type_corr,reco):
     if correctl1 or correctl2l3:
         jra.jecLabel = corrJets.correctors[0]
     if Defaults.JetResponseParameters.doFlavor.value():
-        jra.srcRefToPartonMap = cms.InputTag(genToParton.label(),'rec2gen')
+        # OLD
+        # ===
+        #jra.srcRefToPartonMap = cms.InputTag(genToParton.label(),'rec2gen')
+        jra.srcRefToPartonMap = cms.InputTag(genToParton.label())
     setattr(process,alg_size_type_corr,jra)
     sequence = cms.Sequence(sequence * jra)
     

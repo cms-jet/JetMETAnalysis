@@ -1,3 +1,14 @@
+2011-03-21  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V01-01-00
+	* change flavor determination of references
+	* used to be based on PdgIdAndStatusCandViewSelector and
+	MatchRecToGen plugins
+	* now based on PartonSelector and JetPartonMatcher plugins
+	* same procedure as by default used in PAT
+	* 'algorithm' definition instead of 'physics' definition, should
+	be more suitable
+
 2011-03-14  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
 	* tag V01-00-01

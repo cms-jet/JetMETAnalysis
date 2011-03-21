@@ -30,6 +30,7 @@
 
 #include "JetMETCorrections/Objects/interface/JetCorrector.h"
 
+#include "SimDataFormats/JetMatching/interface/JetMatchedPartons.h"
 #include "SimDataFormats/GeneratorProducts/interface/GenEventInfoProduct.h"
 #include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
 
@@ -261,11 +262,12 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
 {
   // EVENT DATA HANDLES
   nref_=0;
-  edm::Handle<GenEventInfoProduct>    genInfo;
-  edm::Handle<PileupSummaryInfo>      puInfo;
-  edm::Handle<reco::CandidateView>    refs;
-  edm::Handle<reco::CandViewMatchMap> refToJetMap;
-  edm::Handle<reco::CandViewMatchMap> refToPartonMap;
+  edm::Handle<GenEventInfoProduct>               genInfo;
+  edm::Handle<PileupSummaryInfo>                 puInfo;
+  edm::Handle<reco::CandidateView>               refs;
+  edm::Handle<reco::CandViewMatchMap>            refToJetMap;
+  edm::Handle<reco::JetMatchedPartonsCollection> refToPartonMap;
+  //edm::Handle<reco::CandViewMatchMap> refToPartonMap;
 
   // JET CORRECTOR
   jetCorrector_ = (jecLabel_.empty()) ? 0 : JetCorrector::getJetCorrector(jecLabel_,iSetup);
@@ -293,8 +295,9 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
   if (doBalancing_&&refToJetMap->size()!=1) return;
   size_t nRef=(nRefMax_==0) ? refs->size() : std::min(nRefMax_,refs->size());
   for (size_t iRef=0;iRef<nRef;iRef++) {
-
+    
     reco::CandidateBaseRef ref=refs->refAt(iRef);
+
     reco::CandViewMatchMap::const_iterator itMatch=refToJetMap->find(ref);
     if (itMatch==refToJetMap->end()) continue;
     reco::CandidateBaseRef jet=itMatch->val;
@@ -307,11 +310,24 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
     
     refpdgid_[nref_]=0;
     if (getFlavorFromMap_) {
-      itMatch=refToPartonMap->find(ref);
-      if (itMatch!=refToPartonMap->end()) {
-	double refdrparton=reco::deltaR(*itMatch->key,*itMatch->val);
+      reco::JetMatchedPartonsCollection::const_iterator itPartonMatch;
+      itPartonMatch=refToPartonMap->begin();
+      for (;itPartonMatch!=refToPartonMap->end();++itPartonMatch) {
+	reco::JetBaseRef jetRef = itPartonMatch->first;
+	const reco::MatchedPartons partonMatch = itPartonMatch->second;
+	const reco::Candidate* cand = &(*jetRef);
+	if (cand==&(*ref)) break;
+      }
+      
+      if (itPartonMatch!=refToPartonMap->end()&&
+	  itPartonMatch->second.algoDefinitionParton().get()!=0) {
+	
+	double refdrparton=
+	  reco::deltaR(ref->p4(),
+		       itPartonMatch->second.algoDefinitionParton().get()->p4());
+	
 	if (refdrparton<deltaRPartonMax_) {
-	  refpdgid_[nref_]=itMatch->val->pdgId();
+	  refpdgid_[nref_]=itPartonMatch->second.algoDefinitionParton().get()->pdgId();
 	  int absid = std::abs(refpdgid_[nref_]);
 	  if (absid==4||absid==5) {
 	    GenJetLeptonFinder finder(*ref);
