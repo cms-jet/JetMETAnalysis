@@ -267,7 +267,6 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
   edm::Handle<reco::CandidateView>               refs;
   edm::Handle<reco::CandViewMatchMap>            refToJetMap;
   edm::Handle<reco::JetMatchedPartonsCollection> refToPartonMap;
-  //edm::Handle<reco::CandViewMatchMap> refToPartonMap;
 
   // JET CORRECTOR
   jetCorrector_ = (jecLabel_.empty()) ? 0 : JetCorrector::getJetCorrector(jecLabel_,iSetup);
@@ -284,7 +283,7 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
   
   // MC PILEUP INFORMATION
   npu_=0;
-  if (iEvent.getByLabel("addPileUpInfo",puInfo))
+  if (iEvent.getByLabel("addPileupInfo",puInfo))
     npu_=puInfo->getPU_NumInteractions();
   
   

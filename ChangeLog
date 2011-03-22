@@ -1,3 +1,8 @@
+2011-03-22  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V01-01-01
+	* fix MC pileup label, addPileupInfo, *not* addPileUpInfo
+
 2011-03-21  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
 	* tag V01-01-00
