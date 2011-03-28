@@ -25,6 +25,7 @@
 #include <TTree.h>
 #include <TH1F.h>
 #include <TKey.h>
+#include <TEventList.h>
 
 #include <iostream>
 #include <sstream>
@@ -113,6 +114,7 @@ int main(int argc,char**argv)
   float          phirspmax    = cl.getValue<float>  ("phirspmax",    1.0);
   float          jtptmin      = cl.getValue<float>  ("jtptmin",      1.0);
   vector<string> algs         = cl.getVector<string>("algs",          "");
+  vector<string> presel       = cl.getVector<string>("presel",        "");
 
   if (!cl.check()) return 0;
   cl.print();
@@ -916,9 +918,20 @@ int main(int argc,char**argv)
     //
     // fill histograms
     //
-    unsigned int nevt = (unsigned int)tree->GetEntries();
+
+    TEventList* el = new TEventList("el","el");
+    stringstream selection; selection<<"1";
+    for (unsigned icut=0;icut<presel.size();icut++) selection<<"&&("<<presel[icut]<<")";
+    if (presel.size()>0) cout<<"Selection: "<<selection.str()<<endl;
+    tree->Draw(">>el",selection.str().c_str());
+    cout<<"tree entries: "<<tree->GetEntries()<<" elist: "<<el->GetN()<<endl;
+
+    unsigned nevt = (unsigned) el->GetN();
+
     for (unsigned int ievt=0;ievt<nevt;ievt++) {
-      tree->GetEntry(ievt);
+
+      const Long64_t ientry = el->GetEntry(ievt);
+      tree->GetEntry(ientry);
       if (nrefmax>0) nref = std::min((int)nref,nrefmax);
       for (unsigned char iref=0;iref<nref;iref++) {
 

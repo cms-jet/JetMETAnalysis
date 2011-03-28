@@ -1,3 +1,8 @@
+2011-03-28  Hauke Held  <held@cern.ch>
+
+	* tag V01-01-02
+	* added -presel option to jet_response_analyzer_x
+
 2011-03-22  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
 
 	* tag V01-01-01
