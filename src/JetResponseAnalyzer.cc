@@ -101,7 +101,12 @@ private:
   // tree & branches
   TTree*        tree_;
 
-  Int_t         npu_;
+  vector<Int_t> npus_;
+  vector<Int_t> bxns_;
+  vector<Float_t> sumpt_lowpt_;
+  vector<Float_t> sumpt_highpt_;
+  vector<Int_t> ntrks_lowpt_;
+  vector<Int_t> ntrks_highpt_;
   Float_t       pthat_;
   Float_t       weight_;
   
@@ -213,7 +218,12 @@ void JetResponseAnalyzer::beginJob()
   
   tree_=fs->make<TTree>("t","t");
 
-  tree_->Branch("npu",   &npu_,    "npu/I");
+  tree_->Branch("npus", "vector<Int_t>",  &npus_);
+  tree_->Branch("bxns", "vector<Int_t>", &bxns_);
+  tree_->Branch("sumpt_lowpt", "vector<Float_t>", &sumpt_lowpt_);
+  tree_->Branch("sumpt_highpt", "vector<Float_t>", &sumpt_highpt_);
+  tree_->Branch("ntrks_lowpt", "vector<Int_t>", &ntrks_lowpt_);
+  tree_->Branch("ntrks_highpt", "vector<Int_t>", &ntrks_highpt_);
   tree_->Branch("pthat", &pthat_,  "pthat/F");
   tree_->Branch("weight",&weight_, "weight/F");
 
@@ -263,7 +273,7 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
   // EVENT DATA HANDLES
   nref_=0;
   edm::Handle<GenEventInfoProduct>               genInfo;
-  edm::Handle<PileupSummaryInfo>                 puInfo;
+  edm::Handle<vector<PileupSummaryInfo> >        puInfos;  
   edm::Handle<reco::CandidateView>               refs;
   edm::Handle<reco::CandViewMatchMap>            refToJetMap;
   edm::Handle<reco::JetMatchedPartonsCollection> refToPartonMap;
@@ -282,10 +292,38 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
   
   
   // MC PILEUP INFORMATION
-  npu_=0;
-  if (iEvent.getByLabel("addPileupInfo",puInfo))
-    npu_=puInfo->getPU_NumInteractions();
-  
+  npus_.clear();
+  bxns_.clear();
+  sumpt_lowpt_.clear();
+  sumpt_highpt_.clear();
+  ntrks_lowpt_.clear();
+  ntrks_highpt_.clear();
+  if (iEvent.getByLabel("addPileupInfo",puInfos)) {
+     for(unsigned int i=0; i<puInfos->size(); i++) {
+        npus_.push_back((*puInfos)[i].getPU_NumInteractions());
+        bxns_.push_back((*puInfos)[i].getBunchCrossing());
+        int sumptlowpttemp = 0;
+        int sumpthighpttemp = 0;
+        int ntrkslowpttemp = 0;
+        int ntrkshighpttemp = 0;
+        for(unsigned int j=0; j<(*puInfos)[i].getPU_sumpT_lowpT().size(); j++) {
+          sumptlowpttemp += ((*puInfos)[i].getPU_sumpT_lowpT())[j];
+        }
+        for(unsigned int j=0; j<(*puInfos)[i].getPU_sumpT_highpT().size(); j++) {
+          sumpthighpttemp += ((*puInfos)[i].getPU_sumpT_highpT())[j];
+        }
+        for(unsigned int j=0; j<(*puInfos)[i].getPU_ntrks_lowpT().size(); j++) {
+          ntrkslowpttemp += ((*puInfos)[i].getPU_ntrks_lowpT())[j];
+        }
+        for(unsigned int j=0; j<(*puInfos)[i].getPU_ntrks_highpT().size(); j++) {
+          ntrkshighpttemp += ((*puInfos)[i].getPU_ntrks_highpT())[j];
+        }
+        sumpt_lowpt_.push_back(sumptlowpttemp);
+        sumpt_highpt_.push_back(sumpthighpttemp);
+        ntrks_lowpt_.push_back(ntrkslowpttemp);
+        ntrks_highpt_.push_back(ntrkshighpttemp);
+     }
+  }
   
   // REFERENCES & RECOJETS
   iEvent.getByLabel(srcRef_,        refs);
