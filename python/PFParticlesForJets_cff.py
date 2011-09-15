@@ -1,6 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 
-from PhysicsTools.PFCandProducer.PF2PAT_cff import *
+from CommonTools.ParticleFlow.PF2PAT_cff import *
 
 pfParticlesForJets = cms.Sequence( PF2PAT )
 
