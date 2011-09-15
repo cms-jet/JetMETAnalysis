@@ -34,9 +34,3 @@
 </bin>
 <bin   name="jet_draw_closure_eta_x" file="jet_draw_closure_eta_x.cc">
 </bin>
-<bin   name="jet_draw_closure_pt_ratio_x" file="jet_draw_closure_pt_ratio_x.cc">
-</bin>
-<bin   name="jet_draw_l3rsp_refpt_ratio_x" file="jet_draw_l3rsp_refpt_ratio_x.cc">
-</bin>
-<bin   name="jet_draw_l2graphs_x" file="jet_draw_l2graphs_x.cc">
-</bin>
