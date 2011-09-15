@@ -1,5 +1,6 @@
 <use   name="JetMETAnalysis/JetUtilities"/>
 <use   name="CondFormats/JetMETObjects"/>
+<use   name="FWCore/FWLite"/>
 <use   name="rootphysics"/>
 <use   name="rootgraphics"/>
 <use   name="root"/>
@@ -26,4 +27,16 @@
 <bin   name="jet_matching_efficiency_x" file="jet_matching_efficiency_x.cc">
 </bin>
 <bin   name="jet_response_vs_deltar_x" file="jet_response_vs_deltar_x.cc">
+</bin>
+<bin   name="jet_correction_analyzer_x" file="jet_correction_analyzer_x.cc">
+</bin>
+<bin   name="jet_draw_closure_pt_x" file="jet_draw_closure_pt_x.cc">
+</bin>
+<bin   name="jet_draw_closure_eta_x" file="jet_draw_closure_eta_x.cc">
+</bin>
+<bin   name="jet_draw_closure_pt_ratio_x" file="jet_draw_closure_pt_ratio_x.cc">
+</bin>
+<bin   name="jet_draw_l3rsp_refpt_ratio_x" file="jet_draw_l3rsp_refpt_ratio_x.cc">
+</bin>
+<bin   name="jet_draw_l2graphs_x" file="jet_draw_l2graphs_x.cc">
 </bin>

@@ -37,16 +37,16 @@ using namespace std;
 
 /// default fit with gaussian in niter iteration of mean
 void fit_gaussian(TH1F*& hrsp,
-		  const double nsigma,
-		  const double jtptmin,
-		  const int niter);
+                  const double nsigma,
+                  const double jtptmin,
+                  const int niter);
 
 /// optional double sided crystal ball fit to response distributions
 int fit_dscb(TH1F*& hrsp,
-	     const double nsigma,
-	     const double jtptmin,
-	     const int niter,
-	     const string alg);
+             const double nsigma,
+             const double jtptmin,
+             const int niter,
+             const string alg);
 
 /// double sided crystal ball function definition
 double fnc_dscb(double*xx,double*pp);
@@ -152,32 +152,32 @@ int main(int argc,char**argv)
       TH1F* hrsp = (TH1F*)histKey->ReadObj();
       string histname(hrsp->GetName());
       
-      if (histname.find("RelRsp")!=0&&histname.find("AbsRsp")!=0) {
-	hrsp->Write();
-	continue;
+      if (histname.find("RelRsp")>5&&histname.find("AbsRsp")!=0) {
+        hrsp->Write();
+        continue;
       }
       
       if (hrsp->Integral()>0.0) {
-	int fitstatus(0);
-	if (0==fittype) fit_gaussian(hrsp,nsigma,jtptmin,niter);
-	else fitstatus = fit_dscb(hrsp,nsigma,jtptmin,niter,alg);
+        int fitstatus(0);
+        if (0==fittype) fit_gaussian(hrsp,nsigma,jtptmin,niter);
+        else fitstatus = fit_dscb(hrsp,nsigma,jtptmin,niter,alg);
 
-	TF1* fitfnc = (TF1*) hrsp->GetListOfFunctions()->Last();
-	if (0!=fitfnc && 0==fitstatus) fitfnc->ResetBit(TF1::kNotDraw);
+        TF1* fitfnc = (TF1*) hrsp->GetListOfFunctions()->Last();
+        if (0!=fitfnc && 0==fitstatus) fitfnc->ResetBit(TF1::kNotDraw);
 
-	if (verbose>0&&0!=fitfnc) 
-	  cout<<"histo: "<<hrsp->GetName()<<"-> fnc: "<<fitfnc->GetName()<<endl;
+        if (verbose>0&&0!=fitfnc) 
+          cout<<"histo: "<<hrsp->GetName()<<"-> fnc: "<<fitfnc->GetName()<<endl;
 
-	if (0!=fitfnc&&fitfnc->GetNDF()<ndfmin) {
-	  if (verbose>0) cout<<"NDOF("<<fitfnc->GetName()<<")="
-			     <<fitfnc->GetNDF()
-			     <<" FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
-	  hrsp->GetListOfFunctions()->Delete();
-	}
+        if (0!=fitfnc&&fitfnc->GetNDF()<ndfmin) {
+          if (verbose>0) cout<<"NDOF("<<fitfnc->GetName()<<")="
+                             <<fitfnc->GetNDF()
+                             <<" FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
+          hrsp->GetListOfFunctions()->Delete();
+        }
       }
       else {
-	if (verbose>0)
-	  cout<<"NOT ENOUGH ENTRIES FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
+        if (verbose>0)
+          cout<<"NOT ENOUGH ENTRIES FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
       }
       hrsp->Write();
     }
@@ -213,10 +213,10 @@ int main(int argc,char**argv)
 
 //______________________________________________________________________________
 int fit_dscb(TH1F*& hrsp,
-	     const double nsigma,
-	     const double jtptmin,
-	     const int niter,
-	     const string alg)
+             const double nsigma,
+             const double jtptmin,
+             const int niter,
+             const string alg)
 {
   if (0==hrsp) {
     cout<<"ERROR: Empty pointer to fit_dscb()"<<endl;return -1;
@@ -354,9 +354,9 @@ double fnc_dscb(double*xx,double*pp)
 
 //______________________________________________________________________________
 void fit_gaussian(TH1F*& hrsp,
-		  const double nsigma,
-		  const double jtptmin,
-		  const int niter)
+                  const double nsigma,
+                  const double jtptmin,
+                  const int niter)
 {
   if (0==hrsp) {
     cout<<"ERROR: Empty pointer to fit_gaussian()"<<endl;return;
@@ -403,10 +403,14 @@ void fit_gaussian(TH1F*& hrsp,
     peak  = fitfnc->GetParameter(1);
     sigma = fitfnc->GetParameter(2);
   }
+  if(hrsp->GetFunction("fgaus")==0)
+    {
+      cout << "No function recorded in histogram " << hrsp->GetName() << endl;
+    }
   if (0!=fitstatus){
     cout<<"fit_gaussian() to "<<hrsp->GetName()
-	<<" failed. Fitstatus: "<<fitstatus
-	<<" - FNC deleted."<<endl;
+        <<" failed. Fitstatus: "<<fitstatus
+        <<" - FNC deleted."<<endl;
     hrsp->GetListOfFunctions()->Delete();
   }
 }

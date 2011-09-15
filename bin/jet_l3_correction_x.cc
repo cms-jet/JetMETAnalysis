@@ -70,6 +70,7 @@ int main(int argc,char**argv)
   bool           batch   = cl.getValue<bool>   ("batch",     false);
   bool           logx    = cl.getValue<bool>   ("logx",      false);
   bool           logy    = cl.getValue<bool>   ("logy",      false);
+  string         flavor  = cl.getValue<string> ("flavor",       "");
     
   if (!cl.check()) return 0;
   cl.print();
@@ -124,13 +125,13 @@ int main(int argc,char**argv)
     gcor->SetName("L3CorVsJetPt");
     
     ObjectLoader<TH1F> hl_relrsp;
-    hl_relrsp.load_objects(idir,"RelRsp_Barrel:RefPt");
+    hl_relrsp.load_objects(idir,flavor+"RelRsp_Barrel:RefPt");
     
     ObjectLoader<TH1F> hl_refpt;
-    hl_refpt.load_objects(idir,"RefPt_Barrel:RefPt");
+    hl_refpt.load_objects(idir,flavor+"RefPt_Barrel:RefPt");
     
     ObjectLoader<TH1F> hl_jetpt;
-    hl_jetpt.load_objects(idir,"JetPt_Barrel:RefPt");
+    hl_jetpt.load_objects(idir,flavor+"JetPt_Barrel:RefPt");
         
     vector<unsigned int> indices; TH1F* hrelrsp(0);
     hl_relrsp.begin_loop();
@@ -149,8 +150,8 @@ int main(int argc,char**argv)
       double jetpt   =hjetpt->GetMean();
       double ejetpt  =hjetpt->GetMeanError();
 
-      double peak    =(frelrsp==0)?hrelrsp->GetMean():frelrsp->GetParameter(1);
-      double epeak   =(frelrsp==0)?hrelrsp->GetMeanError():frelrsp->GetParError(1);
+      double peak    =(frelrsp==0)?hrelrsp->GetMean():((frelrsp->GetParameter(1)+hrelrsp->GetMean())*0.5);
+      double epeak   =(frelrsp==0)?hrelrsp->GetMeanError():0.5*sqrt(pow(hrelrsp->GetMeanError(),2)+pow(frelrsp->GetParError(1),2));
       
       double rsp     =peak;
       double ersp    =epeak;
@@ -177,14 +178,15 @@ int main(int argc,char**argv)
     // response
     TF1* fitrsp;
     if (alg.find("pf")!=string::npos) {
-      fitrsp = new TF1("fitrsp","[0]-[1]/(pow(log10(x),2)+[2])-[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",
+      fitrsp = new TF1("fitrsp","[0]-[1]/(pow(log10(x),2)+[2])-[3]*exp((-[4]*(log10(x)-[5])*(log10(x)-[5]))+([6]*(log10(x)-[5])))",
 			  1.0,grsp->GetX()[grsp->GetN()-1]);
-      fitrsp->SetParameter(0,1.0);
-      fitrsp->SetParameter(1,1.0);
-      fitrsp->SetParameter(2,1.0);
-      fitrsp->SetParameter(3,1.0);
-      fitrsp->SetParameter(4,1.0);
-      fitrsp->SetParameter(5,1.0);
+      fitrsp->SetParameter(0,0.96);
+      fitrsp->SetParameter(1,0.033);
+      fitrsp->SetParameter(2,-0.7);
+      fitrsp->SetParameter(3,0.02);
+      fitrsp->SetParameter(4,1.02);
+      fitrsp->SetParameter(5,2.7);
+      fitrsp->SetParameter(6,0.016);
     }
     else if (alg.find("trk")!=string::npos) {
       fitrsp = new TF1("fitrsp","[0]-[1]*pow(x/500.0,[2])",
@@ -192,6 +194,16 @@ int main(int argc,char**argv)
       fitrsp->SetParameter(0,1.0);
       fitrsp->SetParameter(1,1.0);
       fitrsp->SetParameter(2,1.0);
+    }
+    else if ((int)alg.find("jpt")>0) {
+      fitrsp = new TF1("fitrsp","[0]+[1]*TMath::Erf([2]*(log10(x)-[3]))+[4]*exp([5]*log10(x))",
+                       1.0,grsp->GetX()[grsp->GetN()-1]);
+      fitrsp->SetParameter(0,1.0);
+      fitrsp->SetParameter(1,1.0);
+      fitrsp->SetParameter(2,1.0);
+      fitrsp->SetParameter(3,1.0);
+      fitrsp->SetParameter(4,1.0);
+      fitrsp->SetParameter(5,1.0);
     }
     else {
       fitrsp = new TF1("fitrsp","[0]-[1]/(pow(log10(x),[2])+[3])+[4]/x",
@@ -233,31 +245,42 @@ int main(int argc,char**argv)
     // correction
     string fitcor_as_str;
     
-    if (alg.find("pf")!=string::npos) fitcor_as_str = "[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))";
+    if (alg.find("pf")!=string::npos) fitcor_as_str = "[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp((-[4]*(log10(x)-[5])*(log10(x)-[5]))+([6]*(log10(x)-[5])))";
     else if (alg.find("trk")!=string::npos) fitcor_as_str = "[0]+[1]*pow(x/500.0,[2])";
-    else                         fitcor_as_str = "[0]+[1]/(pow(log10(x),[2])+[3])";
+    else if ((int)alg.find("jpt")>0) fitcor_as_str = "[0]+[1]*TMath::Erf([2]*(log10(x)-[3]))+[4]*exp([5]*log10(x))";
+    else                         fitcor_as_str = "[0]+[1]/(pow(log10(x),[2])+[3])-[4]/x";
     
     TF1* fitcor = new TF1("fitcor",fitcor_as_str.c_str(),
 			  2.0,gcor->GetX()[gcor->GetN()-1]);
     
     if (alg.find("pf")!=string::npos) {
-      fitcor->SetParameter(0,1.0);
-      fitcor->SetParameter(1,1.0);
-      fitcor->SetParameter(2,1.0);
-      fitcor->SetParameter(3,1.0); 
-      fitcor->SetParameter(4,1.0);
-      fitcor->SetParameter(5,1.0);
+      fitcor->SetParameter(0,1.04);
+      fitcor->SetParameter(1,.033);
+      fitcor->SetParameter(2,-0.7);
+      fitcor->SetParameter(3,0.02); 
+      fitcor->SetParameter(4,1.02);
+      fitcor->SetParameter(5,2.7);
+      fitrsp->SetParameter(6,0.016);
     }
     else if (alg.find("trk")!=string::npos) {
       fitcor->SetParameter(0,1.7);
       fitcor->SetParameter(1,0.2);
       fitcor->SetParameter(2,0.3);
     }
+    else if ((int)alg.find("jpt")>0) {
+      fitcor->SetParameter(0,1.0);
+      fitcor->SetParameter(1,1.0);
+      fitcor->SetParameter(2,1.0);
+      fitcor->SetParameter(3,1.0);
+      fitcor->SetParameter(4,1.0);
+      fitcor->SetParameter(5,1.0);
+    }
     else {
       fitcor->SetParameter(0,1.0);
       fitcor->SetParameter(1,7.0);
       fitcor->SetParameter(2,4.0);
-      fitcor->SetParameter(3,4.0);       
+      fitcor->SetParameter(3,4.0);
+      fitcor->SetParameter(4,1.0);       
     }
     fitcor->SetLineWidth(2);
     gcor->Fit(fitcor,"QR");
@@ -287,38 +310,48 @@ int main(int argc,char**argv)
     fout.setf(ios::left);
     fout<<"{1 JetEta 1 JetPt "<<fitcor_as_str<<" Correction L3Absolute}"<<endl;
     if (alg.find("pf")!=string::npos) {
-      fout<<setw(12)<<-5.191                  // eta_min
-	  <<setw(12)<<+5.191                  // eta_max
-	  <<setw(12)<<8                       // number of parameters + 2
-	  <<setw(12)<<4.0                     // minimum pT
-	  <<setw(12)<<5000.0                  // maximum pT
-	  <<setw(12)<<fitcor->GetParameter(0) // p0
-	  <<setw(12)<<fitcor->GetParameter(1) // p1
-	  <<setw(12)<<fitcor->GetParameter(2) // p2
-	  <<setw(12)<<fitcor->GetParameter(3) // p3
-	  <<setw(12)<<fitcor->GetParameter(4) // p4
-	  <<setw(12)<<fitcor->GetParameter(5);// p5
+      fout<<setw(12)<<-5.191                       // eta_min
+          <<setw(12)<<+5.191                       // eta_max
+          <<setw(12)<<fitcor->GetNpar()+2          // number of parameters + 2
+          <<setw(12)<<4.0                          // minimum pT
+          <<setw(12)<<5000.0;                      // maximum pT
+      for(int p=0; p<fitcor->GetNpar(); p++)
+        {
+          fout<<setw(12)<<fitcor->GetParameter(p); // p0-p6
+        }
     }
     else if (alg.find("trk")!=string::npos) {
-      fout<<setw(12)<<-2.5                    // eta_min
-	  <<setw(12)<<+2.5                    // eta_max
-	  <<setw(12)<<5                       // number of parameters + 2
-	  <<setw(12)<<4.0                     // minimum pT
-	  <<setw(12)<<500.0                   // maximum pT
-	  <<setw(12)<<fitcor->GetParameter(0) // p0
-	  <<setw(12)<<fitcor->GetParameter(1) // p1
-	  <<setw(12)<<fitcor->GetParameter(2);// p2
+      fout<<setw(12)<<-2.5                         // eta_min
+          <<setw(12)<<+2.5                         // eta_max
+          <<setw(12)<<fitcor->GetNpar()+2          // number of parameters + 2
+          <<setw(12)<<4.0                          // minimum pT
+          <<setw(12)<<500.0;                       // maximum pT
+      for(int p=0; p<fitcor->GetNpar(); p++)
+        {
+          fout<<setw(12)<<fitcor->GetParameter(p); // p0-p2
+        }
+    }
+    else if ((int)alg.find("jpt")>0){
+      fout<<setw(12)<<-5.191                       // eta_min                                                          
+          <<setw(12)<<+5.191                       // eta_max                                                             
+          <<setw(12)<<fitcor->GetNpar()+2          // number of parameters + 2         
+          <<setw(12)<<4.0                          // minimum pT                                     
+          <<setw(12)<<5000.0;                      // maximum pT   
+      for(int p=0; p<fitcor->GetNpar(); p++)
+        {
+          fout<<setw(12)<<fitcor->GetParameter(p); // p0-p5
+        }
     }
     else {
       fout<<setw(12)<<-5.191                  // eta_min
-	  <<setw(12)<<+5.191                  // eta_max
-	  <<setw(12)<<6                       // number of parameters + 2
-	  <<setw(12)<<4.0                     // minimum pT
-	  <<setw(12)<<5000.0                  // maximum pT
-	  <<setw(12)<<fitcor->GetParameter(0) // p0
-	  <<setw(12)<<fitcor->GetParameter(1) // p1
-	  <<setw(12)<<fitcor->GetParameter(2) // p2
-	  <<setw(12)<<fitcor->GetParameter(3);// p3
+          <<setw(12)<<+5.191                  // eta_max
+          <<setw(12)<<fitcor->GetNpar()+2     // number of parameters + 2
+          <<setw(12)<<4.0                     // minimum pT
+          <<setw(12)<<5000.0;                 // maximum pT
+      for(int p=0; p<fitcor->GetNpar(); p++)
+        {
+          fout<<setw(12)<<fitcor->GetParameter(p); // p0-p4
+        }
     }
     fout.close();
     
@@ -397,10 +430,13 @@ string get_algorithm_suffix(const string& alg)
   result += std::toupper(alg[0]);
   result += std::toupper(alg[1]);
   result += alg[2];
-  if      (alg.find("calo")==3) result += "Calo";
+  if      (alg.find("calol1")==3) result += "Calol1";
+  else if (alg.find("calo")==3) result += "Calo";
+  else if (alg.find("jptl1") ==3) result += "JPTl1";
   else if (alg.find("jpt") ==3) result += "JPT";
+  else if (alg.find("pfl1")  ==3) result += "PFl1";
   else if (alg.find("pf")  ==3) result += "PF";
   else if (alg.find("trk") ==3) result += "TRK";
-  cout<<"get_algorithm_suffix: result = "<<result;
+  cout<<"get_algorithm_suffix: result = "<<result<<" from alg = "<<alg<<endl;
   return result;
 }
