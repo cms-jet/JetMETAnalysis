@@ -71,6 +71,7 @@ int main(int argc,char**argv)
   bool           logx    = cl.getValue<bool>   ("logx",      false);
   bool           logy    = cl.getValue<bool>   ("logy",      false);
   string         flavor  = cl.getValue<string> ("flavor",       "");
+  int            tpeak   = cl.getValue<int>    ("tpeak",         1);
     
   if (!cl.check()) return 0;
   cl.print();
@@ -150,8 +151,24 @@ int main(int argc,char**argv)
       double jetpt   =hjetpt->GetMean();
       double ejetpt  =hjetpt->GetMeanError();
 
-      double peak    =(frelrsp==0)?hrelrsp->GetMean():((frelrsp->GetParameter(1)+hrelrsp->GetMean())*0.5);
-      double epeak   =(frelrsp==0)?hrelrsp->GetMeanError():0.5*sqrt(pow(hrelrsp->GetMeanError(),2)+pow(frelrsp->GetParError(1),2));
+      double peak;
+      double epeak;
+      if(tpeak==1)
+        {
+          peak    =(frelrsp==0)?hrelrsp->GetMean():frelrsp->GetParameter(1);
+          epeak   =(frelrsp==0)?hrelrsp->GetMeanError():frelrsp->GetParError(1);
+        }
+      else if(tpeak==2)
+        {
+          peak    =(frelrsp==0)?hrelrsp->GetMean():((frelrsp->GetParameter(1)+hrelrsp->GetMean())*0.5);
+          epeak   =(frelrsp==0)?hrelrsp->GetMeanError():0.5*sqrt(pow(hrelrsp->GetMeanError(),2)+
+                                                                 pow(frelrsp->GetParError(1),2));
+        }
+      else
+        {
+          peak    =hrelrsp->GetMean();
+          epeak   =hrelrsp->GetMeanError();
+        }
       
       double rsp     =peak;
       double ersp    =epeak;
