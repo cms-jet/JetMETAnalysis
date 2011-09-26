@@ -5,7 +5,7 @@ from TauAnalysis.TauIdEfficiency.tools.buildConfigFilesTauIdEffAnalysis import b
 import os
 import re
 
-version = 'v1_2enRecoveryCB'
+version = 'v1_2enRecoveryCBa'
 era = 'TauJec11V1'
 
 inputFilePath = '/data2/veelken/CMSSW_4_2_x/JRAtauNtuples/Ztautau/v1_2enRecovery/' \
@@ -147,7 +147,7 @@ for sampleToAnalyze in samplesToAnalyze:
         (fileNames_and_options_jrAnalyzer[sampleToAnalyze]['configFileName'],
          make_MakeFile_vstring(fileNames_and_options_jrAnalyzer[sampleToAnalyze]['inputFileNames']),
          fileNames_and_options_jrAnalyzer[sampleToAnalyze]['outputFileName'],
-         make_MakeFile_vstring(algorithms))
+         "".join([ "%s:0.3 " % algorithm for algorithm in algorithms ]))
 #--------------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------------
