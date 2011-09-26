@@ -4,6 +4,7 @@
 <use   name="FWCore/ParameterSet"/>
 <use   name="CommonTools/UtilAlgos"/>
 <use   name="DataFormats/JetReco"/>
+<use   name="DataFormats/TauReco"/>
 <use   name="DataFormats/Math"/>
 <use   name="DataFormats/HepMCCandidate"/>
 <use   name="JetMETCorrections/Objects"/>
