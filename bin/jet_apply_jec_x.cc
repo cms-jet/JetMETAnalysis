@@ -228,6 +228,7 @@ string get_correction_tags(const string& era,const string& alg,
     else if (alg.find("sc5")==0) ssera<<"SC5";
     else if (alg.find("sc7")==0) ssera<<"SC7";
     else if (alg.find("ic5")==0) ssera<<"IC5";
+    if (alg.find("tau")==3) ssera<<std::string(alg, 3);
 
     if (level==1 || level==4 || level==5 || level==7) {
       ssresult<<ssera.str()<<".txt";
