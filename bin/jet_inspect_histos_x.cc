@@ -220,7 +220,7 @@ int main(int argc,char** argv)
 	    if (ymin==-1) ymin=0.0;
 	    TF1* f = (TF1*)h->GetListOfFunctions()->Last();
 	    if (0!=f) f->SetParameter(0,f->GetParameter(0)/h->Integral());
-	    h->Sumw2();
+	    if ( !h->GetSumw2N() ) h->Sumw2();
 	    h->Scale(1./h->Integral());
 	  }
 
@@ -479,16 +479,14 @@ void draw_extrapolation(TH1* h)
 
   string fname = f->GetName();
 
-  if (fname.find("fdscb")==string::npos) {
+  if ( fname.find("fdscb") == string::npos ) {
     TF1* ff = (TF1*)f->Clone("ff");
     ff->SetRange(h->GetXaxis()->GetXmin(),h->GetXaxis()->GetXmax());
     ff->SetLineColor(f->GetLineColor());
     ff->SetLineStyle(kDashed);
     ff->SetLineWidth(1);
     ff->Draw("SAME");
-  }
-  else {
-
+  } else {
     string hname = h->GetName();
     float xmin   = h->GetXaxis()->GetXmin();
     float xmax   = h->GetXaxis()->GetXmax();
@@ -496,17 +494,16 @@ void draw_extrapolation(TH1* h)
 
     TF1* fgaus   = (TF1*)h->GetFunction("fgaus");
     
-    if (fgaus!=0) {
-      TF1* ffg = (TF1*)fgaus->Clone("ffg");
-      
+    if ( fgaus!=0 ) {
+      TF1* ffg = (TF1*)fgaus->Clone("ffg");      
       ffg->SetRange(xmin,xmax);
+      ffg->SetMaximum(f->GetMaximum());
       ffg->SetLineColor(f->GetLineColor());
       ffg->SetLineStyle(kDotted);
       ffg->SetLineWidth(1);
       ffg->Draw("SAME");
-
     }
-
+ 
     ff->SetParameter(0,f->GetParameter(0)); // N
     ff->SetParameter(1,f->GetParameter(1)); // mean
     ff->SetParameter(2,f->GetParameter(2)); // sigma
@@ -576,7 +573,7 @@ void draw_residual(TPad* pad,TH1* hist,TF1* func,
 			    hist->GetXaxis()->GetXmin(), 
 			    hist->GetXaxis()->GetXmax());
 
-  resiHist->Sumw2();
+  if ( !resiHist->GetSumw2N() ) resiHist->Sumw2();
   resiHist->SetLineWidth(1);
   resiHist->SetXTitle(hist->GetXaxis()->GetTitle());
   resiHist->GetYaxis()->CenterTitle(1);
@@ -839,6 +836,14 @@ void set_draw_attributes(TH1* h,unsigned index,bool fill,
     h->SetFillColor(h->GetLineColor());
     h->SetFillStyle(fillstyle);
   }
+  
+  TList* fitfncs = h->GetListOfFunctions();
+  int n = fitfncs->GetEntries();
+  for ( int i = 0; i < n; ++i ) {
+    TObject* obj = fitfncs->At(i);
+    if ( i < ( n - 1) ) fitfncs->Remove(obj);
+  }
+
   TF1* fitfnc = (TF1*)h->GetListOfFunctions()->Last();
   if (0!=fitfnc) {
     fitfnc->SetLineWidth(1);
@@ -851,6 +856,7 @@ void set_draw_attributes(TH1* h,unsigned index,bool fill,
 void draw_stats(TH1* h,double xoffset,Color_t color,Color_t fitColor)
 {
   TF1* fitfnc = (TF1*)h->GetListOfFunctions()->Last();
+
   stringstream ssentries;
   ssentries<<setw(6) <<setiosflags(ios::left)<<"N:"
 	   <<setw(10)<<resetiosflags(ios::left)<<setprecision(4)<<h->GetEntries();
