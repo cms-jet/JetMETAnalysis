@@ -169,7 +169,8 @@ int main(int argc,char**argv)
         // only add points to the graphs if the current histo is not empty
         if (hrsp->Integral()!=0) {
            
-           TF1*  frsp    = hrsp->GetFunction("fit");
+           TF1*  frsp    = (TF1*)hrsp->GetListOfFunctions()->Last();
+	   //std::cout << "hrspName = " << hrsp->GetName() << ": frsp = " << frsp << std::endl;
            TH1F* hrefpt  = hl_refpt.object(indices);
            TH1F* hjetpt  = hl_jetpt.object(indices);
            
@@ -295,8 +296,7 @@ int main(int argc,char**argv)
            gabscor->SetMarkerStyle(20); 
            gabsrsp->Write();
            gabscor->Write();
-        }
-        
+        }        
      }
      
      
@@ -376,7 +376,6 @@ int main(int argc,char**argv)
         }
      }
     
-     
      //
      // write the L2 correction text file for the current algorithm
      //
@@ -500,12 +499,13 @@ string get_algorithm_suffix(const string& alg)
   result += std::toupper(alg[1]);
   result += alg[2];
   if      (alg.find("calol1")==3) result += "Calol1";
-  else if (alg.find("calo")==3) result += "Calo";
+  else if (alg.find("calo")  ==3) result += "Calo";
   else if (alg.find("jptl1") ==3) result += "JPTl1";
-  else if (alg.find("jpt") ==3) result += "JPT";
+  else if (alg.find("jpt")   ==3) result += "JPT";
   else if (alg.find("pfl1")  ==3) result += "PFl1";
-  else if (alg.find("pf")  ==3) result += "PF";
-  else if (alg.find("trk") ==3) result += "TRK";
+  else if (alg.find("pf")    ==3) result += "PF";
+  else if (alg.find("trk")   ==3) result += "TRK";
+  else if (alg.find("tau")   ==3) result += std::string(alg, 3);
   cout<<"get_algorithm_suffix: result = "<<result<<" from algo = "<<alg<<endl;
   return result;
 }
