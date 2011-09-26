@@ -34,4 +34,4 @@ JetResponseParameters = cms.PSet(
     deltaRPartonMax = cms.double(0.25),
     # consider all matched references
     nRefMax         = cms.uint32(0)
-    )
+)
