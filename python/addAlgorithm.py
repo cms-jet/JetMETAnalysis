@@ -1,26 +1,13 @@
 import FWCore.ParameterSet.Config as cms
 
-import JetMETAnalysis.JetAnalyzers.Defaults_cff as Defaults
-
-
 ################################################################################
 ## filter final state partons (define globaly)
 ################################################################################
 
-partons = cms.EDProducer(
-    'PartonSelector',
+partons = cms.EDProducer('PartonSelector',
     src = cms.InputTag('genParticles'),
     withLeptons = cms.bool(False)
-    )
-
-# OLD
-# ===
-#partons = cms.EDFilter(
-#    'PdgIdAndStatusCandViewSelector',
-#    src    = cms.InputTag('genParticles'),
-#    status = cms.vint32(3),
-#    pdgId  = cms.vint32(1, 2, 3, 4, 5, 21)
-#    )
+)
 
 
 ################################################################################
@@ -30,134 +17,170 @@ from JetMETAnalysis.JetAnalyzers.JetReconstruction_cff import *
 from JetMETAnalysis.JetAnalyzers.TauReconstruction_cff import *
 from JetMETAnalysis.JetAnalyzers.JPTReconstruction_cff import *
 from JetMETAnalysis.JetAnalyzers.JetCorrection_cff     import *
+from RecoTauTag.TauTagTools.tauDecayModes_cfi          import *
 
 tauDiscriminatorDict = {
-    "ak5tauHpsLoose":"hpsPFTauDiscriminationByLooseIsolation",
-    "ak5tauHpsMedium":"hpsPFTauDiscriminationByMediumIsolation",
-    "ak5tauHpsTight":"hpsPFTauDiscriminationByTightIsolation",
-    "ak5tauTaNCLoose":"shrinkingConePFTauDiscriminationByTaNCfrOnePercent",
-    "ak5tauTaNCMedium":"shrinkingConePFTauDiscriminationByTaNCfrHalfPercent",
-    "ak5tauTaNCTight":"shrinkingConePFTauDiscriminationByTaNCfrQuarterPercent",
-    "ak5tauCombinedLoose":"hpsTancTausDiscriminationByTancLoose",
-    "ak5tauCombinedMedium":"hpsTancTausDiscriminationByTancMedium",
-    "ak5tauCombinedTight":"hpsTancTausDiscriminationByTancTight",
+    "ak5tauHPSloose"            : "hpsPFTauDiscriminationByLooseIsolation",
+    "ak5tauHPSmedium"           : "hpsPFTauDiscriminationByMediumIsolation",
+    "ak5tauHPStight"            : "hpsPFTauDiscriminationByTightIsolation",
+    "ak5tauHPSlooseDBcorr"      : "hpsPFTauDiscriminationByLooseIsolation",
+    "ak5tauHPSmediumDBcorr"     : "hpsPFTauDiscriminationByMediumIsolation",
+    "ak5tauHPStightDBcorr"      : "hpsPFTauDiscriminationByTightIsolation",
+    "ak5tauHPSlooseCombDBcorr"  : "hpsPFTauDiscriminationByLooseIsolation",
+    "ak5tauHPSmediumCombDBcorr" : "hpsPFTauDiscriminationByMediumIsolation",
+    "ak5tauHPStightCombDBcorr"  : "hpsPFTauDiscriminationByTightIsolation",
+    "ak5tauTaNCloose"           : "hpsTancTausDiscriminationByTancLoose",    
+    "ak5tauTaNCmedium"          : "hpsTancTausDiscriminationByTancMedium",
+    "ak5tauTaNCtight"           : "hpsTancTausDiscriminationByTancTight"
 }
 
+tauDecayModeDict = {
+    "All"                       : "*",
+    "OneProng0Pi0"              : "%i" % tauToOneProng0PiZero,
+    "OneProng1Pi0"              : "%i" % tauToOneProng1PiZero,
+    "OneProng2Pi0"              : "%i" % tauToOneProng2PiZero,
+    "ThreeProng0Pi0"            : "%i" % tauToThreeProng0PiZero,
+}
+
+tauDiscriminators_and_DecayModes = {}
+for tauDiscriminator in tauDiscriminatorDict:
+    for tauDecayMode in tauDecayModeDict:
+        key = tauDiscriminator
+        if tauDecayModeDict[tauDecayMode] != "":
+            key += tauDecayMode
+        tauDiscriminators_and_DecayModes[key] = (tauDiscriminatorDict[tauDiscriminator], tauDecayModeDict[tauDecayMode])
+
 stdGenJetsDict = {
-    'ak5calo':   'ak5GenJets',
-    'ak7calo':   'ak7GenJets',
-    'kt4calo':   'kt4GenJets',
-    'kt6calo':   'kt6GenJets',
-    'ak5pf':     'ak5GenJets',
-    'ak7pf':     'ak7GenJets',
-    'kt4pf':     'kt4GenJets',
-    'kt6pf':     'kt6GenJets',
-    'ak5trk':    'ak5GenJets',
-    'ak7trk':    'ak7GenJets',
-    'kt4trk':    'kt4GenJets',
-    'kt6trk':    'kt6GenJets',
-    'ak5jpt':    'ak5GenJets',
-    'ak5tauAll': 'tauHadronicGenJets',
-    }
-for i in tauDiscriminatorDict:
-    stdGenJetsDict[i] = stdGenJetsDict["ak5tauAll"] 
+    'ak5calo'       : 'ak5GenJets',
+    'ak7calo'       : 'ak7GenJets',
+    'kt4calo'       : 'kt4GenJets',
+    'kt6calo'       : 'kt6GenJets',
+    'ak5pf'         : 'ak5GenJets',
+    'ak7pf'         : 'ak7GenJets',
+    'kt4pf'         : 'kt4GenJets',
+    'kt6pf'         : 'kt6GenJets',
+    'ak5trk'        : 'ak5GenJets',
+    'ak7trk'        : 'ak7GenJets',
+    'kt4trk'        : 'kt4GenJets',
+    'kt6trk'        : 'kt6GenJets',
+    'ak5jpt'        : 'ak5GenJets',
+    'ak5tauHPSall'  : 'tauGenJetsSelectorAllHadrons',
+    'ak5tauTaNCall' : 'tauGenJetsSelectorAllHadrons'
+}
+for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
+    if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
+        stdGenJetsDict[tauDiscriminator_and_DecayMode] = stdGenJetsDict["ak5tauHPSall"]
+    elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
+        stdGenJetsDict[tauDiscriminator_and_DecayMode] = stdGenJetsDict["ak5tauTaNCall"]
 
 genJetsDict = {
-    'ak5calo':     ('ak5GenJetsNoMuNoNu', ak5GenJetsNoMuNoNu),
-    'ak7calo':     ('ak7GenJetsNoMuNoNu', ak7GenJetsNoMuNoNu),
-    'kt4calo':     ('kt4GenJetsNoMuNoNu', kt4GenJetsNoMuNoNu),
-    'kt6calo':     ('kt6GenJetsNoMuNoNu', kt6GenJetsNoMuNoNu),
-    'ak5pf':       ('ak5GenJetsNoNu',     ak5GenJetsNoNu),
-    'ak7pf':       ('ak7GenJetsNoNu',     ak7GenJetsNoNu),
-    'kt4pf':       ('kt4GenJetsNoNu',     kt4GenJetsNoNu),
-    'kt6pf':       ('kt6GenJetsNoNu',     kt6GenJetsNoNu),
-    'ak5trk':      ('ak5GenJetsNoNu',     ak5GenJetsNoNu),
-    'ak7trk':      ('ak7GenJetsNoNu',     ak7GenJetsNoNu),
-    'kt4trk':      ('kt4GenJetsNoNu',     kt4GenJetsNoNu),
-    'kt6trk':      ('kt6GenJetsNoNu',     kt6GenJetsNoNu),
-    'ak5jpt':      ('ak5GenJetsNoNu',     ak5GenJetsNoNu),
-    'ak7jpt':      ('ak7GenJetsNoNu',     ak7GenJetsNoNu),
-    'ak5tauAll':   ('tauHadronicGenJets', tauHadronicGenJets),
+    'ak5calo'       : ('ak5GenJetsNoMuNoNu',           ak5GenJetsNoMuNoNu),
+    'ak7calo'       : ('ak7GenJetsNoMuNoNu',           ak7GenJetsNoMuNoNu),
+    'kt4calo'       : ('kt4GenJetsNoMuNoNu',           kt4GenJetsNoMuNoNu),
+    'kt6calo'       : ('kt6GenJetsNoMuNoNu',           kt6GenJetsNoMuNoNu),
+    'ak5pf'         : ('ak5GenJetsNoNu',               ak5GenJetsNoNu),
+    'ak7pf'         : ('ak7GenJetsNoNu',               ak7GenJetsNoNu),
+    'kt4pf'         : ('kt4GenJetsNoNu',               kt4GenJetsNoNu),
+    'kt6pf'         : ('kt6GenJetsNoNu',               kt6GenJetsNoNu),
+    'ak5trk'        : ('ak5GenJetsNoNu',               ak5GenJetsNoNu),
+    'ak7trk'        : ('ak7GenJetsNoNu',               ak7GenJetsNoNu),
+    'kt4trk'        : ('kt4GenJetsNoNu',               kt4GenJetsNoNu),
+    'kt6trk'        : ('kt6GenJetsNoNu',               kt6GenJetsNoNu),
+    'ak5jpt'        : ('ak5GenJetsNoNu',               ak5GenJetsNoNu),
+    'ak7jpt'        : ('ak7GenJetsNoNu',               ak7GenJetsNoNu),
+    'ak5tauHPSall'  : ('tauGenJetsSelectorAllHadrons', tauGenJetsSelectorAllHadrons),
+    'ak5tauTaNCall' : ('tauGenJetsSelectorAllHadrons', tauGenJetsSelectorAllHadrons)
 }    
-for i in tauDiscriminatorDict:
-    genJetsDict[i] = genJetsDict["ak5tauAll"] 
-    
-    stdRecJetsDict = {
-    'ak5calo':   'ak5CaloJets',
-    'ak7calo':   'ak7CaloJets',
-    'kt4calo':   'kt4CaloJets',
-    'kt6calo':   'kt6CaloJets',
-    'ak5pf':     'ak5PFJets',
-    'ak7pf':     'ak7PFJets',
-    'kt4pf':     'kt4PFJets',
-    'kt6pf':     'kt6PFJets',
-    'ak5trk':    'ak5TrackJets',
-    'kt4trk':    'kt4TrackJets',
-    'ak5jpt':    'ak5JPTJets',
-    'ak7jpt':    'ak7JPTJets',
-    'ak5tauAll': 'ak5PFJets',
-    }
-for i in tauDiscriminatorDict:
-    stdRecJetsDict[i] = stdRecJetsDict["ak5tauAll"] 
+for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
+    if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
+        genJetsDict[tauDiscriminator_and_DecayMode] = genJetsDict["ak5tauHPSall"]
+    elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
+        genJetsDict[tauDiscriminator_and_DecayMode] = genJetsDict["ak5tauTaNCall"]
 
+    
+stdRecJetsDict = {
+    'ak5calo'       : 'ak5CaloJets',
+    'ak7calo'       : 'ak7CaloJets',
+    'kt4calo'       : 'kt4CaloJets',
+    'kt6calo'       : 'kt6CaloJets',
+    'ak5pf'         : 'ak5PFJets',
+    'ak7pf'         : 'ak7PFJets',
+    'kt4pf'         : 'kt4PFJets',
+    'kt6pf'         : 'kt6PFJets',
+    'ak5trk'        : 'ak5TrackJets',
+    'kt4trk'        : 'kt4TrackJets',
+    'ak5jpt'        : 'ak5JPTJets',
+    'ak7jpt'        : 'ak7JPTJets',
+    'ak5tauHPSall'  : 'hpsPFTauProducer',
+    'ak5tauTaNCall' : 'hpsTancTaus'
+}
+for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
+    if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
+        stdRecJetsDict[tauDiscriminator_and_DecayMode] = stdRecJetsDict["ak5tauHPSall"]
+    elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
+        stdRecJetsDict[tauDiscriminator_and_DecayMode] = stdRecJetsDict["ak5tauTaNCall"]
 
 recJetsDict = {
-    'ak5calo':     ('ak5CaloJets',  ak5CaloJets),
-    'ak7calo':     ('ak7CaloJets',  ak7CaloJets),
-    'kt4calo':     ('kt4CaloJets',  kt4CaloJets),
-    'kt6calo':     ('kt6CaloJets',  kt6CaloJets),
-    'ak5pf':       ('ak5PFJets',    ak5PFJets),
-    'ak7pf':       ('ak7PFJets',    ak7PFJets),
-    'kt4pf':       ('kt4PFJets',    kt4PFJets),
-    'kt6pf':       ('kt6PFJets',    kt6PFJets),
-    'ak5trk':      ('ak5TrackJets', ak5TrackJets),
-    'kt4trk':      ('kt4TrackJets', kt4TrackJets),
-    'ak5jpt':      ('ak5JPTJets',   ak5JPTJets),
-    'ak7jpt':      ('ak7JPTJets',   ak7JPTJets),
-    'ak5tauAll':   ('ak5PFJets',    ak5PFJets),
-    }
-for i in tauDiscriminatorDict:
-    recJetsDict[i] = recJetsDict["ak5tauAll"] 
+    'ak5calo'       : ('ak5CaloJets',      ak5CaloJets),
+    'ak7calo'       : ('ak7CaloJets',      ak7CaloJets),
+    'kt4calo'       : ('kt4CaloJets',      kt4CaloJets),
+    'kt6calo'       : ('kt6CaloJets',      kt6CaloJets),
+    'ak5pf'         : ('ak5PFJets',        ak5PFJets),
+    'ak7pf'         : ('ak7PFJets',        ak7PFJets),
+    'kt4pf'         : ('kt4PFJets',        kt4PFJets),
+    'kt6pf'         : ('kt6PFJets',        kt6PFJets),
+    'ak5trk'        : ('ak5TrackJets',     ak5TrackJets),
+    'kt4trk'        : ('kt4TrackJets',     kt4TrackJets),
+    'ak5jpt'        : ('ak5JPTJets',       ak5JPTJets),
+    'ak7jpt'        : ('ak7JPTJets',       ak7JPTJets),
+    'ak5tauHPSall'  : ('hpsPFTauProducer', hpsPFTauProducer),
+    'ak5tauTaNCall' : ('hpsTancTaus',      hpsTancTaus)
+}
+for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
+    if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
+        recJetsDict[tauDiscriminator_and_DecayMode] = recJetsDict["ak5tauHPSall"]
+    elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
+        recJetsDict[tauDiscriminator_and_DecayMode] = recJetsDict["ak5tauTaNCall"]
 
 
 corrJetsDict = {
-    'ak5calol1':     ('ak5CaloJetsL1Fast',    ak5CaloJetsL1Fast),
-    'ak7calol1':     ('ak7CaloJetsL1Fast',    ak7CaloJetsL1Fast),
-    'kt4calol1':     ('kt4CaloJetsL1Fast',    kt4CaloJetsL1Fast),
-    'kt6calol1':     ('kt6CaloJetsL1Fast',    kt6CaloJetsL1Fast),
-    'ak5jptl1':      ('ak5JPTJetsL1',         ak5JPTJetsL1),
-    'ak7jptl1':      ('ak7JPTJetsL1',         ak7JPTJetsL1),
-    'ak5pfl1':       ('ak5PFJetsL1Fast',      ak5PFJetsL1Fast),
-    'ak7pfl1':       ('ak7PFJetsL1Fast',      ak7PFJetsL1Fast),
-    'kt4pfl1':       ('kt4PFJetsL1Fast',      kt4PFJetsL1Fast),
-    'kt6pfl1':       ('kt6PFJetsL1Fast',      kt6PFJetsL1Fast),
-    'ak5calol2l3':   ('ak5CaloJetsL2L3',      ak5CaloJetsL2L3),
-    'ak7calol2l3':   ('ak7CaloJetsL2L3',      ak7CaloJetsL2L3),
-    'kt4calol2l3':   ('kt4CaloJetsL2L3',      kt4CaloJetsL2L3),
-    'kt6calol2l3':   ('kt6CaloJetsL2L3',      kt6CaloJetsL2L3),
-    'ak5jptl2l3':    ('ak5JPTJetsL2L3',       ak5JPTJetsL2L3),
-    'ak7jptl2l3':    ('ak7JPTJetsL2L3',       ak7JPTJetsL2L3),
-    'ak5pfl2l3':     ('ak5PFJetsL2L3',        ak5PFJetsL2L3),
-    'ak7pfl2l3':     ('ak7PFJetsL2L3',        ak7PFJetsL2L3),
-    'kt4pfl2l3':     ('kt4PFJetsL2L3',        kt4PFJetsL2L3),
-    'kt6pfl2l3':     ('kt6PFJetsL2L3',        kt6PFJetsL2L3),
-    'ak5calol1l2l3': ('ak5CaloJetsL1FastL2L3',ak5CaloJetsL1FastL2L3),
-    'ak7calol1l2l3': ('ak7CaloJetsL1FastL2L3',ak7CaloJetsL1FastL2L3),
-    'kt4calol1l2l3': ('kt4CaloJetsL1FastL2L3',kt4CaloJetsL1FastL2L3),
-    'kt6calol1l2l3': ('kt6CaloJetsL1FastL2L3',kt6CaloJetsL1FastL2L3),
-    'ak5jptl1l2l3':  ('ak5JPTJetsL1L2L3',     ak5JPTJetsL1L2L3),
-    'ak7jptl1l2l3':  ('ak7JPTJetsL1L2L3',     ak7JPTJetsL1L2L3),
-    'ak5pfl1l2l3':   ('ak5PFJetsL1FastL2L3',  ak5PFJetsL1FastL2L3),
-    'ak7pfl1l2l3':   ('ak7PFJetsL1FastL2L3',  ak7PFJetsL1FastL2L3),
-    'kt4pfl1l2l3':   ('kt4PFJetsL1FastL2L3',  kt4PFJetsL1FastL2L3),
-    'kt6pfl1l2l3':   ('kt6PFJetsL1FastL2L3',  kt6PFJetsL1FastL2L3),
-    }
+    'ak5calol1'     : ('ak5CaloJetsL1Fast',     ak5CaloJetsL1Fast),
+    'ak7calol1'     : ('ak7CaloJetsL1Fast',     ak7CaloJetsL1Fast),
+    'kt4calol1'     : ('kt4CaloJetsL1Fast',     kt4CaloJetsL1Fast),
+    'kt6calol1'     : ('kt6CaloJetsL1Fast',     kt6CaloJetsL1Fast),
+    'ak5jptl1'      : ('ak5JPTJetsL1',          ak5JPTJetsL1),
+    'ak7jptl1'      : ('ak7JPTJetsL1',          ak7JPTJetsL1),
+    'ak5pfl1'       : ('ak5PFJetsL1Fast',       ak5PFJetsL1Fast),
+    'ak7pfl1'       : ('ak7PFJetsL1Fast',       ak7PFJetsL1Fast),
+    'kt4pfl1'       : ('kt4PFJetsL1Fast',       kt4PFJetsL1Fast),
+    'kt6pfl1'       : ('kt6PFJetsL1Fast',       kt6PFJetsL1Fast),
+    'ak5calol2l3'   : ('ak5CaloJetsL2L3',       ak5CaloJetsL2L3),
+    'ak7calol2l3'   : ('ak7CaloJetsL2L3',       ak7CaloJetsL2L3),
+    'kt4calol2l3'   : ('kt4CaloJetsL2L3',       kt4CaloJetsL2L3),
+    'kt6calol2l3'   : ('kt6CaloJetsL2L3',       kt6CaloJetsL2L3),
+    'ak5jptl2l3'    : ('ak5JPTJetsL2L3',        ak5JPTJetsL2L3),
+    'ak7jptl2l3'    : ('ak7JPTJetsL2L3',        ak7JPTJetsL2L3),
+    'ak5pfl2l3'     : ('ak5PFJetsL2L3',         ak5PFJetsL2L3),
+    'ak7pfl2l3'     : ('ak7PFJetsL2L3',         ak7PFJetsL2L3),
+    'kt4pfl2l3'     : ('kt4PFJetsL2L3',         kt4PFJetsL2L3),
+    'kt6pfl2l3'     : ('kt6PFJetsL2L3',         kt6PFJetsL2L3),
+    'ak5calol1l2l3' : ('ak5CaloJetsL1FastL2L3', ak5CaloJetsL1FastL2L3),
+    'ak7calol1l2l3' : ('ak7CaloJetsL1FastL2L3', ak7CaloJetsL1FastL2L3),
+    'kt4calol1l2l3' : ('kt4CaloJetsL1FastL2L3', kt4CaloJetsL1FastL2L3),
+    'kt6calol1l2l3' : ('kt6CaloJetsL1FastL2L3', kt6CaloJetsL1FastL2L3),
+    'ak5jptl1l2l3'  : ('ak5JPTJetsL1L2L3',      ak5JPTJetsL1L2L3),
+    'ak7jptl1l2l3'  : ('ak7JPTJetsL1L2L3',      ak7JPTJetsL1L2L3),
+    'ak5pfl1l2l3'   : ('ak5PFJetsL1FastL2L3',   ak5PFJetsL1FastL2L3),
+    'ak7pfl1l2l3'   : ('ak7PFJetsL1FastL2L3',   ak7PFJetsL1FastL2L3),
+    'kt4pfl1l2l3'   : ('kt4PFJetsL1FastL2L3',   kt4PFJetsL1FastL2L3),
+    'kt6pfl1l2l3'   : ('kt6PFJetsL1FastL2L3',   kt6PFJetsL1FastL2L3)
+}
 
 
 ################################################################################
 ## addAlgorithm
 ################################################################################
-def addAlgorithm(process,alg_size_type_corr,reco):
+def addAlgorithm(process, alg_size_type_corr, Defaults, reco):
     """ 
     addAlgorithm takes the following parameters:
     ============================================
@@ -188,12 +211,18 @@ def addAlgorithm(process,alg_size_type_corr,reco):
     elif (alg_size_type_corr.find('tau') > 0) :
         alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('tau')]
         type          = 'TAU'
-        if "tauAll" in alg_size_type_corr:
-            alg_size_type = alg_size + 'tauAll'
+        if "tauHPSall" in alg_size_type_corr:
+            alg_size_type = alg_size + 'tauHPSall'
+        elif "tauTaNCall" in alg_size_type_corr:
+            alg_size_type = alg_size + 'tauTaNCall'
         else:
-            for i in tauDiscriminatorDict:
-                if i in alg_size_type_corr: 
-                    alg_size_type = i
+            for tauDiscriminator in tauDiscriminatorDict:
+                if tauDiscriminator in alg_size_type_corr: 
+                    alg_size_type = tauDiscriminator
+            for tauDecayMode in tauDecayModeDict:
+                if tauDecayModeDict[tauDecayMode] != "" and \
+                   tauDecayMode in alg_size_type_corr:
+                    alg_size_type += tauDecayMode
                     
     elif (alg_size_type_corr.find('jpt') > 0) :
         alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('jpt')]
@@ -205,10 +234,9 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         alg_size_type = alg_size + 'trk'
     else:
         raise ValueError("Can't identify valid jet type: calo|pf|jpt|trk|tau")
-
         
     if (alg_size_type_corr.find('l1') > 0):
-        correctl1   = True
+        correctl1 = True
         if not reco:
             raise ValueError("Can't subtract PU without reco!")
         
@@ -221,7 +249,7 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         not reco and stdGenJetsDict.keys().index(alg_size_type)
         not reco and stdRecJetsDict.keys().index(alg_size_type)
     except ValueError:
-        raise ValueError("Algorithm unavailable in standard format: "+alg_size_type)
+        raise ValueError("Algorithm unavailable in standard format: " + alg_size_type)
     
     try:
         reco and genJetsDict.keys().index(alg_size_type)
@@ -233,24 +261,21 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         correctl2l3 and corrJetsDict.keys().index(alg_size_type_corr)
     except ValueError:
         raise ValueError("Invalid jet correction: " + alg_size_type_corr)
-
         
     ## reference (genjet) kinematic selection
-    refPtEta = cms.EDFilter(
-        'EtaPtMinCandViewRefSelector',
+    refPtEta = cms.EDFilter('EtaPtMinCandViewRefSelector',
         Defaults.RefPtEta,
         src = cms.InputTag(genJetsDict[alg_size_type][0])
-        )
+    )
     if not reco:
         refPtEta.src = stdGenJetsDict[alg_size_type]
     setattr(process, alg_size_type + 'GenPtEta', refPtEta)
     
     ## reco jet kinematic selection
-    jetPtEta = cms.EDFilter(
-        'EtaPtMinCandViewRefSelector',
+    jetPtEta = cms.EDFilter('EtaPtMinCandViewRefSelector',
         Defaults.JetPtEta,
         src = cms.InputTag(recJetsDict[alg_size_type][0])
-        )
+    )
     if not reco:
         jetPtEta.src = stdRecJetsDict[alg_size_type]
     setattr(process, alg_size_type_corr + 'PtEta', jetPtEta)
@@ -262,8 +287,8 @@ def addAlgorithm(process,alg_size_type_corr,reco):
     corrLabel = ''
     if correctl1 or correctl2l3:
         process.load('JetMETAnalysis.JetAnalyzers.JetCorrection_cff')
-        (corrLabel,corrJets) = corrJetsDict[alg_size_type_corr]
-        setattr(process,corrLabel,corrJets)
+        (corrLabel, corrJets) = corrJetsDict[alg_size_type_corr]
+        setattr(process, corrLabel, corrJets)
         sequence = cms.Sequence(corrJets * sequence)
 
     ## add pu density calculation
@@ -288,7 +313,7 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         process.load('JetMETAnalysis.JetAnalyzers.JPTReconstruction_cff')
         if   alg_size == 'ak5':
             sequence = cms.Sequence(process.ak5JPTJetsSequence * sequence)
-        elif   alg_size == 'ak7':
+        elif alg_size == 'ak7':
             sequence = cms.Sequence(process.ak7JPTJetsSequence * sequence)
         else:
             raise ValueError(alg_size + " not supported for JPT!")
@@ -297,7 +322,7 @@ def addAlgorithm(process,alg_size_type_corr,reco):
     elif reco:
         process.load('Configuration.StandardSequences.Geometry_cff')
         process.load('Configuration.StandardSequences.MagneticField_cff')
-        (recLabel,recJets) = recJetsDict[alg_size_type]
+        (recLabel, recJets) = recJetsDict[alg_size_type]
         if correctl1 or correctl2l3:
             corrJets.src = recLabel
             jetPtEta.src = corrLabel
@@ -306,103 +331,76 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         if correctl1:
             recJets.doAreaFastjet = True
             recJets.Rho_EtaMax    = cms.double(5.0) # FIX LATER
-        setattr(process,recLabel,recJets)
+        setattr(process, recLabel, recJets)
         sequence = cms.Sequence(recJets * sequence)
-        if type =='Track':
+        if type == 'Track':
             process.load('JetMETAnalysis.JetAnalyzers.TrackJetReconstruction_cff')
             sequence = cms.Sequence(trackJetSequence * sequence)
-        elif type =="TAU":
+        elif type == 'TAU':
             from PhysicsTools.PatAlgos.tools.helpers import massSearchReplaceParam
             from RecoTauTag.TauTagTools.PFTauSelector_cfi import pfTauSelector
-            #get event sources
-            process.load("TrackingTools/TransientTrack/TransientTrackBuilder_cfi")
-            
-            #get producers
-            process.load("RecoTauTag.RecoTau.RecoTauPiZeroProducer_cfi")        
-            from RecoTauTag.RecoTau.RecoTauCombinatoricProducer_cfi import combinatoricRecoTaus
-            
-            tauRecoSequence = None
-            if "Hps" in alg_size_type:
-                process.ak5PFJetsLegacyHPSPiZeros.src = jetPtEta.src.value()                
-                process.combinatoricRecoTausHps = combinatoricRecoTaus.clone(
-                    jetSrc = jetPtEta.src.value(),
-                    piZeroSrc = "ak5PFJetsLegacyHPSPiZeros",
-                )
-                process.load("RecoTauTag.Configuration.HPSPFTaus_cfi")
-                massSearchReplaceParam(process.produceAndDiscriminateHPSPFTaus, "PFTauProducer", 
-                                       cms.InputTag("combinatoricRecoTaus"), cms.InputTag("combinatoricRecoTausHps") )
-                process.hpsPFTauProducer.src = "combinatoricRecoTausHps"
-                selectedTaus = pfTauSelector.clone( src = "hpsPFTauProducer",
-                    discriminators = cms.VPSet( cms.PSet( discriminator=cms.InputTag("hpsPFTauDiscriminationAgainstElectron"),selectionCut=cms.double(0.5)),
-                                                cms.PSet( discriminator=cms.InputTag("hpsPFTauDiscriminationAgainstMuon"),selectionCut=cms.double(0.5)),
-                                                cms.PSet( discriminator=cms.InputTag(tauDiscriminatorDict[alg_size_type]),selectionCut=cms.double(0.5)),
-                    )
-                )
-                setattr(process, alg_size_type+"Selected", selectedTaus)
-                jetPtEta.src = alg_size_type+"Selected"
-                tauRecoSequence = process.ak5PFJetsLegacyHPSPiZeros * process.combinatoricRecoTausHps * process.produceAndDiscriminateHPSPFTaus * getattr(process, alg_size_type+"Selected")
-            elif "TaNC" in alg_size_type or "All" in alg_size_type:
-                process.ak5PFJetsLegacyTaNCPiZeros.src = jetPtEta.src.value()
-                process.load("RecoTauTag.Configuration.ShrinkingConePFTaus_cfi")
-                process.shrinkingConePFTauProducer.jetSrc = jetPtEta.src.value()
-                process.shrinkingConePFTauProducer.piZeroSrc = "ak5PFJetsLegacyTaNCPiZeros"
-                jetPtEta.src = process.shrinkingConePFTauProducer.label()
-                tauRecoSequence = process.ak5PFJetsLegacyTaNCPiZeros * process.produceAndDiscriminateShrinkingConePFTaus * process.produceShrinkingConeDiscriminationByTauNeuralClassifier
-                if "TaNC" in alg_size_type:
-                    selectedTaus = pfTauSelector.clone( src = "shrinkingConePFTauProducer",
-                        discriminators = cms.VPSet( cms.PSet( discriminator=cms.InputTag("shrinkingConePFTauDiscriminationAgainstElectron"),selectionCut=cms.double(0.5)),
-                                                    cms.PSet( discriminator=cms.InputTag("shrinkingConePFTauDiscriminationAgainstMuon"),selectionCut=cms.double(0.5)),
-                                                    cms.PSet( discriminator=cms.InputTag(tauDiscriminatorDict[alg_size_type]),selectionCut=cms.double(0.5)),
+            #process.load("TrackingTools/TransientTrack/TransientTrackBuilder_cfi")
+            process.load("RecoTauTag/Configuration/RecoPFTauTag_cff")
+
+            tauRecoSequence = cms.Sequence(process.recoTauCommonSequence)
+            if "HPS" in alg_size_type:
+                tauRecoSequence += process.recoTauClassicHPSSequence
+            elif "TaNC" in alg_size_type:
+                tauRecoSequence += process.recoTauHPSTancSequence
+
+            (tauIsoDiscriminator, tauDecayMode) = tauDiscriminators_and_DecayModes[alg_size_type]
+
+            if not (("HPSall" in alg_size_type or "TaNCall" in alg_size_type) and tauDecayMode == ""):
+                tauDiscriminators = []
+                if "HPS" in alg_size_type:
+                    tauDiscriminators = [
+                        "hpsPFTauDiscriminationByLooseElectronRejection",
+                        "hpsPFTauDiscriminationByTightMuonRejection",
+                        "hpsPFTauDiscriminationByDecayModeFinding",
+                    ]
+                elif "TaNC" in alg_size_type:
+                    tauDiscriminators = [
+                        "hpsTancTausDiscriminationByLooseElectronRejection",
+                        "hpsTancTausDiscriminationByTightMuonRejection",
+                        "hpsTancTausDiscriminationByDecayModeSelection"
+                    ]
+                tauDiscriminators.append(tauIsoDiscriminator)
+                                
+                tauDiscriminatorConfigs = []
+                for tauDiscriminator in tauDiscriminators:
+                    tauDiscriminatorConfigs.append(
+                        cms.PSet(
+                            discriminator = cms.InputTag(tauDiscriminator),
+                            selectionCut = cms.double(0.5)
                         )
                     )
-                    setattr(process, alg_size_type+"Selected", selectedTaus)
-                    jetPtEta.src = alg_size_type+"Selected"
-                    tauRecoSequence *= getattr(process, alg_size_type+"Selected")
                 
-            elif "Combined" in alg_size_type:
-                process.ak5PFJetsRecoTauPiZeros.src = jetPtEta.src.value()
-                process.combinatoricRecoTausHpsTanc = combinatoricRecoTaus.clone(
-                    jetSrc = jetPtEta.src.value(),
-                    piZeroSrc = "ak5PFJetsRecoTauPiZeros",
+                selTauModule = pfTauSelector.clone(
+                    src = cms.InputTag(recLabel),
+                    discriminators = cms.VPSet(tauDiscriminatorConfigs)
                 )
-                process.load("RecoTauTag.Configuration.HPSTancTaus_cfi")
-                massSearchReplaceParam( process.hpsTancTauSequence, "PFTauProducer",
-                                        cms.InputTag("combinatoricRecoTaus"), cms.InputTag("combinatoricRecoTausHpsTanc") )
-                massSearchReplaceParam( process.hpsTancTauSequence, "PFTauProducer",
-                                        cms.InputTag("combinatoricRecoTausHps"), cms.InputTag("combinatoricRecoTausHpsTanc") )
-#                ME: bug in massSearchReplaceParam prevents usage (VInputTags are considered InputTags )
-#                massSearchReplaceParam( process.hpsTancTauSequence, "src",
-#                                        cms.InputTag("combinatoricRecoTaus"), cms.InputTag("combinatoricRecoTausHpsTanc") )
-                process.combinatoricRecoTausHPSSelector.src =  "combinatoricRecoTausHpsTanc"
-                process.combinatoricTaus1prong0pi0.src = "combinatoricRecoTausHpsTanc"
-                process.combinatoricTaus1prong1pi0.src = "combinatoricRecoTausHpsTanc"
-                process.combinatoricTaus1prong2pi0.src = "combinatoricRecoTausHpsTanc"
-                process.combinatoricTaus3prong0pi0.src = "combinatoricRecoTausHpsTanc"
-                
-                selectedTaus = pfTauSelector.clone( src = "hpsTancTaus",
-                    discriminators = cms.VPSet( cms.PSet( discriminator=cms.InputTag("hpsTancTausDiscriminationAgainstElectron"),selectionCut=cms.double(0.5)),
-                                                cms.PSet( discriminator=cms.InputTag("hpsTancTausDiscriminationAgainstMuon"),selectionCut=cms.double(0.5)),
-                                                cms.PSet( discriminator=cms.InputTag(tauDiscriminatorDict[alg_size_type]),selectionCut=cms.double(0.5)),
-                    )
-                )
-                setattr(process, alg_size_type+"Selected", selectedTaus)
-                jetPtEta.src = alg_size_type+"Selected"
-                tauRecoSequence = process.ak5PFJetsRecoTauPiZeros * process.combinatoricRecoTausHpsTanc * process.hpsTancTauSequence * getattr(process, alg_size_type+"Selected")
-                
+                if tauDecayMode != "*":
+                    #setattr(selTauModule, "cut", cms.string("isDecayMode('%s')" % tauDecayMode))
+                    setattr(selTauModule, "cut", cms.string("decayMode() == %s" % tauDecayMode))
+                selTauModuleName = alg_size_type + "Selected"
+                setattr(process, selTauModuleName, selTauModule)
+                tauRecoSequence += getattr(process, selTauModuleName)
+                        
+                jetPtEta.src = cms.InputTag(selTauModuleName)
+            
             process.load("PhysicsTools.JetMCAlgos.TauGenJets_cfi")
 
             sequence = cms.Sequence(tauRecoSequence * process.tauGenJets * sequence)
 
     # reconstruct genjets
     if reco:
-        (genLabel,genJets) = genJetsDict[alg_size_type]
-        setattr(process,genLabel,genJets)
+        (genLabel, genJets) = genJetsDict[alg_size_type]
+        setattr(process, genLabel, genJets)
         
         sequence.replace(refPtEta, genJets * refPtEta)
 
         if type == 'Calo':
-            setattr(process,'genParticlesForJetsNoMuNoNu',
-                    genParticlesForJetsNoMuNoNu)
+            setattr(process, 'genParticlesForJetsNoMuNoNu', genParticlesForJetsNoMuNoNu)
             sequence = cms.Sequence(genParticlesForJetsNoMuNoNu * sequence)
         else:
             setattr(process,'genParticlesForJetsNoNu',genParticlesForJetsNoNu)
@@ -411,52 +409,39 @@ def addAlgorithm(process,alg_size_type_corr,reco):
         
     ## filter / map partons only if flavor information is requested
     if Defaults.JetResponseParameters.doFlavor.value() :
-        setattr(process,'partons',partons)
-        genToParton = cms.EDProducer(
-            'JetPartonMatcher',
+        setattr(process, 'partons', partons)
+        genToParton = cms.EDProducer('JetPartonMatcher',
             jets = cms.InputTag(genJets.label()),
             coneSizeToAssociate = cms.double(0.3),
             partons = cms.InputTag('partons')
-            )
-        # OLD
-        # ===
-        #genToParton = cms.EDProducer(
-        #    'MatchRecToGen',
-        #    srcRec = cms.InputTag(refPtEta.label()),
-        #    srcGen = cms.InputTag(partons.label())
-        #    )
-        setattr(process,alg_size_type + 'GenToParton', genToParton)
+        )
+        setattr(process, alg_size_type + 'GenToParton', genToParton)
         sequence = cms.Sequence(sequence * partons * genToParton)
         
     ## reference to jet matching
-    jetToRef = cms.EDProducer(
-        'MatchRecToGen',
+    jetToRef = cms.EDProducer('MatchRecToGen',
         srcGen = cms.InputTag(refPtEta.label()),
         srcRec = cms.InputTag(jetPtEta.label())
-        )
+    )
     setattr(process,alg_size_type_corr + 'JetToRef', jetToRef)
     sequence = cms.Sequence(sequence * jetToRef)
     
     ## jet response analyzer
-    jra = cms.EDAnalyzer(
-        'JetResponseAnalyzer',
+    jra = cms.EDAnalyzer('JetResponseAnalyzer',
         Defaults.JetResponseParameters,
-        srcRefToJetMap    = cms.InputTag(jetToRef.label(),'gen2rec'),
+        srcRefToJetMap    = cms.InputTag(jetToRef.label(), 'gen2rec'),
         srcRef            = cms.InputTag(refPtEta.label()),
         jecLabel          = cms.string('')            
-        )
+    )
     if correctl1 or correctl2l3:
         jra.jecLabel = corrJets.correctors[0]
     if Defaults.JetResponseParameters.doFlavor.value():
-        # OLD
-        # ===
-        #jra.srcRefToPartonMap = cms.InputTag(genToParton.label(),'rec2gen')
         jra.srcRefToPartonMap = cms.InputTag(genToParton.label())
     setattr(process,alg_size_type_corr,jra)
     sequence = cms.Sequence(sequence * jra)
     
     ## create the path and put in the sequence
     sequence = cms.Sequence(sequence)
-    setattr(process,alg_size_type_corr + 'Sequence',sequence)
+    setattr(process, alg_size_type_corr + 'Sequence', sequence)
     path = cms.Path( sequence )
-    setattr(process,alg_size_type_corr + 'Path',path)
+    setattr(process, alg_size_type_corr + 'Path', path)
