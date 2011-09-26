@@ -229,10 +229,10 @@ for sampleToAnalyze in samplesToAnalyze:
     fileNames_and_options_applyL2L3param[sampleToAnalyze]['logFileName']    = \
       os.path.join(outputFilePath, "applyL2L3param_%s.log" % sampleToAnalyze)
     fileNames_and_options_applyL2L3param[sampleToAnalyze]['commandLine']    = \
-      '-input %s -output %s -era tauPtRes_%s -algs %s -jecpath %s -levels 2 3' % \
+      '-input %s -output %s -era %s -algs %s -jecpath %s -levels 2 3' % \
         (fileNames_hadd[sampleToAnalyze]['outputFileName'],
          fileNames_and_options_applyL2L3param[sampleToAnalyze]['outputFileName'],
-         version,
+         era,
          make_MakeFile_vstring(algorithms),
          jecTextFilePath)
 #--------------------------------------------------------------------------------    
@@ -307,43 +307,52 @@ for sampleToAnalyze in samplesToAnalyze:
 # plus resolution plots for calibrated compared to uncalibrated tau-jets
 #
 fileNames_and_options_showHistos = {}
-
 fileNames_and_options_showGraphs = {}
 
 for sampleToAnalyze in samplesToAnalyze:
+
     fileNames_and_options_showHistos[sampleToAnalyze] = {}
-    for refVariable in [ "RefPt", "JetEta" ]:
-        fileNames_and_options_showHistos[sampleToAnalyze][refVariable] = {}
-        fileNames_and_options_showHistos[sampleToAnalyze][refVariable]['inputFileNames'] = \
-          [ fileNames_and_options_fitResponse_calibrated[sampleToAnalyze]['outputFileName'] ]
-        fileNames_and_options_showHistos[sampleToAnalyze][refVariable]['outputFileName'] = \
-          "make_jet_inspect_histos_target_%s_%s_calibrated" % (sampleToAnalyze, refVariable)
-        fileNames_and_options_showHistos[sampleToAnalyze][refVariable]['logFileName']    = \
-          os.path.join(outputFilePath, "jet_inspect_histos_%s_%s_calibrated.log" % (sampleToAnalyze, refVariable))
-        fileNames_and_options_showHistos[sampleToAnalyze][refVariable]['commandLine']    = \
-          '-inputs %s -algs %s -variables RelRsp:%s %s -formats png -batch true -opath %s' % \
-            (make_MakeFile_vstring(fileNames_and_options_showHistos[sampleToAnalyze][refVariable]['inputFileNames']),
-             make_MakeFile_vstring([ "".join([ algorithm, suffix]) for algorithm in algorithms for suffix in [ "", "l2l3"] ]),
-             refVariable,
-             "-norm true -npercanvas 1",
-             outputFilePath_plots)
-    
     fileNames_and_options_showGraphs[sampleToAnalyze] = {}
-    for refVariable in [ "RefPt", "JetEta" ]:
-        fileNames_and_options_showGraphs[sampleToAnalyze][refVariable] = {}
-        fileNames_and_options_showGraphs[sampleToAnalyze][refVariable]['inputFileNames'] = \
-          [ fileNames_and_options_fitResolution[sampleToAnalyze]['outputFileName'] ]
-        fileNames_and_options_showGraphs[sampleToAnalyze][refVariable]['outputFileName'] = \
-          "make_jet_inspect_graphs_%s_%s_target" % (sampleToAnalyze, refVariable)
-        fileNames_and_options_showGraphs[sampleToAnalyze][refVariable]['logFileName']    = \
-          os.path.join(outputFilePath, "jet_inspect_graphs_%s_%s.log" % (sampleToAnalyze, refVariable))
-        fileNames_and_options_showGraphs[sampleToAnalyze][refVariable]['commandLine']    = \
-          '-inputs %s -algs %s -variables RelRspVs%s %s -formats png -batch true -opath %s' % \
-            (make_MakeFile_vstring(fileNames_and_options_showGraphs[sampleToAnalyze][refVariable]['inputFileNames']),
-             make_MakeFile_vstring([ "".join([ algorithm, suffix]) for algorithm in algorithms for suffix in [ "", "l2l3"] ]),
-             refVariable,
-             "-ymin 0.5 -ymax 1.5 -legx 0.20 -legy 0.35 -legw 0.60",
-             outputFilePath_plots)
+
+    for algorithm in algorithms:
+
+        outputFilePath_plots_algorithm = os.path.join(outputFilePath_plots, algorithm)
+        if not os.path.exists(outputFilePath_plots_algorithm):
+            os.mkdir(outputFilePath_plots_algorithm)
+        
+        fileNames_and_options_showHistos[sampleToAnalyze][algorithm] = {}
+        for refVariable in [ "RefPt", "JetEta" ]:
+            fileNames_and_options_showHistos[sampleToAnalyze][algorithm][refVariable] = {}
+            fileNames_and_options_showHistos[sampleToAnalyze][algorithm][refVariable]['inputFileNames'] = \
+              [ fileNames_and_options_fitResponse_calibrated[sampleToAnalyze]['outputFileName'] ]
+            fileNames_and_options_showHistos[sampleToAnalyze][algorithm][refVariable]['outputFileName'] = \
+              "make_jet_inspect_histos_target_%s_%s_%s_calibrated" % (sampleToAnalyze, algorithm, refVariable)
+            fileNames_and_options_showHistos[sampleToAnalyze][algorithm][refVariable]['logFileName']    = \
+              os.path.join(outputFilePath, "jet_inspect_histos_%s_%s_%s_calibrated.log" % (sampleToAnalyze, algorithm, refVariable))
+            fileNames_and_options_showHistos[sampleToAnalyze][algorithm][refVariable]['commandLine']    = \
+              '-inputs %s -algs %s -variables RelRsp:%s %s -formats png -batch true -opath %s' % \
+                (make_MakeFile_vstring(fileNames_and_options_showHistos[sampleToAnalyze][algorithm][refVariable]['inputFileNames']),
+                 make_MakeFile_vstring([ "".join([ algorithm, suffix]) for suffix in [ "", "l2l3"] ]),
+                 refVariable,
+                 "-norm true -npercanvas 1",
+                 outputFilePath_plots_algorithm)
+    
+        fileNames_and_options_showGraphs[sampleToAnalyze][algorithm] = {}
+        for refVariable in [ "RefPt", "JetEta" ]:
+            fileNames_and_options_showGraphs[sampleToAnalyze][algorithm][refVariable] = {}
+            fileNames_and_options_showGraphs[sampleToAnalyze][algorithm][refVariable]['inputFileNames'] = \
+              [ fileNames_and_options_fitResolution[sampleToAnalyze]['outputFileName'] ]
+            fileNames_and_options_showGraphs[sampleToAnalyze][algorithm][refVariable]['outputFileName'] = \
+              "make_jet_inspect_graphs_%s_%s_%s_target" % (sampleToAnalyze, algorithm, refVariable)
+            fileNames_and_options_showGraphs[sampleToAnalyze][algorithm][refVariable]['logFileName']    = \
+              os.path.join(outputFilePath, "jet_inspect_graphs_%s_%s_%s.log" % (sampleToAnalyze, algorithm, refVariable))
+            fileNames_and_options_showGraphs[sampleToAnalyze][algorithm][refVariable]['commandLine']    = \
+              '-inputs %s -algs %s -variables RelRspVs%s %s -formats png -batch true -opath %s' % \
+                (make_MakeFile_vstring(fileNames_and_options_showGraphs[sampleToAnalyze][algorithm][refVariable]['inputFileNames']),
+                 make_MakeFile_vstring([ "".join([ algorithm, suffix]) for suffix in [ "", "l2l3"] ]),
+                 refVariable,
+                 "-ymin 0.5 -ymax 1.5 -legx 0.20 -legy 0.35 -legw 0.60",
+                 outputFilePath_plots_algorithm)
 #--------------------------------------------------------------------------------
 
 # done building config files and initializing command-line parameters, now build Makefile...
@@ -362,11 +371,12 @@ for sampleName in samplesToAnalyze:
         fileNames_and_options_fitResponse_calibrated[sampleName]['outputFileName'],
         fileNames_and_options_fitResolution[sampleName]['outputFileName']
     ])
-    for refVariable in [ "RefPt", "JetEta" ]:
-        outputFileNames_runJRAtauworkflow.extend([
-            fileNames_and_options_showHistos[sampleName][refVariable]['outputFileName'],
-            fileNames_and_options_showGraphs[sampleName][refVariable]['outputFileName'],
-        ])
+    for algorithm in algorithms:
+        for refVariable in [ "RefPt", "JetEta" ]:
+            outputFileNames_runJRAtauworkflow.extend([
+                fileNames_and_options_showHistos[sampleName][algorithm][refVariable]['outputFileName'],
+                fileNames_and_options_showGraphs[sampleName][algorithm][refVariable]['outputFileName']
+            ])
 makeFile.write("all: %s\n" % make_MakeFile_vstring(outputFileNames_runJRAtauworkflow))
 makeFile.write("\techo 'Finished running JRAtau Workflow.'\n")
 makeFile.write("\n")
@@ -449,21 +459,22 @@ for sampleName in samplesToAnalyze:
        fileNames_and_options_fitResolution[sampleName]['logFileName']))
 makeFile.write("\n")
 for sampleName in samplesToAnalyze:
-    for refVariable in [ "RefPt", "JetEta" ]:
-        makeFile.write("%s: %s\n" %
-          (fileNames_and_options_showHistos[sampleName][refVariable]['outputFileName'],
-           make_MakeFile_vstring(fileNames_and_options_showHistos[sampleName][refVariable]['inputFileNames'])))    
-        makeFile.write("\t%s %s &> %s\n" %
-          (executable_showHistos,
-           fileNames_and_options_showHistos[sampleName][refVariable]['commandLine'],
-           fileNames_and_options_showHistos[sampleName][refVariable]['logFileName']))
-        makeFile.write("%s: %s\n" %
-          (fileNames_and_options_showGraphs[sampleName][refVariable]['outputFileName'],
-           make_MakeFile_vstring(fileNames_and_options_showGraphs[sampleName][refVariable]['inputFileNames'])))    
-        makeFile.write("\t%s %s &> %s\n" %
-          (executable_showGraphs,
-           fileNames_and_options_showGraphs[sampleName][refVariable]['commandLine'],
-           fileNames_and_options_showGraphs[sampleName][refVariable]['logFileName']))       
+    for algorithm in algorithms:
+        for refVariable in [ "RefPt", "JetEta" ]:
+            makeFile.write("%s: %s\n" %
+              (fileNames_and_options_showHistos[sampleName][algorithm][refVariable]['outputFileName'],
+               make_MakeFile_vstring(fileNames_and_options_showHistos[sampleName][algorithm][refVariable]['inputFileNames'])))    
+            makeFile.write("\t%s %s &> %s\n" %
+              (executable_showHistos,
+               fileNames_and_options_showHistos[sampleName][algorithm][refVariable]['commandLine'],
+               fileNames_and_options_showHistos[sampleName][algorithm][refVariable]['logFileName']))
+            makeFile.write("%s: %s\n" %
+              (fileNames_and_options_showGraphs[sampleName][algorithm][refVariable]['outputFileName'],
+               make_MakeFile_vstring(fileNames_and_options_showGraphs[sampleName][algorithm][refVariable]['inputFileNames'])))    
+            makeFile.write("\t%s %s &> %s\n" %
+              (executable_showGraphs,
+               fileNames_and_options_showGraphs[sampleName][algorithm][refVariable]['commandLine'],
+               fileNames_and_options_showGraphs[sampleName][algorithm][refVariable]['logFileName']))       
 makeFile.write("\n")        
 makeFile.write(".PHONY: clean\n")
 makeFile.write("clean:\n")
