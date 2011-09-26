@@ -39,7 +39,7 @@ tauDecayModeDict = {
     "OneProng0Pi0"              : "%i" % tauToOneProng0PiZero,
     "OneProng1Pi0"              : "%i" % tauToOneProng1PiZero,
     "OneProng2Pi0"              : "%i" % tauToOneProng2PiZero,
-    "ThreeProng0Pi0"            : "%i" % tauToThreeProng0PiZero,
+    "ThreeProng0Pi0"            : "%i" % tauToThreeProng0PiZero
 }
 
 tauDiscriminators_and_DecayModes = {}
