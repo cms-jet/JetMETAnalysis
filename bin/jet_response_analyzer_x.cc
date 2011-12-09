@@ -73,8 +73,8 @@ bool contains(const vector<string>& collection,const string& element);
 bool it_pileup(int itlow, int ithigh, vector<int>* npus);
 
 /// check the amount of OOT pileup before nad after the event and see if it is in the specified range
-bool oot_pileup(int itlow, int ithigh, int earlyootlow, int earlyoothigh, 
-               int lateootlow, int lateoothigh, vector<int>* npus);
+bool oot_pileup(int earlyootlow, int earlyoothigh, int lateootlow, int lateoothigh,
+                vector<int>* npus);
 
 /// check the sum of the OOT pileup before and after the event and see if it is in the specified range
 bool total_oot_pileup(int totalootlow, int totaloothigh, vector<int>* npus);
@@ -1487,8 +1487,8 @@ bool it_pileup(int itlow, int ithigh, vector<int>* npus)
 
 
 //______________________________________________________________________________
-bool oot_pileup(int itlow, int ithigh, int earlyootlow, int earlyoothigh, 
-               int lateootlow, int lateoothigh, vector<int>* npus)
+bool oot_pileup(int earlyootlow, int earlyoothigh, int lateootlow, int lateoothigh,
+                vector<int>* npus)
 {
   if((*npus)[0]>=earlyootlow && (*npus)[0]<=earlyoothigh && 
      (*npus)[2]>=lateootlow && (*npus)[2]<=lateoothigh) return true;
@@ -1511,6 +1511,6 @@ bool pileup_cut(int itlow, int ithigh, int earlyootlow, int earlyoothigh,
 {
   if(it_pileup(itlow,ithigh,npus) && 
      total_oot_pileup(totalootlow,totaloothigh,npus) && 
-     oot_pileup(itlow,ithigh,earlyootlow,earlyoothigh,lateootlow,lateoothigh,npus)) return true;
+     oot_pileup(earlyootlow,earlyoothigh,lateootlow,lateoothigh,npus)) return true;
   return false;
 }
