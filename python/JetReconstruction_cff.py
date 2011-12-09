@@ -11,6 +11,10 @@ from RecoJets.Configuration.RecoJets_cff import *
 from RecoJets.Configuration.RecoPFJets_cff import *
 from JetMETAnalysis.JetAnalyzers.TrackJetReconstruction_cff import *
 
+# extra producerts for ak
+ak5PFchsJets = ak5PFJets.clone( src = 'pfNoPileUp' )
+ak7PFchsJets = ak5PFchsJets.clone( rParam=0.7 )
+
 # sc & ic clones
 sc5GenJets = sisCone5GenJets.clone()
 sc7GenJets = sisCone7GenJets.clone()

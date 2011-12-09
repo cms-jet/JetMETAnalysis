@@ -73,6 +73,7 @@ private:
   edm::InputTag srcRef_;
   edm::InputTag srcRefToJetMap_;
   edm::InputTag srcRefToPartonMap_;
+  edm::InputTag srcRho_;
 
   std::string   jecLabel_;
   
@@ -107,6 +108,7 @@ private:
   vector<Float_t> sumpt_highpt_;
   vector<Int_t> ntrks_lowpt_;
   vector<Int_t> ntrks_highpt_;
+  Float_t       rho_;
   Float_t       pthat_;
   Float_t       weight_;
   
@@ -150,6 +152,9 @@ JetResponseAnalyzer::JetResponseAnalyzer(const edm::ParameterSet& iConfig)
   : moduleLabel_   (iConfig.getParameter<std::string>   ("@module_label"))
   , srcRef_        (iConfig.getParameter<edm::InputTag>        ("srcRef"))
   , srcRefToJetMap_(iConfig.getParameter<edm::InputTag>("srcRefToJetMap"))
+  , srcRho_        (iConfig.getParameter<edm::InputTag>        ("srcRho"))
+    //, srcRho_        (iConfig.getParameter<std::string> ("kt6CaloJets:rho"))
+    //, srcRho_        (iConfig.getParameter<std::string> ("kt6CaloJets_rho"))
   , jecLabel_      (iConfig.getParameter<std::string>        ("jecLabel"))
   , doComposition_ (iConfig.getParameter<bool>          ("doComposition"))
   , doFlavor_      (iConfig.getParameter<bool>               ("doFlavor"))
@@ -224,6 +229,7 @@ void JetResponseAnalyzer::beginJob()
   tree_->Branch("sumpt_highpt", "vector<Float_t>", &sumpt_highpt_);
   tree_->Branch("ntrks_lowpt", "vector<Int_t>", &ntrks_lowpt_);
   tree_->Branch("ntrks_highpt", "vector<Int_t>", &ntrks_highpt_);
+  tree_->Branch("rho", &rho_, "rho/F");
   tree_->Branch("pthat", &pthat_,  "pthat/F");
   tree_->Branch("weight",&weight_, "weight/F");
 
@@ -277,6 +283,7 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
   edm::Handle<reco::CandidateView>               refs;
   edm::Handle<reco::CandViewMatchMap>            refToJetMap;
   edm::Handle<reco::JetMatchedPartonsCollection> refToPartonMap;
+  edm::Handle<double>                            rho;
 
   // JET CORRECTOR
   jetCorrector_ = (jecLabel_.empty()) ? 0 : JetCorrector::getJetCorrector(jecLabel_,iSetup);
@@ -290,6 +297,14 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
     weight_ = (Float_t)genInfo->weight();
   }
   
+  //RHO INFORMATION
+  rho_ = 0.0;
+  if (iEvent.getByLabel(srcRho_,rho)) {
+  //if (iEvent.getByLabel("kt6CaloJets",rho)) {
+  //iEvent.getByLabel("kt6CaloJets",rho);
+  //if(rho.isValid()) {
+    rho_ = *rho;
+  }
   
   // MC PILEUP INFORMATION
   npus_.clear();
@@ -332,71 +347,71 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
   if (doBalancing_&&refToJetMap->size()!=1) return;
   size_t nRef=(nRefMax_==0) ? refs->size() : std::min(nRefMax_,refs->size());
   for (size_t iRef=0;iRef<nRef;iRef++) {
-    
-    reco::CandidateBaseRef ref=refs->refAt(iRef);
-
-    reco::CandViewMatchMap::const_iterator itMatch=refToJetMap->find(ref);
-    if (itMatch==refToJetMap->end()) continue;
-    reco::CandidateBaseRef jet=itMatch->val;
-    
-    refdrjt_[nref_]  =reco::deltaR(jet->eta(),jet->phi(),ref->eta(),ref->phi());
-    refdphijt_[nref_]=reco::deltaPhi(jet->phi(),ref->phi());
-    
-    if ((!doBalancing_&&refdrjt_[nref_]>deltaRMax_)||
-	(doBalancing_&&std::abs(refdphijt_[nref_])<deltaPhiMin_)) continue;
-    
-    refpdgid_[nref_]=0;
-    if (getFlavorFromMap_) {
-      reco::JetMatchedPartonsCollection::const_iterator itPartonMatch;
-      itPartonMatch=refToPartonMap->begin();
-      for (;itPartonMatch!=refToPartonMap->end();++itPartonMatch) {
-	reco::JetBaseRef jetRef = itPartonMatch->first;
-	const reco::MatchedPartons partonMatch = itPartonMatch->second;
-	const reco::Candidate* cand = &(*jetRef);
-	if (cand==&(*ref)) break;
-      }
-      
-      if (itPartonMatch!=refToPartonMap->end()&&
-	  itPartonMatch->second.algoDefinitionParton().get()!=0) {
-	
-	double refdrparton=
-	  reco::deltaR(ref->p4(),
-		       itPartonMatch->second.algoDefinitionParton().get()->p4());
-	
-	if (refdrparton<deltaRPartonMax_) {
-	  refpdgid_[nref_]=itPartonMatch->second.algoDefinitionParton().get()->pdgId();
-	  int absid = std::abs(refpdgid_[nref_]);
-	  if (absid==4||absid==5) {
-	    GenJetLeptonFinder finder(*ref);
-	    finder.run();
-	    if (finder.foundLeptonAndNeutrino()) {
-	      int sign  = (refpdgid_[nref_]>0) ? +1 : -1;
-	      refpdgid_[nref_] = sign*(absid*100+std::abs(finder.leptonPdgId()));
-	    }
-	  }
-	}
-      }
-    }
-    else {
-      refpdgid_[nref_]=ref->pdgId();
-    }
-    
-    refrank_[nref_]=nref_;
-    refe_[nref_]   =ref->energy();
-    refpt_[nref_]  =ref->pt();
-    refeta_[nref_] =ref->eta();
-    refphi_[nref_] =ref->phi();
-    refy_[nref_]   =ref->rapidity();
-    jte_[nref_]    =jet->energy();
-    jtpt_[nref_]   =jet->pt();
-    jteta_[nref_]  =jet->eta();
-    jtphi_[nref_]  =jet->phi();
-    jty_[nref_]    =jet->rapidity();
-    jtjec_[nref_]  =1.0;
-
-    if (0!=jetCorrector_) {
-      if (!jetCorrector_->vectorialCorrection()) {
-	if (jetCorrector_->eventRequired()||isJPTJet_) {
+     
+     reco::CandidateBaseRef ref=refs->refAt(iRef);
+     
+     reco::CandViewMatchMap::const_iterator itMatch=refToJetMap->find(ref);
+     if (itMatch==refToJetMap->end()) continue;
+     reco::CandidateBaseRef jet=itMatch->val;
+     
+     refdrjt_[nref_]  =reco::deltaR(jet->eta(),jet->phi(),ref->eta(),ref->phi());
+     refdphijt_[nref_]=reco::deltaPhi(jet->phi(),ref->phi());
+     
+     if ((!doBalancing_&&refdrjt_[nref_]>deltaRMax_)||
+         (doBalancing_&&std::abs(refdphijt_[nref_])<deltaPhiMin_)) continue;
+     
+     refpdgid_[nref_]=0;
+     if (getFlavorFromMap_) {
+        reco::JetMatchedPartonsCollection::const_iterator itPartonMatch;
+        itPartonMatch=refToPartonMap->begin();
+        for (;itPartonMatch!=refToPartonMap->end();++itPartonMatch) {
+           reco::JetBaseRef jetRef = itPartonMatch->first;
+           const reco::MatchedPartons partonMatch = itPartonMatch->second;
+           const reco::Candidate* cand = &(*jetRef);
+           if (cand==&(*ref)) break;
+        }
+        
+        if (itPartonMatch!=refToPartonMap->end()&&
+            itPartonMatch->second.algoDefinitionParton().get()!=0) {
+           
+           double refdrparton=
+              reco::deltaR(ref->p4(),
+                           itPartonMatch->second.algoDefinitionParton().get()->p4());
+           
+           if (refdrparton<deltaRPartonMax_) {
+              refpdgid_[nref_]=itPartonMatch->second.algoDefinitionParton().get()->pdgId();
+              int absid = std::abs(refpdgid_[nref_]);
+              if (absid==4||absid==5) {
+                 GenJetLeptonFinder finder(*ref);
+                 finder.run();
+                 if (finder.foundLeptonAndNeutrino()) {
+                    int sign  = (refpdgid_[nref_]>0) ? +1 : -1;
+                    refpdgid_[nref_] = sign*(absid*100+std::abs(finder.leptonPdgId()));
+                 }
+              }
+           }
+        }
+     }
+     else {
+        refpdgid_[nref_]=ref->pdgId();
+     }
+     
+     refrank_[nref_]=nref_;
+     refe_[nref_]   =ref->energy();
+     refpt_[nref_]  =ref->pt();
+     refeta_[nref_] =ref->eta();
+     refphi_[nref_] =ref->phi();
+     refy_[nref_]   =ref->rapidity();
+     jte_[nref_]    =jet->energy();
+     jtpt_[nref_]   =jet->pt();
+     jteta_[nref_]  =jet->eta();
+     jtphi_[nref_]  =jet->phi();
+     jty_[nref_]    =jet->rapidity();
+     jtjec_[nref_]  =1.0;
+     
+     if (0!=jetCorrector_) {
+        if (!jetCorrector_->vectorialCorrection()) {
+           if (jetCorrector_->eventRequired()||isJPTJet_) {
 	  if (isCaloJet_) {
 	    reco::CaloJetRef caloJetRef;
 	    caloJetRef=jet.castTo<reco::CaloJetRef>();
