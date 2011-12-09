@@ -13,15 +13,17 @@
 #include "JetMETAnalysis/JetUtilities/interface/RootStyle.h"
 
 
-#include <TApplication.h>
-#include <TFile.h>
-#include <TKey.h>
-#include <TH1F.h>
-#include <TF1.h>
-#include <TGraphErrors.h>
-#include <TCanvas.h>
-#include <TLatex.h>
-
+#include "TApplication.h"
+#include "TFile.h"
+#include "TKey.h"
+#include "TCanvas.h"
+#include "TGraphErrors.h"
+#include "TH1F.h"
+#include "TF1.h"
+#include "TFitResult.h"
+#include "TFitResultPtr.h"
+#include "TString.h"
+#include "TLatex.h"
 
 #include <iostream>
 #include <iomanip>
@@ -48,6 +50,9 @@ string get_legend_title(const string& alg);
 /// get the suffix to the parmeter text file for each algorithm
 string get_algorithm_suffix(const string& alg);
 
+/// this method performs consecutive fittings (up to maxFitIter) but uses the
+/// parameters from the one with the lowest chi2 that has not failed.
+void perform_smart_fit(TGraphErrors * gabscor, TF1 * fabscor);
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -62,15 +67,16 @@ int main(int argc,char**argv)
   CommandLine cl;
   if (!cl.parse(argc,argv)) return 0;
 
-  string         input   = cl.getValue<string> ("input");
-  string         era     = cl.getValue<string> ("era");
-  string         l3input = cl.getValue<string> ("l3input","l3.root");
-  string         output  = cl.getValue<string> ("output", "l2.root");
-  vector<string> formats = cl.getVector<string>("formats",       "");
-  vector<string> algs    = cl.getVector<string>("algs",          "");
-  bool           batch   = cl.getValue<bool>   ("batch",      false);
-  bool           l2l3    = cl.getValue<bool>   ("l2l3",       false);
-  bool           mpv     = cl.getValue<bool>   ("mpv",        false);
+  string         input     = cl.getValue<string>  ("input");
+  string         era       = cl.getValue<string>  ("era");
+  string         l3input   = cl.getValue<string>  ("l3input","l3.root");
+  string         output    = cl.getValue<string>  ("output", "l2.root");
+  TString        outputDir = cl.getValue<TString> ("outputDir",   "./");
+  vector<string> formats   = cl.getVector<string> ("formats",       "");
+  vector<string> algs      = cl.getVector<string> ("algs",          "");
+  bool           batch     = cl.getValue<bool>    ("batch",      false);
+  bool           l2l3      = cl.getValue<bool>    ("l2l3",       false);
+  bool           mpv       = cl.getValue<bool>    ("mpv",        false);
 
   if (!cl.check()) return 0;
   cl.print();
@@ -95,8 +101,14 @@ int main(int argc,char**argv)
   TFile* ifile = new TFile(input.c_str(),"READ");
   if (!ifile->IsOpen()) { cout<<"Can't open "<<input<<endl; return 0; }
   
-  TFile* l3file = new TFile(l3input.c_str(),"READ");
-  if (!l3file->IsOpen()) { cout<<"Can't open "<<l3input<<endl; return 0; }
+  TFile* l3file = 0;
+  if (!l2l3) {
+    l3file = new TFile(l3input.c_str(),"READ");
+    if (!l3file->IsOpen()) {
+      cout<<"Can't open "<<l3input<<endl;
+      return 0;
+    }
+  }
   
   if (algs.size()==0) {
     TIter nextDir(ifile->GetListOfKeys());
@@ -110,24 +122,31 @@ int main(int argc,char**argv)
   TIter nextDir(ifile->GetListOfKeys());
   TKey* dirKey(0);
   while ((dirKey=(TKey*)nextDir())) {
-     if (strcmp(dirKey->GetClassName(),"TDirectoryFile")!=0) continue;
-     TDirectoryFile* idir = (TDirectoryFile*)dirKey->ReadObj();
-     string alg(idir->GetName()); if (!contains(algs,alg)) continue;
+    if (strcmp(dirKey->GetClassName(),"TDirectoryFile")!=0) continue;
+    TDirectoryFile* idir = (TDirectoryFile*)dirKey->ReadObj();
+    string alg(idir->GetName()); if (!contains(algs,alg)) continue;
+    
+     cout << alg << " ... " << endl;
      
-     cout<<alg<<" ... "<<flush;
-     
-     TDirectoryFile* l3dir = (TDirectoryFile*)l3file->Get(alg.c_str());
-     if (l3dir==0) {
-        cout<<"Failed to rerieve L3 correction for "<<alg<<", skip"<<endl;
-        continue;
-     }
-     
-     TGraphErrors* gl3rsp = (TGraphErrors*)l3dir->Get("L3RspVsRefPt");
-     TF1*          fl3rsp = (TF1*)gl3rsp->GetListOfFunctions()->First();
-     if (0==fl3rsp) {
-        cout<<"Failed to retrieve L3 correction for "<<alg<<", skip"<<endl;
-        continue;
-     }
+     //
+     // Get the response from the l3 file only if l2l3 is set to false;
+     //
+     TF1* fl3rsp = 0;
+     if (!l2l3) {
+       TDirectoryFile* l3dir = (TDirectoryFile*)l3file->Get(alg.c_str());
+       if (l3dir==0) {
+         cout<<"Failed to rerieve L3 correction for "<<alg<<", skip"<<endl;
+         continue;
+       }
+       
+       TGraphErrors* gl3rsp = (TGraphErrors*)l3dir->Get("L3RspVsRefPt");
+       fl3rsp = (TF1*)gl3rsp->GetListOfFunctions()->First();
+       if (0==fl3rsp) {
+         cout<<"Failed to retrieve L3 correction for "<<alg<<", skip"<<endl;
+         continue;
+       }
+     }//if (!l2l3)
+
      TDirectoryFile* odir = (TDirectoryFile*)ofile->mkdir(alg.c_str());
      odir->cd();
      
@@ -156,7 +175,9 @@ int main(int argc,char**argv)
         unsigned int ieta=indices[0];
         unsigned int ipt =indices[1];
         
+        //
         // create new graphs if a new eta bin comes around
+        //
         if (ipt==0) {
            vabsrsp_eta.push_back(new TGraphErrors());
            vabscor_eta.push_back(new TGraphErrors());
@@ -166,11 +187,14 @@ int main(int argc,char**argv)
            vabscor_eta.back()->SetName(("AbsCorVsJetPt_JetEta"+ss.str()).c_str());
         }
         
+        //
         // only add points to the graphs if the current histo is not empty
-        if (hrsp->Integral()!=0) {
+        // the current setting might be a little high
+        //
+        if (hrsp->GetEntries() > 10) {//hrsp->Integral()!=0) { 
            
            TF1*  frsp    = (TF1*)hrsp->GetListOfFunctions()->Last();
-	   //std::cout << "hrspName = " << hrsp->GetName() << ": frsp = " << frsp << std::endl;
+           //std::cout << "hrspName = " << hrsp->GetName() << ": frsp = " << frsp << std::endl;
            TH1F* hrefpt  = hl_refpt.object(indices);
            TH1F* hjetpt  = hl_jetpt.object(indices);
            
@@ -219,7 +243,9 @@ int main(int argc,char**argv)
            else cout << "absrsp " << absrsp << " and eabsrsp " << eabsrsp << " and abscor " << abscor << " and eabscor " << eabscor << endl;
         }
         
+        //
         // fit graphs if last pt of the current eta bin comes around
+        //
         if (ipt==hl_jetpt.nobjects(1)-1 && (vabsrsp_eta.back())->GetN()!=0 && (vabscor_eta.back())->GetN()!=0) {
            TGraphErrors* gabsrsp = vabsrsp_eta.back();
            TGraphErrors* gabscor = vabscor_eta.back();
@@ -231,6 +257,12 @@ int main(int argc,char**argv)
               xmin = gabscor->GetX()[0];
               xmax = gabscor->GetX()[gabscor->GetN()-1];
            }
+
+           //
+           // we don't want to fit for pt less than 5 GeV as even a corrected calo jet of 10 
+           // will be at least 5 Gev in raw energy.
+           //
+           if (xmin<7) xmin=7;
            if (npoints<3) {
               gabscor->SetPoint     (0, 10.0,1.0);
               gabscor->SetPointError(0,  0.0,0.0);
@@ -246,51 +278,57 @@ int main(int argc,char**argv)
              fabscor->SetParameter(2,0.0);
            }
            else {
-              if (alg.find("pf")!=string::npos) {
-                 fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",xmin,xmax);
-                 fabscor->SetParameter(0,0.5);
-                 fabscor->SetParameter(1,9.0);
-                 fabscor->SetParameter(2,8.0);
-                 fabscor->SetParameter(3,-0.3);
-                 fabscor->SetParameter(4,0.6);
-                 fabscor->SetParameter(5,1.0);
-              }
-              else if (alg.find("trk")!=string::npos) {
-                 fabscor=new TF1("fit","[0]+[1]*pow(x/500.0,[2])+[3]/log10(x)+[4]*log10(x)",xmin,xmax);
-                 fabscor->SetParameter(0,1.7);
-                 fabscor->SetParameter(1,0.7);
-                 fabscor->SetParameter(2,3.0);
-                 fabscor->SetParLimits(2,1,10);
-                 fabscor->SetParameter(3,0.0);
-                 fabscor->SetParameter(4,0.0);
-              }
-              else if (alg.find("jpt")!=string::npos) {
-                 fabscor=new TF1("fit","[0]+[1]*TMath::Erf([2]*(log10(x)-[3]))+[4]*exp([5]*log10(x))",xmin,xmax);
-                 fabscor->SetParameter(0,1.0);
-                 fabscor->SetParameter(1,1.0);
-                 fabscor->SetParameter(2,1.0);
-                 fabscor->SetParameter(3,1.0);
-                 fabscor->SetParameter(4,1.0);
-                 fabscor->SetParameter(5,1.0);
-              }
-              else if (alg.find("calo")!=string::npos) {
-                 fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),[2])+[3])",xmin,xmax);
-                 fabscor->SetParameter(0,1.0);
-                 fabscor->SetParameter(1,5.0);
-                 fabscor->SetParameter(2,3.0);
-                 fabscor->SetParameter(3,3.0);
-              }
-              else {
-                cout << "WARNING::jet_l2_correction_x::Cannot determine fit function for " << alg << "." << endl;
-                //fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),[2])+[3])",xmin,xmax);
-                //fabscor->SetParameter(0,1.0);
-                //fabscor->SetParameter(1,5.0);
-                //fabscor->SetParameter(2,3.0);
-                //fabscor->SetParameter(3,3.0);
-              }
+             if (alg.find("pf")!=string::npos) {
+               fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",xmin,xmax);
+               fabscor->SetParameter(0,0.5);
+               fabscor->SetParameter(1,9.0);
+               fabscor->SetParameter(2,8.0);
+               fabscor->SetParameter(3,-0.3);
+               fabscor->SetParameter(4,0.6);
+               fabscor->SetParameter(5,1.0);
+             }
+             else if (alg.find("trk")!=string::npos) {
+               fabscor=new TF1("fit","[0]+[1]*pow(x/500.0,[2])+[3]/log10(x)+[4]*log10(x)",xmin,xmax);
+               fabscor->SetParameter(0,1.7);
+               fabscor->SetParameter(1,0.7);
+               fabscor->SetParameter(2,3.0);
+               fabscor->SetParLimits(2,1,10);
+               fabscor->SetParameter(3,0.0);
+               fabscor->SetParameter(4,0.0);
+             }
+             else if (alg.find("jpt")!=string::npos) {
+               fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",xmin,xmax);
+               //
+               // INITIAL PARAMS: These are the fitted parameters that work for JetEta0.261to0.348
+               //
+               fabscor->SetParameter(0,-8.9);
+               fabscor->SetParameter(1,530);
+               fabscor->SetParameter(2,16);
+               fabscor->SetParameter(3,-22);
+               fabscor->SetParameter(4,0.06);
+               fabscor->SetParameter(5,-0.28);
+             }
+             else if (alg.find("calo")!=string::npos) {
+               if (xmin<6) xmin=6;
+               fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),[2])+[3])",xmin,xmax);
+               fabscor->SetParameter(0,1.0);
+               fabscor->SetParameter(1,5.0);
+               fabscor->SetParameter(2,3.0);
+               fabscor->SetParameter(3,3.0);
+             }
+             else {
+               cout << "WARNING::Cannot determine fit function for " << alg << "." << endl;
+             }
            }
            
-           gabscor->Fit(fabscor,"QR0");
+           //
+           // obtain the best fit of the function fabscor to the histo gabscor
+           //
+           perform_smart_fit(gabscor,fabscor);
+
+           //
+           // format the graphs
+           //
            gabscor->GetListOfFunctions()->First()->ResetBit(TF1::kNotDraw);
            gabsrsp->SetMarkerStyle(20); 
            gabscor->SetMarkerStyle(20); 
@@ -328,7 +366,9 @@ int main(int argc,char**argv)
            TF1*   fabscor  =vabscor_eta[ieta]->GetFunction("fit");
            double jetpt    =hjetpt->GetMean();
            double refpt    =jetpt*fabscor->Eval(jetpt);
-           double controlpt=refpt*fl3rsp->Eval(refpt);
+           double l3cor    = 1;
+           if (!l2l3) l3cor = fl3rsp->Eval(refpt);
+           double controlpt=refpt*l3cor;
            double relcor   =controlpt/jetpt;
            if (relcor > 5)
               cout<<"WARNING !!! suspicious point: "<<hjetpt->GetName()
@@ -379,26 +419,11 @@ int main(int argc,char**argv)
      //
      // write the L2 correction text file for the current algorithm
      //
-     string txtfilename = era+"_L2Relative_"+get_algorithm_suffix(alg)+".txt";
-     ofstream fout(txtfilename.c_str());
-     fout.setf(ios::right);
-     
-     ///////////////////////////////
-     //For L2L3 Corrections Together
-     if(l2l3)
-       {
-         if (alg.find("pf")!=string::npos) fnc_as_str = "[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))";
-         else if (alg.find("trk")!=string::npos) fnc_as_str = "[0]+[1]*pow(x/500.0,[2])+[3]/log10(x)+[4]*log10(x)";
-         else if (alg.find("jpt")!=string::npos) fnc_as_str = "[0]+[1]*TMath::Erf([2]*(log10(x)-[3]))+[4]*exp([5]*log10(x))";
-         else if (alg.find("calo")!=string::npos) fnc_as_str = "[0]+[1]/(pow(log10(x),[2])+[3])";
-         fout<<"{1 JetEta 1 JetPt "<<fnc_as_str<<" Correction L2Relative}"<<endl;
-       }
-     ///////////////////////////////
-     //////////////////////////////////
-     //For L2 & L3 Corrections Separate
-     else fout<<"{1 JetEta 1 JetPt "<<fnc_as_str<<" Correction L2Relative}"<<endl;
-     //////////////////////////////////
-     
+     if(!outputDir.EndsWith("/")) outputDir+="/";
+     TString txtfilename = outputDir + era + "_L2Relative_" + get_algorithm_suffix(alg) + ".txt";
+     ofstream fout(txtfilename);
+     fout.setf(ios::right); 
+
      unsigned int vector_size = 0;
      if(l2l3) vector_size = vabscor_eta.size(); //For L2L3 Corrections Together
      else vector_size = vrelcor_eta.size(); //For L2 & L3 Corrections Separate
@@ -406,8 +431,9 @@ int main(int argc,char**argv)
        TGraph* grelcor;
        if(l2l3) grelcor = vabscor_eta[ieta]; //For L2L3 Corrections Together
        else grelcor = vrelcor_eta[ieta]; //For L2 & L3 Corrections Separate
-       TF1*    frelcor = (TF1*)grelcor->GetListOfFunctions()->First();
+       TF1* frelcor = (TF1*)grelcor->GetListOfFunctions()->First();
        if(frelcor!=0) {
+         if(ieta==0) fout<<"{1 JetEta 1 JetPt "<<frelcor->GetExpFormula()<<" Correction L2Relative}"<<endl;
          double  etamin  = hl_jetpt.minimum(0,ieta);
          double  etamax  = hl_jetpt.maximum(0,ieta);
          double  ptmin = grelcor->GetX()[0];
@@ -419,17 +445,15 @@ int main(int argc,char**argv)
              <<setw(12)<<ptmax;
          for(int p=0; p<frelcor->GetNpar(); p++)
            {
-             fout<<setw(13)<<frelcor->GetParameter(p); // p0-p4
+             fout<<setw(13)<<frelcor->GetParameter(p); //p0-p4
            }
          fout<<endl;
        }
      }
      fout.close();
      
-     
-     cout<<"DONE"<<endl;
+     cout<<alg<<" is DONE."<<endl;
   }
-  
   
   //
   // close output file
@@ -475,11 +499,11 @@ string get_legend_title(const string& alg)
   else if (alg.find("ak")==0) { title = "Anti k_{T}, D="; tmp = tmp.substr(2); }
   else return alg;
   
-  string reco[5] = { "gen",  "calo",   "pf",      "trk",      "jpt" };
-  string RECO[5] = { "(Gen)","(Calo)", "(PFlow)", "(Tracks)", "(JPT)" };
+  string reco[6] = { "gen",  "calo",   "pfchs",       "pf",      "trk",      "jpt" };
+  string RECO[6] = { "(Gen)","(Calo)", "(PFlow+CHS)", "(PFlow)", "(Tracks)", "(JPT)" };
 
-  size_t pos=string::npos; int ireco=-1;
-  while (pos==string::npos&&ireco<4) { pos = tmp.find(reco[++ireco]); }
+  string::size_type pos=string::npos; int ireco=-1;
+  while (pos==string::npos&&ireco<5) { pos = tmp.find(reco[++ireco]); }
   if (pos==string::npos) return alg;
   
   double jet_size; stringstream ss1; ss1<<tmp.substr(0,pos); ss1>>jet_size;
@@ -498,14 +522,87 @@ string get_algorithm_suffix(const string& alg)
   result += std::toupper(alg[0]);
   result += std::toupper(alg[1]);
   result += alg[2];
-  if      (alg.find("calol1")==3) result += "Calol1";
-  else if (alg.find("calo")  ==3) result += "Calo";
-  else if (alg.find("jptl1") ==3) result += "JPTl1";
-  else if (alg.find("jpt")   ==3) result += "JPT";
-  else if (alg.find("pfl1")  ==3) result += "PFl1";
-  else if (alg.find("pf")    ==3) result += "PF";
-  else if (alg.find("trk")   ==3) result += "TRK";
-  else if (alg.find("tau")   ==3) result += std::string(alg, 3);
+  if      (alg.find("calol1off")  ==3) result += "Calol1off";
+  else if (alg.find("calol1")     ==3) result += "Calol1";
+  else if (alg.find("calo")       ==3) result += "Calo";
+  else if (alg.find("jptl1")      ==3) result += "JPTl1";
+  else if (alg.find("jpt")        ==3) result += "JPT";
+  else if (alg.find("pfchsl1off") ==3) result += "PFchsl1off";
+  else if (alg.find("pfchsl1")    ==3) result += "PFchsl1";
+  else if (alg.find("pfchs")      ==3) result += "PFchs";
+  else if (alg.find("pfl1off")    ==3) result += "PFl1off";
+  else if (alg.find("pfl1")       ==3) result += "PFl1";
+  else if (alg.find("pf")         ==3) result += "PF";
+  else if (alg.find("trk")        ==3) result += "TRK";
+  else if (alg.find("tau")        ==3) result += std::string(alg, 3);
   cout<<"get_algorithm_suffix: result = "<<result<<" from algo = "<<alg<<endl;
   return result;
+}
+
+//______________________________________________________________________________
+void perform_smart_fit(TGraphErrors * gabscor, TF1 * fabscor) {
+
+  int maxFitIter = 30;
+  int fitIter = 0;
+  vector<double> bestPars;
+  double bestRChi2 = 0;
+  do {	       
+
+    //
+    // do the fit, get the results and the parameters of the fitted function
+    //
+    TFitResultPtr fitResPtr = gabscor->Fit(fabscor,"RQ0S");
+    vector<double> auxPars = fitResPtr.Get()->Parameters();
+
+    //
+    // compute the reduced chi2 of this fit and if it is the best fit so far
+    // then save the parameters
+    //
+    double rchi2 = fitResPtr.Get()->Chi2()/ fitResPtr.Get()->Ndf();
+    if (rchi2 > 0 && (rchi2<bestRChi2 || bestRChi2==0)){
+      bestRChi2 = rchi2;
+      bestPars  = auxPars;
+    } 
+
+    //
+    // increment the counter
+    //
+    fitIter++;
+  }while(( bestRChi2 > 2 || bestRChi2 == 0 ) && fitIter < maxFitIter);
+ 
+  //
+  // set the best parameters and chi2 to the fit function
+  //
+  TF1 * ffh = gabscor->GetFunction("fit");
+  for (unsigned int np=0;np < bestPars.size() ; np++){
+    ffh->SetParameter(np,bestPars[np]);
+    fabscor->SetParameter(np,bestPars[np]);
+  }
+  fabscor->SetChisquare(bestRChi2 * fabscor->GetNDF());
+  ffh->SetChisquare(bestRChi2 * fabscor->GetNDF());
+		
+  //   
+  // check for failed fits
+  // a chi2 of zero is symptomatic of a failed fit.
+  //
+  if (bestRChi2 < 0.001){
+    cout<<"\t***ERROR***, FIT HAS FAILED for histo "<<gabscor->GetName()
+	<<" which has a reduced chi2="<<bestRChi2
+	<<" after "<<fitIter<<" iterations. "<<endl;
+  }
+
+  //
+  // check for large reduced chi2's
+  // above 10 is a plain error; between 5 and 10 is a warning
+  //
+  if (bestRChi2 > 5){
+    if (bestRChi2 > 10)
+      cout<<"\t***ERROR***,";
+    else
+      cout<<"\tWARNING,";
+
+    cout<<" fit for histo "<<gabscor->GetName()
+	<<" has a reduced chi2="<<bestRChi2
+	<<" after "<<fitIter<<" iterations"<<endl;
+  }
 }

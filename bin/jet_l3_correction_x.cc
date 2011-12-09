@@ -425,11 +425,11 @@ string get_legend_title(const string& alg)
   else if (alg.find("ak")==0) { title = "Anti k_{T}, D="; tmp = tmp.substr(2); }
   else return alg;
   
-  string reco[5] = { "gen",  "calo",   "pf",      "trk",      "jpt" };
-  string RECO[5] = { "(Gen)","(Calo)", "(PFlow)", "(Tracks)", "(JPT)" };
+  string reco[6] = { "gen",  "calo",   "pfchs",       "pf",      "trk",      "jpt" };
+  string RECO[6] = { "(Gen)","(Calo)", "(PFlow+CHS)", "(PFlow)", "(Tracks)", "(JPT)" };
 
   string::size_type pos=string::npos; int ireco=-1;
-  while (pos==string::npos&&ireco<4) { pos = tmp.find(reco[++ireco]); }
+  while (pos==string::npos&&ireco<5) { pos = tmp.find(reco[++ireco]); }
   if (pos==string::npos) return alg;
   
   double jet_size; stringstream ss1; ss1<<tmp.substr(0,pos); ss1>>jet_size;
@@ -448,14 +448,19 @@ string get_algorithm_suffix(const string& alg)
   result += std::toupper(alg[0]);
   result += std::toupper(alg[1]);
   result += alg[2];
-  if      (alg.find("calol1")==3) result += "Calol1";
-  else if (alg.find("calo")  ==3) result += "Calo";
-  else if (alg.find("jptl1") ==3) result += "JPTl1";
-  else if (alg.find("jpt")   ==3) result += "JPT";
-  else if (alg.find("pfl1")  ==3) result += "PFl1";
-  else if (alg.find("pf")    ==3) result += "PF";
-  else if (alg.find("trk")   ==3) result += "TRK";
-  else if (alg.find("tau")   ==3) result += std::string(alg, 3);
+  if      (alg.find("calol1off")  ==3) result += "Calol1off";
+  else if (alg.find("calol1")     ==3) result += "Calol1";
+  else if (alg.find("calo")       ==3) result += "Calo";
+  else if (alg.find("jptl1")      ==3) result += "JPTl1";
+  else if (alg.find("jpt")        ==3) result += "JPT";
+  else if (alg.find("pfchsl1off") ==3) result += "PFchsl1off";
+  else if (alg.find("pfchsl1")    ==3) result += "PFchsl1";
+  else if (alg.find("pfchs")      ==3) result += "PFchs";
+  else if (alg.find("pfl1off")    ==3) result += "PFl1off";
+  else if (alg.find("pfl1")       ==3) result += "PFl1";
+  else if (alg.find("pf")         ==3) result += "PF";
+  else if (alg.find("trk")        ==3) result += "TRK";
+  else if (alg.find("tau")        ==3) result += std::string(alg, 3);
   cout<<"get_algorithm_suffix: result = "<<result<<" from alg = "<<alg<<endl;
   return result;
 }
