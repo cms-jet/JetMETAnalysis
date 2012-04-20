@@ -53,7 +53,7 @@ int main(int argc,char**argv)
   vector<TString> algs         = cl.getVector<TString> ("algs");
   TString         flavor       = cl.getValue<TString>  ("flavor",           "");
   TString         path         = cl.getValue<TString>  ("path",             "");
-  bool            mpv          = cl.getValue<bool>     ("mpv",            true);
+  bool            mpv          = cl.getValue<bool>     ("mpv",           false);
   TString         outputDir    = cl.getValue<TString>  ("outputDir",  "images");
   TString         outputFormat = cl.getValue<TString>  ("outputFormat", ".png");
 
@@ -104,7 +104,7 @@ int main(int argc,char**argv)
             {
               sprintf(name,"h%d%d",i,j);
               if (i==3&&j>=70) sprintf(name,"h2%d%d",i,j);
-              h[i][j] = RespVsEta[i]->ProjectionY(name,j,j+1);
+              h[i][j] = RespVsEta[i]->ProjectionY(name,j,j); //final bin != j+1
               sprintf(name,"fit%d%d",i,j);
               func[i][j] = new TF1(name,"gaus",h[i][j]->GetMean()-1.5*h[i][j]->GetRMS(),h[i][j]->GetMean()+1.5*h[i][j]->GetRMS());
               if (h[i][j]->GetEntries()>5)
@@ -221,7 +221,7 @@ int main(int argc,char**argv)
   
       TCanvas *ove = new TCanvas(ss,ss,1200,800);
       ove->Divide(3,2);
-      int ca[6] = {1,3,5,7,9,11};
+      int ca[6] = {1,11,15,19,23,27};
       for (int c=0;c<6;c++) {
         if (ca[c] > NPtBins-1) {
           cout<<"\tWRONG PT requested"<<endl;

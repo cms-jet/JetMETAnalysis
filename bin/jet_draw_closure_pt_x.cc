@@ -7,6 +7,7 @@
 ///////////////////////////////////////////////////////////////////
 
 #include "JetMETAnalysis/JetAnalyzers/interface/Settings.h"
+#include "JetMETAnalysis/JetAnalyzers/bin/tdrstyle.C"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 
 #include "TROOT.h"
@@ -22,6 +23,8 @@
 #include "TF1.h"
 #include "TString.h"
 #include "TPaveText.h"
+#include "TLatex.h"
+#include "TLegend.h"
 
 #include <fstream>
 #include <string>
@@ -29,6 +32,19 @@
 #include <stdarg.h>
 
 using namespace std;
+
+////////////////////////////////////////////////////////////////////////////////
+// define local functions
+////////////////////////////////////////////////////////////////////////////////
+
+/// sets the style for the canvas if the plots need to be in tdr style
+void setStyle(bool fitStat = false, bool name = false);
+
+///CMS Preliminary label;
+void cmsPrelim(double intLUMI = 0);
+
+/// get the uppercase version of the algorithm name
+TString getAlias(TString s);
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -54,9 +70,14 @@ int main(int argc,char**argv)
   bool            mpv          = cl.getValue<bool>     ("mpv",            true);
   TString         outputDir    = cl.getValue<TString>  ("outputDir",  "images");
   TString         outputFormat = cl.getValue<TString>  ("outputFormat", ".png");
+  bool            tdr          = cl.getValue<bool>     ("tdr",           false);
 
   if (!cl.check()) return 0;
   cl.print();
+
+  if (tdr) {
+     setStyle();
+  }
 
   for(unsigned int a=0; a<algs.size(); a++)
     {
@@ -128,6 +149,10 @@ int main(int argc,char**argv)
               sprintf(name,"can_%d_RefPt%sto%s",j,Pt[i],Pt[i+1]);
               TString ss(name);
               ss+="_"+algs[a];
+              if (tdr && j==0 && i>=NPtBins-6) {
+                 hClosure[j]->SetBinContent(i+1,0.0);
+                 hClosure[j]->SetBinError(i+1,0.0);
+              }
             }
         }
 
@@ -138,11 +163,19 @@ int main(int argc,char**argv)
       line->SetLineColor(1);
       line->SetLineWidth(1);
       line->SetLineStyle(2);
-      TF1 *linePlus = new TF1("linePlus","0*x+1.02",0,5000);
+      TF1 *linePlus;
+      if (tdr)
+         linePlus = new TF1("linePlus","0*x+1.01",0,5000);
+      else
+         linePlus = new TF1("linePlus","0*x+1.02",0,5000);
       linePlus->SetLineColor(1);
       linePlus->SetLineWidth(1);
       linePlus->SetLineStyle(2);
-      TF1 *lineMinus = new TF1("lineMinus","0*x+0.98",0,5000);
+      TF1 *lineMinus;
+      if (tdr)
+         lineMinus = new TF1("lineMinus","0*x+0.99",0,5000);
+      else
+         lineMinus = new TF1("lineMinus","0*x+0.98",0,5000);
       lineMinus->SetLineColor(1);
       lineMinus->SetLineWidth(1);
       lineMinus->SetLineStyle(2);
@@ -166,8 +199,14 @@ int main(int argc,char**argv)
       for(int j=0;j<3;j++)
         {
           pave[j] = new TPaveText(0.3,0.75,0.8,0.9,"NDC");
-          pave[j]->AddText(algs[a]);
-          pave[j]->AddText(Text[j]);      
+          if (tdr) {
+             pave[j]->AddText("QCD Monte Carlo");
+             pave[j]->AddText("Anti-kT R=0.5, PFlow");
+          }
+          else {
+             pave[j]->AddText(algs[a]);
+          }
+          pave[j]->AddText(Text[j]);
           sprintf(name,"ClosureVsPt_%d",j);
           TString ss(name);
           if(!flavor.IsNull()) ss+="_"+algs[a]+"_"+flavor;
@@ -178,15 +217,23 @@ int main(int argc,char**argv)
           if (ss.Contains("pf"))	
             hClosure[j]->GetXaxis()->SetRangeUser(XminPF[j],Xmax[j]);
           else
-            hClosure[j]->GetXaxis()->SetRangeUser(XminCalo[j],Xmax[j]);	    
+            hClosure[j]->GetXaxis()->SetRangeUser(XminCalo[j],Xmax[j]);
           hClosure[j]->GetXaxis()->SetTitle("GenJet p_{T} (GeV)"); 
-          hClosure[j]->GetYaxis()->SetTitle("Corrected Response"); 
-          hClosure[j]->GetXaxis()->SetLabelSize(0.04);
-          hClosure[j]->GetXaxis()->SetMoreLogLabels();
-          hClosure[j]->GetXaxis()->SetNoExponent();
-          hClosure[j]->GetYaxis()->SetLabelSize(0.04); 
+          hClosure[j]->GetYaxis()->SetTitle("Corrected Response");
+          if (tdr) {
+             hClosure[j]->GetXaxis()->SetTitleSize(0.058);
+             hClosure[j]->GetXaxis()->SetTitleOffset(0.95);
+             hClosure[j]->SetMarkerStyle(20);
+             hClosure[j]->SetMarkerSize(0.5);
+          }
+          else {
+             hClosure[j]->GetXaxis()->SetLabelSize(0.04);
+             hClosure[j]->GetYaxis()->SetLabelSize(0.04);             
+             hClosure[j]->SetMarkerSize(2.0);
+             hClosure[j]->GetXaxis()->SetNoExponent();
+             hClosure[j]->GetXaxis()->SetMoreLogLabels();
+          }
           hClosure[j]->SetMarkerColor(kBlue);
-          hClosure[j]->SetMarkerSize(2.0);
           hClosure[j]->SetLineColor(kBlue);
           hClosure[j]->SetMaximum(1.1);
           hClosure[j]->SetMinimum(0.9);
@@ -198,7 +245,8 @@ int main(int argc,char**argv)
           pave[j]->SetBorderSize(0);
           pave[j]->SetTextFont(42);
           pave[j]->SetTextSize(0.05);
-          pave[j]->Draw();
+          pave[j]->Draw("EP");
+          if (tdr) cmsPrelim();
           can[j]->SaveAs(outputDir+ss+outputFormat);
           hClosure[j]->Write();
           can[j]->Write();
@@ -217,17 +265,220 @@ int main(int argc,char**argv)
         ove->cd(c+1);
         if (c<2) 
           gPad->SetLogx();
-        hClosure[c]->GetXaxis()->SetMoreLogLabels();
-        hClosure[c]->GetXaxis()->SetNoExponent();
-        hClosure[c]->Draw();
+        if (!tdr) {
+           hClosure[c]->GetXaxis()->SetMoreLogLabels();
+           hClosure[c]->GetXaxis()->SetNoExponent();
+        }
+        hClosure[c]->Draw("EP");
         line->Draw("same");
         linePlus->Draw("same");
         lineMinus->Draw("same");
         pave[c]->Draw();
+        if (tdr) cmsPrelim();
       }
       ove->SaveAs(outputDir+ss+outputFormat);
       ove->Write();
+
+      //
+      // create shared overview canvas
+      //
+      ss = "ClosureVsPt_Overview2";
+      if(!flavor.IsNull()) ss+="_"+algs[a]+"_"+flavor;
+      else ss+="_"+algs[a];
+      TLegend* leg = new TLegend(0.70,0.7,0.9,0.9);
+      leg->SetTextSize(0.03);//0.04);
+      leg->SetBorderSize(0);
+      leg->SetFillColor(0);
+      TCanvas *ove2 = new TCanvas(ss,ss,800,800);//600);
+      ove2->cd();
+      gPad->SetLogx();
+      for (int c=0;c<3;c++) {
+         hClosure[c]->SetMaximum(1.05);
+         hClosure[c]->SetMinimum(0.95);
+         //if (!tdr) {
+            hClosure[c]->GetXaxis()->SetMoreLogLabels();
+            hClosure[c]->GetXaxis()->SetNoExponent();
+            hClosure[c]->GetXaxis()->SetLabelSize(0.045);
+            hClosure[c]->GetYaxis()->SetLabelSize(0.045);
+            //}
+         if (c==0) {
+            hClosure[c]->SetMarkerColor(kBlack);
+            hClosure[c]->SetLineColor(kBlack);
+         }
+         else if (c==1) {
+            hClosure[c]->SetMarkerColor(kBlue);
+            hClosure[c]->SetLineColor(kBlue);
+         }
+         else {
+            hClosure[c]->SetMarkerColor(kRed);
+            hClosure[c]->SetLineColor(kRed);
+         }
+         if (c==0)
+            hClosure[c]->Draw("EP");
+         else
+            hClosure[c]->Draw("EPsame");
+         leg->AddEntry(hClosure[c],Text[c],"lep");
+         line->Draw("same");
+         linePlus->Draw("same");
+         lineMinus->Draw("same");
+         delete pave[c];
+         pave[c] = new TPaveText(0.35,0.8,0.75,0.9,"NDC");
+         if (tdr) {
+            pave[c]->AddText("QCD Monte Carlo");
+            pave[c]->AddText("Anti-kT R=0.5, PFlow");
+         }
+         else {
+            pave[c]->AddText(algs[a]);
+         }
+         pave[c]->SetFillColor(0);
+         pave[c]->SetBorderSize(0);
+         pave[c]->SetTextFont(42);
+         pave[c]->SetTextSize(0.035);//0.05);
+         pave[c]->Draw();
+         leg->Draw("same");
+      }
+      if (tdr) cmsPrelim();
+      ove2->SaveAs(outputDir+ss+outputFormat);
+      ove2->Write();
       
       outf->Close();
     }//for(unsigned int a=0; a<algs.size(); a++)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// implement local functions
+////////////////////////////////////////////////////////////////////////////////
+
+//______________________________________________________________________________
+void setStyle(bool fitStat, bool name) {
+   TStyle* tdrStyle = getTDRStyle();
+   tdrStyle->SetPadRightMargin(0.08);
+   tdrStyle->SetLegendBorderSize(0);
+   //tdrStyle->SetMarkerStyle(7);
+   if(fitStat)
+   {
+      if(name) tdrStyle->SetOptStat("neMR");
+      else tdrStyle->SetOptStat("eMR");
+      tdrStyle->SetOptFit(2211);
+   }
+   else
+   {
+      tdrStyle->SetOptStat(0);
+      tdrStyle->SetOptFit(0);
+   }
+   tdrStyle->SetStatColor(0);
+   tdrStyle->SetPalette(1);
+   tdrStyle->SetTitleColor(0,"c");
+   tdrStyle->SetTitleFillColor(0);
+   gROOT->SetStyle(tdrStyle->GetName());
+}
+
+//______________________________________________________________________________
+void cmsPrelim(double intLUMI)
+{
+   const float LUMINOSITY = intLUMI;
+  TLatex latex;
+  latex.SetNDC();
+  latex.SetTextSize(0.045);
+
+  latex.SetTextAlign(31); // align right
+  latex.DrawLatex(0.93,0.96,"#sqrt{s} = 7 TeV");
+  if (LUMINOSITY > 0.) {
+    latex.SetTextAlign(31); // align right
+    //latex.DrawLatex(0.82,0.7,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //Original
+    latex.DrawLatex(0.65,0.85,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //29/07/2011
+  }
+  latex.SetTextAlign(11); // align left
+  latex.DrawLatex(0.16,0.96,"CMS preliminary");// 2012");
+}
+
+//______________________________________________________________________________
+TString getAlias(TString s)
+{
+   if (s=="ic5calo")
+      return "IC5Calo";
+   else if (s=="ic5pf")
+      return "IC5PF";
+   else if (s=="ak5calo")
+      return "AK5Calo";  
+   else if (s=="ak5calol1")
+      return "AK5Calol1";
+   else if (s=="ak5calol1off")
+      return "AK5Calol1off";
+   else if (s=="ak5calol1offl2l3")
+      return "AK5Calol1off";
+   else if (s=="ak7calo")
+      return "AK7Calo";
+   else if (s=="ak7calol1")
+      return "AK7Calol1";
+   else if (s=="ak7calol1off")
+      return "AK7Calol1off";
+   else if (s=="ak5caloHLT")
+      return "AK5CaloHLT";
+   else if (s=="ak5caloHLTl1")
+      return "AK5CaloHLTl1";
+   else if (s=="ak5pf")
+      return "AK5PF";
+   else if (s=="ak5pfl1")
+      return "AK5PFl1";
+   else if (s=="ak5pfl1l2l3")
+      return "AK5PFl1";
+   else if (s=="ak5pfl1off")
+      return "AK5PFl1off";
+   else if (s=="ak7pf")
+      return "AK7PF";
+   else if (s=="ak7pfl1")
+      return "AK7PFl1";
+   else if (s=="ak7pfl1off")
+      return "AK7PFl1off";
+   else if (s=="ak5pfchs")
+      return "AK5PFchs";
+   else if (s=="ak5pfchsl1")
+      return "AK5PFchsl1";
+   else if (s=="ak5pfchsl1l2l3")
+      return "AK5PFchsl1";
+   else if (s=="ak5pfchsl1off")
+      return "AK5PFchsl1off";
+   else if (s=="ak7pfchs")
+      return "AK7PFchs";
+   else if (s=="ak7pfchsl1")
+      return "AK7PFchsl1";
+   else if (s=="ak7pfchsl1off")
+      return "AK7PFchsl1off";
+   else if (s=="ak5pfHLT")
+      return "AK5PFHLT";
+  else if (s=="ak5pfHLTl1")
+      return "AK5PFHLTl1";
+   else if (s=="ak5pfchsHLT")
+      return "AK5PFchsHLT";
+   else if (s=="ak5pfchsHLTl1")
+      return "AK5PFchsHLTl1";
+   else if (s=="ak5jpt")
+      return "AK5JPT";
+   else if (s=="ak5jptl1")
+      return "AK5JPTl1";
+   else if (s=="ak5jptl1l2l3")
+      return "AK5JPTl1";
+   else if (s=="ak7jpt")
+      return "AK7JPT";
+   else if (s=="ak7jptl1")
+      return "AK7JPTl1";
+   else if (s=="sc5calo")
+      return "SC5Calo";
+   else if (s=="sc5pf")
+      return "SC5PF";
+   else if (s=="sc7calo")
+      return "SC5Calo";
+   else if (s=="sc7pf")
+      return "SC5PF";
+   else if (s=="kt4calo")
+      return "KT4Calo";
+   else if (s=="kt4pf")
+      return "KT4PF";
+   else if (s=="kt6calo")
+      return "KT6Calo";
+   else if (s=="kt6pf")
+      return "KT6PF";
+   else
+      return "unknown";
 }
