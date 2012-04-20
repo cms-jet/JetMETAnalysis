@@ -124,6 +124,20 @@ bool CommandLine::check()
   return result;
 }
 
+//______________________________________________________________________________
+bool CommandLine::partialCheck()
+{
+  bool result = true;
+  if (_unknowns.size()>0) {
+    result = false;
+    cout<<"\nCommandLine WARNING: "
+	<<"the following parameters *must* be provided:"<<endl;
+    for (StrVec_t::const_iterator it=_unknowns.begin();it!=_unknowns.end();++it)
+      cout<<(*it)<<endl;
+    cout<<endl;
+  }
+  return result;
+}
 
 //______________________________________________________________________________
 void CommandLine::print()

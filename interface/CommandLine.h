@@ -30,6 +30,7 @@ public:
   //
   bool parse(int argc,char**argv);
   bool check();
+  bool partialCheck();
   void print();
   
   template <class T> T getValue(const std::string& name);
