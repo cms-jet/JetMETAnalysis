@@ -33,5 +33,23 @@ JetResponseParameters = cms.PSet(
     # deltaR(ref,parton) IF doFlavor is True
     deltaRPartonMax = cms.double(0.25),
     # consider all matched references
-    nRefMax         = cms.uint32(0)
+    nRefMax         = cms.uint32(0),
+    # is the sample an HLT sample
+    doHLT           = cms.bool(False)
+)
+
+#!
+#! DEFAULT KT6CALOJET PARAMETERS
+#!
+kt6CaloJetParameters = cms.PSet(
+    Rho_EtaMax   = cms.double(4.4), # FIX LATER
+    Ghost_EtaMax = cms.double(5.0)
+)
+
+#!
+#! DEFAULT KT6PFJET PARAMETERS
+#!
+kt6PFJetParameters = cms.PSet(
+    Rho_EtaMax   = cms.double(4.4), # FIX LATER
+    Ghost_EtaMax = cms.double(5.0)
 )

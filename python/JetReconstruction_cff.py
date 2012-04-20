@@ -10,10 +10,17 @@ from RecoJets.Configuration.RecoGenJets_cff import *
 from RecoJets.Configuration.RecoJets_cff import *
 from RecoJets.Configuration.RecoPFJets_cff import *
 from JetMETAnalysis.JetAnalyzers.TrackJetReconstruction_cff import *
+#from JetMETAnalysis.JetAnalyzers.ak5CaloHLTJets_cff import *
+#from JetMETAnalysis.JetAnalyzers.ak5PFHLTJets_cff import *
 
 # extra producerts for ak
 ak5PFchsJets = ak5PFJets.clone( src = 'pfNoPileUp' )
 ak7PFchsJets = ak5PFchsJets.clone( rParam=0.7 )
+ak5CaloHLTJets = ak5CaloJets.clone( src = 'hltAntiKT5CaloJets' )
+ak5PFHLTJets = ak5PFJets.clone( src = 'hltAntiKT5PFJets' )
+ak5PFchsHLTJets = ak5PFJets.clone( src = 'hltAntiKT5PFJetsNoPUPixelVert' )
+kt6CaloJets50 = kt6CaloJets.clone()
+kt6PFJets50 = kt6PFJets.clone()
 
 # sc & ic clones
 sc5GenJets = sisCone5GenJets.clone()
