@@ -143,13 +143,17 @@ TCanvas * getCorrectionVsEtaCanvas(TString algo, FactorizedJetCorrector * jetCor
   PtVals.push_back(0.00001);
   PtVals.push_back(0.1);
   PtVals.push_back(1);
+  PtVals.push_back(5);
+  PtVals.push_back(7);
   PtVals.push_back(10);
   PtVals.push_back(20);
   PtVals.push_back(30);
-  PtVals.push_back(60);
+  PtVals.push_back(40);
+  PtVals.push_back(50);
   PtVals.push_back(150);
   PtVals.push_back(250);
   PtVals.push_back(500);
+  PtVals.push_back(1000);
   PtVals.push_back(1500);
   PtVals.push_back(2500);
 
@@ -157,7 +161,7 @@ TCanvas * getCorrectionVsEtaCanvas(TString algo, FactorizedJetCorrector * jetCor
   TString ss("CorrectionVsEta_Overview");
   ss += suffix;
   TCanvas *ove = new TCanvas(ss,ss,1200,800);
-  ove->Divide(4,3);
+  ove->Divide(4,4);
 
   // loop over all pads
   for (int c = 0; c < ove->GetListOfPrimitives()->GetSize(); c++) {
@@ -249,7 +253,7 @@ TCanvas * getCorrectionVsPtCanvas(TString algo, FactorizedJetCorrector * jetCorr
 
       //Create and fill the histo
       TString hstr; hstr.Form("PtSF_%d",c);
-      TH1F * cc = new TH1F(hstr,hstr,NPtBins,vpt);
+      TH1F * cc = new TH1F(hstr,hstr,NPtBinsHLT,vpt_HLT);
       for (int b = 1; b <= cc->GetNbinsX(); b++){
 	jetCorr->setJetPt(cc->GetBinCenter(b));
 	jetCorr->setJetEta(EtaVals[c]);
@@ -372,70 +376,90 @@ FactorizedJetCorrector * getFactorizedCorrector(TString algo, CommandLine & cl, 
 //______________________________________________________________________________
 string getAlias(TString s)
 {
-  if (s=="ic5calo")
-    return "IC5Calo";
-  else if (s=="ic5pf")
-    return "IC5PF";
-  else if (s=="ak5calo")
-    return "AK5Calo";  
-  else if (s=="ak5calol1")
-    return "AK5Calol1";
-  else if (s=="ak5calol1off")
-    return "AK5Calol1off";
-  else if (s=="ak7calo")
-    return "AK7Calo";
-  else if (s=="ak7calol1")
-    return "AK7Calol1";
-  else if (s=="ak7calol1off")
-    return "AK7Calol1off";
-  else if (s=="ak5pf")
-    return "AK5PF";
-  else if (s=="ak5pfl1")
-    return "AK5PFl1";
-  else if (s=="ak5pfl1off")
-    return "AK5PFl1off";
-  else if (s=="ak7pf")
-    return "AK7PF";
-  else if (s=="ak7pfl1")
-    return "AK7PFl1";
-  else if (s=="ak7pfl1off")
-    return "AK7PFl1off";
-  else if (s=="ak5pfchs")
-    return "AK5PFchs";
-  else if (s=="ak5pfchsl1")
-    return "AK5PFchsl1";
-  else if (s=="ak5pfchsl1off")
-    return "AK5PFchsl1off";
-  else if (s=="ak7pfchs")
-    return "AK7PFchs";
-  else if (s=="ak7pfchsl1")
-    return "AK7PFchsl1";
-  else if (s=="ak7pfchsl1off")
-    return "AK7PFchsl1off";
-  else if (s=="ak5jpt")
-    return "AK5JPT";
-  else if (s=="ak5jptl1")
-    return "AK5JPTl1";
-  else if (s=="ak7jpt")
-    return "AK7JPT";
-  else if (s=="ak7jptl1")
-    return "AK7JPTl1";
-  else if (s=="sc5calo")
-    return "SC5Calo";
-  else if (s=="sc5pf")
-    return "SC5PF";
-  else if (s=="sc7calo")
-    return "SC5Calo";
-  else if (s=="sc7pf")
-    return "SC5PF";
-  else if (s=="kt4calo")
-    return "KT4Calo";
-  else if (s=="kt4pf")
-    return "KT4PF";
-  else if (s=="kt6calo")
-    return "KT6Calo";
-  else if (s=="kt6pf")
-    return "KT6PF";
-  else
-    return "unknown";
+   if (s=="ic5calo")
+      return "IC5Calo";
+   else if (s=="ic5pf")
+      return "IC5PF";
+   else if (s=="ak5calo")
+      return "AK5Calo";  
+   else if (s=="ak5calol1")
+      return "AK5Calol1";
+   else if (s=="ak5calol1off")
+      return "AK5Calol1off";
+   else if (s=="ak5calol1offl2l3")
+      return "AK5Calol1off";
+   else if (s=="ak7calo")
+      return "AK7Calo";
+   else if (s=="ak7calol1")
+      return "AK7Calol1";
+   else if (s=="ak7calol1off")
+      return "AK7Calol1off";
+   else if (s=="ak5caloHLT")
+      return "AK5CaloHLT";
+   else if (s=="ak5caloHLTl1")
+      return "AK5CaloHLTl1";
+   else if (s=="ak5pf")
+      return "AK5PF";
+   else if (s=="ak5pfl1")
+      return "AK5PFl1";
+   else if (s=="ak5pfl1l2l3")
+      return "AK5PFl1";
+   else if (s=="ak5pfl1off")
+      return "AK5PFl1off";
+   else if (s=="ak7pf")
+      return "AK7PF";
+   else if (s=="ak7pfl1")
+      return "AK7PFl1";
+   else if (s=="ak7pfl1off")
+      return "AK7PFl1off";
+   else if (s=="ak5pfchs")
+      return "AK5PFchs";
+   else if (s=="ak5pfchsl1")
+      return "AK5PFchsl1";
+   else if (s=="ak5pfchsl1l2l3")
+      return "AK5PFchsl1";
+   else if (s=="ak5pfchsl1off")
+      return "AK5PFchsl1off";
+   else if (s=="ak7pfchs")
+      return "AK7PFchs";
+   else if (s=="ak7pfchsl1")
+      return "AK7PFchsl1";
+   else if (s=="ak7pfchsl1off")
+      return "AK7PFchsl1off";
+   else if (s=="ak5pfHLT")
+      return "AK5PFHLT";
+  else if (s=="ak5pfHLTl1")
+      return "AK5PFHLTl1";
+   else if (s=="ak5pfchsHLT")
+      return "AK5PFchsHLT";
+   else if (s=="ak5pfchsHLTl1")
+      return "AK5PFchsHLTl1";
+   else if (s=="ak5jpt")
+      return "AK5JPT";
+   else if (s=="ak5jptl1")
+      return "AK5JPTl1";
+   else if (s=="ak5jptl1l2l3")
+      return "AK5JPTl1";
+   else if (s=="ak7jpt")
+      return "AK7JPT";
+   else if (s=="ak7jptl1")
+      return "AK7JPTl1";
+   else if (s=="sc5calo")
+      return "SC5Calo";
+   else if (s=="sc5pf")
+      return "SC5PF";
+   else if (s=="sc7calo")
+      return "SC5Calo";
+   else if (s=="sc7pf")
+      return "SC5PF";
+   else if (s=="kt4calo")
+      return "KT4Calo";
+   else if (s=="kt4pf")
+      return "KT4PF";
+   else if (s=="kt6calo")
+      return "KT6Calo";
+   else if (s=="kt6pf")
+      return "KT6PF";
+   else
+      return "unknown";
 }
