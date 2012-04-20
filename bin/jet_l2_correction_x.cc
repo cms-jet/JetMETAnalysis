@@ -12,10 +12,10 @@
 #include "JetMETAnalysis/JetUtilities/interface/ObjectLoader.h"
 #include "JetMETAnalysis/JetUtilities/interface/RootStyle.h"
 
-
 #include "TApplication.h"
 #include "TFile.h"
 #include "TKey.h"
+#include "TObjArray.h"
 #include "TCanvas.h"
 #include "TGraphErrors.h"
 #include "TH1F.h"
@@ -42,7 +42,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 /// check if a vector of strings contains a certain element
-bool   contains(const vector<string>& collection,const string& element);
+bool contains(const vector<string>& collection,const string& element);
 
 /// transform the alg label into a title, e.g.: kt4calo -> k_{T}, D=0.4 (Calo)
 string get_legend_title(const string& alg);
@@ -70,7 +70,7 @@ int main(int argc,char**argv)
   string         input     = cl.getValue<string>  ("input");
   string         era       = cl.getValue<string>  ("era");
   string         l3input   = cl.getValue<string>  ("l3input","l3.root");
-  string         output    = cl.getValue<string>  ("output", "l2.root");
+  TString        output    = cl.getValue<TString> ("output", "l2.root");
   TString        outputDir = cl.getValue<TString> ("outputDir",   "./");
   vector<string> formats   = cl.getVector<string> ("formats",       "");
   vector<string> algs      = cl.getVector<string> ("algs",          "");
@@ -91,7 +91,8 @@ int main(int argc,char**argv)
   //
   // open output file
   //
-  TFile* ofile = new TFile(output.c_str(),"RECREATE");
+  if(!outputDir.EndsWith("/")) outputDir+="/";
+  TFile* ofile = new TFile(outputDir+output,"RECREATE");
   if (!ofile->IsOpen()) { cout<<"Can't create "<<output<<endl; return 0; }
   
   
@@ -279,13 +280,38 @@ int main(int argc,char**argv)
            }
            else {
              if (alg.find("pf")!=string::npos) {
-               fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",xmin,xmax);
-               fabscor->SetParameter(0,0.5);
-               fabscor->SetParameter(1,9.0);
-               fabscor->SetParameter(2,8.0);
-               fabscor->SetParameter(3,-0.3);
-               fabscor->SetParameter(4,0.6);
-               fabscor->SetParameter(5,1.0);
+                //
+                // online
+                //
+                if(alg.find("HLT")!=string::npos){
+                   fabscor=new TF1("fit","(x>=[6])*([0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5])))+(x<[6])*[7]",xmin,xmax);
+                   fabscor->FixParameter(6,xmin);
+                   fabscor->FixParameter(7,0.0);
+                }
+                //
+                // offline
+                //
+                else
+                   fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",xmin,xmax);
+                
+                fabscor->SetParameter(0,0.5);
+                fabscor->SetParameter(1,9.0);
+                fabscor->SetParameter(2,8.0);
+                fabscor->SetParameter(3,-0.3);
+                fabscor->SetParameter(4,0.6);
+                fabscor->SetParameter(5,1.0);
+               
+                fabscor->SetParLimits(2,0.1,100);
+                fabscor->SetParLimits(3,-100,0);
+                fabscor->SetParLimits(4,0,100);
+
+               if (xmax < 15) {
+                  fabscor->FixParameter(1,0.0);
+                  fabscor->FixParameter(2,0.0);
+                  fabscor->FixParameter(3,0.0);
+                  fabscor->FixParameter(4,0.0);
+                  fabscor->FixParameter(5,0.0);
+               }
              }
              else if (alg.find("trk")!=string::npos) {
                fabscor=new TF1("fit","[0]+[1]*pow(x/500.0,[2])+[3]/log10(x)+[4]*log10(x)",xmin,xmax);
@@ -315,6 +341,8 @@ int main(int argc,char**argv)
                fabscor->SetParameter(1,5.0);
                fabscor->SetParameter(2,3.0);
                fabscor->SetParameter(3,3.0);
+
+               fabscor->SetParLimits(3,0,100);
              }
              else {
                cout << "WARNING::Cannot determine fit function for " << alg << "." << endl;
@@ -325,6 +353,11 @@ int main(int argc,char**argv)
            // obtain the best fit of the function fabscor to the histo gabscor
            //
            perform_smart_fit(gabscor,fabscor);
+           if (alg.find("pf")!=string::npos)
+              if (alg.find("HLT")!=string::npos) {
+                 ((TF1*)gabscor->GetListOfFunctions()->First())->FixParameter(7,fabscor->Eval(fabscor->GetParameter(6)));
+                 fabscor->FixParameter(7,fabscor->Eval(fabscor->GetParameter(6)));
+              }
 
            //
            // format the graphs
@@ -419,7 +452,6 @@ int main(int argc,char**argv)
      //
      // write the L2 correction text file for the current algorithm
      //
-     if(!outputDir.EndsWith("/")) outputDir+="/";
      TString txtfilename = outputDir + era + "_L2Relative_" + get_algorithm_suffix(alg) + ".txt";
      ofstream fout(txtfilename);
      fout.setf(ios::right); 
@@ -445,7 +477,7 @@ int main(int argc,char**argv)
              <<setw(12)<<ptmax;
          for(int p=0; p<frelcor->GetNpar(); p++)
            {
-             fout<<setw(13)<<frelcor->GetParameter(p); //p0-p4
+             fout<<setw(13)<<frelcor->GetParameter(p);
            }
          fout<<endl;
        }
@@ -485,7 +517,6 @@ bool contains(const vector<string>& collection,const string& element)
   return false;
 }
 
-
 //______________________________________________________________________________
 string get_legend_title(const string& alg)
 {
@@ -499,11 +530,11 @@ string get_legend_title(const string& alg)
   else if (alg.find("ak")==0) { title = "Anti k_{T}, D="; tmp = tmp.substr(2); }
   else return alg;
   
-  string reco[6] = { "gen",  "calo",   "pfchs",       "pf",      "trk",      "jpt" };
-  string RECO[6] = { "(Gen)","(Calo)", "(PFlow+CHS)", "(PFlow)", "(Tracks)", "(JPT)" };
+  string reco[9] = { "gen", "caloHLT", "calo", "pfHLT", "pfchsHLT", "pfchs", "pf", "trk", "jpt" };
+  string RECO[9] = { "(Gen)", "(Calo@HLT)", "(Calo)", "(PFlow@HLT)", "(PFlow+CHS@HLT)", "(PFlow+CHS)", "(PFlow)", "(Tracks)", "(JPT)" };
 
   string::size_type pos=string::npos; int ireco=-1;
-  while (pos==string::npos&&ireco<5) { pos = tmp.find(reco[++ireco]); }
+  while (pos==string::npos&&ireco<8) { pos = tmp.find(reco[++ireco]); }
   if (pos==string::npos) return alg;
   
   double jet_size; stringstream ss1; ss1<<tmp.substr(0,pos); ss1>>jet_size;
@@ -524,12 +555,18 @@ string get_algorithm_suffix(const string& alg)
   result += alg[2];
   if      (alg.find("calol1off")  ==3) result += "Calol1off";
   else if (alg.find("calol1")     ==3) result += "Calol1";
+  else if (alg.find("caloHLTl1")  ==3) result += "CaloHLTl1";
+  else if (alg.find("caloHLT")    ==3) result += "CaloHLT";
   else if (alg.find("calo")       ==3) result += "Calo";
   else if (alg.find("jptl1")      ==3) result += "JPTl1";
   else if (alg.find("jpt")        ==3) result += "JPT";
+  else if (alg.find("pfchsHLTl1") ==3) result += "PFchsHLTl1";
+  else if (alg.find("pfchsHLT")   ==3) result += "PFchsHLT";
   else if (alg.find("pfchsl1off") ==3) result += "PFchsl1off";
   else if (alg.find("pfchsl1")    ==3) result += "PFchsl1";
   else if (alg.find("pfchs")      ==3) result += "PFchs";
+  else if (alg.find("pfHLTl1")    ==3) result += "PFHLTl1";
+  else if (alg.find("pfHLT")      ==3) result += "PFHLT";
   else if (alg.find("pfl1off")    ==3) result += "PFl1off";
   else if (alg.find("pfl1")       ==3) result += "PFl1";
   else if (alg.find("pf")         ==3) result += "PF";
@@ -559,6 +596,7 @@ void perform_smart_fit(TGraphErrors * gabscor, TF1 * fabscor) {
     // then save the parameters
     //
     double rchi2 = fitResPtr.Get()->Chi2()/ fitResPtr.Get()->Ndf();
+    if (fitResPtr.Get()->Ndf() == 0) rchi2 = 0;
     if (rchi2 > 0 && (rchi2<bestRChi2 || bestRChi2==0)){
       bestRChi2 = rchi2;
       bestPars  = auxPars;
@@ -581,6 +619,12 @@ void perform_smart_fit(TGraphErrors * gabscor, TF1 * fabscor) {
   fabscor->SetChisquare(bestRChi2 * fabscor->GetNDF());
   ffh->SetChisquare(bestRChi2 * fabscor->GetNDF());
 		
+  //
+  // warn if the fit diverges at low pt
+  //
+  if (fabscor->Integral(0,10) > 25)
+     cout << "\t***ERROR***, fit for histo " << gabscor->GetName() << " diverges at low pt" << endl;
+
   //   
   // check for failed fits
   // a chi2 of zero is symptomatic of a failed fit.
