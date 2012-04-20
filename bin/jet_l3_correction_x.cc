@@ -252,7 +252,7 @@ int main(int argc,char**argv)
     grsp->SetLineWidth(2);
     grsp->SetMarkerStyle(kFullCircle);
     
-    tex.DrawLatex(0.6,0.3,get_legend_title(alg).c_str());
+    tex.DrawLatex(0.3,0.3,get_legend_title(alg).c_str());
     
     grsp->Write();
     
@@ -320,7 +320,7 @@ int main(int argc,char**argv)
     gcor->SetLineWidth(2);
     gcor->SetMarkerStyle(kFullCircle);
     
-    tex.DrawLatex(0.6,0.8,get_legend_title(alg).c_str());
+    tex.DrawLatex(0.3,0.8,get_legend_title(alg).c_str());
     
     gcor->Write();
     string txtfilename = era+"_L3Absolute_"+get_algorithm_suffix(alg)+".txt";
@@ -425,11 +425,11 @@ string get_legend_title(const string& alg)
   else if (alg.find("ak")==0) { title = "Anti k_{T}, D="; tmp = tmp.substr(2); }
   else return alg;
   
-  string reco[6] = { "gen",  "calo",   "pfchs",       "pf",      "trk",      "jpt" };
-  string RECO[6] = { "(Gen)","(Calo)", "(PFlow+CHS)", "(PFlow)", "(Tracks)", "(JPT)" };
+  string reco[9] = { "gen", "caloHLT", "calo", "pfHLT", "pfchsHLT", "pfchs", "pf", "trk", "jpt" };
+  string RECO[9] = { "(Gen)", "(Calo@HLT)", "(Calo)", "(PFlow@HLT)", "(PFlow+CHS@HLT)", "(PFlow+CHS)", "(PFlow)", "(Tracks)", "(JPT)" };
 
   string::size_type pos=string::npos; int ireco=-1;
-  while (pos==string::npos&&ireco<5) { pos = tmp.find(reco[++ireco]); }
+  while (pos==string::npos&&ireco<8) { pos = tmp.find(reco[++ireco]); }
   if (pos==string::npos) return alg;
   
   double jet_size; stringstream ss1; ss1<<tmp.substr(0,pos); ss1>>jet_size;
@@ -450,12 +450,18 @@ string get_algorithm_suffix(const string& alg)
   result += alg[2];
   if      (alg.find("calol1off")  ==3) result += "Calol1off";
   else if (alg.find("calol1")     ==3) result += "Calol1";
+  else if (alg.find("caloHLTl1")  ==3) result += "CaloHLTl1";
+  else if (alg.find("caloHLT")    ==3) result += "CaloHLT";
   else if (alg.find("calo")       ==3) result += "Calo";
   else if (alg.find("jptl1")      ==3) result += "JPTl1";
   else if (alg.find("jpt")        ==3) result += "JPT";
+  else if (alg.find("pfchsHLTl1") ==3) result += "PFchsHLTl1";
+  else if (alg.find("pfchsHLT")   ==3) result += "PFchsHLT";
   else if (alg.find("pfchsl1off") ==3) result += "PFchsl1off";
   else if (alg.find("pfchsl1")    ==3) result += "PFchsl1";
   else if (alg.find("pfchs")      ==3) result += "PFchs";
+  else if (alg.find("pfHLTl1")    ==3) result += "PFHLTl1";
+  else if (alg.find("pfHLT")      ==3) result += "PFHLT";
   else if (alg.find("pfl1off")    ==3) result += "PFl1off";
   else if (alg.find("pfl1")       ==3) result += "PFl1";
   else if (alg.find("pf")         ==3) result += "PF";
