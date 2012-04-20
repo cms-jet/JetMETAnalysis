@@ -27,6 +27,8 @@
 #include "DataFormats/JetReco/interface/PFJet.h"
 #include "DataFormats/Math/interface/deltaR.h"
 #include "DataFormats/Math/interface/deltaPhi.h"
+#include "DataFormats/VertexReco/interface/Vertex.h"
+#include "DataFormats/VertexReco/interface/VertexFwd.h"
 
 #include "JetMETCorrections/Objects/interface/JetCorrector.h"
 
@@ -74,6 +76,9 @@ private:
   edm::InputTag srcRefToJetMap_;
   edm::InputTag srcRefToPartonMap_;
   edm::InputTag srcRho_;
+  edm::InputTag srcRho50_;
+  edm::InputTag srcRhoHLT_;
+  edm::InputTag srcVtx_;
 
   std::string   jecLabel_;
   
@@ -81,6 +86,7 @@ private:
   bool          doFlavor_;
   bool          doJetPt_;
   bool          doRefPt_;
+  bool          doHLT_;
   unsigned int  nRefMax_;
 
   double        deltaRMax_;
@@ -109,9 +115,14 @@ private:
   vector<Int_t> ntrks_lowpt_;
   vector<Int_t> ntrks_highpt_;
   Float_t       rho_;
+  Float_t       rho50_;
+  Float_t       rho_hlt_;
   Float_t       pthat_;
   Float_t       weight_;
-  
+  Long64_t      npv_;
+  Long64_t      evt_;
+  Long64_t      run_;
+
   UChar_t       nref_;
   UChar_t       refrank_[100];
   Int_t         refpdgid_[100];
@@ -149,18 +160,20 @@ private:
 
 //______________________________________________________________________________
 JetResponseAnalyzer::JetResponseAnalyzer(const edm::ParameterSet& iConfig)
-  : moduleLabel_   (iConfig.getParameter<std::string>   ("@module_label"))
-  , srcRef_        (iConfig.getParameter<edm::InputTag>        ("srcRef"))
-  , srcRefToJetMap_(iConfig.getParameter<edm::InputTag>("srcRefToJetMap"))
-  , srcRho_        (iConfig.getParameter<edm::InputTag>        ("srcRho"))
-    //, srcRho_        (iConfig.getParameter<std::string> ("kt6CaloJets:rho"))
-    //, srcRho_        (iConfig.getParameter<std::string> ("kt6CaloJets_rho"))
-  , jecLabel_      (iConfig.getParameter<std::string>        ("jecLabel"))
-  , doComposition_ (iConfig.getParameter<bool>          ("doComposition"))
-  , doFlavor_      (iConfig.getParameter<bool>               ("doFlavor"))
-  , doJetPt_       (iConfig.getParameter<bool>                ("doJetPt"))
-  , doRefPt_       (iConfig.getParameter<bool>                ("doRefPt"))
-  , nRefMax_       (iConfig.getParameter<unsigned int>        ("nRefMax"))
+  : moduleLabel_   (iConfig.getParameter<std::string>            ("@module_label"))
+  , srcRef_        (iConfig.getParameter<edm::InputTag>                 ("srcRef"))
+  , srcRefToJetMap_(iConfig.getParameter<edm::InputTag>         ("srcRefToJetMap"))
+  , srcRho_        (iConfig.getParameter<edm::InputTag>                 ("srcRho"))
+  , srcRho50_      (iConfig.getParameter<edm::InputTag>               ("srcRho50"))
+  , srcRhoHLT_     (iConfig.getParameter<edm::InputTag>              ("srcRhoHLT"))
+  , srcVtx_        (iConfig.getParameter<edm::InputTag>                 ("srcVtx"))
+  , jecLabel_      (iConfig.getParameter<std::string>                 ("jecLabel"))
+  , doComposition_ (iConfig.getParameter<bool>                   ("doComposition"))
+  , doFlavor_      (iConfig.getParameter<bool>                        ("doFlavor"))
+  , doJetPt_       (iConfig.getParameter<bool>                         ("doJetPt"))
+  , doRefPt_       (iConfig.getParameter<bool>                         ("doRefPt"))
+  , doHLT_         (iConfig.getParameter<bool>                           ("doHLT"))
+  , nRefMax_       (iConfig.getParameter<unsigned int>                 ("nRefMax"))
   , deltaRMax_(0.0)
   , deltaPhiMin_(3.141)
   , deltaRPartonMax_(0.0)
@@ -230,8 +243,13 @@ void JetResponseAnalyzer::beginJob()
   tree_->Branch("ntrks_lowpt", "vector<Int_t>", &ntrks_lowpt_);
   tree_->Branch("ntrks_highpt", "vector<Int_t>", &ntrks_highpt_);
   tree_->Branch("rho", &rho_, "rho/F");
+  tree_->Branch("rho50", &rho_, "rho50/F");
+  if (doHLT_) tree_->Branch("rho_hlt",&rho_hlt_, "rho_hlt/F");
   tree_->Branch("pthat", &pthat_,  "pthat/F");
   tree_->Branch("weight",&weight_, "weight/F");
+  tree_->Branch("npv",&npv_, "npv/L");
+  tree_->Branch("evt",&evt_, "evt/L");
+  tree_->Branch("run",&run_, "run/L");
 
   tree_->Branch("nref",  &nref_,   "nref/b");
   tree_->Branch("refrank",refrank_,"refrank[nref]/b");
@@ -284,6 +302,9 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
   edm::Handle<reco::CandViewMatchMap>            refToJetMap;
   edm::Handle<reco::JetMatchedPartonsCollection> refToPartonMap;
   edm::Handle<double>                            rho;
+  edm::Handle<double>                            rho50;
+  edm::Handle<double>                            rho_hlt;
+  edm::Handle<reco::VertexCollection>            vtx;
 
   // JET CORRECTOR
   jetCorrector_ = (jecLabel_.empty()) ? 0 : JetCorrector::getJetCorrector(jecLabel_,iSetup);
@@ -300,12 +321,31 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
   //RHO INFORMATION
   rho_ = 0.0;
   if (iEvent.getByLabel(srcRho_,rho)) {
-  //if (iEvent.getByLabel("kt6CaloJets",rho)) {
-  //iEvent.getByLabel("kt6CaloJets",rho);
-  //if(rho.isValid()) {
     rho_ = *rho;
   }
-  
+  //RHO50 INFORMATION
+  rho50_ = 0.0;
+    if (iEvent.getByLabel(srcRho50_,rho50)) {
+    rho50_ = *rho50;
+  }
+  //HLT RHO INFORMATION
+  rho_hlt_ = 0.0;
+  if (doHLT_) {
+     if (iEvent.getByLabel(srcRhoHLT_,rho_hlt)) {
+       rho_hlt_ = *rho_hlt;
+     }
+  }
+ 
+  //NPV INFORMATION
+  npv_ = 0;
+  if (iEvent.getByLabel(srcVtx_,vtx)) {
+     npv_ = vtx->size();
+  }
+ 
+  //EVENT INFORMATION
+  evt_ = iEvent.id().event();
+  run_ = iEvent.id().run();
+
   // MC PILEUP INFORMATION
   npus_.clear();
   bxns_.clear();
