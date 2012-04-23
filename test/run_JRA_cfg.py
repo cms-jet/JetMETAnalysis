@@ -28,14 +28,15 @@ process = cms.Process("JRA")
 #! CONDITIONS (DELIVERING JEC BY DEFAULT!)
 #!
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-process.GlobalTag.globaltag = "START42_V17::All"
+process.GlobalTag.globaltag = "START44_V12::All"
 
 
 #!
 #! INPUT
 #!
 qcdFiles = cms.untracked.vstring(
-         '/store/mc/Summer12/QCD_Pt-15to3000_TuneZ2star_Flat_8TeV_pythia6/GEN-SIM-RECO/PU_S7_START52_V5-v1/0000/FEEA2CFE-9B7B-E111-BD9F-00266CFFA1FC.root'
+	     '/store/mc/Fall11/QCD_Pt-15to3000_TuneZ2_Flat_7TeV_pythia6/GEN-SIM-RECO/PU_S6_START44_V9B-v1/0000/0051CEDD-EA3E-E111-BA1D-0026189438DD.root'
+         #'/store/mc/Summer12/QCD_Pt-15to3000_TuneZ2star_Flat_8TeV_pythia6/GEN-SIM-RECO/PU_S7_START52_V5-v1/0000/FEEA2CFE-9B7B-E111-BD9F-00266CFFA1FC.root'
          ##'/store/user/lpcjm/lungu/QCD_Pt-15to3000_TuneZ2_Flat_7TeV_pythia6/Fall11-QCD_Pt-15to3000_TuneZ2_7TeV_pythia6_reHLTRAWRECO_v3//564fc77dd089d3ffa20dc78b12538743/myQCD_RECO_89_1_0W5.root'
     )
 
@@ -51,11 +52,14 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 100
 process.load('CommonTools.UtilAlgos.TFileService_cfi')
 process.TFileService.fileName=cms.string('JRA.root')
 
+
 #!
-#! NEEDED FOR PFCHS
+#! NEEDED FOR PFCHS (last two lines needed for 44X and up)
 #!
 process.load('CommonTools.ParticleFlow.pfNoPileUp_cff')
 process.pfPileUp.checkClosestZVertex = False
+process.pfPileUp.PFCandidates = 'particleFlow' 
+process.pfNoPileUp.bottomCollection = 'particleFlow'
 
 
 #!
