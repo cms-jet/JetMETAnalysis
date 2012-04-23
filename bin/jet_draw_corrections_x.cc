@@ -176,7 +176,7 @@ TCanvas * getCorrectionVsEtaCanvas(TString algo, FactorizedJetCorrector * jetCor
 	jetCorr->setJetPt(PtVals[c]);
 	jetCorr->setJetEta(cc->GetBinCenter(b));
 	double cor = jetCorr->getCorrection();
-	if (isnan(cor) || isinf(cor) ){
+	if (std::isnan((double)cor) || std::isinf((double)cor) ){
 	  cout<<" *** ERROR *** getCorrectionVsEtaCanvas(). For eta="<<cc->GetBinCenter(b)
 	      <<" and pt="<<PtVals[c]<<" the correction is "<<cor<<"!!"<<endl;
 	  cor = 10000;
@@ -258,7 +258,7 @@ TCanvas * getCorrectionVsPtCanvas(TString algo, FactorizedJetCorrector * jetCorr
 	jetCorr->setJetPt(cc->GetBinCenter(b));
 	jetCorr->setJetEta(EtaVals[c]);
 	double cor = jetCorr->getCorrection();
-	if (isnan(cor) ||  isinf(cor) ){
+	if (std::isnan((double)cor) ||  std::isinf((double)cor) ){
 	  cout<<" *** ERROR *** getCorrectionVsPtCanvas(). For eta="<<EtaVals[c]
 	      <<" and pt="<<cc->GetBinCenter(b)<<" the correction is "<<cor<<"!!"<<endl;
 	  cor = 10000;
