@@ -195,7 +195,19 @@ int main(int argc,char**argv)
           corrector->setJetPt(jtpt[ijt]);
           corrector->setJetEta(jteta[ijt]);
           if (TString(get_correction_levels(levels)).Contains("L1FastJet")) {
-             corrector->setJetA(TMath::Pi()*TMath::Power(0.5,2));
+             if (TString(alg).Contains("4"))
+                corrector->setJetA(TMath::Pi()*TMath::Power(0.4,2));
+             else if (TString(alg).Contains("5"))
+                corrector->setJetA(TMath::Pi()*TMath::Power(0.5,2));
+             else if (TString(alg).Contains("6"))
+                corrector->setJetA(TMath::Pi()*TMath::Power(0.6,2));
+             else if (TString(alg).Contains("7"))
+                corrector->setJetA(TMath::Pi()*TMath::Power(0.7,2));
+             else {
+                cout << "WARNING::Unknown jet area. Skipping event." << endl;
+                continue;
+             }
+
              if (TString(alg).Contains("HLT")||TString(alg).Contains("hlt"))
                 corrector->setRho(rho_hlt);
              else
