@@ -26,6 +26,7 @@ public:
    TAxis*             GetAxis(Int_t axisNumber);
    Double_t           GetBinContent(const std::vector<Int_t> & binCoord);
    virtual Double_t   GetBinContent(Int_t bin) const;
+   Double_t           GetBinEffectiveEntries(const std::vector<Int_t> & binCoord);
    virtual Double_t   GetBinEffectiveEntries(Int_t globalBin) const;
    Double_t           GetBinError(const std::vector<Int_t> & binCoord);
    virtual Double_t   GetBinError(Int_t globalBin) const;
@@ -40,6 +41,8 @@ public:
    void               LoopOverBinsRaw();
    void               ReadFromFile(TString filename, TString treeName); 
    TProfileMDF*       ReduceDimensions(TString name, UInt_t axisNumber, Int_t firstbin, Int_t lastbin);
+   void               SetBinContentError(Int_t bin, Double_t cont, Double_t sw2, Double_t bent, Double_t bsw2);
+   void               SetErrorOption(Option_t * option);
    void               Test();
    void               TestRD();
    void               WriteToFile(TString filename, TString writeFlag = "RECREATE");

@@ -386,8 +386,16 @@ Double_t TProfileMDF::GetBinEffectiveEntries(Int_t bin) const {
    double sumOfWeightsSquare = fBinSumw2.fArray[bin]; 
    return ( sumOfWeightsSquare > 0 ?  sumOfWeights * sumOfWeights /   sumOfWeightsSquare : 0 ); 
 
-} // GetBinEffectiveEntries
+}//GetBinEffectiveEntries
 
+// --------------------------------------------------------------
+Double_t TProfileMDF::GetBinEffectiveEntries(const std::vector<Int_t> & binCoord){
+
+   // Find the bin and return the effective entries
+   Int_t bin = GetGlobalBin(binCoord);
+   return GetBinEffectiveEntries(bin);
+
+}//GetBinEffectiveEntries
 
 // --------------------------------------------------------------
 Double_t TProfileMDF::GetBinError(Int_t bin) const{
@@ -441,7 +449,6 @@ Double_t TProfileMDF::GetBinError(Int_t bin) const{
    
 }// GetBinError
 
-
 // --------------------------------------------------------------
 Double_t TProfileMDF::GetBinError(const vector<Int_t> & binCoord){
 
@@ -451,87 +458,12 @@ Double_t TProfileMDF::GetBinError(const vector<Int_t> & binCoord){
 }
 
 // --------------------------------------------------------------
-void TProfileMDF::Test(){
-
-  AddAxis("x",30,0,130);
-  AddAxis("y",20,0,3500);
-  AddAxis("z",10,0,10);
-  
-  Sumw2();
-
-  // Vector of coordinates initialized to 
-  // have h->GetNaxis() elements
-  // coord[0]=x, coord[1]=y, and so on...
-  vector<Double_t> coord (GetNaxis(),0);
-
-  // Throw some random values
-  TRandom3 rn;
-
-  for (int pse = 0; pse < 1000; pse ++) {
-
-     coord[0] = rn.Gaus(60,10);
-     coord[1] = rn.Gaus(1000,100);
-     coord[2] = rn.Gaus(5,2);
-
-     Fill(coord,rn.Gaus(13, 0.2));
-
-  }//for pse's
-  
-  // Bin -> Vector of bins
-  vector<Int_t> bin (GetNaxis(),0);
-  bin[0] = 2;
-  bin[1] = 2;
-  bin[2] = 2;
-  
-  cout<<"TEST()"<<endl;
-  cout<<" \tfNcells="<<fNcells<<endl;
-  cout<<" \tbin[0]="<<bin[0]<<" bin[1]="<<bin[1]<<" bin[2]="<<bin[2]<<endl;
-  cout<<" \tGlobal bin  ="<< GetGlobalBin(bin)<<endl;
-  cout<<" \tBin Content ="<< GetBinContent(bin)<<endl;
-  cout<<" \tBin Error   ="<< GetBinError(bin)<<endl;
-
-}//Test
-
-// --------------------------------------------------------------
-void TProfileMDF::TestRD(){
-
-   AddAxis("x",3,0,3);
-   AddAxis("y",3,0,3);
-   AddAxis("z",3,0,3);
-
-   Sumw2();
-
-   vector<Double_t> c (GetNaxis(),0);
-
-   c[0]=0.5;
-   c[1]=0.5;
-   c[2]=0.5;
-   Fill(c,1);
-   c[0]=1.5;
-   c[1]=0.5;
-   c[2]=0.5;
-   Fill(c,1);
-   c[0]=2.5;
-   c[1]=0.5;
-   c[2]=0.5;
-   Fill(c,1);
-
-   LoopOverBins();
-   cout<<"LoopOverBins1"<< endl;
-   TProfileMDF* p = ReduceDimensions("p",0,0,5);
-   cout<<"ReducedDimensionsBy1"<< endl;
-   p->LoopOverBins();
-   cout<<"LoopOverBins2"<< endl;
-
-}//TestRD
-
-// --------------------------------------------------------------
 void TProfileMDF::LoopOverBins(){
 
   for (Int_t b=0; b < fNcells ; b++){
      if(GetBinEffectiveEntries(b)==0) 
         continue;
-     cout<<"\tGlobal bin ="<<b
+     cout<<"\tGlobal bin="<<b
          <<" content="<< GetBinContent(b)
          <<" +/- "<< GetBinError(b)
          <<" entries "<< GetBinEffectiveEntries(b)
@@ -546,7 +478,7 @@ void TProfileMDF::LoopOverBinsRaw(){
    for (Int_t b=0; b < fNcells ; b++){
       if(GetBinEffectiveEntries(b)==0) 
          continue;
-      cout<<"\tGlobal bin ="<<b
+      cout<<"\tGlobal bin="<<b
           <<" content="<< fArray[b]
           <<" fBinEntries="<< fBinEntries.fArray[b]
           <<" fBinSumw2="<< fBinSumw2.fArray[b]
@@ -634,12 +566,12 @@ TProfileMDF* TProfileMDF::ReduceDimensions(TString name, UInt_t axisNumber, Int_
    vector<TAxis*> fAxesTemp = fAxes;
    vector<TAxis*> outAxes;
    TAxis* inAxis;
-   cout << "sfsg0" << endl;
+
    inNbin = fAxesTemp[axisNumber]->GetNbins();
    inAxis = fAxesTemp[axisNumber];
    fAxesTemp.erase(fAxesTemp.begin()+axisNumber);
    outAxes = fAxesTemp;
-   cout << "sfsg1" << endl;
+
    if ( lastbin < firstbin && inAxis->TestBit(TAxis::kAxisRange) ) {
       firstbin = inAxis->GetFirst();
       lastbin = inAxis->GetLast();
@@ -655,14 +587,14 @@ TProfileMDF* TProfileMDF::ReduceDimensions(TString name, UInt_t axisNumber, Int_
    if (firstbin < 0) firstbin = 0;
    if (lastbin  < 0) lastbin  = inNbin + 1;
    if (lastbin  > inNbin+1) lastbin  = inNbin + 1;
-   cout << "sfsg2" << endl;
+
    // Create the projection histogram
    if(name.IsNull()) {
       stringstream ss;
       ss << axisNumber;
       name = TString(GetName() + TString(ss.str()));
    }
-   cout << "sfsg3" << endl;
+
    //check if histogram with identical name exist
    // if compatible reset and re-use previous histogram
    // (see https://savannah.cern.ch/bugs/?54340)
@@ -680,25 +612,27 @@ TProfileMDF* TProfileMDF::ReduceDimensions(TString name, UInt_t axisNumber, Int_
    h1->SetFillColor(this->GetFillColor());
    h1->SetMarkerColor(this->GetMarkerColor());
    h1->SetMarkerStyle(this->GetMarkerStyle());
-   cout << "sfsg4" << endl;
+
    // Fill the projected histogram
-   Double_t cont,err2;
+   Double_t cont,sw2,bent,bsw2;
    Double_t totcont = 0;
    Bool_t  computeErrors = h1->GetSumw2N();
    vector<Int_t> inbins;
    inbins.assign(fAxes.size(),0);
    vector<Int_t> outbins;
    outbins.assign(h1->GetNaxis(),0);
-   cout << "sfsg5" << endl;
+
    // implement filling of projected histogram
    // outbin is bin number of outAxis (the projected axis). Loop is done on all bin of TH2 histograms
    // inbin is the axis being integrated. Loop is done only on the selected bins
    firstOutBin = 0;
    lastOutBin = h1->GetNbins();
-   cout << "sfsg6" << endl;
+
    for (Int_t outbin = 0; outbin < h1->GetNbins(); ++outbin) {
-      err2 = 0;
       cont = 0;
+      sw2  = 0;
+      bent = 0;
+      bsw2 = 0;
       outbins = h1->GetBins(outbin);
       
       /*
@@ -733,24 +667,30 @@ TProfileMDF* TProfileMDF::ReduceDimensions(TString name, UInt_t axisNumber, Int_
          */
        
          cont += GetBinContent(inbins);
-         Double_t err = GetBinError(inbins);
-         err2 += err*err;
+         sw2  += fSumw2.fArray[GetGlobalBin(inbins)];
+         bent += fBinEntries.fArray[GetGlobalBin(inbins)];
+         bsw2 += (fBinSumw2.fN ? fBinSumw2.fArray[GetGlobalBin(inbins)] : 0);
       }//for inbin
 
-      // find corresponding bin number in h1 for outbin
-      h1->TH1F::SetBinContent(h1->GetGlobalBin(outbins),cont);
-      if(cont!=0) cout << "cont=" << cont << " at global bin " << h1->GetGlobalBin(outbins) << endl;
-      h1->TH1F::SetBinError(h1->GetGlobalBin(outbins),TMath::Sqrt(err2));
+      // find corresponding bin number in h1 for outbin and set the bin content and error
+      h1->SetBinContentError(h1->GetGlobalBin(outbins),cont,sw2,bent,bsw2);
+
+      // For debugging purposes
+      //if(cont!=0) cout << "cont=" << cont << " at global bin " << h1->GetGlobalBin(outbins) << endl;
+      //if(cont!=0) cout << "h1->GetBinContent(6)=" << h1->GetBinContent(6) << " at global bin " << h1->GetGlobalBin(outbins) << endl;
+
       // sum  all content
       totcont += cont;
    }//for outbin
-   cout << "sfsg7" << endl;
-   h1->LoopOverBins();
+
+   // For debugging purposes
+   //h1->LoopOverBins();
+
    // the statistics is automatically recalulated since it is reset by the call to SetBinContent
    // we just need to set the entries since they have not been correctly calculated during the projection
    // we can only set them to the effective entries
    h1->SetEntries( h1->GetEffectiveEntries() );
-   cout << "sfsg8" << endl;
+
    // re-compute the entries
    // in case of error calculation (i.e. when Sumw2() is set)
    // use the effective entries for the entries
@@ -758,10 +698,134 @@ TProfileMDF* TProfileMDF::ReduceDimensions(TString name, UInt_t axisNumber, Int_
    Double_t entries =  TMath::Floor( totcont + 0.5); // to avoid numerical rounding
    if (h1->GetSumw2N()) entries = h1->GetEffectiveEntries();
    h1->SetEntries( entries );
-   cout << "sfsg9" << endl;
+
    return h1;
 
 }//ReduceDimensions
+
+// --------------------------------------------------------------
+void TProfileMDF::SetBinContentError(Int_t bin, Double_t cont, Double_t sw2, Double_t bent, Double_t bsw2){
+
+   if (bin < 0 || bin > fNcells-1) return;
+   // delete buffer if it is there since it will become invalid
+   if (fBuffer) BufferEmpty(1);
+   // create sumw2 per bin if not set
+   if (fBinSumw2.fN == 0) Sumw2();
+   
+   fEntries+=bent;
+   fTsumw = 0;
+   fArray[bin] = cont;
+   fSumw2.fArray[bin] = sw2;
+   fBinEntries.fArray[bin] = bent;
+   if (fBinSumw2.fN)
+      fBinSumw2.fArray[bin] = bsw2; 
+   //cout<<"bin="<<bin<<"\t fNcells="<<fNcells<<"\tcontent="<<cont<<"\tfArray[bin]="<<fArray[bin]<<"\tfBinEntries.fArray[bin]="<<fBinEntries.fArray[bin]<<"\tfBinSumw2.fArray[bin]="<<fBinSumw2.fArray[bin]<<endl;
+
+}
+
+// --------------------------------------------------------------
+void TProfileMDF::SetErrorOption(Option_t * option){
+
+//*-*-*-*-*-*-*-*-*-*Set option to compute profile2D errors*-*-*-*-*-*-*-*
+//*-*                =======================================
+//
+//    The computation of errors is based on the parameter option:
+//    option:
+//     ' '  (Default) Errors are Spread/SQRT(N) for Spread.ne.0. ,
+//                      "     "  SQRT(T)/SQRT(N) for Spread.eq.0,N.gt.0 ,
+//                      "     "  0.  for N.eq.0
+//     's'            Errors are Spread  for Spread.ne.0. ,
+//                      "     "  SQRT(T)  for Spread.eq.0,N.gt.0 ,
+//                      "     "  0.  for N.eq.0
+//     'i'            Errors are Spread/SQRT(N) for Spread.ne.0. ,
+//                      "     "  1./SQRT(12.*N) for Spread.eq.0,N.gt.0 ,
+//                      "     "  0.  for N.eq.0
+//   See TProfile3D::BuildOptions for explanation of all options
+
+   TString opt = option;
+   opt.ToLower();
+   fErrorMode = kERRORMEAN;
+   if (opt.Contains("s")) fErrorMode = kERRORSPREAD;
+   if (opt.Contains("i")) fErrorMode = kERRORSPREADI;
+   if (opt.Contains("g")) fErrorMode = kERRORSPREADG;
+
+}//SetErrorOption
+
+// --------------------------------------------------------------
+void TProfileMDF::Test(){
+
+  AddAxis("x",30,0,130);
+  AddAxis("y",20,0,3500);
+  AddAxis("z",10,0,10);
+  
+  Sumw2();
+
+  // Vector of coordinates initialized to 
+  // have h->GetNaxis() elements
+  // coord[0]=x, coord[1]=y, and so on...
+  vector<Double_t> coord (GetNaxis(),0);
+
+  // Throw some random values
+  TRandom3 rn;
+
+  for (int pse = 0; pse < 1000; pse ++) {
+
+     coord[0] = rn.Gaus(60,10);
+     coord[1] = rn.Gaus(1000,100);
+     coord[2] = rn.Gaus(5,2);
+
+     Fill(coord,rn.Gaus(13, 0.2));
+
+  }//for pse's
+  
+  // Bin -> Vector of bins
+  vector<Int_t> bin (GetNaxis(),0);
+  bin[0] = 2;
+  bin[1] = 2;
+  bin[2] = 2;
+  
+  cout<<"TEST()"<<endl;
+  cout<<" \tfNcells="<<fNcells<<endl;
+  cout<<" \tbin[0]="<<bin[0]<<" bin[1]="<<bin[1]<<" bin[2]="<<bin[2]<<endl;
+  cout<<" \tGlobal bin  ="<< GetGlobalBin(bin)<<endl;
+  cout<<" \tBin Content ="<< GetBinContent(bin)<<endl;
+  cout<<" \tBin Error   ="<< GetBinError(bin)<<endl;
+
+}//Test
+
+// --------------------------------------------------------------
+void TProfileMDF::TestRD(){
+
+   AddAxis("x",3,0,3);
+   AddAxis("y",3,0,3);
+   AddAxis("z",3,0,3);
+
+   Sumw2();
+
+   vector<Double_t> c (GetNaxis(),0);
+
+   c[0]=0.5;
+   c[1]=0.5;
+   c[2]=0.5;
+   Fill(c,1);
+   c[0]=1.5;
+   c[1]=0.5;
+   c[2]=0.5;
+   Fill(c,1);
+   c[0]=2.5;
+   c[1]=0.5;
+   c[2]=0.5;
+   Fill(c,4);
+
+   cout<<"LoopOverBins1"<< endl;
+   LoopOverBins();
+   TProfileMDF* p = ReduceDimensions("p",0,0,5);
+   cout<<"ReducedDimensionsBy1"<< endl;
+   cout<<"LoopOverBins2"<< endl;
+   p->LoopOverBins();
+   //cout<<"p->GetBinContent(6)="<<p->GetBinContent(6)<<endl;
+
+}//TestRD
 
 // --------------------------------------------------------------
 void TProfileMDF::WriteToFile(TString filename, TString writeFlag){
