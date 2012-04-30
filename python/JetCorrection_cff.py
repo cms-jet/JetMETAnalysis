@@ -38,9 +38,9 @@ kt6PFJetsL1Fast = ak5PFJetsL1Fast.clone(src='kt6PFJets', correctors=['kt6PFL1Fas
 ak5JPTJetsL1   = cms.EDProducer(
     'JPTJetCorrectionProducer',
     src         = cms.InputTag('ak5JPTJets'),
-    correctors  = cms.vstring('ak5JPTL1Offset')
+    correctors  = cms.vstring('ak5L1JPTOffset')
     )
-ak7JPTJetsL1 = ak5JPTJetsL1.clone(src='ak7JPTJets', correctors=['ak7JPTL1Offset'])
+ak7JPTJetsL1 = ak5JPTJetsL1.clone(src='ak7JPTJets', correctors=['ak7L1JPTOffset'])
 
 #
 # JPT L2L3
