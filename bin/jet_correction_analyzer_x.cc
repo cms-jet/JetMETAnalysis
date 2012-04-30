@@ -231,7 +231,7 @@ int main(int argc,char**argv)
       vector<Double_t> coord;
       TProfileMDF *RhoVsPileupVsEta;
       vector<Double_t> coord2;
-      TProfile3D *RespVsRhoHLT; //For Mikko and Ricardo to create Calo and PF HLT L1 files
+      TProfile3D *RespVsRho; //For Mikko and Ricardo to create Calo and PF HLT L1 files
       TProfile2D *OffVsRhoVsEta; //For Ricardo to create Calo and PF HLT L1 files
       TProfile2D *RhoVsOffETVsEta;
       TProfile2D *RhoVsOffITVsEta;
@@ -372,8 +372,8 @@ int main(int argc,char**argv)
          RespVsPileup->Sumw2();
          coord.assign(RespVsPileup->GetNaxis(),0);
 
-         RespVsRhoHLT = new TProfile3D("RespVsRhoHLTVsEtaVsPt","RespVsRhoHLTVsEtaVsPt",NPtBins,vpt,NETA_HLT,veta_HLT,NRhoBins,vrho);
-         RespVsRhoHLT->Sumw2();
+         RespVsRho = new TProfile3D("RespVsRhoVsEtaVsPt","RespVsRhoVsEtaVsPt",NPtBins,vpt,NETA_HLT,veta_HLT,NRhoBins,vrho);
+         RespVsRho->Sumw2();
 
          RhoVsPileupVsEta = new TProfileMDF("RhoVsPileupVsEta","RhoVsPileupVsEta");
          RhoVsPileupVsEta->AddAxis("eta",NETA,veta);
@@ -391,13 +391,13 @@ int main(int argc,char**argv)
          
          TFile tempin(readRespVsPileup);
          tempin.cd();
-         RespVsRhoHLT = (TProfile3D*)gDirectory->Get("RespVsRhoHLTVsEtaVsPt");
-         if (!RespVsRhoHLT) {
-            cout << "ERROR::Could not retrieve RespVsRhoHLTVsEtaVsPt" << endl
+         RespVsRho = (TProfile3D*)gDirectory->Get("RespVsRhoVsEtaVsPt");
+         if (!RespVsRho) {
+            cout << "ERROR::Could not retrieve RespVsRhoVsEtaVsPt" << endl
                  << "Ending program !!" << endl;
             return 0;
          }
-         RespVsRhoHLT->SetDirectory(0);
+         RespVsRho->SetDirectory(0);
       }
       outf->cd();
       OffVsRhoVsEta = new TProfile2D("OffVsRhoVsEta","OffVsRhoVsEta",26,0,26,NETA,veta);
@@ -540,8 +540,11 @@ int main(int argc,char**argv)
                   coord[3] = (*npus)[1];
                   coord[4] = (*npus)[2];
                   RespVsPileup->Fill(coord,relrsp);
-
-                  RespVsRhoHLT->Fill(ptgen,eta,rho_hlt,relrsp);
+                  
+                  if(!algs[a].Contains("HLT"))
+                     RespVsRho->Fill(ptgen,eta,rho,relrsp);
+                  else
+                     RespVsRho->Fill(ptgen,eta,rho_hlt,relrsp);
 
                   coord2[0] = eta;
                   coord2[1] = (*npus)[0];
@@ -580,7 +583,7 @@ int main(int argc,char**argv)
                   double resp_LOOT = RespVsPileup->GetBinContent(RespVsPileup->FindBin(coord));
                   double eresp_LOOT = RespVsPileup->GetBinError(RespVsPileup->FindBin(coord));
 
-                  double resp_rho = RespVsRhoHLT->GetBinContent(RespVsRhoHLT->FindBin(ptgen,eta,1));
+                  double resp_rho = RespVsRho->GetBinContent(RespVsRho->FindBin(ptgen,eta,1));
 
                   //
                   // Psi = {RelRsp[p_T^GEN,EOOT,IT,LOOT]-RelRsp[p_T^GEN,EOOT,IT,LOOT]}*p_T^GEN
@@ -703,7 +706,7 @@ int main(int argc,char**argv)
          RespVsPileup->WriteToFile(outputDir+"RespVsPileup_"+alias+".root");
          TFile tempout(outputDir+"RespVsPileup_"+alias+".root","UPDATE");
          tempout.cd();
-         RespVsRhoHLT->Write();
+         RespVsRho->Write();
          tempout.Close();
          RhoVsPileupVsEta->WriteToFile(outputDir+"RhoVsPileupVsEta_"+alias+".root");
       }
