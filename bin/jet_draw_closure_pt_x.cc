@@ -7,7 +7,7 @@
 ///////////////////////////////////////////////////////////////////
 
 #include "JetMETAnalysis/JetAnalyzers/interface/Settings.h"
-#include "JetMETAnalysis/JetAnalyzers/bin/tdrstyle.C"
+#include "JetMETAnalysis/JetAnalyzers/interface/Style.h"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 
 #include "TROOT.h"
@@ -36,9 +36,6 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 // define local functions
 ////////////////////////////////////////////////////////////////////////////////
-
-/// sets the style for the canvas if the plots need to be in tdr style
-void setStyle(bool fitStat = false, bool name = false);
 
 ///CMS Preliminary label;
 void cmsPrelim(double intLUMI = 0);
@@ -348,30 +345,6 @@ int main(int argc,char**argv)
 ////////////////////////////////////////////////////////////////////////////////
 // implement local functions
 ////////////////////////////////////////////////////////////////////////////////
-
-//______________________________________________________________________________
-void setStyle(bool fitStat, bool name) {
-   TStyle* tdrStyle = getTDRStyle();
-   tdrStyle->SetPadRightMargin(0.08);
-   tdrStyle->SetLegendBorderSize(0);
-   //tdrStyle->SetMarkerStyle(7);
-   if(fitStat)
-   {
-      if(name) tdrStyle->SetOptStat("neMR");
-      else tdrStyle->SetOptStat("eMR");
-      tdrStyle->SetOptFit(2211);
-   }
-   else
-   {
-      tdrStyle->SetOptStat(0);
-      tdrStyle->SetOptFit(0);
-   }
-   tdrStyle->SetStatColor(0);
-   tdrStyle->SetPalette(1);
-   tdrStyle->SetTitleColor(0,"c");
-   tdrStyle->SetTitleFillColor(0);
-   gROOT->SetStyle(tdrStyle->GetName());
-}
 
 //______________________________________________________________________________
 void cmsPrelim(double intLUMI)

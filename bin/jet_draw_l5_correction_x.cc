@@ -7,7 +7,7 @@
 ///////////////////////////////////////////////////////////////////
 
 #include "JetMETAnalysis/JetAnalyzers/interface/Settings.h"
-#include "JetMETAnalysis/JetAnalyzers/bin/tdrstyle.C"
+#include "JetMETAnalysis/JetAnalyzers/interface/Style.h"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 
 #include "TROOT.h"
@@ -48,9 +48,6 @@ std::string concatString(const T& obj1, const U& obj2)
 
 /// divide one graph by another, assuming they have the same abscissa
 void divTGraphErrors(TGraphErrors* num, TGraphErrors* den);
-
-/// sets the style for the canvas if the plots need to be in tdr style
-void setStyle(bool fitStat = false, bool name = false);
 
 ///CMS Preliminary label;
 void cmsPrelim(double intLUMI = 0);
@@ -341,31 +338,6 @@ void divTGraphErrors(TGraphErrors* num, TGraphErrors* den)
       num->SetPointError(k,ex,TMath::Sqrt((TMath::Power((1/normy),2)*TMath::Power(ey,2))+
                                           (TMath::Power((y/TMath::Power(normy,2)),2)*TMath::Power(normey,2))));
    }
-}
-
-//______________________________________________________________________________
-void setStyle(bool fitStat, bool name) {
-   TStyle* tdrStyle = getTDRStyle();
-   tdrStyle->SetPadRightMargin(0.08);
-   tdrStyle->SetLegendBorderSize(0);
-   //tdrStyle->SetMarkerStyle(7);
-   tdrStyle->SetEndErrorSize(0);
-   if(fitStat)
-   {
-      if(name) tdrStyle->SetOptStat("neMR");
-      else tdrStyle->SetOptStat("eMR");
-      tdrStyle->SetOptFit(2211);
-   }
-   else
-   {
-      tdrStyle->SetOptStat(0);
-      tdrStyle->SetOptFit(0);
-   }
-   tdrStyle->SetStatColor(0);
-   tdrStyle->SetPalette(1);
-   tdrStyle->SetTitleColor(0,"c");
-   tdrStyle->SetTitleFillColor(0);
-   gROOT->SetStyle(tdrStyle->GetName());
 }
 
 //______________________________________________________________________________
