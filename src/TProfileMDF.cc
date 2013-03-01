@@ -108,17 +108,162 @@ TProfileMDF::TProfileMDF(const char*name, const char *title) : TH1F() {
 }
 
 // --------------------------------------------------------------
-TAxis * TProfileMDF::GetAxis(Int_t axisNumber){
-  
-  if (axisNumber >= (Int_t) fAxes.size() ) {
-    cout<<"WARNING TProfileMDF::GetAxis requested with axisNumber"
-      " out of range."<<endl;
-    return 0;
-  }
-  
-  return fAxes[axisNumber];
-  
-} // GetAxis
+void TProfileMDF::Add(TProfileMDF* h1, Double_t c1) {
+   // Performs the operation: this = this + c1*h1
+
+   if (!h1) {
+      Error("Add","Attempt to add a non-existing TProfileMDF");
+      return;
+   }
+   
+   Add(this, h1, 1, c1);
+}
+
+// --------------------------------------------------------------
+void TProfileMDF::Add(TProfileMDF *h1, TProfileMDF *h2, Double_t c1, Double_t c2, Bool_t vetoAddAxis) {
+//   -*-*-*Replace contents of this histogram by the addition of h1 and h2*-*-*
+//         ===============================================================
+//
+//   this = c1*h1 + c2*h2
+//   if errors are defined (see TH1::Sumw2), errors are also recalculated
+//   Note that if h1 or h2 have Sumw2 set, Sumw2 is automatically called for this
+//   if not already set.
+//
+// SPECIAL CASE (Average/Efficiency histograms)
+// For histograms representing averages or efficiencies, one should compute the average
+// of the two histograms and not the sum. One can mark a histogram to be an average
+// histogram by setting its bit kIsAverage with
+//    myhist.SetBit(TH1::kIsAverage);
+// Note that the two histograms must have their kIsAverage bit set
+//
+// IMPORTANT NOTE: If you intend to use the errors of this histogram later
+// you should call Sumw2 before making this operation.
+// This is particularly important if you fit the histogram after TH1::Add
+   
+   if (!h1 || !h2) {
+      Error("Add","Attempt to add a non-existing histogram");
+      return;
+   }
+
+   Bool_t normWidth = kFALSE;
+   if (h1 == h2 && c2 < 0) {
+      Warning("Add","Normalizing h1 by the width of each cell.");
+      c2 = 0; normWidth = kTRUE;
+   }
+   
+   Int_t naxis = 0;
+   TProfileMDF* atemp;
+   if(GetNaxis()==0) {
+      Warning("Add","Attempt to add to a TProfileMDF without any axes. Setting vetoAddAxis to false.");
+      vetoAddAxis=false;
+      if(h1!=this) {
+         naxis = h1->GetNaxis();
+         atemp = h1;
+      }
+      else if(h2!=this) {
+         naxis = h2->GetNaxis();
+         atemp = h2;
+      }
+      else {
+         Error("Add","Attempt to add histogram to itself when \"this\", \"h1\", and \"h2\" have no axes.");
+         return;
+      }
+   }
+
+//   - Add Axes
+   vector<Int_t> nbins;
+   for(Int_t a=0; a<naxis; a++) {
+      if(!vetoAddAxis) {
+         cout << " TProfileMDF::Add::Adding an axis with nBins=" << atemp->GetAxis(a)->GetNbins() << endl;
+         AddAxis(atemp->GetAxis(a));
+      }
+      nbins.push_back(fAxes[a]->GetNbins());
+//   - Check histogram compatibility
+      if(nbins.back() != h1->GetAxis(a)->GetNbins() || nbins.back() != h2->GetAxis(a)->GetNbins()) {
+         Error("Add","Attempt to add histograms with different number of bins");
+         return;
+      }
+//   - Issue a Warning if histogram limits are different
+      if(fAxes[a]->GetXmin() != h1->GetAxis(a)->GetXmin() ||
+         fAxes[a]->GetXmax() != h1->GetAxis(a)->GetXmax()) {
+         Warning("Add",Form("Attempt to add histograms (this=[%f,%f],h1=[%f,%f]) with different axis limits",fAxes[a]->GetXmin(),fAxes[a]->GetXmax(),h1->GetAxis(a)->GetXmin(),h1->GetAxis(a)->GetXmax()));
+      }
+      if(fAxes[a]->GetXmin() != h2->GetAxis(a)->GetXmin() ||
+         fAxes[a]->GetXmax() != h2->GetAxis(a)->GetXmax()) {
+         Warning("Add",Form("Attempt to add histograms (this=[%f,%f],h2=[%f,%f]) with different axis limits",fAxes[a]->GetXmin(),fAxes[a]->GetXmax(),h2->GetAxis(a)->GetXmin(),h2->GetAxis(a)->GetXmax()));
+      }      
+   }
+
+//   - Create Sumw2 if h1 or h2 have Sumw2 set
+   if (fSumw2.fN == 0 && (h1->GetSumw2N() != 0 || h2->GetSumw2N() != 0)) Sumw2();
+
+//   - Add statistics
+   Double_t nEntries = c1*h1->GetEntries() + c2*h2->GetEntries();
+   Double_t s1[kNstat], s2[kNstat], s3[kNstat];
+   Int_t i;
+   for (i=0;i<kNstat;i++) {s1[i] = s2[i] = s3[i] = 0;}
+   h1->GetStats(s1);
+   h2->GetStats(s2);
+   for (i=0;i<kNstat;i++) {
+      if (i == 1) s3[i] = c1*c1*s1[i] + c2*c2*s2[i];
+      else        s3[i] = TMath::Abs(c1)*s1[i] + TMath::Abs(c2)*s2[i];
+   }
+
+   SetMinimum();
+   SetMaximum();
+
+//    Reset the kCanRebin option. Otherwise SetBinContent on the overflow bin
+//    would resize the axis limits!
+   ResetBit(kCanRebin);
+
+//   - Loop on bins (including underflows/overflows)
+   vector<Int_t> coord(fAxes.size(),0);
+   vector<Double_t> widths(fAxes.size(),0.0);
+   Float_t cu;
+   Float_t *cu1 = h1->GetW();    Float_t *cu2 = h2->GetW();
+   Double_t *er1 = h1->GetW2();  Double_t *er2 = h2->GetW2();
+   Float_t *en1 = h1->GetB();    Float_t *en2 = h2->GetB();
+   Float_t *ew1 = h1->GetB2();   Float_t *ew2 = h2->GetB2();
+   // if p1 has not the sum of weight squared/bin stored use just the sum of weights  
+   if (ew1 == 0) ew1 = en1;
+   if (ew2 == 0) ew2 = en2;
+   for (Int_t globalBin=0; globalBin < fNcells ; globalBin++){
+      coord = GetBins(globalBin);
+      Double_t width = 1.0;
+      for(Int_t a=0; a<Int_t(fAxes.size()); a++) {
+         widths[a] = h1->GetAxis(a)->GetBinWidth(coord[a]);
+         width*=widths.back();
+      }
+      if (normWidth) {
+         cu  = c1*cu1[globalBin]/width;
+         TH1F::SetBinContent(globalBin,cu);
+         if (fSumw2.fN) {
+            Double_t e1 = h1->GetBinError(globalBin)/width;
+            fSumw2.fArray[globalBin] = TMath::Abs(c1)*er1[globalBin];
+         }
+         fBinEntries.fArray[globalBin] = TMath::Abs(c1)*en2[globalBin]/width;
+         if (fBinSumw2.fN) fBinSumw2.fArray[globalBin]  = TMath::Power(TMath::Abs(c1),2)*ew1[globalBin]/width;
+      } else {
+         cu  = c1*cu1[globalBin] + c2*cu2[globalBin];
+         //if(cu!=0)
+         //   cout << "Setting content of bin " << globalBin << " to " << cu << endl;
+         fArray[globalBin] = cu;
+         //TH1F::SetBinContent(globalBin,cu);
+         if (fSumw2.fN) {
+            Double_t e1 = h1->GetBinError(globalBin);
+            Double_t e2 = h2->GetBinError(globalBin);
+            fSumw2.fArray[globalBin] = TMath::Abs(c1)*er1[globalBin] + TMath::Abs(c2)*er2[globalBin];
+         }
+         fBinEntries.fArray[globalBin] = TMath::Abs(c1)*en1[globalBin] + TMath::Abs(c2)*en2[globalBin];
+         if (fBinSumw2.fN) fBinSumw2.fArray[globalBin]  = TMath::Power(TMath::Abs(c1),2)*ew1[globalBin] + TMath::Power(TMath::Abs(c2),2)*ew2[globalBin];
+      }
+   }
+
+   // update statistics (do here to avoid changes by SetBinContent)
+   PutStats(s3);
+   SetEntries(nEntries);
+
+}
 
 // --------------------------------------------------------------
 void TProfileMDF::AddAxis(TString axisTitle, Int_t nbins, Double_t xlow, Double_t xup){
@@ -248,7 +393,40 @@ void TProfileMDF::AddAxes(vector<TAxis*> faxes){
 }//AddAxes
 
 // --------------------------------------------------------------
-vector<Int_t> TProfileMDF::GetBins(Int_t binglobal){
+TH1F* TProfileMDF::Get1DProjection(Int_t axisNumber, std::vector<Int_t> binCoord) {
+   TString Name = Form("projection_axis%d",axisNumber);
+   TString Title = Form("1D Projection Along The %s Axis",GetAxis(axisNumber)->GetTitle());
+   //TH1F* projection = new TH1F(NameTitle,NameTitle,GetAxis(axisNumber)->GetNbins(),GetAxis(axisNumber)->GetXmin(),GetAxis(axisNumber)->GetXmax());
+   TH1F* projection = new TH1F(Name,Title,GetAxis(axisNumber)->GetNbins(),GetAxis(axisNumber)->GetXbins()->GetArray());
+   projection->GetXaxis()->SetTitle(GetAxis(axisNumber)->GetTitle());
+   projection->GetXaxis()->SetTitleOffset(1.4); 
+   projection->GetYaxis()->SetTitle("a.u.");
+   projection->GetYaxis()->SetTitleOffset(1.4); 
+
+   for(int i=0; i<=GetAxis(axisNumber)->GetNbins()+1; i++) {
+      binCoord[axisNumber] = i;
+      projection->SetBinContent(i,GetBinContent(binCoord));
+      projection->SetBinError(i,GetBinError(binCoord));
+   }
+   
+   return projection;
+}
+
+// --------------------------------------------------------------
+TAxis * TProfileMDF::GetAxis(Int_t axisNumber){
+  
+  if (axisNumber >= (Int_t) fAxes.size() ) {
+    cout<<"WARNING TProfileMDF::GetAxis requested with axisNumber"
+      " out of range."<<endl;
+    return 0;
+  }
+  
+  return fAxes[axisNumber];
+  
+} // GetAxis
+
+// --------------------------------------------------------------
+vector<Int_t> TProfileMDF::GetBins(Int_t binglobal) const {
    
    // return binx, biny, binz corresponding to the global bin number globalbin
    vector<Int_t> cellsPerAxis;
@@ -298,8 +476,37 @@ Int_t TProfileMDF::GetGlobalBin(const vector<Int_t> & bins){
 
   return bin;
 
-}//FindBin
+}//GetGlobalBin
 
+// --------------------------------------------------------------
+Int_t TProfileMDF::GetMaximumBin() {
+   vector<Int_t> binCoord(GetNaxis(),0);
+   return GetMaximumBin(binCoord);
+}
+
+// --------------------------------------------------------------
+Int_t TProfileMDF::GetMaximumBin(std::vector<Int_t>& binCoord) {
+   //   -*-*-*-*-*Return location of bin with maximum value in the range*-*
+   //             ======================================================
+   Int_t locm;
+   vector<Int_t> low;
+   vector<Int_t> high;
+   for(int a=0; a<GetNaxis(); a++) {
+      low.push_back(fAxes[a]->GetFirst());
+      high.push_back(fAxes[a]->GetLast());
+   }
+   Double_t maximum = -FLT_MAX, value;
+   locm = 0;
+   for (Int_t b=0; b < fNcells ; b++){
+      value = GetBinContent(b);
+      if(value>maximum && !IsBinOverflow(b) && !IsBinUnderflow(b)) {
+         maximum = value;
+         locm = b;
+         binCoord = GetBins(b);
+      }
+   }
+   return locm;
+}
 
 // --------------------------------------------------------------
 Int_t TProfileMDF::FindBin(const vector<Double_t> & xcoor){
@@ -455,11 +662,107 @@ Double_t TProfileMDF::GetBinError(const vector<Int_t> & binCoord){
   // Find the bin and return the content
   Int_t globalBin = GetGlobalBin(binCoord);
   return GetBinError(globalBin);
+}// GetBinError
+
+// --------------------------------------------------------------
+Double_t TProfileMDF::Integral(TString option){
+
+   option.ToLower();
+
+   vector<pair<int,int> > ranges;
+   for(int fDimension=0; fDimension<GetNaxis(); fDimension++) {
+      ranges.push_back(make_pair(0,GetAxis(fDimension)->GetNbins()+1));
+      if(option.CompareTo("debug")==0)
+         cout << "Integral::fDimension = " << fDimension << "\tlow = " << 0 << "\thight = " << GetAxis(fDimension)->GetNbins()+1 << endl;
+   }
+   return Integral(ranges,option);
+
+}// Integral
+
+// --------------------------------------------------------------
+Double_t TProfileMDF::Integral(vector<pair<Int_t,Int_t> > ranges, TString option){
+   vector<Int_t> coord(GetNaxis(),0);
+   Double_t integral = 0.0;
+
+   option.ToLower();
+   
+   if(option.Contains("debug"))
+      cout << "Integral::Before IntegralRecursive with integral = " << integral << "\tranges.size() = " << ranges.size() << endl;
+   IntegralRecursive(integral, ranges, coord, GetNaxis(), option);
+   if(option.Contains("debug"))
+      cout << "Integral::After IntegralRecursive with integral = " << integral << endl;
+
+   return integral;
+
+}// Integral
+
+// --------------------------------------------------------------
+void TProfileMDF::IntegralRecursive(Double_t& integral, vector<pair<Int_t,Int_t> > ranges, vector<Int_t>& coord, Int_t depth, TString option){
+
+   option.ToLower();
+   
+   if(option.Contains("debug")){
+      for(int i=ranges.size()-depth; i>-1;i--)
+         cout << "\t";
+      cout << "IntegralRecursive::At depth = " << depth << endl;
+   }
+
+   if (depth==0) {
+      Int_t bin = GetGlobalBin(coord);
+      if(option.Contains("width")) {
+         Double_t width = 0.0;
+         for(unsigned int w=0; w< fAxes.size();w++) {
+            width*=fAxes[w]->GetBinWidth(coord[w]);
+         }
+         integral += GetBinContent(bin)*fBinEntries.fArray[bin]*width;
+      }
+      else
+         integral += GetBinContent(bin)*fBinEntries.fArray[bin];
+   }		
+   else {
+      for (int fRange = ranges[depth-1].first; fRange<=ranges[depth-1].second; fRange++) {
+         if(option.Contains("debug")){
+            for(int i=ranges.size()-depth; i>-1;i--)
+               cout << "\t";
+            cout << "IntegralRecursive::At index = " << fRange << endl;
+         }
+         coord[depth-1] = fRange;
+         IntegralRecursive(integral,ranges,coord,depth-1,option);
+      }
+   }
+
 }
 
 // --------------------------------------------------------------
-void TProfileMDF::LoopOverBins(){
+Bool_t TProfileMDF::IsBinOverflow(Int_t bin) const {
+   // Return true if the bin is overflow.
+   vector<Int_t> bins = GetBins(bin);
+   bool overflow = false;
+   for(unsigned int fDimension=1; fDimension<=bins.size(); fDimension++) {
+      if(bins[fDimension-1] >= fAxes[fDimension-1]->GetNbins()+1)
+         overflow = true;
+   }
+   
+   return overflow;
+}// IsBinOverflow
 
+// --------------------------------------------------------------
+Bool_t TProfileMDF::IsBinUnderflow(Int_t bin) const {
+   // Return true if the bin is overflow.
+   vector<Int_t> bins = GetBins(bin);
+   bool underflow = false;
+
+   for(unsigned int fDimension=1; fDimension<=bins.size(); fDimension++) {
+      if(bins[fDimension-1] <= 0)
+         underflow = true;
+   }
+   
+   return underflow;
+}// IsBinUnderflow
+
+// --------------------------------------------------------------
+void TProfileMDF::LoopOverBins(){
+   
   for (Int_t b=0; b < fNcells ; b++){
      if(GetBinEffectiveEntries(b)==0) 
         continue;
@@ -475,6 +778,8 @@ void TProfileMDF::LoopOverBins(){
 // --------------------------------------------------------------
 void TProfileMDF::LoopOverBinsRaw(){
 
+   Double_t integral = 0.0;
+
    for (Int_t b=0; b < fNcells ; b++){
       if(GetBinEffectiveEntries(b)==0) 
          continue;
@@ -484,23 +789,44 @@ void TProfileMDF::LoopOverBinsRaw(){
           <<" fBinSumw2="<< fBinSumw2.fArray[b]
           <<" fSumw2="<< fSumw2.fArray[b]
          <<endl;
+      integral += fBinEntries.fArray[b]*GetBinContent(b);
    }//for
    cout<<"\tfNcells="<<fNcells<<endl
        <<"\tfErrorMode="<<fErrorMode<<endl
        <<"\tfgApproximate="<<fgApproximate<<endl;
    for (unsigned int a=0; a<fAxes.size(); a++){
-      cout<<"\tAxis"<<a<<" name="<<fAxes[a]->GetName()
-          <<"Axis"<<a<<" title="<<fAxes[a]->GetTitle()<<endl;
+      cout<<"\tAxis"<<a<<" \tname="<<fAxes[a]->GetName()
+          <<" \ttitle="<<fAxes[a]->GetTitle()<<endl;
    }
+   cout<<"\tIntegral="<<integral<<endl;
 
 }//LoopOverBinsRaw
+
+// --------------------------------------------------------------
+void TProfileMDF::LoopOverBinsCoordinates(){
+
+  for (Int_t b=0; b < fNcells ; b++){
+     cout<<"\tGlobal bin="<<b;
+     vector<Int_t> bins = GetBins(b);
+     for(unsigned int fDimension=1; fDimension<=bins.size(); fDimension++) {
+        cout<<" Axis" << fDimension << "Bin=" << bins[fDimension-1];
+     }
+     cout<<" IsUnderflow="<< IsBinUnderflow(b)
+         <<" IsOverflow="<< IsBinOverflow(b)
+         <<endl;
+  }//for
+
+}
 
 // --------------------------------------------------------------
 void TProfileMDF::ReadFromFile(TString filename, TString treeName){
 
    TFile *f = new TFile(filename);
    if (!f->IsOpen()) return;
- 
+
+   gDirectory->cd(treeName);
+   if(TString(gDirectory->GetName()).CompareTo(treeName)!=0) return;
+
    TTree* t = (TTree*)gDirectory->Get(treeName);
    if (!t) return;
 
@@ -508,6 +834,7 @@ void TProfileMDF::ReadFromFile(TString filename, TString treeName){
    Float_t fBinEntries_ = 0.0;
    Float_t fBinSumw2_ = 0.0;
    Double_t fSumw2_ = 0.0;
+   Double_t fEntries_ = 0.0;
    vector<TAxis*> axes;
 
    t->SetBranchAddress("content",     &content_);
@@ -543,7 +870,7 @@ void TProfileMDF::ReadFromFile(TString filename, TString treeName){
    for (int bin=0; bin<nent; bin++){
       t->GetEntry(bin);
       if (fBinEntries_<1) {
-         TH1F::SetBinContent(bin,0.0);
+         //TH1F::SetBinContent(bin,0.0);
          fBinEntries.fArray[bin] = 0.0;      
          fBinSumw2.fArray[bin] = 0.0;
          fSumw2.fArray[bin] = 0.0;
@@ -553,8 +880,10 @@ void TProfileMDF::ReadFromFile(TString filename, TString treeName){
          fBinEntries.fArray[bin] = fBinEntries_;      
          fBinSumw2.fArray[bin] = fBinSumw2_;
          fSumw2.fArray[bin] = fSumw2_;
+         fEntries_+=fBinEntries_;
       }
    }
+   fEntries = fEntries_;
 
 }
 
@@ -704,6 +1033,57 @@ TProfileMDF* TProfileMDF::ReduceDimensions(TString name, UInt_t axisNumber, Int_
 }//ReduceDimensions
 
 // --------------------------------------------------------------
+void TProfileMDF::Scale(Double_t c1, Option_t* option){
+   //   -*-*-*Multiply this histogram by a constant c1*-*-*-*-*-*-*-*-*
+   //         ========================================
+   //
+   //   this = c1*this
+   //
+   // Note that both contents and errors(if any) are scaled.
+   // This function uses the services of TH1::Add
+   //
+   // IMPORTANT NOTE: If you intend to use the errors of this histogram later
+   // you should call Sumw2 before making this operation.
+   // This is particularly important if you fit the histogram after TH1::Scale
+   //
+   // One can scale an histogram such that the bins integral is equal to
+   // the normalization parameter via TH1::Scale(Double_t norm), where norm
+   // is the desired normalization divided by the integral of the histogram.
+   //
+   // If option contains "width" the bin contents and errors are divided
+   // by the bin width.
+/*
+//For TH1
+
+   TString opt = option;
+   opt.ToLower();
+   Double_t ent = 0.0;
+   for (Int_t bin=0; bin < fNcells ; bin++){
+      ent += fBinEntries.fArray[bin];
+   }
+   if (opt.Contains("width")) Add(this,this,c1,-1);
+   else                       Add(this,this,c1,0);
+   fEntries = ent;
+*/
+//For TProfile
+   Double_t ac1 = TMath::Abs(c1);
+
+   // Make the loop over the bins to calculate the Addition
+   Int_t bin;
+   Float_t *cu1 = GetW();
+   Double_t *er1 = GetW2();
+   Float_t *en1 = GetB();
+   Float_t *ew1 = GetB2();
+   for (bin=0;bin<fNcells;bin++) {
+      fArray[bin]             = c1*cu1[bin];
+      fSumw2.fArray[bin]      = ac1*ac1*er1[bin];
+      fBinEntries.fArray[bin] = en1[bin];
+      fBinSumw2.fArray[bin]   = ac1*ac1*ew1[bin];
+   }
+
+}//Scale
+
+// --------------------------------------------------------------
 void TProfileMDF::SetBinContentError(Int_t bin, Double_t cont, Double_t sw2, Double_t bent, Double_t bsw2){
 
    if (bin < 0 || bin > fNcells-1) return;
@@ -787,14 +1167,57 @@ void TProfileMDF::Test(){
   cout<<"TEST()"<<endl;
   cout<<" \tfNcells="<<fNcells<<endl;
   cout<<" \tbin[0]="<<bin[0]<<" bin[1]="<<bin[1]<<" bin[2]="<<bin[2]<<endl;
-  cout<<" \tGlobal bin  ="<< GetGlobalBin(bin)<<endl;
-  cout<<" \tBin Content ="<< GetBinContent(bin)<<endl;
-  cout<<" \tBin Error   ="<< GetBinError(bin)<<endl;
+  cout<<" \tGlobal bin        ="<< GetGlobalBin(bin)<<endl;
+  cout<<" \tBin Content       ="<< GetBinContent(bin)<<endl;
+  cout<<" \tBin Error         ="<< GetBinError(bin)<<endl;
+  cout<<" \tEntries           ="<< GetEntries()<<endl;
+  cout<<" \tEffective Entries ="<< GetEffectiveEntries()<<endl;
 
 }//Test
 
 // --------------------------------------------------------------
 void TProfileMDF::TestRD(){
+   Test3D();
+
+   cout<<"LoopOverBins1"<< endl;
+   LoopOverBins();
+   TProfileMDF* p = ReduceDimensions("p",0,0,5);
+   cout<<"ReducedDimensionsBy1"<< endl;
+   cout<<"LoopOverBins2"<< endl;
+   p->LoopOverBins();
+   //cout<<"p->GetBinContent(6)="<<p->GetBinContent(6)<<endl;
+
+}//TestRD
+
+// --------------------------------------------------------------
+void TProfileMDF::Test2D(){
+
+   AddAxis("x",3,0,3);
+   AddAxis("y",3,0,3);
+
+   Sumw2();
+
+   vector<Double_t> c (GetNaxis(),0);
+
+   c[0]=0.5;
+   c[1]=0.5;
+   Fill(c,1);
+   c[0]=1.5;
+   c[1]=0.5;
+   Fill(c,1);
+   c[0]=2.5;
+   c[1]=0.5;
+   Fill(c,4);
+/*
+   vector<pair<Int_t,Int_t> > ranges;
+   ranges.push_back(make_pair(0,1));
+   ranges.push_back(make_pair(0,3));
+   cout << "Integral=" << Integral(ranges) << endl;
+*/
+}//Test2D
+
+// --------------------------------------------------------------
+void TProfileMDF::Test3D(){
 
    AddAxis("x",3,0,3);
    AddAxis("y",3,0,3);
@@ -816,21 +1239,25 @@ void TProfileMDF::TestRD(){
    c[1]=0.5;
    c[2]=0.5;
    Fill(c,4);
-
-   cout<<"LoopOverBins1"<< endl;
-   LoopOverBins();
-   TProfileMDF* p = ReduceDimensions("p",0,0,5);
-   cout<<"ReducedDimensionsBy1"<< endl;
-   cout<<"LoopOverBins2"<< endl;
-   p->LoopOverBins();
-   //cout<<"p->GetBinContent(6)="<<p->GetBinContent(6)<<endl;
-
-}//TestRD
+   c[0]=2.5;
+   c[1]=0.5;
+   c[2]=0.5;
+   Fill(c,4);
+/*
+   vector<pair<Int_t,Int_t> > ranges;
+   ranges.push_back(make_pair(3,3));
+   ranges.push_back(make_pair(0,1));
+   ranges.push_back(make_pair(0,1));
+   cout << "Integral=" << Integral(ranges) << endl;
+*/
+}//Test3D
 
 // --------------------------------------------------------------
 void TProfileMDF::WriteToFile(TString filename, TString writeFlag){
 
    TFile* f = new TFile(filename,writeFlag);
+   gDirectory->mkdir(this->GetName());
+   gDirectory->cd(this->GetName());
    TTree* t = new TTree(this->GetName(),this->GetTitle());
 
    Float_t content_;
