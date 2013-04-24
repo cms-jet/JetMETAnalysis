@@ -71,13 +71,13 @@ int main(int argc,char**argv)
   
    vector<TString> algs         = cl.getVector<TString> ("algs");
    TString         filename     = cl.getValue<TString>  ("filename");
-   TString         path         = cl.getValue<TString>  ("path",                 "");
-   TString         outputDir    = cl.getValue<TString>  ("outputDir",      "images");
-   TString         outputFormat = cl.getValue<TString>  ("outputFormat",     ".png");
-   vector<TString> flavors      = cl.getVector<TString> ("flavors", "all b c g uds");
-   bool            normToAll    = cl.getValue<bool>     ("normToAll",          true);
-   bool            drawNormed   = cl.getValue<bool>     ("drawNormed",        false);
-   bool            tdr          = cl.getValue<bool>     ("tdr",               false);
+   TString         path         = cl.getValue<TString>  ("path",                    "");
+   TString         outputDir    = cl.getValue<TString>  ("outputDir",         "images");
+   vector<TString> outputFormat = cl.getVector<TString> ("outputFormat", ".png:::.eps");
+   vector<TString> flavors      = cl.getVector<TString> ("flavors",    "all b c g uds");
+   bool            normToAll    = cl.getValue<bool>     ("normToAll",             true);
+   bool            drawNormed   = cl.getValue<bool>     ("drawNormed",           false);
+   bool            tdr          = cl.getValue<bool>     ("tdr",                  false);
   
    if (!cl.check()) return 0;
    cl.print();
@@ -87,6 +87,7 @@ int main(int argc,char**argv)
    //
    if (tdr) {
       setStyle();
+      gStyle->SetOptFit(0);
    }
 
    //
@@ -101,6 +102,7 @@ int main(int argc,char**argv)
    TFile* file = new TFile(path+filename,"READ");
    for(unsigned int a=0; a<algs.size(); a++)
    {
+      cout << "Doing algorithm " << algs[a] << endl;
       TDirectoryFile *idir = (TDirectoryFile*)file->Get(algs[a]);
       vector<TCanvas*> cans;
       vector<TGraphErrors*> graphs;
@@ -111,6 +113,19 @@ int main(int argc,char**argv)
       TH1D* normalizationHist;
       vector<TLegend*> legs;
       vector<TPaveText*> paves;
+
+      //Create a pave indicating the algorithm name
+      TString algNameLong;
+      if(TString(algs[a]).Contains("ak"))        algNameLong += "Anti-kT";
+      if(TString(algs[a]).Contains("4"))         algNameLong += " R=0.4";
+      else if(TString(algs[a]).Contains("5"))    algNameLong += " R=0.5";
+      else if(TString(algs[a]).Contains("6"))    algNameLong += " R=0.6";
+      else if(TString(algs[a]).Contains("7"))    algNameLong += " R=0.7";
+      if(TString(algs[a]).Contains("pfchs"))     algNameLong += ", PFlow+CHS";
+      //else if(TString(algs[a]).Contains("pf"))   algNameLong += ", PFlow";
+      else if(TString(algs[a]).Contains("pf"))   algNameLong += ", Particle-Flow Jets";
+      else if(TString(algs[a]).Contains("calo")) algNameLong += ", Calo";
+      else if(TString(algs[a]).Contains("jpt"))  algNameLong += ", JPT";
 
       //
       //Loop over eta bins
@@ -230,12 +245,14 @@ int main(int argc,char**argv)
                      graphs.back()->GetXaxis()->SetLabelSize(0.045);
                      graphs.back()->GetXaxis()->SetNoExponent();
                      graphs.back()->GetXaxis()->SetMoreLogLabels();
+                     graphs.back()->GetYaxis()->SetRangeUser(20,1800);
                      graphs.back()->GetYaxis()->SetTitle("Jet Flavor Correction");
                      graphs.back()->GetYaxis()->SetTitleOffset(1.3);
                      graphs.back()->GetYaxis()->SetTitleSize(0.055);
                      graphs.back()->GetYaxis()->SetLabelSize(0.045);
                      graphs.back()->GetYaxis()->SetRangeUser(0.95,1.05);
                      graphs.back()->SetMarkerStyle(7);
+                     graphs.back()->GetFunction("fit")->SetLineColor(j+1);
                      graphs.back()->Draw("AP");
                   }
                   else {
@@ -248,6 +265,7 @@ int main(int argc,char**argv)
                      graphs.back()->GetYaxis()->SetLabelSize(0.035);
                      graphs.back()->GetYaxis()->SetRangeUser(0.94,1.1);
                      graphs.back()->SetMarkerStyle(7);
+                     graphs.back()->GetFunction("fit")->SetLineColor(j+1);
                      graphs.back()->Draw("AP");
                   }
                }
@@ -270,13 +288,18 @@ int main(int argc,char**argv)
          legs.back()->SetFillColor(0);
          legs.back()->Draw();
          if (tdr) {
-            paves.push_back(new TPaveText(0.2,0.78,0.6,0.88,"NDC"));
+            //paves.push_back(new TPaveText(0.2,0.72,0.65,0.9,"NDC"));
+            paves.push_back(new TPaveText(0.23,0.72,0.68,0.9,"NDC"));
             paves.back()->AddText("QCD Monte Carlo");
+            TString eta = Form("%s < #eta < %s",eta_boundaries_coarse[i],eta_boundaries_coarse[i+1]);
             paves.back()->AddText("|#eta| < 1.3");
+            //paves.back()->AddText(eta);
+            paves.back()->AddText(algNameLong);
             paves.back()->SetFillColor(0);
             paves.back()->SetBorderSize(0);
             paves.back()->SetTextFont(42);
-            paves.back()->SetTextSize(0.05);
+            //paves.back()->SetTextSize(0.05);
+            paves.back()->SetTextSize(0.04);
             paves.back()->Draw("EP");
             cmsPrelim();
          }
@@ -296,7 +319,9 @@ int main(int argc,char**argv)
       for(unsigned int i=0; i<cans.size(); i++)
       {
          string canName = cans[i]->GetName();
-         cans[i]->SaveAs(outputDir+"L5"+"AbsCorGraphs_"+algs[a]+"_"+canName+outputFormat);
+         for(unsigned int of=0; of<outputFormat.size(); of++) {
+            cans[i]->SaveAs(outputDir+"L5"+"AbsCorGraphs_"+algs[a]+"_"+canName+outputFormat[of]);
+         }
          cans[i]->Write();
       }
 
@@ -346,15 +371,17 @@ void cmsPrelim(double intLUMI)
    const float LUMINOSITY = intLUMI;
   TLatex latex;
   latex.SetNDC();
-  latex.SetTextSize(0.05);
+  //latex.SetTextSize(0.05);
+  latex.SetTextSize(0.045);
 
   latex.SetTextAlign(31); // align right
-  latex.DrawLatex(0.93,0.96,"#sqrt{s} = 7 TeV");
+  latex.DrawLatex(0.93,0.96,"#sqrt{s} = 8 TeV");
   if (LUMINOSITY > 0.) {
     latex.SetTextAlign(31); // align right
     //latex.DrawLatex(0.82,0.7,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //Original
     latex.DrawLatex(0.65,0.85,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //29/07/2011
   }
   latex.SetTextAlign(11); // align left
-  latex.DrawLatex(0.16,0.96,"CMS preliminary");// 2012");
+  //latex.DrawLatex(0.16,0.96,"CMS preliminary");// 2012");
+  latex.DrawLatex(0.16,0.96,"CMS Simulation Preliminary");// 2012");
 }

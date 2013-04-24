@@ -399,9 +399,11 @@ void fit_gaussian(TH1F*& hrsp,
     delete fitfnc;
     fitfnc = hrsp->GetFunction("fgaus");
     //fitfnc->ResetBit(TF1::kNotDraw);
-    norm  = fitfnc->GetParameter(0);
-    peak  = fitfnc->GetParameter(1);
-    sigma = fitfnc->GetParameter(2);
+    if (fitfnc) {
+       norm  = fitfnc->GetParameter(0);
+       peak  = fitfnc->GetParameter(1);
+       sigma = fitfnc->GetParameter(2);
+    }
   }
   if(hrsp->GetFunction("fgaus")==0)
     {

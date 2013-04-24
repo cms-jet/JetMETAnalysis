@@ -478,6 +478,7 @@ string get_algorithm_suffix(const string& alg)
    if      (alg.find("calol1off")  ==3) result += "Calol1off";
    else if (alg.find("calol1")     ==3) result += "Calol1";
    else if (alg.find("calo")       ==3) result += "Calo";
+   else if (alg.find("jptl1off")   ==3) result += "JPTl1off";
    else if (alg.find("jptl1")      ==3) result += "JPTl1";
    else if (alg.find("jpt")        ==3) result += "JPT";
    else if (alg.find("pfchsl1off") ==3) result += "PFchsl1off";

@@ -172,8 +172,10 @@ corrJetsDict = {
     'kt6calol1'            : ('kt6CaloJetsL1Fast',         kt6CaloJetsL1Fast),
     'ak5caloHLTl1'         : ('ak5CaloHLTJetsL1Fast',      ak5CaloHLTJetsL1Fast), #added 02/14/2012
     'ak5caloHLTl1off'      : ('ak5CaloHLTJetsL1Off',       ak5CaloHLTJetsL1Off), #added 02/14/2012
-    'ak5jptl1'             : ('ak5JPTJetsL1',              ak5JPTJetsL1),
-    'ak7jptl1'             : ('ak7JPTJetsL1',              ak7JPTJetsL1),
+	'ak5jptl1'             : ('ak5JPTJetL1Fast',           ak5JPTJetsL1Fast),
+	'ak7jptl1'             : ('ak7JPTJetL1Fast',           ak7JPTJetsL1Fast),
+    'ak5jptl1off'          : ('ak5JPTJetsL1Off',           ak5JPTJetsL1Off),
+    'ak7jptl1off'          : ('ak7JPTJetsL1Off',           ak7JPTJetsL1Off),
     'ak5pfl1'              : ('ak5PFJetsL1Fast',           ak5PFJetsL1Fast),
     'ak5pfl1off'           : ('ak5PFJetsL1Off',            ak5PFJetsL1Off), #added 10/10/2011
     'ak7pfl1'              : ('ak7PFJetsL1Fast',           ak7PFJetsL1Fast),
@@ -211,8 +213,10 @@ corrJetsDict = {
     'kt6calol1l2l3'        : ('kt6CaloJetsL1FastL2L3',     kt6CaloJetsL1FastL2L3),
     'ak5caloHLTl1l2l3'     : ('ak5CaloHLTJetsL1FastL2L3',  ak5CaloHLTJetsL1FastL2L3), #added 02/14/2012
     'ak5caloHLTl1offl2l3'  : ('ak5CaloHLTJetsL1L2L3',      ak5CaloHLTJetsL1L2L3), #added 02/14/2012
-    'ak5jptl1l2l3'         : ('ak5JPTJetsL1L2L3',          ak5JPTJetsL1L2L3),
-    'ak7jptl1l2l3'         : ('ak7JPTJetsL1L2L3',          ak7JPTJetsL1L2L3),
+	'ak5jptl1l2l3'         : ('ak5JPTJetsL1FastL2L3',      ak7JPTJetsL1FastL2L3),
+	'ak7jptl1l2l3'         : ('ak5JPTJetsL1FastL2L3',      ak7JPTJetsL1FastL2L3),
+    'ak5jptl1offl2l3'      : ('ak5JPTJetsL1L2L3',          ak5JPTJetsL1L2L3),
+    'ak7jptl1offl2l3'      : ('ak7JPTJetsL1L2L3',          ak7JPTJetsL1L2L3),
     'ak5pfl1l2l3'          : ('ak5PFJetsL1FastL2L3',       ak5PFJetsL1FastL2L3),
     'ak5pfl1offl2l3'       : ('ak5PFJetsL1L2L3',           ak5PFJetsL1L2L3), #added 10/10/2011
     'ak7pfl1l2l3'          : ('ak7PFJetsL1FastL2L3',       ak7PFJetsL1FastL2L3),
@@ -241,7 +245,9 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco):
       alg_size_type_corr: a string, e.g. kt4calol2l3
                           alg=kt4, size=0.4, type=calo, corr=l2l3
       reco:               indicates wether the jets should be reconstructed
-
+	  prod                indicates if the output ntuple should be in EDM format
+	                      using an EDProducer or in the JRA Ntuple format unsing
+						  the EDAnalyzer
     it will then create a complete sequence within an executable path
     to kinematically select references and jets, select partons and match
     them to the references, match references and jets, and finally execute
@@ -592,16 +598,16 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco):
     
     ## jet response analyzer
     jra = cms.EDAnalyzer('JetResponseAnalyzer',
-        Defaults.JetResponseParameters,
-        srcRefToJetMap    = cms.InputTag(jetToRef.label(), 'gen2rec'),
-        srcRef            = cms.InputTag(refPtEta.label()),
-        jecLabel          = cms.string(''),
-        srcRho            = cms.InputTag(''),
-        srcRho50          = cms.InputTag(''),
-        srcRhoHLT         = cms.InputTag(''),
-        srcVtx            = cms.InputTag('offlinePrimaryVertices')
-    )
-
+                         Defaults.JetResponseParameters,
+                         srcRefToJetMap    = cms.InputTag(jetToRef.label(), 'gen2rec'),
+                         srcRef            = cms.InputTag(refPtEta.label()),
+                         jecLabel          = cms.string(''),
+                         srcRho            = cms.InputTag(''),
+                         srcRho50          = cms.InputTag(''),
+                         srcRhoHLT         = cms.InputTag(''),
+                         srcVtx            = cms.InputTag('offlinePrimaryVertices')
+                        )
+		
     if type == 'CaloHLT':
         jra.srcRho = ak5CaloL1Fastjet.srcRho #added 02/15/2012
         jra.srcRho50 = cms.InputTag('kt6CaloJets50','rho')
@@ -631,7 +637,8 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco):
         jra.jecLabel = corrJets.correctors[0]
 
     if Defaults.JetResponseParameters.doFlavor.value():
-        jra.srcRefToPartonMap = cms.InputTag(genToParton.label())
+		jra.srcRefToPartonMap = cms.InputTag(genToParton.label())
+
     setattr(process,alg_size_type_corr,jra)
     sequence = cms.Sequence(sequence * jra)
     

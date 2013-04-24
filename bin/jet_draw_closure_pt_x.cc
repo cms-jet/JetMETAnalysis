@@ -282,8 +282,9 @@ int main(int argc,char**argv)
       ss = "ClosureVsPt_Overview2";
       if(!flavor.IsNull()) ss+="_"+algs[a]+"_"+flavor;
       else ss+="_"+algs[a];
-      TLegend* leg = new TLegend(0.70,0.7,0.9,0.9);
-      leg->SetTextSize(0.03);//0.04);
+      //TLegend* leg = new TLegend(0.70,0.65,0.90,0.90);
+      TLegend* leg = new TLegend(0.40,0.20,0.80,0.40);
+      leg->SetTextSize(0.04);//0.03);
       leg->SetBorderSize(0);
       leg->SetFillColor(0);
       TCanvas *ove2 = new TCanvas(ss,ss,800,800);//600);
@@ -292,11 +293,14 @@ int main(int argc,char**argv)
       for (int c=0;c<3;c++) {
          hClosure[c]->SetMaximum(1.05);
          hClosure[c]->SetMinimum(0.95);
+         //hClosure[c]->SetMaximum(1.60);
+         //hClosure[c]->SetMinimum(0.40);
          //if (!tdr) {
             hClosure[c]->GetXaxis()->SetMoreLogLabels();
             hClosure[c]->GetXaxis()->SetNoExponent();
             hClosure[c]->GetXaxis()->SetLabelSize(0.045);
             hClosure[c]->GetYaxis()->SetLabelSize(0.045);
+            hClosure[c]->SetMarkerSize(0.8);
             //}
          if (c==0) {
             hClosure[c]->SetMarkerColor(kBlack);
@@ -315,8 +319,11 @@ int main(int argc,char**argv)
          else
             hClosure[c]->Draw("EPsame");
          leg->AddEntry(hClosure[c],Text[c],"lep");
+         line->SetLineWidth(2);
          line->Draw("same");
+         linePlus->SetLineWidth(2);
          linePlus->Draw("same");
+         lineMinus->SetLineWidth(2);
          lineMinus->Draw("same");
          delete pave[c];
          pave[c] = new TPaveText(0.35,0.8,0.75,0.9,"NDC");
@@ -355,7 +362,7 @@ void cmsPrelim(double intLUMI)
   latex.SetTextSize(0.045);
 
   latex.SetTextAlign(31); // align right
-  latex.DrawLatex(0.93,0.96,"#sqrt{s} = 7 TeV");
+  latex.DrawLatex(0.93,0.96,"#sqrt{s} = 8 TeV");
   if (LUMINOSITY > 0.) {
     latex.SetTextAlign(31); // align right
     //latex.DrawLatex(0.82,0.7,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //Original

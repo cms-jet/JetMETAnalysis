@@ -263,7 +263,7 @@ int main(int argc,char**argv)
            // we don't want to fit for pt less than 5 GeV as even a corrected calo jet of 10 
            // will be at least 5 Gev in raw energy.
            //
-           if (xmin<7) xmin=7;
+           //if (xmin<7) xmin=7;
            if (npoints<3) {
               gabscor->SetPoint     (0, 10.0,1.0);
               gabscor->SetPointError(0,  0.0,0.0);
@@ -558,6 +558,7 @@ string get_algorithm_suffix(const string& alg)
   else if (alg.find("caloHLTl1")  ==3) result += "CaloHLTl1";
   else if (alg.find("caloHLT")    ==3) result += "CaloHLT";
   else if (alg.find("calo")       ==3) result += "Calo";
+  else if (alg.find("jptl1off")   ==3) result += "JPTl1off";
   else if (alg.find("jptl1")      ==3) result += "JPTl1";
   else if (alg.find("jpt")        ==3) result += "JPT";
   else if (alg.find("pfchsHLTl1") ==3) result += "PFchsHLTl1";

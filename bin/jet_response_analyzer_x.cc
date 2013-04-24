@@ -19,6 +19,7 @@
 
 
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
+#include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
 
 #include <TROOT.h>
 #include <TFile.h>
@@ -33,7 +34,7 @@
 #include <string>
 #include <map>
 #include <cmath>
-
+#include <vector>
 
 using namespace std;
 
@@ -146,7 +147,9 @@ int main(int argc,char**argv)
   int            lateoothigh       = cl.getValue<int>    ("lateoothigh",        1000);
   int            totalootlow       = cl.getValue<int>    ("totalootlow",           0);
   int            totaloothigh      = cl.getValue<int>    ("totaloothigh",       1000);
-  TString         weightfile       = cl.getValue<TString>("weightfile",           "");
+  TString        weightfile        = cl.getValue<TString>("weightfile",           "");
+  TString        MCPUReWeighting   = cl.getValue<TString>("MCPUReWeighting",      "");
+  TString        DataPUReWeighting = cl.getValue<TString>("DataPUReWeighting",    "");
 
   if (!cl.check()) return 0;
   cl.print();
@@ -239,6 +242,10 @@ int main(int argc,char**argv)
           }
        }
     }
+    edm::LumiReWeighting LumiWeights_;
+    if(!MCPUReWeighting.IsNull() && !DataPUReWeighting.IsNull()) { 
+       LumiWeights_ = edm::LumiReWeighting(string(MCPUReWeighting),string(DataPUReWeighting),"pileup","pileup_jt400");
+    }
 
     //
     // setup the tree for reading
@@ -258,6 +265,7 @@ int main(int argc,char**argv)
     float refdrjt[100];
     float refdphijt[100];
     vector<int>* npus = new vector<int>;
+    vector<float>* tnpus = new vector<float>;
     
     tree->SetBranchAddress("nref",   &nref);
     if (doflavor) tree->SetBranchAddress("refpdgid",refpdgid);
@@ -270,6 +278,7 @@ int main(int argc,char**argv)
     tree->SetBranchAddress("jtphi",   jtphi);
     tree->SetBranchAddress("jty",     jty);
     tree->SetBranchAddress("npus",    &npus);
+    tree->SetBranchAddress("tnpus",   &tnpus);
     if (xsection>0.0) { weight = xsection/tree->GetEntries(); useweight = false; }
     if (useweight) {
       if (0==tree->GetBranch("weight"))
@@ -1014,6 +1023,7 @@ int main(int argc,char**argv)
           //
           // retrieve the correct weight
           //
+          if (!(xsection>0.0) && !useweight) weight = 1.0;
           if(!weightfile.IsNull())
           {
              if(!doflavor && log10(refpt[iref])<3)
@@ -1034,6 +1044,15 @@ int main(int argc,char**argv)
           }
           else
              flavorWeight = weight;
+          if(!MCPUReWeighting.IsNull() && !DataPUReWeighting.IsNull()) {
+             double LumiWeight = LumiWeights_.weight((*tnpus)[1]);
+             //if (ievt<10)
+             //   cout << "LumiWeight = " << LumiWeight << "\tweight (before) = "<< weight;
+             weight *= LumiWeight;
+             //if (ievt<10)
+             //   cout << "\tweight (after) = " << weight << endl;
+
+          }
 
           if (eta>=etabarrelmin&&eta<=etabarrelmax) {
             if (dorefpt) {

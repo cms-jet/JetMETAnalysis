@@ -25,6 +25,7 @@
 #include "DataFormats/JetReco/interface/JPTJet.h"
 #include "DataFormats/JetReco/interface/CaloJet.h"
 #include "DataFormats/JetReco/interface/PFJet.h"
+#include "DataFormats/JetReco/interface/GenJet.h"
 #include "DataFormats/Math/interface/deltaR.h"
 #include "DataFormats/Math/interface/deltaPhi.h"
 #include "DataFormats/VertexReco/interface/Vertex.h"
@@ -101,14 +102,13 @@ private:
   bool          isTrackJet_;
   bool          isTauJet_;
 
-  const
-  JetCorrector* jetCorrector_;
-  
+  const JetCorrector* jetCorrector_;
   
   // tree & branches
   TTree*        tree_;
 
   vector<Int_t> npus_;
+  vector<Float_t> tnpus_;
   vector<Int_t> bxns_;
   vector<Float_t> sumpt_lowpt_;
   vector<Float_t> sumpt_highpt_;
@@ -133,6 +133,7 @@ private:
   Float_t       refy_[100];
   Float_t       refdrjt_[100];
   Float_t       refdphijt_[100];
+  Float_t       refarea_[100];
 
   Float_t       jte_[100];
   Float_t       jtpt_[100];
@@ -140,6 +141,7 @@ private:
   Float_t       jtphi_[100];
   Float_t       jty_[100];
   Float_t       jtjec_[100];
+  Float_t       jtarea_[100];
   
   Float_t       jtemf_[100];
 
@@ -207,7 +209,7 @@ JetResponseAnalyzer::JetResponseAnalyzer(const edm::ParameterSet& iConfig)
 
   int check = isCaloJet_+isJPTJet_+isPFJet_+isTrackJet_+isTauJet_;
   assert(check<2);
-  
+
   //if (isCaloJet_)  cout<<"These are CaloJets  ("<<moduleLabel_<<")"<<endl;
   //if (isJPTJet_)   cout<<"These are JPTJets   ("<<moduleLabel_<<")"<<endl;
   //if (isPFJet_)    cout<<"These are PFJets    ("<<moduleLabel_<<")"<<endl;
@@ -237,6 +239,7 @@ void JetResponseAnalyzer::beginJob()
   tree_=fs->make<TTree>("t","t");
 
   tree_->Branch("npus", "vector<Int_t>",  &npus_);
+  tree_->Branch("tnpus", "vector<Float_t>",  &tnpus_);
   tree_->Branch("bxns", "vector<Int_t>", &bxns_);
   tree_->Branch("sumpt_lowpt", "vector<Float_t>", &sumpt_lowpt_);
   tree_->Branch("sumpt_highpt", "vector<Float_t>", &sumpt_highpt_);
@@ -261,7 +264,7 @@ void JetResponseAnalyzer::beginJob()
   tree_->Branch("refy",   refy_,   "refy[nref]/F");
   if (doBalancing_) tree_->Branch("refdphijt",refdphijt_,"refdphijt[nref]/F");
   else              tree_->Branch("refdrjt",  refdrjt_,  "refdrjt[nref]/F");
-
+  tree_->Branch("refarea", refarea_, "refarea[nref]/F");
 
   tree_->Branch("jte",    jte_,    "jte[nref]/F");
   tree_->Branch("jtpt",   jtpt_,   "jtpt[nref]/F");
@@ -269,7 +272,8 @@ void JetResponseAnalyzer::beginJob()
   tree_->Branch("jtphi",  jtphi_,  "jtphi[nref]/F");
   tree_->Branch("jty",    jty_,    "jty[nref]/F");
   tree_->Branch("jtjec",  jtjec_,  "jtjec[nref]/F");
-  
+  tree_->Branch("jtarea", jtarea_, "jtarea[nref]/F");
+
   if (doComposition_) {
     
     if (isCaloJet_) {
@@ -286,13 +290,13 @@ void JetResponseAnalyzer::beginJob()
       tree_->Branch("jthfef", jthfef_, "jthfef[nref]/F");
     }
   }
-  
+
 }
 
 
 //______________________________________________________________________________
-void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
-				  const edm::EventSetup& iSetup)
+void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
+                                  const edm::EventSetup& iSetup)
 {
   // EVENT DATA HANDLES
   nref_=0;
@@ -308,7 +312,6 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
 
   // JET CORRECTOR
   jetCorrector_ = (jecLabel_.empty()) ? 0 : JetCorrector::getJetCorrector(jecLabel_,iSetup);
-  
   
   // GENERATOR INFORMATION
   pthat_  = 0.0;
@@ -339,7 +342,12 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
   //NPV INFORMATION
   npv_ = 0;
   if (iEvent.getByLabel(srcVtx_,vtx)) {
-     npv_ = vtx->size();
+     const reco::VertexCollection::const_iterator vtxEnd = vtx->end();
+     for (reco::VertexCollection::const_iterator vtxIter = vtx->begin(); vtxEnd != vtxIter; ++vtxIter) {
+        if (!vtxIter->isFake() && vtxIter->ndof()>=4 && fabs(vtxIter->z())<=24)
+           ++npv_;
+     }
+     //npv_ = vtx->size();
   }
  
   //EVENT INFORMATION
@@ -348,6 +356,7 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
 
   // MC PILEUP INFORMATION
   npus_.clear();
+  tnpus_.clear();
   bxns_.clear();
   sumpt_lowpt_.clear();
   sumpt_highpt_.clear();
@@ -356,6 +365,7 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
   if (iEvent.getByLabel("addPileupInfo",puInfos)) {
      for(unsigned int i=0; i<puInfos->size(); i++) {
         npus_.push_back((*puInfos)[i].getPU_NumInteractions());
+        tnpus_.push_back((*puInfos)[i].getTrueNumInteractions());
         bxns_.push_back((*puInfos)[i].getBunchCrossing());
         int sumptlowpttemp = 0;
         int sumpthighpttemp = 0;
@@ -379,7 +389,7 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
         ntrks_highpt_.push_back(ntrkshighpttemp);
      }
   }
-  
+
   // REFERENCES & RECOJETS
   iEvent.getByLabel(srcRef_,        refs);
   iEvent.getByLabel(srcRefToJetMap_,refToJetMap);
@@ -435,78 +445,99 @@ void JetResponseAnalyzer::analyze(const edm::Event&      iEvent,
      else {
         refpdgid_[nref_]=ref->pdgId();
      }
-     
+    
      refrank_[nref_]=nref_;
      refe_[nref_]   =ref->energy();
      refpt_[nref_]  =ref->pt();
      refeta_[nref_] =ref->eta();
      refphi_[nref_] =ref->phi();
      refy_[nref_]   =ref->rapidity();
+     refarea_[nref_]=ref.castTo<reco::GenJetRef>()->jetArea();
      jte_[nref_]    =jet->energy();
      jtpt_[nref_]   =jet->pt();
      jteta_[nref_]  =jet->eta();
      jtphi_[nref_]  =jet->phi();
      jty_[nref_]    =jet->rapidity();
      jtjec_[nref_]  =1.0;
-     
+
+     if (isCaloJet_) {
+        jtarea_[nref_] =jet.castTo<reco::CaloJetRef>()->jetArea();
+     }
+     else if (isJPTJet_) {
+        //jtarea_[nref_] =jet.castTo<reco::JPTJetRef>()->jetArea(); //Doesn't work. Returns 0 instead of the jet area.
+        const reco::JPTJet& jptjet = dynamic_cast <const reco::JPTJet&> (*jet);
+        edm::RefToBase<reco::Jet> jptjetRef = jptjet.getCaloJetRef();
+        reco::CaloJet const * rawcalojet = dynamic_cast<reco::CaloJet const *>( &* jptjetRef);
+        jtarea_[nref_] = rawcalojet->jetArea();
+     }
+     else if (isPFJet_) {
+        jtarea_[nref_] =jet.castTo<reco::PFJetRef>()->jetArea();
+     }
+
      if (0!=jetCorrector_) {
         if (!jetCorrector_->vectorialCorrection()) {
            if (jetCorrector_->eventRequired()||isJPTJet_) {
-	  if (isCaloJet_) {
-	    reco::CaloJetRef caloJetRef;
-	    caloJetRef=jet.castTo<reco::CaloJetRef>();
-	    jtjec_[nref_]=jetCorrector_->correction(*caloJetRef,
-						    edm::RefToBase<reco::Jet>(),
-						    iEvent,iSetup);
-	  }
-	  else if (isJPTJet_) {
-	    reco::JPTJetRef jptJetRef;
-	    jptJetRef=jet.castTo<reco::JPTJetRef>();
-	    jtjec_[nref_]=jetCorrector_->correction(*jptJetRef,
-						    edm::RefToBase<reco::Jet>(),
-						    iEvent,iSetup);
-	  }
-	  else if (isPFJet_) {
-	    reco::PFJetRef pfJetRef;
-	    pfJetRef=jet.castTo<reco::PFJetRef>();
-	    jtjec_[nref_]=jetCorrector_->correction(*pfJetRef,
-						    edm::RefToBase<reco::Jet>(),
-						    iEvent,iSetup);
-	  }
-	}
-	else {
-	  jtjec_[nref_]=jetCorrector_->correction(jet->p4());
-	}
-      }
+              if (isCaloJet_) {
+                 reco::CaloJetRef caloJetRef;
+                 caloJetRef=jet.castTo<reco::CaloJetRef>();
+                 //jtjec_[nref_]=jetCorrector_->correction(*caloJetRef,
+                 //                                        edm::RefToBase<reco::Jet>(),
+                 //                                        iEvent,iSetup);
+                 jtjec_[nref_]=jetCorrector_->correction(*caloJetRef,
+                                                         iEvent,iSetup);
+              }
+              else if (isJPTJet_) {
+                 reco::JPTJetRef jptJetRef;
+                 jptJetRef=jet.castTo<reco::JPTJetRef>();
+                 //jtjec_[nref_]=jetCorrector_->correction(*jptJetRef,
+                 //                                        edm::RefToBase<reco::Jet>(),
+                 //                                        iEvent,iSetup);
+                 jtjec_[nref_]=jetCorrector_->correction(*jptJetRef,
+                                                         iEvent,iSetup);
+              }
+              else if (isPFJet_) {
+                 reco::PFJetRef pfJetRef;
+                 pfJetRef=jet.castTo<reco::PFJetRef>();
+                 //jtjec_[nref_]=jetCorrector_->correction(*pfJetRef,
+                 //                                        edm::RefToBase<reco::Jet>(),
+                 //                                        iEvent,iSetup);
+                 jtjec_[nref_]=jetCorrector_->correction(*pfJetRef,
+                                                         iEvent,iSetup);
+              }
+           }
+           else {
+              jtjec_[nref_]=jetCorrector_->correction(jet->p4());
+           }
+        }
+     }
+     
+     if (doComposition_) {
+        
+        if (isCaloJet_) {
+           reco::CaloJetRef caloJetRef;
+           caloJetRef=jet.castTo<reco::CaloJetRef>();
+           jtemf_[nref_]=caloJetRef->emEnergyFraction();
+        }
+        
+        else if (isPFJet_) {
+           reco::PFJetRef pfJetRef;
+           pfJetRef=jet.castTo<reco::PFJetRef>();
+           jtchf_[nref_] =pfJetRef->chargedHadronEnergyFraction()*jtjec_[nref_];
+           jtnhf_[nref_] =pfJetRef->neutralHadronEnergyFraction()*jtjec_[nref_];
+           jtnef_[nref_] =pfJetRef->photonEnergyFraction()*jtjec_[nref_];
+           jtcef_[nref_] =pfJetRef->electronEnergyFraction()*jtjec_[nref_];
+           jtmuf_[nref_] =pfJetRef->muonEnergyFraction()*jtjec_[nref_];
+           jthfhf_[nref_]=pfJetRef->HFHadronEnergyFraction()*jtjec_[nref_];
+           jthfef_[nref_]=pfJetRef->HFEMEnergyFraction()*jtjec_[nref_];
+        }
+        
     }
-    
-    if (doComposition_) {
-      
-      if (isCaloJet_) {
-	reco::CaloJetRef caloJetRef;
-	caloJetRef=jet.castTo<reco::CaloJetRef>();
-	jtemf_[nref_]=caloJetRef->emEnergyFraction();
-      }
-
-      else if (isPFJet_) {
-	reco::PFJetRef pfJetRef;
-	pfJetRef=jet.castTo<reco::PFJetRef>();
-	jtchf_[nref_] =pfJetRef->chargedHadronEnergyFraction()*jtjec_[nref_];
-	jtnhf_[nref_] =pfJetRef->neutralHadronEnergyFraction()*jtjec_[nref_];
-	jtnef_[nref_] =pfJetRef->photonEnergyFraction()*jtjec_[nref_];
-	jtcef_[nref_] =pfJetRef->electronEnergyFraction()*jtjec_[nref_];
-	jtmuf_[nref_] =pfJetRef->muonEnergyFraction()*jtjec_[nref_];
-	jthfhf_[nref_]=pfJetRef->HFHadronEnergyFraction()*jtjec_[nref_];
-	jthfef_[nref_]=pfJetRef->HFEMEnergyFraction()*jtjec_[nref_];
-      }
-
-    }
-    
-    nref_++;
+     
+     nref_++;
   }
   
   tree_->Fill();
-
+  
   return;
 }
 

@@ -38,7 +38,7 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 /// returns a string containing all of the correction levels to be applied
-string get_correction_levels(const vector<int>& levels);
+string get_correction_levels(const vector<int>& levels, bool L1FastJet);
 
 /// returns the full path of each correction level concatinated into a single string
 string get_correction_tags(const string& tag,const string& alg,
@@ -128,7 +128,7 @@ int main(int argc,char**argv)
       continue;
     }
     cout<<"jet algorithm: "<<alg<<endl;
-    cout<<"correction level: "<<get_correction_levels(levels)<<endl;
+    cout<<"correction level: "<<get_correction_levels(levels,L1FastJet)<<endl;
     cout<<"correction tag: "<<get_correction_tags(era,alg,levels,jecpath,L1FastJet)<<endl;
 
     //
@@ -137,7 +137,7 @@ int main(int argc,char**argv)
     FactorizedJetCorrector *corrector;
     if(useTags)
       {
-        corrector = new FactorizedJetCorrector(get_correction_levels(levels),
+         corrector = new FactorizedJetCorrector(get_correction_levels(levels,L1FastJet),
                                                get_correction_tags(era,alg,levels,jecpath,L1FastJet));
       }
     else
@@ -176,13 +176,18 @@ int main(int argc,char**argv)
     float         jte[100];
     float         rho;
     float         rho_hlt;
+    Long64_t      npv;
+    float         jtarea[100];
     vector<int>* npus = new vector<int>;
     itree->SetBranchAddress("nref",&nref);
     itree->SetBranchAddress("jtpt", jtpt);
+    itree->SetBranchAddress("jte", jte);
     itree->SetBranchAddress("jteta",jteta);
     itree->SetBranchAddress("npus",&npus);
     itree->SetBranchAddress("rho",&rho);
     itree->SetBranchAddress("rho_hlt",&rho_hlt);
+    itree->SetBranchAddress("npv",&npv);
+    itree->SetBranchAddress("jtarea",jtarea);
     TBranch* b_jtpt=otree->Branch("jtpt",jtpt,"jtpt[nref]/F");
     TBranch* b_jte =otree->Branch("jte", jte, "jte[nref]/F");
     
@@ -193,9 +198,12 @@ int main(int argc,char**argv)
        itree->GetEntry(ievt);
        for (unsigned int ijt=0;ijt<nref;ijt++) {
           corrector->setJetPt(jtpt[ijt]);
+          corrector->setJetE(jte[ijt]);
           corrector->setJetEta(jteta[ijt]);
-          if (TString(get_correction_levels(levels)).Contains("L1FastJet")) {
-             if (TString(alg).Contains("4"))
+          if (TString(get_correction_levels(levels,L1FastJet)).Contains("L1FastJet")) {
+             if (jtarea[ijt]!=0)
+                corrector->setJetA(jtarea[ijt]);
+             else if (TString(alg).Contains("4"))
                 corrector->setJetA(TMath::Pi()*TMath::Power(0.4,2));
              else if (TString(alg).Contains("5"))
                 corrector->setJetA(TMath::Pi()*TMath::Power(0.5,2));
@@ -213,7 +221,7 @@ int main(int argc,char**argv)
              else
                 corrector->setRho(rho);
           }
-          if(!L1FastJet) corrector->setNPV((*npus)[0]+(*npus)[1]+(*npus)[2]);
+          if(!L1FastJet) corrector->setNPV(npv);
           float jec=corrector->getCorrection();
           jtpt[ijt]*=jec;
           jte[ijt] *=jec;
@@ -239,15 +247,20 @@ int main(int argc,char**argv)
 ////////////////////////////////////////////////////////////////////////////////
 
 //______________________________________________________________________________
-string get_correction_levels(const vector<int>& levels)
+string get_correction_levels(const vector<int>& levels, bool L1FastJet)
 {
   stringstream ssresult;
   for (unsigned int ilevel=0;ilevel<levels.size();++ilevel) {
     if (ilevel!=0) ssresult<<":";
     int level(levels[ilevel]);
     switch (level) {
-       //case 1 : ssresult<<"L1Offset"; break;
-    case 1 : ssresult<<"L1FastJet"; break;
+    case 1 : 
+       if (L1FastJet) {
+          ssresult<<"L1FastJet"; break;
+       }
+       else {
+          ssresult<<"L1Offset"; break;
+       }
     case 2 : ssresult<<"L2Relative"; break;
     case 3 : ssresult<<"L3Absolute"; break;
     case 4 : ssresult<<"L4EMF"; break;
@@ -280,8 +293,8 @@ string get_correction_tags(const string& era,const string& alg,
 
     if      (level==1 && !L1FastJet) ssera<<"L1Offset_";
     else if (level==1 && L1FastJet) ssera<<"L1FastJet_";
-    else if (level==2) ssera<<era<<"_L2Relative_";
-    else if (level==3) ssera<<era<<"_L3Absolute_";
+    else if (level==2) ssera<<"L2Relative_";
+    else if (level==3) ssera<<"L3Absolute_";
     else if (level==4) ssera<<"L4EMF_";
     else if (level==5) ssera<<"L5Flavor_";
     else if (level==6) ssera<<"L6SLB_";
@@ -292,7 +305,7 @@ string get_correction_tags(const string& era,const string& alg,
       ssresult<<ssera.str()<<".txt";
       continue;
     }
-    
+    /*
     if      (alg.find("ak5")==0) ssera<<"AK5";
     else if (alg.find("ak7")==0) ssera<<"AK7";
     else if (alg.find("kt4")==0) ssera<<"KT4";
@@ -304,7 +317,7 @@ string get_correction_tags(const string& era,const string& alg,
     else if (alg.find("ic5")==0) ssera<<"IC5";
     if (alg.find("tau")==3) ssera<<std::string(alg, 3);
 
-    if (/*level==1 || */level==4 || level==5 || level==7) {
+    if (level==4 || level==5 || level==7) {
       ssresult<<ssera.str()<<".txt";
       continue;
     }
@@ -336,9 +349,12 @@ string get_correction_tags(const string& era,const string& alg,
     else if (alg.find("jpt")!=string::npos  ||
              alg.find("Jpt")!=string::npos  ||
              alg.find("JPT")!=string::npos)  ssera<<"JPT";
-    
+   */
+
+    ssera<<getAlias(alg);
+
     ssresult<<ssera.str()<<".txt";
-    cout<<ssera.str()<<".txt"<<endl;
+    //cout<<ssera.str()<<".txt"<<endl;
   }
   
   
@@ -363,90 +379,108 @@ string get_level_tag(int level, bool L1FastJet)
 //______________________________________________________________________________
 string getAlias(TString s)
 {
-  if (s=="ic5calo")
-    return "IC5Calo";
-  else if (s=="ic5pf")
-    return "IC5PF";
-  else if (s=="ak5calo")
-    return "AK5Calo";  
-  else if (s=="ak5calol1")
-    return "AK5Calol1";
-  else if (s=="ak5calol1off")
-    return "AK5Calol1off";
-  else if (s=="ak7calo")
-    return "AK7Calo";
-  else if (s=="ak7calol1")
-    return "AK7Calol1";
-  else if (s=="ak7calol1off")
-    return "AK7Calol1off";
-  else if (s=="ak5caloHLT")
-     return "AK5CaloHLT";
-  else if (s=="ak5caloHLTl1")
-     return "AK5CaloHLTl1";
-  else if (s=="ak5pf")
-    return "AK5PF";
-  else if (s=="ak5pfl1")
-    return "AK5PFl1";
-  else if (s=="ak5pfl1off")
-     return "AK5PFl1off";
-  else if (s=="ak7pf")
-    return "AK7PF";
-  else if (s=="ak7pfl1")
-    return "AK7PFl1";
-  else if (s=="ak7pfl1off")
-    return "AK7PFl1off";
-  else if (s=="ak5pfchs")
-    return "AK5PFchs";
-  else if (s=="ak5pfchsl1")
-    return "AK5PFchsl1";
-  else if (s=="ak5pfchsl1off")
-     return "AK5PFchsl1off";
-  else if (s=="ak7pfchs")
-    return "AK7PFchs";
-  else if (s=="ak7pfchsl1")
-    return "AK7PFchsl1";
-  else if (s=="ak7pfchsl1off")
-    return "AK7PFchsl1off";
-  else if (s=="ak5pfHLT")
-     return "AK5PF_HLT";
+   if (s=="ic5calo")
+      return "IC5Calo";
+   else if (s=="ic5pf")
+      return "IC5PF";
+   else if (s=="ak5calo")
+      return "AK5Calo";  
+   else if (s=="ak5calol1")
+      return "AK5Calol1";
+   else if (s=="ak5calol1off")
+      return "AK5Calol1off";
+   else if (s=="ak5calol1offl2l3")
+      return "AK5Calol1off";
+   else if (s=="ak7calo")
+      return "AK7Calo";
+   else if (s=="ak7calol1")
+      return "AK7Calol1";
+   else if (s=="ak7calol1off")
+      return "AK7Calol1off";
+   else if (s=="ak5caloHLT")
+      return "AK5CaloHLT";
+   else if (s=="ak5caloHLTl1")
+      return "AK5CaloHLTl1";
+   else if (s=="ak5pf")
+      return "AK5PF";
+   else if (s=="ak5pfl1")
+      return "AK5PFl1";
+   else if (s=="ak5pfl1l2l3")
+      return "AK5PFl1";
+   else if (s=="ak5pfl1off")
+      return "AK5PFl1off";
+   else if (s=="ak7pf")
+      return "AK7PF";
+   else if (s=="ak7pfl1")
+      return "AK7PFl1";
+   else if (s=="ak7pfl1off")
+      return "AK7PFl1off";
+   else if (s=="ak5pfchs")
+      return "AK5PFchs";
+   else if (s=="ak5pfchsl1")
+      return "AK5PFchsl1";
+   else if (s=="ak5pfchsl1l2l3")
+      return "AK5PFchsl1";
+   else if (s=="ak5pfchsl1off")
+      return "AK5PFchsl1off";
+   else if (s=="ak7pfchs")
+      return "AK7PFchs";
+   else if (s=="ak7pfchsl1")
+      return "AK7PFchsl1";
+   else if (s=="ak7pfchsl1off")
+      return "AK7PFchsl1off";
+   else if (s=="ak5pfHLT")
+      return "AK5PFHLT";
   else if (s=="ak5pfHLTl1")
-     return "AK5PFHLTl1";
-  else if (s=="ak5pfchsHLT")
-     return "AK5PFchsHLT";
-  else if (s=="ak5pfchsHLTl1")
-     return "AK5PFchsHLTl1";
-  else if (s=="ak5jpt")
-    return "AK5JPT";
-  else if (s=="ak5jptl1")
-    return "AK5JPTl1";
-  else if (s=="ak7jpt")
-    return "AK7JPT";
-  else if (s=="ak7jptl1")
-    return "AK7JPTl1";
-  else if (s=="sc5calo")
-    return "SC5Calo";
-  else if (s=="sc5pf")
-    return "SC5PF";
-  else if (s=="sc7calo")
-    return "SC5Calo";
-  else if (s=="sc7pf")
-    return "SC5PF";
-  else if (s=="kt4calo")
-    return "KT4Calo";
-  else if (s=="kt4pf")
-    return "KT4PF";
-  else if (s=="kt6calo")
-    return "KT6Calo";
-  else if (s=="kt6pf")
-    return "KT6PF";
-  else
-    return "unknown";
+      return "AK5PFHLTl1";
+   else if (s=="ak5pfchsHLT")
+      return "AK5PFchsHLT";
+   else if (s=="ak5pfchsHLTl1")
+      return "AK5PFchsHLTl1";
+   else if (s=="ak5jpt")
+      return "AK5JPT";
+   else if (s=="ak5jptl1")
+      return "AK5JPTl1";
+   else if (s=="ak5jptl1off")
+      return "AK5JPTl1off";
+   else if (s=="ak5jptl1l2l3")
+      return "AK5JPTl1";
+   else if (s=="ak5jptl1offl2l3")
+      return "AK5JPTl1off";
+   else if (s=="ak7jpt")
+      return "AK7JPT";
+   else if (s=="ak7jptl1")
+      return "AK7JPTl1";
+   else if (s=="ak7jptl1off")
+      return "AK7JPTl1off";
+   else if (s=="ak7jptl1l2l3")
+      return "AK7JPTl1";
+   else if (s=="ak7jptl1offl2l3")
+      return "AK7JPTl1off";
+   else if (s=="sc5calo")
+      return "SC5Calo";
+   else if (s=="sc5pf")
+      return "SC5PF";
+   else if (s=="sc7calo")
+      return "SC5Calo";
+   else if (s=="sc7pf")
+      return "SC5PF";
+   else if (s=="kt4calo")
+      return "KT4Calo";
+   else if (s=="kt4pf")
+      return "KT4PF";
+   else if (s=="kt6calo")
+      return "KT6Calo";
+   else if (s=="kt6pf")
+      return "KT6PF";
+   else
+      return "unknown";
 }
 
 //______________________________________________________________________________
 string getPostfix(vector<string> postfix, string alg, int level)
 {
-  for(unsigned int ipostfix; ipostfix<postfix.size(); ipostfix+=3)
+  for(unsigned int ipostfix=0; ipostfix<postfix.size(); ipostfix+=3)
     {
       TString tmp(postfix[ipostfix+1]);
       if(postfix[ipostfix].compare(alg)==0 && atoi(tmp.Data())==level)
