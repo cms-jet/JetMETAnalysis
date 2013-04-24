@@ -30,6 +30,39 @@ process = cms.Process("JRA")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 process.GlobalTag.globaltag = "START53_V7F::All"
 
+from CondCore.DBCommon.CondDBSetup_cfi import *
+process.jec = cms.ESSource("PoolDBESSource",CondDBSetup,
+                           connect = cms.string('sqlite_file:Fall12_V7_MC.db'),
+                           #cms.string("frontier://FrontierPrep/CMS_COND_PHYSICSTOOLS"),
+                           toGet =  cms.VPSet(
+	cms.PSet(record = cms.string("JetCorrectionsRecord"),
+			 tag = cms.string("JetCorrectorParametersCollection_Fall12_V7_MC_AK5Calo"),
+			 label= cms.untracked.string("AK5Calo")),
+	cms.PSet(record = cms.string("JetCorrectionsRecord"),
+			 tag = cms.string("JetCorrectorParametersCollection_Fall12_V7_MC_AK5PF"),
+			 label= cms.untracked.string("AK5PF")),
+	cms.PSet(record = cms.string("JetCorrectionsRecord"),
+			 tag = cms.string("JetCorrectorParametersCollection_Fall12_V7_MC_AK5PFchs"),
+			 label=cms.untracked.string("AK5PFchs")),
+	cms.PSet(record = cms.string("JetCorrectionsRecord"),
+			 tag = cms.string("JetCorrectorParametersCollection_Fall12_V7_MC_AK5JPT"),
+			 label=cms.untracked.string("AK5JPT")),
+	cms.PSet(record = cms.string("JetCorrectionsRecord"),
+			 tag = cms.string("JetCorrectorParametersCollection_Fall12_V7_MC_AK7Calo"),
+			 label= cms.untracked.string("AK7Calo")),
+	cms.PSet(record = cms.string("JetCorrectionsRecord"),
+			 tag = cms.string("JetCorrectorParametersCollection_Fall12_V7_MC_AK7PF"),
+			 label= cms.untracked.string("AK7PF")),
+	cms.PSet(record = cms.string("JetCorrectionsRecord"),
+			 tag = cms.string("JetCorrectorParametersCollection_Fall12_V7_MC_AK7PFchs"),
+			 label=cms.untracked.string("AK7PFchs")),
+	cms.PSet(record = cms.string("JetCorrectionsRecord"),
+			 tag = cms.string("JetCorrectorParametersCollection_Fall12_V7_MC_AK7JPT"),
+			 label=cms.untracked.string("AK7JPT")),
+	)
+                           )
+process.es_prefer_jec = cms.ESPrefer("PoolDBESSource","jec")
+
 
 #!
 #! INPUT
@@ -103,64 +136,64 @@ algorithms.append('ak5pfchsl1')
 algorithms.append('ak7pfchsl1')
 #algorithms.append('ak5pfHLTl1')
 #algorithms.append('ak5pfchsHLTl1')
-algorithms.append('ak5jptl1')
-algorithms.append('ak7jptl1')
+#algorithms.append('ak5jptl1')
+#algorithms.append('ak7jptl1')
 
-algorithms.append('ak5calol1off')
-algorithms.append('ak7calol1off')
+#algorithms.append('ak5calol1off')
+#algorithms.append('ak7calol1off')
 #algorithms.append('ak5caloHLTl1off')
-algorithms.append('ak5pfl1off')
-algorithms.append('ak7pfl1off')
-algorithms.append('ak5pfchsl1off')
-algorithms.append('ak7pfchsl1off')
+#algorithms.append('ak5pfl1off')
+#algorithms.append('ak7pfl1off')
+#algorithms.append('ak5pfchsl1off')
+#algorithms.append('ak7pfchsl1off')
 #algorithms.append('ak5pfHLTl1off')
 #algorithms.append('ak5pfchsHLTl1off')
-algorithms.append('ak5jptl1off')
-algorithms.append('ak7jptl1off')
+#algorithms.append('ak5jptl1off')
+#algorithms.append('ak7jptl1off')
 
-algorithms.append('ak5calol2l3')
-algorithms.append('ak7calol2l3')
+#algorithms.append('ak5calol2l3')
+#algorithms.append('ak7calol2l3')
 #algorithms.append('kt4calol2l3')
 #algorithms.append('kt6calol2l3')
 #algorithms.append('ak5caloHLTl2l3')
-algorithms.append('ak5pfl2l3')
-algorithms.append('ak7pfl2l3')
+#algorithms.append('ak5pfl2l3')
+#algorithms.append('ak7pfl2l3')
 #algorithms.append('kt4pfl2l3')
 #algorithms.append('kt6pfl2l3')
-algorithms.append('ak5pfchsl2l3')
-algorithms.append('ak7pfchsl2l3')
+#algorithms.append('ak5pfchsl2l3')
+#algorithms.append('ak7pfchsl2l3')
 #algorithms.append('ak5pfHLTl2l3')
 #algorithms.append('ak5pfchsHLTl2l3')
-algorithms.append('ak5jptl2l3')
-algorithms.append('ak7jptl2l3')
+#algorithms.append('ak5jptl2l3')
+#algorithms.append('ak7jptl2l3')
 
-algorithms.append('ak5calol1l2l3')
-algorithms.append('ak7calol1l2l3')
+#algorithms.append('ak5calol1l2l3')
+#algorithms.append('ak7calol1l2l3')
 #algorithms.append('kt4calol1l2l3')
 #algorithms.append('kt6calol1l2l3')
 #algorithms.append('ak5caloHLTl1l2l3')
-algorithms.append('ak5pfl1l2l3')
-algorithms.append('ak7pfl1l2l3')
+#algorithms.append('ak5pfl1l2l3')
+#algorithms.append('ak7pfl1l2l3')
 #algorithms.append('kt4pfl1l2l3')
 #algorithms.append('kt6pfl1l2l3')
-algorithms.append('ak5pfchsl1l2l3')
-algorithms.append('ak7pfchsl1l2l3')
+#algorithms.append('ak5pfchsl1l2l3')
+#algorithms.append('ak7pfchsl1l2l3')
 #algorithms.append('ak5pfHLTl1l2l3')
 #algorithms.append('ak5pfchsHLTl1l2l3')
-algorithms.append('ak5jptl1l2l3')
-algorithms.append('ak7jptl1l2l3')
+#algorithms.append('ak5jptl1l2l3')
+#algorithms.append('ak7jptl1l2l3')
 
-algorithms.append('ak5calol1offl2l3')
-algorithms.append('ak7calol1offl2l3')
+#algorithms.append('ak5calol1offl2l3')
+#algorithms.append('ak7calol1offl2l3')
 #algorithms.append('ak5caloHLTl1offl2l3')
-algorithms.append('ak5pfl1offl2l3')
-algorithms.append('ak7pfl1offl2l3')
-algorithms.append('ak5pfchsl1offl2l3')
-algorithms.append('ak7pfchsl1offl2l3')
+#algorithms.append('ak5pfl1offl2l3')
+#algorithms.append('ak7pfl1offl2l3')
+#algorithms.append('ak5pfchsl1offl2l3')
+#algorithms.append('ak7pfchsl1offl2l3')
 #algorithms.append('ak5pfHLTl1offl2l3')
 #algorithms.append('ak5pfchsHLTl1offl2l3')
-algorithms.append('ak5jptl1offl2l3')
-algorithms.append('ak7jptl1offl2l3')
+#algorithms.append('ak5jptl1offl2l3')
+#algorithms.append('ak7jptl1offl2l3')
 
 
 
