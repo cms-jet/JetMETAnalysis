@@ -1,5 +1,6 @@
 <use   name="JetMETAnalysis/JetUtilities"/>
 <use   name="CondFormats/JetMETObjects"/>
+<use   name="PhysicsTools/Utilities"/>
 <use   name="FWCore/FWLite"/>
 <use   name="rootphysics"/>
 <use   name="rootgraphics"/>
@@ -10,6 +11,7 @@
 <bin   name="jet_response_and_resolution_x"    file="jet_response_and_resolution_x.cc" />
 <bin   name="jet_l2_correction_x"              file="jet_l2_correction_x.cc" />
 <bin   name="jet_l3_correction_x"              file="jet_l3_correction_x.cc" />
+<bin   name="jet_l5_correction_x"              file="jet_l5_correction_x.cc" />
 <bin   name="jet_apply_jec_x"                  file="jet_apply_jec_x.cc" />
 <bin   name="jet_scale_resolution_x"           file="jet_scale_resolution_x.cc" />
 <bin   name="jet_weighted_spectrum_x"          file="jet_weighted_spectrum_x.cc" />
@@ -18,7 +20,16 @@
 <bin   name="jet_response_vs_deltar_x"         file="jet_response_vs_deltar_x.cc" />
 <bin   name="jet_correction_analyzer_x"        file="jet_correction_analyzer_x.cc" />
 <bin   name="jet_draw_corrections_x"           file="jet_draw_corrections_x.cc" />
+<bin   name="jet_draw_corrections_TDR_ratio_x" file="jet_draw_corrections_TDR_ratio_x.cc" />
 <bin   name="jet_draw_closure_pt_x"            file="jet_draw_closure_pt_x.cc" />
 <bin   name="jet_draw_closure_eta_x"           file="jet_draw_closure_eta_x.cc" />
+<bin   name="jet_draw_closure_pt_ratio_x"      file="jet_draw_closure_pt_ratio_x.cc" />
+<bin   name="jet_draw_closure_eta_ratio_x"     file="jet_draw_closure_eta_ratio_x.cc" />
 <bin   name="jet_draw_l2_correction_x"         file="jet_draw_l2_correction_x.cc" />
-
+<bin   name="jet_draw_l5_correction_x"         file="jet_draw_l5_correction_x.cc" />
+<bin   name="jet_combine_closure_pt_x"         file="jet_combine_closure_pt_x.cc" />
+<bin   name="jet_combine_closure_eta_x"        file="jet_combine_closure_eta_x.cc" />
+<bin   name="jet_combine_relrsp_resolution_x"  file="jet_combine_relrsp_resolution_x.cc" />
+<bin   name="jet_combine_pu_distributions_x"   file="jet_combine_pu_distributions_x.cc" />
+<bin   name="jet_draw_pileup_comparison_x"	   file="jet_draw_pileup_comparison_x.cc" />
+<bin   name="jet_copyFiles_x"                  file="jet_copyFiles_x.cc" />
