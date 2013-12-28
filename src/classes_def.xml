@@ -1,0 +1,12 @@
+<lcgdict>
+<!--
+  <class name="JRAEvent"/>
+-->
+  <class name="JRAEvent" ClassVersion="11">
+    <version ClassVersion="11" checksum="3322096238"/>
+	<version ClassVersion="10" checksum="1374876231"/>
+  </class>
+  <class name="std::vector<JRAEvent>"/>
+  <class pattern="edm::Wrapper<JRAEvent>"/>
+  <class name="edm::Wrapper<std::vector<JRAEvent> >"/>
+</lcgdict>
