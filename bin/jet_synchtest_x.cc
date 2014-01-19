@@ -186,11 +186,10 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
   //TString basepath = "/uscms_data/d2/aperloff/JRA_outfiles_53X_20120911/JRA/";
   TString basepath ="/fdata/hepx/store/user/aperloff/";
 
-  //TString sample1 =  basepath+"JRA_outfiles_53X_20120911/JRA/JRA.root";
-  TString sample1 =  basepath+"JRA_outfiles_53X_20121102/JRA/JRA.root"; // with latest L1's
+  TString sample1 =  basepath+"JRA_outfiles_53X_20131228_pbs/JRA/JRA.root"; // with latest L1's
   TString algo1(calgo1);
 
-  TString sample2 =  basepath+"JRA_outfiles_53X_noPU_20120911/JRA/JRA.root";
+  TString sample2 =  basepath+"JRA_outfiles_53X_20131228_NoPileup_pbs/JRA/JRA.root";
   //TString algo2 = algo1;
   TString algo2(calgo2);
 

@@ -3,6 +3,7 @@
 #include <vector>
 #include <iomanip>
 #include <fstream>
+#include <assert.h>
 
 #include "TFile.h"
 #include "TChain.h"
@@ -35,6 +36,11 @@ void ExtractGraph(TString calgo1="ak5pf",TString calgo2="ak5pf")
 		algo12 = algo1;
    TString inputFilename = "output_"+algo12+".root";
    TFile *fin= new TFile(inputFilename);
+   if(!fin->IsOpen()) {
+      cout << "ERROR::ExtractGraph The input file could not be opened." << endl
+           << "The program will now exit." << endl;
+      assert(fin->IsOpen());
+   }
 	TProfile3D *prof = (TProfile3D*)fin->Get("p_offOverA_etaVsTnpusVsJetPt");
 	TProfile3D *profPt = (TProfile3D*)fin->Get("p_PtAve_etaVsTnpusVsJetPt");
 	TProfile3D *profRho = (TProfile3D*)fin->Get("p_RhoAve_etaVsTnpusVsJetPt");
@@ -48,6 +54,7 @@ void ExtractGraph(TString calgo1="ak5pf",TString calgo2="ak5pf")
 	TGraph2DErrors *ptemp;
 	char buff[400];
 	char bufftitle[400];
+
 	for (int iEta = 1;iEta<=NETA;iEta++)
 	{
 		sprintf(buff,"p_offOverA_RhoVsJetPt_%d",iEta);
