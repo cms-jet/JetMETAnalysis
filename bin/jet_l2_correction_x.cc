@@ -32,6 +32,7 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <locale>
 
 
 using namespace std;
@@ -545,6 +546,20 @@ string get_legend_title(const string& alg)
   return title;
 }
 
+//______________________________________________________________________________
+template <typename T>
+T StringToNumber ( const string &Text, T defValue = T() )
+{
+   stringstream ss;
+   for ( string::const_iterator i=Text.begin(); i!=Text.end(); ++i ) {
+      if (*i=='l')
+         break;
+      if ( isdigit(*i) || *i=='e' || *i=='-' || *i=='+' || *i=='.' )
+         ss << *i;
+   }
+   T result;
+   return ss >> result ? result : defValue;
+}
 
 //______________________________________________________________________________
 string get_algorithm_suffix(const string& alg)
@@ -552,7 +567,10 @@ string get_algorithm_suffix(const string& alg)
   string result;
   result += std::toupper(alg[0]);
   result += std::toupper(alg[1]);
-  result += alg[2];
+  //result += alg[2];
+  char buffer [50];
+  sprintf (buffer, "%d", StringToNumber(alg,-1));
+  result += string(buffer);
   if      (alg.find("calol1off")  ==3) result += "Calol1off";
   else if (alg.find("calol1")     ==3) result += "Calol1";
   else if (alg.find("caloHLTl1")  ==3) result += "CaloHLTl1";
@@ -569,8 +587,10 @@ string get_algorithm_suffix(const string& alg)
   else if (alg.find("pfHLTl1")    ==3) result += "PFHLTl1";
   else if (alg.find("pfHLT")      ==3) result += "PFHLT";
   else if (alg.find("pfl1off")    ==3) result += "PFl1off";
-  else if (alg.find("pfl1")       ==3) result += "PFl1";
-  else if (alg.find("pf")         ==3) result += "PF";
+  //else if (alg.find("pfl1")       ==3) result += "PFl1";
+  else if (alg.find("pfl1")!=string::npos) result += "PFl1";
+  //else if (alg.find("pf")         ==3) result += "PF";
+  else if (alg.find("pf")!=string::npos) result += "PF";
   else if (alg.find("trk")        ==3) result += "TRK";
   else if (alg.find("tau")        ==3) result += std::string(alg, 3);
   cout<<"get_algorithm_suffix: result = "<<result<<" from algo = "<<alg<<endl;

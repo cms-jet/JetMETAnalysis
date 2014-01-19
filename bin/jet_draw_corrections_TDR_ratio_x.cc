@@ -136,10 +136,14 @@ int main(int argc,char**argv)
    //Create a pave indicating the algorithm name
    TString algNameLong;
    if(TString(algo).Contains("ak"))        algNameLong += "Anti-kT";
-   if(TString(algo).Contains("4"))         algNameLong += " R=0.4";
+   if(TString(algo).Contains("3"))         algNameLong += " R=0.3";
+   else if(TString(algo).Contains("4"))    algNameLong += " R=0.4";
    else if(TString(algo).Contains("5"))    algNameLong += " R=0.5";
    else if(TString(algo).Contains("6"))    algNameLong += " R=0.6";
    else if(TString(algo).Contains("7"))    algNameLong += " R=0.7";
+   else if(TString(algo).Contains("8"))    algNameLong += " R=0.8";
+   else if(TString(algo).Contains("9"))    algNameLong += " R=0.9";
+   else if(TString(algo).Contains("10"))   algNameLong += " R=1.0";
    if(TString(algo).Contains("pfchs"))     algNameLong += ", PFlow+CHS";
    else if(TString(algo).Contains("pf"))   algNameLong += ", PFlow";
    else if(TString(algo).Contains("calo")) algNameLong += ", Calo";
@@ -387,6 +391,14 @@ TString getAlias(TString s)
       return "AK5CaloHLT";
    else if (s=="ak5caloHLTl1")
       return "AK5CaloHLTl1";
+   else if (s=="ak3pf")
+      return "AK3PF";
+   else if (s=="ak3pfl1")
+      return "AK3PFl1";
+   else if (s=="ak4pf")
+      return "AK4PF";
+   else if (s=="ak4pfl1")
+      return "AK4PFl1";
    else if (s=="ak5pf")
       return "AK5PF";
    else if (s=="ak5pfl1")
@@ -395,12 +407,28 @@ TString getAlias(TString s)
       return "AK5PFl1";
    else if (s=="ak5pfl1off")
       return "AK5PFl1off";
+   else if (s=="ak6pf")
+      return "AK6PF";
+   else if (s=="ak6pfl1")
+      return "AK6PFl1";
    else if (s=="ak7pf")
       return "AK7PF";
    else if (s=="ak7pfl1")
       return "AK7PFl1";
    else if (s=="ak7pfl1off")
       return "AK7PFl1off";
+   else if (s=="ak8pf")
+      return "AK8PF";
+   else if (s=="ak8pfl1")
+      return "AK8PFl1";
+   else if (s=="ak9pf")
+      return "AK9PF";
+   else if (s=="ak9pfl1")
+      return "AK9PFl1";
+   else if (s=="ak10pf")
+      return "AK10PF";
+   else if (s=="ak10pfl1")
+      return "AK10PFl1";
    else if (s=="ak5pfchs")
       return "AK5PFchs";
    else if (s=="ak5pfchsl1")

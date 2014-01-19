@@ -43,6 +43,9 @@ void cmsPrelim(double intLUMI = 0);
 /// get the uppercase version of the algorithm name
 TString getAlias(TString s);
 
+/// transform the alg label into a title, e.g.: kt4calo -> k_{T}, D=0.4 (Calo)
+string get_legend_title(const string& alg);
+
 ////////////////////////////////////////////////////////////////////////////////
 // main
 ////////////////////////////////////////////////////////////////////////////////
@@ -64,16 +67,24 @@ int main(int argc,char**argv)
    string          filepath1    = cl.getValue<string>   ("filepath1");
    string          filepath2    = cl.getValue<string>   ("filepath2");
    string          algo         = cl.getValue<string>   ("algo");
-   bool            doflavor     = cl.getValue<bool>     ("doflavor",      false);
-   TString         outputDir    = cl.getValue<TString>  ("outputDir",  "images");
-   TString         outputFormat = cl.getValue<TString>  ("outputFormat", ".png");
-   bool            tdr          = cl.getValue<bool>     ("tdr",           false);
+   string          numerator    = cl.getValue<string>   ("numerator",            "53X");
+   string          denomenator  = cl.getValue<string>   ("denomenator",          "52X");
+   bool            doflavor     = cl.getValue<bool>     ("doflavor",             false);
+   TString         outputDir    = cl.getValue<TString>  ("outputDir",         "images");
+   vector<TString> outputFormat = cl.getVector<TString> ("outputFormat", ".png:::.eps");
+   bool            tdr          = cl.getValue<bool>     ("tdr",                  false);
 
    if (!cl.check()) return 0;
    cl.print();
 
    if (tdr) {
       setStyle();
+   }
+
+   bool algDiv = false;
+   if(getAlias(TString(numerator)).CompareTo("unknown") && getAlias(TString(denomenator)).CompareTo("unknown")) {
+      algo = numerator+"Over"+denomenator;
+      algDiv = true;
    }
 
    //
@@ -174,17 +185,28 @@ int main(int argc,char**argv)
    for(int i=0; i<NPtBins+1; i++)
    {
       TString ss;
-      pave[i] = new TPaveText(0.3,0.75,0.8,0.9,"NDC");
+      if(!algDiv)
+         pave[i] = new TPaveText(0.3,0.75,0.8,0.9,"NDC");
+      else
+         pave[i] = new TPaveText(0.3,0.65,0.8,0.9,"NDC");
       if (tdr) {
          pave[i]->AddText("QCD Monte Carlo");
-         if(ss.Contains("pfchs"))
-            pave[i]->AddText("Anti-kT R=0.5, PFlow+CHS");
-         else if(ss.Contains("pf"))
-            pave[i]->AddText("Anti-kT R=0.5, PFlow");
-         else if(ss.Contains("calo"))
-            pave[i]->AddText("Anti-kT R=0.5, Calo");
-         else if(ss.Contains("jpt"))
-            pave[i]->AddText("Anti-kT R=0.5, JPT");
+         if(!algDiv) {
+            //if(ss.Contains("pfchs"))
+            //   pave[i]->AddText("Anti-kT R=0.5, PFlow+CHS");
+            //else if(ss.Contains("pf"))
+            //   pave[i]->AddText("Anti-kT R=0.5, PFlow");
+            //else if(ss.Contains("calo"))
+            //   pave[i]->AddText("Anti-kT R=0.5, Calo");
+            //else if(ss.Contains("jpt"))
+            //   pave[i]->AddText("Anti-kT R=0.5, JPT");
+            pave[i]->AddText(get_legend_title(algo).c_str());
+         }
+         else {
+            pave[i]->AddText(get_legend_title(numerator).c_str());
+            pave[i]->AddText("Over");
+            pave[i]->AddText(get_legend_title(denomenator).c_str());
+         }
       }
       else {
          pave[i]->AddText(algo.c_str());
@@ -237,10 +259,15 @@ int main(int argc,char**argv)
       pave[i]->SetFillColor(0);
       pave[i]->SetBorderSize(0);
       pave[i]->SetTextFont(42);
-      pave[i]->SetTextSize(0.05);
+      if(!algDiv)
+         pave[i]->SetTextSize(0.05);
+      else
+         pave[i]->SetTextSize(0.04);
       pave[i]->Draw("EP");
       if (tdr) cmsPrelim();
-      can[i]->SaveAs(outputDir+"/"+ss+outputFormat);
+      for(unsigned int f=0; f<outputFormat.size(); f++) {
+        can[i]->SaveAs(outputDir+"/"+ss+outputFormat[f]);
+      }
       ratioHist[i]->Write();
       can[i]->Write();
    }
@@ -275,10 +302,10 @@ int main(int argc,char**argv)
       h2[ca[c]]->SetLineColor(kRed);
       h1[ca[c]]->Draw("EPsame");
       h2[ca[c]]->Draw("EPsame");
-      leg[c]->AddEntry(h1[ca[c]],"53X","lep");
-      leg[c]->AddEntry(h2[ca[c]],"52X","lep");
+      leg[c]->AddEntry(h1[ca[c]],numerator.c_str(),"lep");
+      leg[c]->AddEntry(h2[ca[c]],denomenator.c_str(),"lep");
 
-      leg[c]->AddEntry(ratioHist[ca[c]],"Ratio = #frac{53X}{52X}","lep");
+      leg[c]->AddEntry(ratioHist[ca[c]],"Ratio = #frac{"+TString(numerator)+"}{"+TString(denomenator)+"}","lep");
       line->Draw("same");
       linePlus->Draw("same");
       lineMinus->Draw("same");
@@ -286,7 +313,9 @@ int main(int argc,char**argv)
       leg[c]->Draw("same");
       if (tdr) cmsPrelim();
    }
-   ove->SaveAs(outputDir+"/"+ss+outputFormat);
+   for(unsigned int f=0; f<outputFormat.size(); f++) {
+     ove->SaveAs(outputDir+"/"+ss+outputFormat[f]);
+   }
    ove->Write();
    outf->Close();
 }
@@ -339,6 +368,14 @@ TString getAlias(TString s)
       return "AK5CaloHLT";
    else if (s=="ak5caloHLTl1")
       return "AK5CaloHLTl1";
+   else if (s=="ak3pf")
+      return "AK3PF";
+   else if (s=="ak3pfl1")
+      return "AK3PFl1";
+   else if (s=="ak4pf")
+      return "AK4PF";
+   else if (s=="ak4pfl1")
+      return "AK4PFl1";
    else if (s=="ak5pf")
       return "AK5PF";
    else if (s=="ak5pfl1")
@@ -347,12 +384,28 @@ TString getAlias(TString s)
       return "AK5PFl1";
    else if (s=="ak5pfl1off")
       return "AK5PFl1off";
+   else if (s=="ak6pf")
+      return "AK6PF";
+   else if (s=="ak6pfl1")
+      return "AK6PFl1";
    else if (s=="ak7pf")
       return "AK7PF";
    else if (s=="ak7pfl1")
       return "AK7PFl1";
    else if (s=="ak7pfl1off")
       return "AK7PFl1off";
+   else if (s=="ak8pf")
+      return "AK8PF";
+   else if (s=="ak8pfl1")
+      return "AK8PFl1";
+   else if (s=="ak9pf")
+      return "AK9PF";
+   else if (s=="ak9pfl1")
+      return "AK9PFl1";
+   else if (s=="ak10pf")
+      return "AK10PF";
+   else if (s=="ak10pfl1")
+      return "AK10PFl1";
    else if (s=="ak5pfchs")
       return "AK5PFchs";
    else if (s=="ak5pfchsl1")
@@ -403,4 +456,32 @@ TString getAlias(TString s)
       return "KT6PF";
    else
       return "unknown";
+}
+
+//______________________________________________________________________________
+string get_legend_title(const string& alg)
+{
+  string title;
+  string tmp(alg);
+  if      (alg.find("kt")==0) { title = "k_{T}, D=";      tmp = tmp.substr(2); }
+  else if (alg.find("sc")==0) { title = "SISCone, R=";    tmp = tmp.substr(2); }
+  else if (alg.find("ic")==0) { title = "ItCone, R=";     tmp = tmp.substr(2); }
+  else if (alg.find("mc")==0) { title = "MidCone. R=";    tmp = tmp.substr(2); }
+  else if (alg.find("ca")==0) { title = "Cam/Aachen, D="; tmp = tmp.substr(2); }
+  else if (alg.find("ak")==0) { title = "Anti k_{T}, D="; tmp = tmp.substr(2); }
+  else return alg;
+  
+  string reco[9] = { "gen", "caloHLT", "calo", "pfHLT", "pfchsHLT", "pfchs", "pf", "trk", "jpt" };
+  string RECO[9] = { "(Gen)", "(Calo@HLT)", "(Calo)", "(PFlow@HLT)", "(PFlow+CHS@HLT)", "(PFlow+CHS)", "(PFlow)", "(Tracks)", "(JPT)" };
+
+  string::size_type pos=string::npos; int ireco=-1;
+  while (pos==string::npos&&ireco<8) { pos = tmp.find(reco[++ireco]); }
+  if (pos==string::npos) return alg;
+  
+  double jet_size; stringstream ss1; ss1<<tmp.substr(0,pos); ss1>>jet_size;
+  jet_size/=10.0;  stringstream ss2; ss2<<jet_size;
+
+  title += ss2.str() + " " + RECO[ireco];
+
+  return title;
 }
