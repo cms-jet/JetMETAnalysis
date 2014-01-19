@@ -32,33 +32,33 @@ process.GlobalTag.globaltag = "START53_V7F::All"
 
 from CondCore.DBCommon.CondDBSetup_cfi import *
 process.jec = cms.ESSource("PoolDBESSource",CondDBSetup,
-                           connect = cms.string('sqlite_file:Fall12_V7_MC.db'),
+                           connect = cms.string('sqlite_file:Summer13_V1_MC.db'),
                            #cms.string("frontier://FrontierPrep/CMS_COND_PHYSICSTOOLS"),
                            toGet =  cms.VPSet(
 	cms.PSet(record = cms.string("JetCorrectionsRecord"),
-			 tag = cms.string("JetCorrectorParametersCollection_Fall12_V7_MC_AK5Calo"),
+			 tag = cms.string("JetCorrectorParametersCollection_Summer13_V1_MC_AK5Calo"),
 			 label= cms.untracked.string("AK5Calo")),
 	cms.PSet(record = cms.string("JetCorrectionsRecord"),
-			 tag = cms.string("JetCorrectorParametersCollection_Fall12_V7_MC_AK5PF"),
+			 tag = cms.string("JetCorrectorParametersCollection_Summer13_V1_MC_AK5PF"),
 			 label= cms.untracked.string("AK5PF")),
 	cms.PSet(record = cms.string("JetCorrectionsRecord"),
-			 tag = cms.string("JetCorrectorParametersCollection_Fall12_V7_MC_AK5PFchs"),
+			 tag = cms.string("JetCorrectorParametersCollection_Summer13_V1_MC_AK5PFchs"),
 			 label=cms.untracked.string("AK5PFchs")),
+#	cms.PSet(record = cms.string("JetCorrectionsRecord"),
+#			 tag = cms.string("JetCorrectorParametersCollection_Summer13_V1_MC_AK5JPT"),
+#			 label=cms.untracked.string("AK5JPT")),
 	cms.PSet(record = cms.string("JetCorrectionsRecord"),
-			 tag = cms.string("JetCorrectorParametersCollection_Fall12_V7_MC_AK5JPT"),
-			 label=cms.untracked.string("AK5JPT")),
-	cms.PSet(record = cms.string("JetCorrectionsRecord"),
-			 tag = cms.string("JetCorrectorParametersCollection_Fall12_V7_MC_AK7Calo"),
+			 tag = cms.string("JetCorrectorParametersCollection_Summer13_V1_MC_AK7Calo"),
 			 label= cms.untracked.string("AK7Calo")),
 	cms.PSet(record = cms.string("JetCorrectionsRecord"),
-			 tag = cms.string("JetCorrectorParametersCollection_Fall12_V7_MC_AK7PF"),
+			 tag = cms.string("JetCorrectorParametersCollection_Summer13_V1_MC_AK7PF"),
 			 label= cms.untracked.string("AK7PF")),
 	cms.PSet(record = cms.string("JetCorrectionsRecord"),
-			 tag = cms.string("JetCorrectorParametersCollection_Fall12_V7_MC_AK7PFchs"),
+			 tag = cms.string("JetCorrectorParametersCollection_Summer13_V1_MC_AK7PFchs"),
 			 label=cms.untracked.string("AK7PFchs")),
-	cms.PSet(record = cms.string("JetCorrectionsRecord"),
-			 tag = cms.string("JetCorrectorParametersCollection_Fall12_V7_MC_AK7JPT"),
-			 label=cms.untracked.string("AK7JPT")),
+#	cms.PSet(record = cms.string("JetCorrectionsRecord"),
+#			 tag = cms.string("JetCorrectorParametersCollection_Summer13_V1_MC_AK7JPT"),
+#			 label=cms.untracked.string("AK7JPT")),
 	)
                            )
 process.es_prefer_jec = cms.ESPrefer("PoolDBESSource","jec")
@@ -111,29 +111,29 @@ from JetMETAnalysis.JetAnalyzers.addAlgorithm import addAlgorithm
 
 algorithms = []
 
-algorithms.append('ak5calo')
-algorithms.append('ak7calo')
+#algorithms.append('ak5calo')
+#algorithms.append('ak7calo')
 #algorithms.append('kt4calo')
 #algorithms.append('kt6calo')
 #algorithms.append('ak5caloHLT')
 algorithms.append('ak5pf')
-algorithms.append('ak7pf')
+#algorithms.append('ak7pf')
 #algorithms.append('kt4pf')
 #algorithms.append('kt6pf')
-algorithms.append('ak5pfchs')
-algorithms.append('ak7pfchs')
+#algorithms.append('ak5pfchs')
+#algorithms.append('ak7pfchs')
 #algorithms.append('ak5pfHLT')
 #algorithms.append('ak5pfchsHLT')
-algorithms.append('ak5jpt')
-algorithms.append('ak7jpt')
+#algorithms.append('ak5jpt')
+#algorithms.append('ak7jpt')
 
-algorithms.append('ak5calol1')
-algorithms.append('ak7calol1')
+#algorithms.append('ak5calol1')
+#algorithms.append('ak7calol1')
 #algorithms.append('ak5caloHLTl1')
 algorithms.append('ak5pfl1')
-algorithms.append('ak7pfl1')
-algorithms.append('ak5pfchsl1')
-algorithms.append('ak7pfchsl1')
+#algorithms.append('ak7pfl1')
+#algorithms.append('ak5pfchsl1')
+#algorithms.append('ak7pfchsl1')
 #algorithms.append('ak5pfHLTl1')
 #algorithms.append('ak5pfchsHLTl1')
 #algorithms.append('ak5jptl1')
@@ -224,14 +224,14 @@ for algorithm in algorithms:
     if (algorithm.find('HLT') > 0) :
         process.load("Configuration.StandardSequences.Geometry_cff")
         process.load("Configuration.StandardSequences.MagneticField_cff")
-        addAlgorithm(process,algorithm,Defaults,False)
+        addAlgorithm(process,algorithm,Defaults,False,False)
     else:
-        addAlgorithm(process,algorithm,Defaults,doJetReco)
+        addAlgorithm(process,algorithm,Defaults,doJetReco,False)
 
-process.ak5CaloJets.jetPtMin = 1.0
+#process.ak5CaloJets.jetPtMin = 1.0
 process.ak5PFJets.jetPtMin = 1.0
-process.ak7CaloJets.jetPtMin = 1.0
-process.ak7PFJets.jetPtMin = 1.0
+#process.ak7CaloJets.jetPtMin = 1.0
+#process.ak7PFJets.jetPtMin = 1.0
 
 
 #!
