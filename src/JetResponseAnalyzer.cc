@@ -30,6 +30,7 @@
 #include "DataFormats/Math/interface/deltaPhi.h"
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
+#include "DataFormats/TrackReco/interface/TrackFwd.h"
 
 #include "JetMETCorrections/Objects/interface/JetCorrector.h"
 
@@ -74,6 +75,7 @@ private:
   std::string   moduleLabel_;
   
   edm::InputTag srcRef_;
+  edm::InputTag srcJetToUncorJetMap_;
   edm::InputTag srcRefToJetMap_;
   edm::InputTag srcRefToPartonMap_;
   edm::InputTag srcRho_;
@@ -118,6 +120,8 @@ private:
   Float_t       rho50_;
   Float_t       rho_hlt_;
   Float_t       pthat_;
+  Float_t       beta_;
+  Float_t       betaStar_;
   Float_t       weight_;
   Long64_t      npv_;
   Long64_t      evt_;
@@ -164,6 +168,7 @@ private:
 JetResponseAnalyzer::JetResponseAnalyzer(const edm::ParameterSet& iConfig)
   : moduleLabel_   (iConfig.getParameter<std::string>            ("@module_label"))
   , srcRef_        (iConfig.getParameter<edm::InputTag>                 ("srcRef"))
+  , srcJetToUncorJetMap_  (iConfig.getParameter<edm::InputTag>    ("srcJetToUncorJetMap"))
   , srcRefToJetMap_(iConfig.getParameter<edm::InputTag>         ("srcRefToJetMap"))
   , srcRho_        (iConfig.getParameter<edm::InputTag>                 ("srcRho"))
   , srcRho50_      (iConfig.getParameter<edm::InputTag>               ("srcRho50"))
@@ -249,6 +254,8 @@ void JetResponseAnalyzer::beginJob()
   tree_->Branch("rho50", &rho_, "rho50/F");
   if (doHLT_) tree_->Branch("rho_hlt",&rho_hlt_, "rho_hlt/F");
   tree_->Branch("pthat", &pthat_,  "pthat/F");
+  tree_->Branch("beta", &beta_,  "beta/F");
+  tree_->Branch("betaStar", &betaStar_,  "betaStar/F");
   tree_->Branch("weight",&weight_, "weight/F");
   tree_->Branch("npv",&npv_, "npv/L");
   tree_->Branch("evt",&evt_, "evt/L");
@@ -303,6 +310,7 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
   edm::Handle<GenEventInfoProduct>               genInfo;
   edm::Handle<vector<PileupSummaryInfo> >        puInfos;  
   edm::Handle<reco::CandidateView>               refs;
+  edm::Handle<reco::CandViewMatchMap>            jetToUncorJetMap;
   edm::Handle<reco::CandViewMatchMap>            refToJetMap;
   edm::Handle<reco::JetMatchedPartonsCollection> refToPartonMap;
   edm::Handle<double>                            rho;
@@ -311,8 +319,10 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
   edm::Handle<reco::VertexCollection>            vtx;
 
   // JET CORRECTOR
+  //std::cout<<" Before JetCorrector defined, jecLabel_ = "<<jecLabel_<<std::endl;
   jetCorrector_ = (jecLabel_.empty()) ? 0 : JetCorrector::getJetCorrector(jecLabel_,iSetup);
-  
+  //std::cout<<" After JetCorrector defined "<<std::endl;  
+
   // GENERATOR INFORMATION
   pthat_  = 0.0;
   weight_ = 1.0;
@@ -391,7 +401,8 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
   }
 
   // REFERENCES & RECOJETS
-  iEvent.getByLabel(srcRef_,        refs);
+  iEvent.getByLabel(srcRef_,               refs);
+  iEvent.getByLabel(srcJetToUncorJetMap_, jetToUncorJetMap); 
   iEvent.getByLabel(srcRefToJetMap_,refToJetMap);
   if (getFlavorFromMap_) iEvent.getByLabel(srcRefToPartonMap_,refToPartonMap);
   if (doBalancing_&&refToJetMap->size()!=1) return;
@@ -403,7 +414,8 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
      reco::CandViewMatchMap::const_iterator itMatch=refToJetMap->find(ref);
      if (itMatch==refToJetMap->end()) continue;
      reco::CandidateBaseRef jet=itMatch->val;
-     
+     //std::cout<<" Analysis "<<jet->eta()<<" "<<jet->phi()<<" "<<jet->energy()<<" "<<jet->et()<<std::endl;     
+
      refdrjt_[nref_]  =reco::deltaR(jet->eta(),jet->phi(),ref->eta(),ref->phi());
      refdphijt_[nref_]=reco::deltaPhi(jet->phi(),ref->phi());
      
@@ -445,7 +457,50 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
      else {
         refpdgid_[nref_]=ref->pdgId();
      }
-    
+
+     // Beta/Beta Star Calculation
+     beta_ = 0.0;
+     betaStar_ = 0.0;
+     if (isPFJet_) {
+        //---- vertex association -----------
+        //---- get the vector of tracks -----
+        reco::PFJetRef pfJetRef = jet.castTo<reco::PFJetRef>();
+        reco::TrackRefVector vTrks(pfJetRef->getTrackRefs());
+        float sumTrkPt(0.0),sumTrkPtBeta(0.0),sumTrkPtBetaStar(0.0);
+        //---- loop over the tracks of the jet ----
+        for(reco::TrackRefVector::const_iterator i_trk = vTrks.begin(); i_trk != vTrks.end(); i_trk++) {
+           //if (npv_ == 0) break;
+           if ((*vtx).size() == 0) break;
+           sumTrkPt += (*i_trk)->pt();
+           //---- loop over all vertices ----------------------------
+           for(unsigned ivtx = 0;ivtx < (*vtx).size();ivtx++) {
+              //---- loop over the tracks associated with the vertex ---
+              if (!((*vtx)[ivtx].isFake()) && (*vtx)[ivtx].ndof() >= 4 && fabs((*vtx)[ivtx].z()) <= 24) {
+                 for(reco::Vertex::trackRef_iterator i_vtxTrk = (*vtx)[ivtx].tracks_begin(); i_vtxTrk != (*vtx)[ivtx].tracks_end(); ++i_vtxTrk) {
+                    //---- match the jet track to the track from the vertex ----
+                    reco::TrackRef trkRef(i_vtxTrk->castTo<reco::TrackRef>());
+                    //---- check if the tracks match -------------------------
+                    if (trkRef == (*i_trk)) {
+                       if (ivtx == 0) {
+                          sumTrkPtBeta += (*i_trk)->pt();
+                       }
+                       else {
+                          sumTrkPtBetaStar += (*i_trk)->pt();
+                       }   
+                       break;
+                    }
+                 }
+              } 
+           }
+        }
+        if (sumTrkPt > 0) {
+           beta_     = sumTrkPtBeta/sumTrkPt;
+           betaStar_ = sumTrkPtBetaStar/sumTrkPt;
+        }
+        //qcdpfjet.setBeta(beta);
+        //qcdpfjet.setBetaStar(betaStar);
+     }
+
      refrank_[nref_]=nref_;
      refe_[nref_]   =ref->energy();
      refpt_[nref_]  =ref->pt();
@@ -496,13 +551,27 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
                                                          iEvent,iSetup);
               }
               else if (isPFJet_) {
+                 reco::CandViewMatchMap::const_iterator jetMatch=jetToUncorJetMap->find(jet);
+                 if (jetMatch!=jetToUncorJetMap->end()) {
+                    reco::CandidateBaseRef ujet=jetMatch->val;
+                    reco::PFJetRef pfJetRef;
+                    pfJetRef=ujet.castTo<reco::PFJetRef>();
+                    //std::cout<<" Do we start to correct "<<ujet->energy()<<" "<<ujet->eta()<<std::endl;
+                    jtjec_[nref_]=jetCorrector_->correction(*pfJetRef,
+                                                            iEvent,iSetup);
+                    //std::cout<<" Jet corrector end: after do we start to correct "<<std::endl;
+                 }
+                 /*
                  reco::PFJetRef pfJetRef;
                  pfJetRef=jet.castTo<reco::PFJetRef>();
                  //jtjec_[nref_]=jetCorrector_->correction(*pfJetRef,
                  //                                        edm::RefToBase<reco::Jet>(),
                  //                                        iEvent,iSetup);
+                 std::cout<<" Do we start to correct "<<jet->energy()<<" "<<jet->eta()<<std::endl;
                  jtjec_[nref_]=jetCorrector_->correction(*pfJetRef,
                                                          iEvent,iSetup);
+                 std::cout<<" Jet corrector end: after do we start to correct "<<std::endl;
+                 */
               }
            }
            else {
