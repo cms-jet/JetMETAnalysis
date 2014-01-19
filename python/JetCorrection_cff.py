@@ -40,6 +40,19 @@ ak5JPTJetsL1Fast = cms.EDProducer(
 	)
 ak7JPTJetsL1Fast = ak5JPTJetsL1Fast.clone(src='ak5JPTJets', correctors=['ak5JPTL1Fastjet'])
 
+ak3PFL1Fastjet   = ak5PFL1Fastjet.clone( algorithm = 'AK3PF' )
+ak4PFL1Fastjet   = ak5PFL1Fastjet.clone( algorithm = 'AK4PF' )
+ak6PFL1Fastjet   = ak5PFL1Fastjet.clone( algorithm = 'AK6PF' )
+ak8PFL1Fastjet   = ak5PFL1Fastjet.clone( algorithm = 'AK8PF' )
+ak9PFL1Fastjet   = ak5PFL1Fastjet.clone( algorithm = 'AK9PF' )
+ak10PFL1Fastjet   = ak5PFL1Fastjet.clone( algorithm = 'AK10PF' )
+
+ak3PFJetsL1Fast = ak5PFJetsL1Fast.clone(src='ak3PFJets', correctors=['ak3PFL1Fastjet'])
+ak4PFJetsL1Fast = ak5PFJetsL1Fast.clone(src='ak4PFJets', correctors=['ak4PFL1Fastjet'])
+ak6PFJetsL1Fast = ak5PFJetsL1Fast.clone(src='ak6PFJets', correctors=['ak6PFL1Fastjet'])
+ak8PFJetsL1Fast = ak5PFJetsL1Fast.clone(src='ak8PFJets', correctors=['ak8PFL1Fastjet'])
+ak9PFJetsL1Fast = ak5PFJetsL1Fast.clone(src='ak9PFJets', correctors=['ak9PFL1Fastjet'])
+ak10PFJetsL1Fast = ak5PFJetsL1Fast.clone(src='ak10PFJets', correctors=['ak10PFL1Fastjet'])
 
 #
 # L1OFFSET JEC PRODUCERS NOT DEFINED IN DEFAULTJEC_CFF
@@ -103,7 +116,7 @@ ak5PFchsL1Fastjet = cms.ESProducer( #added 10/10/2011
     srcRho      = cms.InputTag('kt6PFJets','rho'),
     useCondDB = cms.untracked.bool(True)
     )
-ak7PFchsL1Fastjet   = ak5PFchsL1Fastjet.clone() #added 10/10/2011
+ak7PFchsL1Fastjet   = ak5PFchsL1Fastjet.clone( algorithm = 'AK7PFchs' ) #added 10/10/2011
 ak5PFchsL2Relative = ak5CaloL2Relative.clone( algorithm = 'AK5PFchs' ) #added 10/10/2011
 ak7PFchsL2Relative   = ak5PFchsL2Relative.clone  ( algorithm = 'AK7PFchs' ) #added 10/10/2011
 ak5PFchsL3Absolute     = ak5CaloL3Absolute.clone( algorithm = 'AK5PFchs' ) #added 10/10/2011
