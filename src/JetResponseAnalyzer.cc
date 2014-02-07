@@ -318,7 +318,7 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
   edm::Handle<double>                            rho_hlt;
   edm::Handle<reco::VertexCollection>            vtx;
 
-  // JET CORRECTOR
+  // Jet CORRECTOR
   //std::cout<<" Before JetCorrector defined, jecLabel_ = "<<jecLabel_<<std::endl;
   jetCorrector_ = (jecLabel_.empty()) ? 0 : JetCorrector::getJetCorrector(jecLabel_,iSetup);
   //std::cout<<" After JetCorrector defined "<<std::endl;  

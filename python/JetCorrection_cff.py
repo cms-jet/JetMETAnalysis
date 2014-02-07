@@ -149,14 +149,14 @@ ak5PFchsJetsL1Fast = cms.EDProducer(
     'PFJetCorrectionProducer',
     src         = cms.InputTag('ak5PFchsJets'),
     correctors  = cms.vstring('ak5PFchsL1Fastjet')
-    ) #added 10/10/2011
-ak7PFchsJetsL1Fast = ak5PFchsJetsL1Fast.clone(src='ak7PFchsJets', correctors=['ak7PFchsL1Fastjet']) #added 10/10/2011
+    )
+ak7PFchsJetsL1Fast = ak5PFchsJetsL1Fast.clone(src='ak7PFchsJets', correctors=['ak7PFchsL1Fastjet'])
 ak5PFchsJetsL1Off = cms.EDProducer(
     'PFJetCorrectionProducer',
     src         = cms.InputTag('ak5PFchsJets'),
     correctors  = cms.vstring('ak5PFchsL1Offset')
-    ) #added 10/10/2011
-ak7PFchsJetsL1Off = ak5PFchsJetsL1Off.clone(src='ak7PFchsJets', correctors=['ak7PFchsL1Offset']) #added 10/10/2011
+    )
+ak7PFchsJetsL1Off = ak5PFchsJetsL1Off.clone(src='ak7PFchsJets', correctors=['ak7PFchsL1Offset'])
 
 ak5PFchsJetsL2L3   = cms.EDProducer('PFJetCorrectionProducer',
     src         = cms.InputTag('ak5PFchsJets'),
@@ -170,6 +170,20 @@ ak7PFchsJetsL1FastL2L3 = ak5PFchsJetsL2L3.clone(src = 'ak7PFchsJets', correctors
 
 ak5PFchsJetsL1L2L3 = ak5PFchsJetsL2L3.clone(src = 'ak5PFchsJets', correctors = ['ak5PFchsL1L2L3'])
 ak7PFchsJetsL1L2L3 = ak5PFchsJetsL2L3.clone(src = 'ak7PFchsJets', correctors = ['ak7PFchsL1L2L3'])
+
+ak3PFchsL1Fastjet   = ak5PFchsL1Fastjet.clone( algorithm = 'AK3PFchs' )
+ak4PFchsL1Fastjet   = ak5PFchsL1Fastjet.clone( algorithm = 'AK4PFchs' )
+ak6PFchsL1Fastjet   = ak5PFchsL1Fastjet.clone( algorithm = 'AK6PFchs' )
+ak8PFchsL1Fastjet   = ak5PFchsL1Fastjet.clone( algorithm = 'AK8PFchs' )
+ak9PFchsL1Fastjet   = ak5PFchsL1Fastjet.clone( algorithm = 'AK9PFchs' )
+ak10PFchsL1Fastjet   = ak5PFchsL1Fastjet.clone( algorithm = 'AK10PFchs' )
+
+ak3PFchsJetsL1Fast = ak5PFchsJetsL1Fast.clone(src='ak3PFchsJets', correctors=['ak3PFchsL1Fastjet'])
+ak4PFchsJetsL1Fast = ak5PFchsJetsL1Fast.clone(src='ak4PFchsJets', correctors=['ak4PFchsL1Fastjet'])
+ak6PFchsJetsL1Fast = ak5PFchsJetsL1Fast.clone(src='ak6PFchsJets', correctors=['ak6PFchsL1Fastjet'])
+ak8PFchsJetsL1Fast = ak5PFchsJetsL1Fast.clone(src='ak8PFchsJets', correctors=['ak8PFchsL1Fastjet'])
+ak9PFchsJetsL1Fast = ak5PFchsJetsL1Fast.clone(src='ak9PFchsJets', correctors=['ak9PFchsL1Fastjet'])
+ak10PFchsJetsL1Fast = ak5PFchsJetsL1Fast.clone(src='ak10PFchsJets', correctors=['ak10PFchsL1Fastjet'])
 
 #
 # HLT JEC PRODUCERS NOT DEFINED IN DEFAULTJEC_CFF

@@ -36,6 +36,7 @@
 #include "TLegend.h"
 #include "TLatex.h"
 #include "TMath.h"
+#include "TColor.h"
 
 #include <fstream>
 #include <string>
@@ -44,23 +45,45 @@
 using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
-// main
+// local functions
 ////////////////////////////////////////////////////////////////////////////////
 FactorizedJetCorrector * getFactorizedCorrector(TString algo, CommandLine & cl, TString & );
 
 void analyzeAlgo(TString algo, CommandLine & cl);
 
+void analyzeAllAlgs(vector<TString>& algs, vector<pair<FactorizedJetCorrector*,TString> >& allJetCorrs, CommandLine & cl);
+
 TCanvas * getCorrectionVsEtaCanvas(TString algo, FactorizedJetCorrector * jetCorr, TString suffix);
 
 TCanvas * getCorrectionVsEtaCanvasTDR(TString algo, FactorizedJetCorrector * jetCorr, TString suffix);
 
+TCanvas * getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, vector<pair<FactorizedJetCorrector*,TString> > allJetCorrs,
+                                                TString suffix);
+
 TCanvas * getCorrectionVsPtCanvas(TString algo, FactorizedJetCorrector * jetCorr, TString suffix);
 
+TCanvas * getCorrectionVsPtComparisonCanvasTDR(vector<TString>& algs, vector<pair<FactorizedJetCorrector*,TString> > allJetCorrs,
+                                               TString suffix);
+
+vector<Int_t> getColors();
+
+vector<Int_t> getMarkerNumbers();
+
 string getAlias(TString s);
+
+TString getAlgNameLong(TString algo);
 
 ///CMS Preliminary label;
 void cmsPrelim(double intLUMI = 0);
 
+////////////////////////////////////////////////////////////////////////////////
+// global variables
+////////////////////////////////////////////////////////////////////////////////
+vector<pair<FactorizedJetCorrector*,TString> > allJetCorrs;
+
+////////////////////////////////////////////////////////////////////////////////
+// main
+////////////////////////////////////////////////////////////////////////////////
 //______________________________________________________________________________
 int main(int argc,char**argv)
 {
@@ -74,11 +97,14 @@ int main(int argc,char**argv)
   if (!cl.parse(argc,argv)) return 0;
 
   vector<TString> algs         = cl.getVector<TString> ("algs");
-  TString         path         = cl.getValue<TString>  ("path"         , ""      );
-  string          outputDir    = cl.getValue<string>   ("outputDir"    , "./");
+  bool            combineAlgs  = cl.getValue<bool>     ("combineAlgs", false);
+  TString         path         = cl.getValue<TString>  ("path",           "");
+  string          outputDir    = cl.getValue<string>   ("outputDir",    "./");
   if (algs.size()==0){
     cout<<"ERROR you must use the flag -algs to select one or more algorithms!"<<endl;
   }
+
+  allJetCorrs.clear();
 
   // Loop over the algorithms 
   for(unsigned int a=0; a<algs.size(); a++){
@@ -101,6 +127,11 @@ int main(int argc,char**argv)
     outf->Close();
     
   }// for algos
+
+  // If we need to combine the algorithms into one canvas
+  if (combineAlgs) {
+    analyzeAllAlgs(algs, allJetCorrs, cl);
+  }
   
 }//main
 
@@ -119,12 +150,17 @@ void analyzeAlgo(TString algo, CommandLine & cl){
     cout<<"ERROR FactorizedJetCorrector could not be defined. Skipping algo."<<endl;
     return;
   }
-    
+
   // see if flavor separation is required
+  bool            combineAlgs  = cl.getValue<bool>     ("combineAlgs",          false);
   TString         flavor       = cl.getValue<TString>  ("flavor",                  "");
   string          outputDir    = cl.getValue<string>   ("outputDir",         "images");
   vector<TString> outputFormat = cl.getVector<TString> ("outputFormat", ".png:::.eps");
   bool            tdr          = cl.getValue<bool>     ("tdr",                   true);
+
+  if(combineAlgs) {
+    allJetCorrs.push_back(make_pair(jetCorr,corrLabel));
+  }
 
   if (tdr) {
      setStyle();
@@ -163,6 +199,67 @@ void analyzeAlgo(TString algo, CommandLine & cl){
   
 
 }//analyzeAlgo
+
+//---------------------------------------------------------------------
+void analyzeAllAlgs(vector<TString>& algs, vector<pair<FactorizedJetCorrector*,TString> >& allJetCorrs, CommandLine & cl) {
+  // see if flavor separation is required
+  TString         flavor       = cl.getValue<TString>  ("flavor",                  "");
+  string          outputDir    = cl.getValue<string>   ("outputDir",         "images");
+  vector<TString> outputFormat = cl.getVector<TString> ("outputFormat", ".png:::.eps");
+  bool            tdr          = cl.getValue<bool>     ("tdr",                   true);
+
+  if (tdr) {
+     setStyle();
+  }
+
+  if(algs.size()!=allJetCorrs.size()) {
+    cout << "ERROR::analyzeAllAlgs::The number of algs and the number of FactorizedJetCorrectors don't match."<<endl;
+    return;
+  }
+
+  TString allAlgs;
+  for(unsigned int ialg=0; ialg<algs.size(); ialg++) {
+    allAlgs+=algs[ialg];
+    if(ialg<algs.size()-1)
+      allAlgs+="_";
+  }
+
+  // create the output file
+  if(outputDir.length() > 0 && outputDir[outputDir.length()-1] != '/') outputDir += "/";
+  TString outf_str = outputDir+"Corrections_Comparison_"+allAlgs+".root" ;
+  TFile *outf = new TFile(outf_str,"RECREATE");
+  if (!outf) {
+    cout<<" Output file="<<outf_str<<" could not be created"<<endl;
+    exit(0);
+  }
+
+  //Create the suffix for the names
+  TString suffix;
+  suffix += "_" + allAlgs;
+  if( !flavor.IsNull() ) suffix += "_" + flavor;
+  suffix += "_" + allJetCorrs[0].second;
+
+  // get the canvas of correction vs eta in tdr format, write and save to file
+  if(tdr) {
+     TCanvas * ovetdr = getCorrectionVsEtaComparisonCanvasTDR(algs, allJetCorrs, suffix);
+     for(unsigned int of=0; of<outputFormat.size(); of++) {
+        ovetdr->SaveAs(outputDir+string(ovetdr->GetName())+outputFormat[of]);
+     }
+     ovetdr->Write();
+
+     TCanvas * ovptdr = getCorrectionVsPtComparisonCanvasTDR(algs, allJetCorrs, suffix);
+     for(unsigned int of=0; of<outputFormat.size(); of++) {
+        ovptdr->SaveAs(outputDir+string(ovptdr->GetName())+outputFormat[of]);
+     }
+     ovptdr->Write();
+  }
+
+  // write and close the output file
+  outf->cd();
+  outf->Write();
+  outf->Close();
+
+}//analyzeAllAlgs
 
 //---------------------------------------------------------------------
 TCanvas * getCorrectionVsEtaCanvas(TString algo, FactorizedJetCorrector * jetCorr, TString suffix) {
@@ -257,7 +354,7 @@ TCanvas * getCorrectionVsEtaCanvas(TString algo, FactorizedJetCorrector * jetCor
 //---------------------------------------------------------------------
 TCanvas * getCorrectionVsEtaCanvasTDR(TString algo, FactorizedJetCorrector * jetCorr, TString suffix) {
 
- //Create canvas vs eta for different pts  
+  //Create canvas vs eta for different pts  
   vector<double> PtVals;
   PtVals.push_back(30);
   PtVals.push_back(100);
@@ -277,22 +374,7 @@ TCanvas * getCorrectionVsEtaCanvasTDR(TString algo, FactorizedJetCorrector * jet
   leg->SetFillColor(0);
 
   //Create a pave indicating the algorithm name
-  TString algNameLong;
-  if(algo.Contains("ak"))        algNameLong += "Anti-kT";
-  if(algo.Contains("3"))         algNameLong += " R=0.3";
-  else if(algo.Contains("4"))    algNameLong += " R=0.4";
-  else if(algo.Contains("5"))    algNameLong += " R=0.5";
-  else if(algo.Contains("6"))    algNameLong += " R=0.6";
-  else if(algo.Contains("7"))    algNameLong += " R=0.7";
-  else if(algo.Contains("8"))    algNameLong += " R=0.8";
-  else if(algo.Contains("9"))    algNameLong += " R=0.9";
-  else if(algo.Contains("10"))   algNameLong += " R=1.0";
-  if(algo.Contains("pfchs"))     algNameLong += ", PFlow+CHS";
-  //else if(algo.Contains("pf"))   algNameLong += ", PFlow";
-  else if(algo.Contains("pf"))   algNameLong += ", Particle-Flow Jets";
-  else if(algo.Contains("calo")) algNameLong += ", Calo";
-  else if(algo.Contains("jpt"))  algNameLong += ", JPT";
-  
+  TString algNameLong = getAlgNameLong(algo);
   leg->AddEntry((TObject*)0,algNameLong,"");
   leg->AddEntry((TObject*)0,"","");
 
@@ -384,6 +466,104 @@ TCanvas * getCorrectionVsEtaCanvasTDR(TString algo, FactorizedJetCorrector * jet
   
 }//getCorrectionVsEtaCanvasTDR()
 
+//---------------------------------------------------------------------
+TCanvas * getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, vector<pair<FactorizedJetCorrector*,TString> > allJetCorrs,
+                                                TString suffix) {
+
+  //Create canvas vs eta for different pts  
+  vector<double> PtVals;
+  PtVals.push_back(30);
+  PtVals.push_back(100);
+  PtVals.push_back(300);
+  PtVals.push_back(500);
+  PtVals.push_back(1000);
+  PtVals.push_back(1500);
+
+  //Create the canvas with multiple pads
+  TString ss("CorrectionVsEta_Comparison_TDR");
+  ss += suffix;
+  TCanvas *ove = new TCanvas(ss,ss,1200,800);
+  ove->Divide(3,2);
+
+  vector<Int_t> colors = getColors();
+  vector<Int_t> markers = getMarkerNumbers();
+
+  // Create a legend for pt values
+  vector<TLegend*> legs;
+
+  // loop over all pt values.
+  map<TString,vector<TH1F*> > cc;
+  for (unsigned int c = 0; c < PtVals.size(); c++) {
+
+    ove->cd(c+1);
+
+    legs.push_back(new TLegend(0.15,0.5,0.85,0.9));
+    legs.back()->SetTextSize(0.04);
+    legs.back()->SetBorderSize(0);
+    legs.back()->SetFillColor(0);
+    TString ptstr;
+    if (PtVals[c]<0.1)
+       ptstr.Form("%f",PtVals[c]);
+    else 
+       ptstr.Form("%.0f",PtVals[c]);
+    //leg->AddEntry(cc,"P_{T} = "+ptstr+" GeV","p");
+    legs.back()->AddEntry((TObject*)0,"P_{T} = "+ptstr+" GeV","");
+    legs.back()->AddEntry((TObject*)0,"","");
+
+    for (unsigned int ialg=0; ialg<algs.size(); ialg++) {
+      //Create and fill the histo
+      TString hstr; hstr.Form("EtaSF_TDR_%d_%s",c,algs[ialg].Data());
+      TH1F * cc = new TH1F(hstr,hstr,NETA,veta);
+      for (int b = 1; b <= cc->GetNbinsX(); b++){
+         allJetCorrs[ialg].first->setJetPt(PtVals[c]);
+         allJetCorrs[ialg].first->setJetEta(cc->GetBinCenter(b));
+         double cor = allJetCorrs[ialg].first->getCorrection();
+         if (std::isnan((double)cor) || std::isinf((double)cor) ){
+            cout<<" *** ERROR *** getCorrectionVsEtaComparisonCanvas(). For eta="<<cc->GetBinCenter(b)
+                <<" and pt="<<PtVals[c]<<" the correction is "<<cor<<"!!"<<endl;
+            cor = 10000;
+         }
+         if ( cor < 0.8  || cor > 3 ){
+            cout<<" WARNING  *** getCorrectionVsEtaComparisonCanvas(). Correction of "<<cor<<" is out of the (0.8,3) range"<<endl;
+            }
+         
+         cc->SetBinContent(b,cor);
+      }//for eta bins
+
+      cc->GetXaxis()->SetTitle("#eta");
+      cc->GetYaxis()->SetTitle("Corr. Factor");
+      if(algs[ialg].Contains("calo"))
+         cc->GetYaxis()->SetRangeUser(0.90,2.5);
+      else
+         cc->GetYaxis()->SetRangeUser(0.90,1.8);
+      cc->SetFillColor(30);
+      cc->SetFillStyle(3001);
+
+      //Set marker colors and styles
+      cc->SetMarkerSize(0.7);
+      cc->SetMarkerStyle(markers[ialg]);
+      cc->SetMarkerColor(colors[ialg]);
+      cc->SetLineColor(colors[ialg]);
+
+      if(ialg == 0)
+         cc->Draw("P");
+      else
+         cc->Draw("Psame");
+
+      //Create a pave indicating the algorithm name
+      TString algNameLong = getAlgNameLong(algs[ialg]);
+      legs.back()->AddEntry(cc,algNameLong,"p");
+    }//for alg
+
+    //pave->Draw("same");
+    legs.back()->Draw("same");
+    cmsPrelim();
+  }//for pt bins
+  
+  // return the canvas
+  return ove;
+
+}//getCorrectionVsEtaComparisonCanvasTDR
 
 //---------------------------------------------------------------------
 TCanvas * getCorrectionVsPtCanvas(TString algo, FactorizedJetCorrector * jetCorr, TString suffix) {
@@ -461,6 +641,106 @@ TCanvas * getCorrectionVsPtCanvas(TString algo, FactorizedJetCorrector * jetCorr
   return ovp;
 
 }//getCorrectionVsPtCanvas()
+
+//---------------------------------------------------------------------
+TCanvas * getCorrectionVsPtComparisonCanvasTDR(vector<TString>& algs, vector<pair<FactorizedJetCorrector*,TString> > allJetCorrs,
+                                               TString suffix) {
+
+  //Create canvas vs eta for different pts  
+  vector<double> EtaVals;
+  EtaVals.push_back(-4.8);
+  EtaVals.push_back(-4.0);
+  EtaVals.push_back(-3.2);
+  EtaVals.push_back(-2.4);
+  EtaVals.push_back(-1.6);
+  EtaVals.push_back(-0.8);
+  EtaVals.push_back(0);
+  EtaVals.push_back( 0.8);
+  EtaVals.push_back( 1.6);
+  EtaVals.push_back( 2.4);
+  EtaVals.push_back( 3.2);
+  EtaVals.push_back( 4.0);
+  EtaVals.push_back( 4.8);
+
+  //Create the canvas with multiple pads
+  TString ss("CorrectionVsPt_Comparison_TDR");
+  ss += suffix;
+  TCanvas *ovp = new TCanvas(ss,ss,1200,1200);
+  ovp->Divide(4,4);
+
+  vector<Int_t> colors = getColors();
+  vector<Int_t> markers = getMarkerNumbers();
+
+  // Create a legend for pt values
+  vector<TLegend*> legs;
+
+  // loop over all pt values.
+  map<TString,vector<TH1F*> > cc;
+  for (unsigned int c = 0; c < EtaVals.size(); c++) {
+
+    ovp->cd(c+1)->SetLogx(1);
+
+    legs.push_back(new TLegend(0.15,0.5,0.85,0.9));
+    legs.back()->SetTextSize(0.04);
+    legs.back()->SetBorderSize(0);
+    legs.back()->SetFillColor(0);
+    TString etastr;
+    etastr.Form("%.1f",EtaVals[c]);
+    //leg->AddEntry(cc,"P_{T} = "+ptstr+" GeV","p");
+    legs.back()->AddEntry((TObject*)0,"#eta = "+etastr,"");
+    legs.back()->AddEntry((TObject*)0,"","");
+
+    for (unsigned int ialg=0; ialg<algs.size(); ialg++) {
+      //Create and fill the histo
+      TString hstr; hstr.Form("PtSF_TDR_%d_%s",c,algs[ialg].Data());
+      TH1F * cc = new TH1F(hstr,hstr,NPtBinsHLT,vpt_HLT);;
+      for (int b = 1; b <= cc->GetNbinsX(); b++){
+         allJetCorrs[ialg].first->setJetEta(EtaVals[c]);
+         allJetCorrs[ialg].first->setJetPt(cc->GetBinCenter(b));
+         double cor = allJetCorrs[ialg].first->getCorrection();
+         if (std::isnan((double)cor) || std::isinf((double)cor) ){
+            cout<<" *** ERROR *** getCorrectionVsEtaComparisonCanvas(). For eta="<<cc->GetBinCenter(b)
+                <<" and pt="<<EtaVals[c]<<" the correction is "<<cor<<"!!"<<endl;
+            cor = 10000;
+         }
+         if ( cor < 0.8  || cor > 3 ){
+            cout<<" WARNING  *** getCorrectionVsEtaComparisonCanvas(). Correction of "<<cor<<" is out of the (0.8,3) range"<<endl;
+            }
+         
+         cc->SetBinContent(b,cor);
+      }//for eta bins
+
+      cc->GetXaxis()->SetTitle("p_{T}");
+      cc->GetYaxis()->SetTitle("Corr. Factor");
+      cc->GetYaxis()->SetRangeUser(0.7,3.0);
+      cc->SetFillColor(30);
+      cc->SetFillStyle(3001);
+
+      //Set marker colors and styles
+      cc->SetMarkerSize(0.7);
+      cc->SetMarkerStyle(markers[ialg]);
+      cc->SetMarkerColor(colors[ialg]);
+      cc->SetLineColor(colors[ialg]);
+
+      if(ialg == 0)
+         cc->Draw("P");
+      else
+         cc->Draw("Psame");
+
+      //Create a pave indicating the algorithm name
+      TString algNameLong = getAlgNameLong(algs[ialg]);
+      legs.back()->AddEntry(cc,algNameLong,"p");
+    }//for alg
+
+    //pave->Draw("same");
+    legs.back()->Draw("same");
+    cmsPrelim();
+  }//for eta bins
+  
+  // return the canvas
+  return ovp;
+
+}//getCorrectionVsPtComparisonCanvasTDR
 
 //---------------------------------------------------------------------
 FactorizedJetCorrector * getFactorizedCorrector(TString algo, CommandLine & cl, TString & label) {
@@ -657,6 +937,60 @@ string getAlias(TString s)
       return "KT6PF";
    else
       return "unknown";
+}
+
+//______________________________________________________________________________
+TString getAlgNameLong(TString algo) {
+  TString algNameLong;
+
+  if(algo.Contains("ak"))        algNameLong += "Anti-kT";
+  if(algo.Contains("3"))         algNameLong += " R=0.3";
+  else if(algo.Contains("4"))    algNameLong += " R=0.4";
+  else if(algo.Contains("5"))    algNameLong += " R=0.5";
+  else if(algo.Contains("6"))    algNameLong += " R=0.6";
+  else if(algo.Contains("7"))    algNameLong += " R=0.7";
+  else if(algo.Contains("8"))    algNameLong += " R=0.8";
+  else if(algo.Contains("9"))    algNameLong += " R=0.9";
+  else if(algo.Contains("10"))   algNameLong += " R=1.0";
+  if(algo.Contains("pfchs"))     algNameLong += ", PFlow+CHS";
+  //else if(algo.Contains("pf"))   algNameLong += ", PFlow";
+  else if(algo.Contains("pf"))   algNameLong += ", Particle-Flow Jets";
+  else if(algo.Contains("calo")) algNameLong += ", Calo";
+  else if(algo.Contains("jpt"))  algNameLong += ", JPT";
+
+  return algNameLong;
+}
+
+//______________________________________________________________________________
+vector<Int_t> getColors() {
+  vector<Int_t> ret;
+  ret.push_back(kBlack);
+  ret.push_back(kRed);
+  ret.push_back(kOrange+1);
+  ret.push_back(kYellow);
+  ret.push_back(kGreen);
+  ret.push_back(kCyan);
+  ret.push_back(kAzure+1);
+  ret.push_back(kViolet+1);
+  ret.push_back(kMagenta);
+  ret.push_back(kGray+2);
+  return ret;
+}
+
+//______________________________________________________________________________
+vector<Int_t> getMarkerNumbers() {
+  vector<Int_t> ret;
+  ret.push_back(20);
+  ret.push_back(33);
+  ret.push_back(22);
+  ret.push_back(21);
+  ret.push_back(24);
+  ret.push_back(27);
+  ret.push_back(26);
+  ret.push_back(25);
+  ret.push_back(28);
+  ret.push_back(34);
+  return ret;
 }
 
 //______________________________________________________________________________

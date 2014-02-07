@@ -133,7 +133,7 @@ private:
 
 private:
    //Inputs
-   std::string   moduleLabel_;
+   std::string    moduleLabel_;
    vector<string> algs;
    vector<double> drmaxs;
    vector<double> binspt;

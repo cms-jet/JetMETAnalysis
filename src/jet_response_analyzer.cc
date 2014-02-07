@@ -9,40 +9,40 @@
 jet_response_analyzer::jet_response_analyzer(const edm::ParameterSet& iConfig)
   : moduleLabel_      (iConfig.getParameter<std::string> ("@module_label"))
   , algs              (iConfig.getParameter<vector<string> >      ("algs"))
-  , drmaxs            (iConfig.getParameter<vector<double> >     ("drmaxs"))
-  , binspt            (iConfig.getParameter<vector<double> >     ("binspt"))
-  , binseta           (iConfig.getParameter<vector<double> >    ("binseta"))
-  , binsphi           (iConfig.getParameter<vector<double> >    ("binsphi"))
-  , binsy             (iConfig.getParameter<vector<double> >      ("binsy"))
+  , drmaxs            (iConfig.getParameter<vector<double> >    ("drmaxs"))
+  , binspt            (iConfig.getParameter<vector<double> >    ("binspt"))
+  , binseta           (iConfig.getParameter<vector<double> >   ("binseta"))
+  , binsphi           (iConfig.getParameter<vector<double> >   ("binsphi"))
+  , binsy             (iConfig.getParameter<vector<double> >     ("binsy"))
   , useweight         (iConfig.getParameter<bool>            ("useweight"))
-  , xsection          (iConfig.getParameter<double>            ("xsection"))
+  , xsection          (iConfig.getParameter<double>           ("xsection"))
   , nrefmax           (iConfig.getParameter<int>               ("nrefmax"))
   , nbinspt           (iConfig.getParameter<int>               ("nbinspt"))
   , nbinseta          (iConfig.getParameter<int>              ("nbinseta"))
   , nbinsphi          (iConfig.getParameter<int>              ("nbinsphi"))
   , nbinsy            (iConfig.getParameter<int>                ("nbinsy"))
-  , etabarrelmin      (iConfig.getParameter<double>        ("etabarrelmin"))
-  , etabarrelmax      (iConfig.getParameter<double>        ("etabarrelmax"))
+  , etabarrelmin      (iConfig.getParameter<double>       ("etabarrelmin"))
+  , etabarrelmax      (iConfig.getParameter<double>       ("etabarrelmax"))
   , dobalance         (iConfig.getParameter<bool>            ("dobalance"))
   , doflavor          (iConfig.getParameter<bool>             ("doflavor"))
   , noabsflavors      (iConfig.getParameter<bool>         ("noabsflavors"))
-  , drmax             (iConfig.getParameter<double>               ("drmax"))
-  , dphimin           (iConfig.getParameter<double>             ("dphimin"))
+  , drmax             (iConfig.getParameter<double>              ("drmax"))
+  , dphimin           (iConfig.getParameter<double>            ("dphimin"))
   , dojetpt           (iConfig.getParameter<bool>              ("dojetpt"))
   , dorefpt           (iConfig.getParameter<bool>              ("dorefpt"))
   , nbinsrelrsp       (iConfig.getParameter<int>           ("nbinsrelrsp"))
-  , relrspmin         (iConfig.getParameter<double>           ("relrspmin"))
-  , relrspmax         (iConfig.getParameter<double>           ("relrspmax"))
+  , relrspmin         (iConfig.getParameter<double>          ("relrspmin"))
+  , relrspmax         (iConfig.getParameter<double>          ("relrspmax"))
   , nbinsabsrsp       (iConfig.getParameter<int>           ("nbinsabsrsp"))
-  , absrspmin         (iConfig.getParameter<double>           ("absrspmin"))
-  , absrspmax         (iConfig.getParameter<double>           ("absrspmax"))
+  , absrspmin         (iConfig.getParameter<double>          ("absrspmin"))
+  , absrspmax         (iConfig.getParameter<double>          ("absrspmax"))
   , nbinsetarsp       (iConfig.getParameter<int>           ("nbinsetarsp"))
-  , etarspmin         (iConfig.getParameter<double>           ("etarspmin"))
-  , etarspmax         (iConfig.getParameter<double>           ("etarspmax"))
+  , etarspmin         (iConfig.getParameter<double>          ("etarspmin"))
+  , etarspmax         (iConfig.getParameter<double>          ("etarspmax"))
   , nbinsphirsp       (iConfig.getParameter<int>           ("nbinsphirsp"))
-  , phirspmin         (iConfig.getParameter<double>           ("phirspmin"))
-  , phirspmax         (iConfig.getParameter<double>           ("phirspmax"))
-  , jtptmin           (iConfig.getParameter<double>             ("jtptmin"))
+  , phirspmin         (iConfig.getParameter<double>          ("phirspmin"))
+  , phirspmax         (iConfig.getParameter<double>          ("phirspmax"))
+  , jtptmin           (iConfig.getParameter<double>            ("jtptmin"))
   , itlow             (iConfig.getParameter<int>                 ("itlow"))
   , ithigh            (iConfig.getParameter<int>                ("ithigh"))
   , earlyootlow       (iConfig.getParameter<int>           ("earlyootlow"))
@@ -51,9 +51,9 @@ jet_response_analyzer::jet_response_analyzer(const edm::ParameterSet& iConfig)
   , lateoothigh       (iConfig.getParameter<int>           ("lateoothigh"))
   , totalootlow       (iConfig.getParameter<int>           ("totalootlow"))
   , totaloothigh      (iConfig.getParameter<int>          ("totaloothigh"))
-  , weightfile        (iConfig.getParameter<string>        ("weightfile"))
-  , MCPUReWeighting   (iConfig.getParameter<string>   ("MCPUReWeighting"))
-  , DataPUReWeighting (iConfig.getParameter<string> ("DataPUReWeighting"))
+  , weightfile        (iConfig.getParameter<string>         ("weightfile"))
+  , MCPUReWeighting   (iConfig.getParameter<string>    ("MCPUReWeighting"))
+  , DataPUReWeighting (iConfig.getParameter<string>  ("DataPUReWeighting"))
 {
 
   dorelrsp=(nbinsrelrsp>0);
@@ -78,6 +78,7 @@ jet_response_analyzer::~jet_response_analyzer(){
 
 //______________________________________________________________________________
 void jet_response_analyzer::beginJob() {
+  
   //
   // evaluate drmin requirements for individual algorithms if provided
   //
@@ -139,6 +140,7 @@ void jet_response_analyzer::beginJob() {
     }
   }
   */
+  
   if(!MCPUReWeighting.IsNull() && !DataPUReWeighting.IsNull()) { 
     LumiWeights_ = edm::LumiReWeighting(string(MCPUReWeighting),string(DataPUReWeighting),"pileup","pileup_jt400");
   }
@@ -168,7 +170,6 @@ void jet_response_analyzer::beginJob() {
     bookHistograms(fs,algs[ialg]);
     //cout << "DONE" << endl;
   }
-
 }
 
 //______________________________________________________________________________
@@ -178,7 +179,7 @@ void jet_response_analyzer::analyze(const edm::Event& iEvent, const edm::EventSe
   //
   getCollections(iEvent, iSetup, algs);
   if(firstEvent) {
-     cout << "There were " << algHandles.size() << " algorithms found." << endl;
+     cout << "There were " << algHandles.size() << " algorithms found for module label " << moduleLabel_ << endl;
    }
 
   for (unsigned int ialg=0;ialg<algHandles.size();ialg++) {
@@ -204,15 +205,18 @@ void jet_response_analyzer::analyze(const edm::Event& iEvent, const edm::EventSe
     // fill histograms
     //
     if (nrefmax>0) nref = std::min((int)algHandles[ialg]->nref,nrefmax);
-    for (unsigned char iref=0;iref<nref;iref++) {
+    for (unsigned char iref=0;iref<algHandles[ialg]->nref;iref++) {
 
       if (( dobalance&&algHandles[ialg]->refdphijt[iref]<dphimin)|| (!dobalance&&algHandles[ialg]->refdrjt[iref]>drmax_alg)) continue;
 
       if (algHandles[ialg]->jtpt[iref]<jtptmin) continue;
 
       if (!pileup_cut(itlow,ithigh,earlyootlow,earlyoothigh,lateootlow,lateoothigh,totalootlow,totaloothigh,
-                      algHandles[ialg]->npus)) 
+                      algHandles[ialg]->npus)) {
+        //cout << "WARNING::Ref " << iref << " for algorithm " << algs[ialg] << " failed the PU test." << endl
+        //     << "Skipping the event." << endl;
         continue;
+      }
 
       float eta    = (binseta.size()&&binseta.front()>=0.)?std::abs(algHandles[ialg]->jteta[iref]):algHandles[ialg]->jteta[iref];
       float y      = (binsy.size()&&binsy.front()>=0.)?std::abs(algHandles[ialg]->jty[iref]):algHandles[ialg]->jty[iref];
@@ -538,10 +542,10 @@ void jet_response_analyzer::analyze(const edm::Event& iEvent, const edm::EventSe
 
 //______________________________________________________________________________
 void jet_response_analyzer::bookHistograms(edm::Service<TFileService>& fs, string alg) {
-  cout << "Creating sub-directory for " << alg << " ... ";
+  //cout << "Creating sub-directory for " << alg << " ... ";
   //Make the sub-directory
-  subDirs.push_back(fs->mkdir(alg));
-  cout << "DONE" << endl;
+  //subDirs.push_back(fs->mkdir(alg));
+  //cout << "DONE" << endl;
 
   cout << "\tBooking histograms ... ";
 
@@ -557,81 +561,81 @@ void jet_response_analyzer::bookHistograms(edm::Service<TFileService>& fs, strin
         if (dojetpt) {
           //jetPtVsJetPt
           hname=flavor[iflv]+"JetPt_"+get_suffix("JetPt",ipt,binspt);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T} [GeV]",nbinspt,ptmin,ptmax);
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T} [GeV]",nbinspt,ptmin,ptmax);
         }
         if (dorefpt) {
           //refPtVsRefPt
           hname=flavor[iflv]+"RefPt_"+get_suffix("RefPt",ipt,binspt);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}^{ref} [GeV]",nbinspt,ptmin,ptmax);
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}^{ref} [GeV]",nbinspt,ptmin,ptmax);
 
           //jetPtVsRefPt
           hname=flavor[iflv]+"JetPt_"+get_suffix("RefPt",ipt,binspt);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T} [GeV]",3*nbinspt,0,3.0*ptmax);
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T} [GeV]",3*nbinspt,0,3.0*ptmax);
 
           //refPtVsRefPtBarrel
           hname=flavor[iflv]+"RefPt_Barrel_"+get_suffix("RefPt",ipt,binspt);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}^{ref} [GeV]",nbinspt,ptmin,ptmax);
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}^{ref} [GeV]",nbinspt,ptmin,ptmax);
 
           //jetPtVsRefPtBarrel
           hname=flavor[iflv]+"JetPt_Barrel_"+get_suffix("RefPt",ipt,binspt);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T} [GeV]",3*nbinspt,0,3.0*ptmax);
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T} [GeV]",3*nbinspt,0,3.0*ptmax);
         }
         if (dorelrsp&&dojetpt) {
           //relRspVsJetPt
           hname=flavor[iflv]+"RelRsp_"+get_suffix("JetPt",ipt,binspt);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}/p_{T}^{ref}",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}/p_{T}^{ref}",
                                                         nbinsrelrsp,relrspmin,relrspmax);
         }
         if (dorelrsp&&dorefpt) {
           //relRspVsRefPt
           hname=flavor[iflv]+"RelRsp_"+get_suffix("RefPt",ipt,binspt);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}/p_{T}^{ref}",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}/p_{T}^{ref}",
                                                         nbinsrelrsp,relrspmin,relrspmax);
 
           //relRspVsRefPtBarrel
           hname=flavor[iflv]+"RelRsp_Barrel_"+get_suffix("RefPt",ipt,binspt);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}/p_{T}^{ref}",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}/p_{T}^{ref}",
                                                         nbinsrelrsp,relrspmin,relrspmax);
         }
         if (doabsrsp&&dojetpt) {
           //absRspVsJetPt
           hname=flavor[iflv]+"AbsRsp_"+get_suffix("JetPt",ipt,binspt);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}-p_{T}^{ref} [GeV]",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}-p_{T}^{ref} [GeV]",
                                                         nbinsabsrsp,absrspmin,absrspmax);
         }
         if (doabsrsp&&dorefpt) {
           //absRspVsRefPt
           hname=flavor[iflv]+"AbsRsp_"+get_suffix("RefPt",ipt,binspt);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}-p_{T}^{ref} [GeV]",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}-p_{T}^{ref} [GeV]",
                                                         nbinsabsrsp,absrspmin,absrspmax);
 
           //absRspVsRefPtBarrel
           hname=flavor[iflv]+"AbsRsp_Barrel_"+get_suffix("RefPt",ipt,binspt);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}-p_{T}^{ref} [GeV]",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}-p_{T}^{ref} [GeV]",
                                                         nbinsabsrsp,absrspmin,absrspmax);
         }
         if (doetarsp&&dojetpt) {
           //etaRspVsJetPt
           hname=flavor[iflv]+"EtaRsp_"+get_suffix("JetPt",ipt,binspt);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";|#eta|-|#eta^{ref}|",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";|#eta|-|#eta^{ref}|",
                                                         nbinsetarsp,etarspmin,etarspmax);
         }
         if (doetarsp&&dorefpt) {
           //etaRspVsRefPt
           hname=flavor[iflv]+"EtaRsp_"+get_suffix("RefPt",ipt,binspt);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";|#eta|-|#eta^{ref}|",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";|#eta|-|#eta^{ref}|",
                                                         nbinsetarsp,etarspmin,etarspmax);
         }
         if (dophirsp&&dojetpt) {
           //phiRspVsJetPt
           hname=flavor[iflv]+"PhiRsp_"+get_suffix("JetPt",ipt,binspt);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";#phi-#phi^{ref}",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";#phi-#phi^{ref}",
                                                         nbinsphirsp,phirspmin,phirspmax);
         }
         if (dophirsp&&dorefpt) {
           //phiRspVsRefPt
           hname=flavor[iflv]+"PhiRsp_"+get_suffix("RefPt",ipt,binspt);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";#phi-#phi^{ref}",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";#phi-#phi^{ref}",
                                                         nbinsphirsp,phirspmin,phirspmax);
         }
       }
@@ -648,37 +652,36 @@ void jet_response_analyzer::bookHistograms(edm::Service<TFileService>& fs, strin
         if (1) {
           //jetEtaVsJetEta
           hname=flavor[iflv]+"JetEta_"+get_suffix("JetEta",ieta,binseta);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";#eta",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";#eta",
                                                         nbinseta,etamin,etamax);          
         }
         if (dorelrsp) {
           //relRspVsJetEta
           hname=flavor[iflv]+"RelRsp_"+get_suffix("JetEta",ieta,binseta);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}/p_{T}^{ref}",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}/p_{T}^{ref}",
                                                         nbinsrelrsp,relrspmin,relrspmax);
         }
         if (doabsrsp) {
           //absRspVsJetEta
           hname=flavor[iflv]+"AbsRsp_"+get_suffix("JetEta",ieta,binseta);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}-p_{T}^{ref} [GeV]",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}-p_{T}^{ref} [GeV]",
                                                         nbinsabsrsp,absrspmin,absrspmax);
         }
         if (doetarsp) {
           //etaRspVsJetEta
           hname=flavor[iflv]+"EtaRsp_"+get_suffix("JetEta",ieta,binseta);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";|#eta|-|#eta^{ref}|",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";|#eta|-|#eta^{ref}|",
                                                         nbinsetarsp,etarspmin,etarspmax);
         }
         if (dophirsp) {
           //phiRspVsJetEta
           hname=flavor[iflv]+"PhiRsp_"+get_suffix("JetEta",ieta,binseta);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";#phi-#phi^{ref}",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";#phi-#phi^{ref}",
                                                         nbinsphirsp,phirspmin,phirspmax);
         }
       }
     }
   }
-
 
   // book phi histograms
   if (binsphi.size()>=2) {
@@ -690,37 +693,36 @@ void jet_response_analyzer::bookHistograms(edm::Service<TFileService>& fs, strin
         if (1) {
           //jetPhiVsJetPhi
           hname=flavor[iflv]+"JetPhi_"+get_suffix("JetPhi",iphi,binsphi);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";#phi",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";#phi",
                                                         nbinsphi,phimin,phimax);
         }
         if (dorelrsp) {
           //relRspVsJetPhi
           hname=flavor[iflv]+"RelRsp_"+get_suffix("JetPhi",iphi,binsphi);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}/p_{T}^{ref}",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}/p_{T}^{ref}",
                                                         nbinsrelrsp,relrspmin,relrspmax);
         }
         if (doabsrsp) {
           //absRspVsJetPhi
           hname=flavor[iflv]+"AbsRsp_"+get_suffix("JetPhi",iphi,binsphi);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}-p_{T}^{ref} [GeV]",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}-p_{T}^{ref} [GeV]",
                                                         nbinsabsrsp,absrspmin,absrspmax);
         }
         if (doetarsp) {
           //etaRspVsJetPhi
           hname=flavor[iflv]+"EtaRsp_"+get_suffix("JetPhi",iphi,binsphi);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";|#eta|-|#eta^{ref}|",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";|#eta|-|#eta^{ref}|",
                                                         nbinsetarsp,etarspmin,etarspmax);
         }
         if (dophirsp) {
           //phiRspVsJetPhi
           hname=flavor[iflv]+"PhiRsp_"+get_suffix("JetPhi",iphi,binsphi);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";#phi-#phi^{ref}",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";#phi-#phi^{ref}",
                                                         nbinsphirsp,phirspmin,phirspmax);
         }
       }
     }
   }
-
 
   // book y histograms (rapidity)
   if (binsy.size()>=2) {
@@ -732,19 +734,19 @@ void jet_response_analyzer::bookHistograms(edm::Service<TFileService>& fs, strin
         if (1) {
           //jetYVsJetY
           hname=flavor[iflv]+"JetY_"+get_suffix("JetY",iy,binsy);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";#y",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";#y",
                                                         nbinsy,ymin,ymax);
         }
         if (dorelrsp) { 
           //relRspVsJetY
           hname=flavor[iflv]+"RelRsp_"+get_suffix("JetY",iy,binsy);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}/p_{T}^{ref}",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}/p_{T}^{ref}",
                                                         nbinsrelrsp,relrspmin,relrspmax);
         }
         if (doabsrsp) {
           //absRspVsJetY
           hname=flavor[iflv]+"AbsRsp_"+get_suffix("JetY",iy,binsy);
-          histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}-p_{T}^{ref} [GeV]",
+          histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}-p_{T}^{ref} [GeV]",
                                                         nbinsabsrsp,absrspmin,absrspmax);
         }
       }
@@ -770,79 +772,79 @@ void jet_response_analyzer::bookHistograms(edm::Service<TFileService>& fs, strin
             //jetPtJetPt
             //jetPtVsJetEtaJetPt
             hname=flavor[iflv]+"JetPt_"+jetEtaSuffix+"_"+jetPtSuffix;
-            histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}",nbinspt,ptmin,ptmax);
+            histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}",nbinspt,ptmin,ptmax);
           }
           if (dorefpt) {
             //refPtRefPt
             //refPtVsJetEtaRefPt
             hname=flavor[iflv]+"RefPt_"+jetEtaSuffix+"_"+refPtSuffix;
-            histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}^{ref}",nbinspt,ptmin,ptmax);
+            histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}^{ref}",nbinspt,ptmin,ptmax);
 
             //jetPtRefPt
             //jetPtVsJetEtaRefPt
             hname=flavor[iflv]+"JetPt_"+jetEtaSuffix+"_"+refPtSuffix;
-            histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}",3*nbinspt,0,3.0*ptmax);
+            histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}",3*nbinspt,0,3.0*ptmax);
           }
           if (dorelrsp&&dojetpt) {
             //relRspJetPt
             //relRspVsJetEtaJetPt
             hname=flavor[iflv]+"RelRsp_"+jetEtaSuffix+"_"+jetPtSuffix;
-            histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}/p_{T}^{ref}",
+            histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}/p_{T}^{ref}",
                                                           nbinsrelrsp,relrspmin,relrspmax);
           }
           if (dorelrsp&&dorefpt) {
             //relRspRefPt
             //relRspVsJetEtaRefPt
             hname=flavor[iflv]+"RelRsp_"+jetEtaSuffix+"_"+refPtSuffix;
-            histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}/p_{T}^{ref}",
+            histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}/p_{T}^{ref}",
                                                           nbinsrelrsp,relrspmin,relrspmax);
           }
           if (doabsrsp&&dojetpt) {
             //absRspJetPt
             //absRspVsJetEtaJetPt
             hname=flavor[iflv]+"AbsRsp_"+jetEtaSuffix+"_"+jetPtSuffix;
-            histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}-p_{T}^{ref} [GeV]",
+            histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}-p_{T}^{ref} [GeV]",
                                                           nbinsabsrsp,absrspmin,absrspmax);
 
             //absRspJetPt
             //absRspVsJetEtaJetPt
             hname=flavor[iflv]+"AbsRsp_"+jetEtaSuffix+"_"+jetPtSuffix;
-            histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";|#eta|-|#eta^{ref}|",
+            histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";|#eta|-|#eta^{ref}|",
                                                           nbinsabsrsp,absrspmin,absrspmax);                                                      
           }
           if (doabsrsp&&dorefpt) {
             //absRspRefPt
             //absRspVsJetEtaRefPt
             hname=flavor[iflv]+"AbsRsp_"+jetEtaSuffix+"_"+refPtSuffix;
-            histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}-p_{T}^{ref} [GeV]",
+            histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}-p_{T}^{ref} [GeV]",
                                                           nbinsabsrsp,absrspmin,absrspmax);
           }
           if (doetarsp&&dorefpt) {
             //etaRspRefPt
             //etaRspVsJetEtaRefPt
             hname=flavor[iflv]+"EtaRsp_"+jetEtaSuffix+"_"+refPtSuffix;
-            histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";|#eta|-|#eta^{ref}|",
+            histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";|#eta|-|#eta^{ref}|",
                                                           nbinsetarsp,etarspmin,etarspmax);
           }
           if (doetarsp&&dojetpt) {
             //etaRspJetPt
             //etaRspVsJetEtaJetPt
             hname=flavor[iflv]+"EtaRsp_"+jetEtaSuffix+"_"+jetPtSuffix;
-            histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";#phi-#phi^{ref}",
+            histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";#phi-#phi^{ref}",
                                                           nbinsetarsp,etarspmin,etarspmax);
           }
           if (dophirsp&&dorefpt) {
             //phiRspRefPt
             //phiRspVsJetEtaRefPt
             hname=flavor[iflv]+"PhiRsp_"+jetEtaSuffix+"_"+refPtSuffix;
-            histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";#phi-#phi^{ref}",
+            histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";#phi-#phi^{ref}",
                                                           nbinsphirsp,phirspmin,phirspmax);
           }
           if (dophirsp&&dojetpt) {
             //phiRspJetPt
             //phiRspVsJetEtaJetPt
             hname=flavor[iflv]+"PhiRsp_"+jetEtaSuffix+"_"+jetPtSuffix;
-            histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";#phi-#phi^{ref}",
+            histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";#phi-#phi^{ref}",
                                                           nbinsphirsp,phirspmin,phirspmax);
           }          
         }
@@ -869,60 +871,60 @@ void jet_response_analyzer::bookHistograms(edm::Service<TFileService>& fs, strin
             //jetPtJetPt
             //jetPtVsJetYJetPt
             hname=flavor[iflv]+"JetPt_"+jetYSuffix+"_"+jetPtSuffix;
-            histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}",nbinspt,ptmin,ptmax);
+            histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}",nbinspt,ptmin,ptmax);
           }
           if (dorefpt) {
             //refPtRefPt
             //refPtVsJetYRefPt
             hname=flavor[iflv]+"RefPt_"+jetYSuffix+"_"+refPtSuffix;
-            histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}^{ref}",
+            histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}^{ref}",
                                                           nbinspt,ptmin,ptmax);
 
             //jetPtRefPt
             //jetPtVsJetYRefPt
             hname=flavor[iflv]+"JetPt_"+jetYSuffix+"_"+refPtSuffix;
-            histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}",
+            histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}",
                                                           3*nbinspt,0,3.0*ptmax);
           }
           if (dorelrsp&&dojetpt) {
             //relRspJetPt
             //relRspVsJetYJetPt
             hname=flavor[iflv]+"RelRsp_"+jetYSuffix+"_"+jetPtSuffix;
-            histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}/p_{T}^{ref}",
+            histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}/p_{T}^{ref}",
                                                           nbinsrelrsp,relrspmin,relrspmax);
           }
           if (dorelrsp&&dorefpt) {
             //relRspRefPt
             //relRspVsJetYRefPt
             hname=flavor[iflv]+"RelRsp_"+jetYSuffix+"_"+refPtSuffix;
-            histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}/p_{T}^{ref}",
+            histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}/p_{T}^{ref}",
                                                           nbinsrelrsp,relrspmin,relrspmax);
           }
           if (doabsrsp&&dojetpt) {
             //absRspJetPt
             //absRspVsJetYJetPt
             hname=flavor[iflv]+"AbsRsp_"+jetYSuffix+"_"+jetPtSuffix;
-            histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}-p_{T}^{ref} [GeV]",
+            histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}-p_{T}^{ref} [GeV]",
                                                           nbinsabsrsp,absrspmin,absrspmax);
           }
           if (doabsrsp&&dorefpt) {
             //absRspRefPt
             //absRspVsJetYRefPt
             hname=flavor[iflv]+"AbsRsp_"+jetYSuffix+"_"+refPtSuffix;
-            histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";p_{T}-p_{T}^{ref} [GeV]",
+            histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";p_{T}-p_{T}^{ref} [GeV]",
                                                           nbinsabsrsp,absrspmin,absrspmax);
           }
           if (doabsrsp&&dojetpt) {
             //absRspJetPt
             hname=flavor[iflv]+"AbsRsp_"+jetYSuffix+"_"+jetPtSuffix;
-            histosPerAlg[hname]=subDirs.back().make<TH1F>(hname.c_str(),";|#y|-|#y^{ref}|",
+            histosPerAlg[hname]=fs->make<TH1F>(hname.c_str(),";|#y|-|#y^{ref}|",
                                                           nbinsabsrsp,absrspmin,absrspmax);
           }
         }
       }
     }
   }
-
+  
   algHistos[alg] = histosPerAlg;
 
   cout << "DONE" << endl;
@@ -931,20 +933,24 @@ void jet_response_analyzer::bookHistograms(edm::Service<TFileService>& fs, strin
 //______________________________________________________________________________
 void jet_response_analyzer::getCollections(const edm::Event& iEvent, const edm::EventSetup& iSetup, vector<string> algs) {
 
-  //edm::Selector s(edm::ProcessNameSelector("JRA") && edm::ModuleLabelSelector("ak*"));
+  //edm::Selector s(edm::ProcessNameSelector("JRAP") && edm::ModuleLabelSelector("ak*"));
   //edm::Selector s(edm::ProcessNameSelector("JRAP"));
   //iEvent.getMany(s,algHandles);
-  iEvent.getManyByType(algHandles);
-  for(unsigned int ialg=0;ialg<algHandles.size();ialg++) {
-    assert ( algHandles[ialg].isValid() );
+
+  //iEvent.getManyByType(algHandles);
+  //for(unsigned int ialg=0;ialg<algHandles.size();ialg++) {
+    //assert ( algHandles[ialg].isValid() );
     //cout << algHandles[ialg].provenance()->moduleLabel() << endl;
-  }
-  //if(algs.size()>0) {
-  //  for(std::vector<edm::Handle<JRAEvent> >::iterator it = algHandles.begin() ; it != algHandles.end(); ++it)
-  //  if(!contains(algs,it->provenance()->moduleLabel()))
-  //    algHandles.erase(it);
   //}
-   
+
+  for(unsigned int ialg=0; ialg<algs.size(); ialg++) {
+    edm::Selector s(edm::ProcessNameSelector("JRAP") && edm::ModuleLabelSelector(algs[ialg]));
+    iEvent.getMany(s,algHandles);
+    for(unsigned int ihandle=0;ihandle<algHandles.size();ihandle++) {
+      assert ( algHandles[ihandle].isValid() );
+      //cout << algHandles[ihandle].provenance()->moduleLabel() << endl;
+    }
+  }
 }
 
 //______________________________________________________________________________
