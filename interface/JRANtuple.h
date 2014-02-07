@@ -25,13 +25,13 @@ public :
    Int_t           fCurrent; //!current Tree number in a TChain
 
    // Declaration of leaf types
-   vector<int>     *npus;
-   vector<float>   *tnpus;
-   vector<int>     *bxns;
-   vector<float>   *sumpt_lowpt;
-   vector<float>   *sumpt_highpt;
-   vector<int>     *ntrks_lowpt;
-   vector<int>     *ntrks_highpt;
+   vector<int>     npus;
+   vector<float>   tnpus;
+   vector<int>     bxns;
+   vector<float>   sumpt_lowpt;
+   vector<float>   sumpt_highpt;
+   vector<int>     ntrks_lowpt;
+   vector<int>     ntrks_highpt;
    Float_t         rho;
    Float_t         rho50;
    Float_t         rho_hlt;
@@ -176,13 +176,13 @@ void JRANtuple::MakeTree(TTree *tree)
    gROOT->ProcessLine("#include <vector>");
 
    // Set object pointer
-   npus = 0;
-   tnpus = 0;
-   bxns = 0;
-   sumpt_lowpt = 0;
-   sumpt_highpt = 0;
-   ntrks_lowpt = 0;
-   ntrks_highpt = 0;
+   //npus = 0;
+   //tnpus = 0;
+   //bxns = 0;
+   //sumpt_lowpt = 0;
+   //sumpt_highpt = 0;
+   //ntrks_lowpt = 0;
+   //ntrks_highpt = 0;
    // Set branch addresses and branch pointers
    if (!tree) return;
    fChain = tree;
@@ -244,13 +244,13 @@ void JRANtuple::Init(TTree *tree)
    // (once per file to be processed).
 
    // Set object pointer
-   npus = 0;
-   tnpus = 0;
-   bxns = 0;
-   sumpt_lowpt = 0;
-   sumpt_highpt = 0;
-   ntrks_lowpt = 0;
-   ntrks_highpt = 0;
+   //npus = 0;
+   //tnpus = 0;
+   //bxns = 0;
+   //sumpt_lowpt = 0;
+   //sumpt_highpt = 0;
+   //ntrks_lowpt = 0;
+   //ntrks_highpt = 0;
    // Set branch addresses and branch pointers
    if (!tree) return;
    fChain = tree;
