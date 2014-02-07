@@ -21,9 +21,9 @@ Defaults.JetResponseParameters.doHLT = True
 #!
 #! PROCESS
 #!
-applyDBFile = True
+applyDBFile = False
 #era = Summer12_V1_MC
-era = "ConeSizeTest_MC"
+era = "ConeSizeTest_MC_PFchs"
 doProducer = False
 process = cms.Process("JRA")
 if doProducer:
@@ -113,7 +113,7 @@ process.source = cms.Source("PoolSource", fileNames = qcdFiles )
 #! SERVICES
 #!
 process.load('FWCore.MessageLogger.MessageLogger_cfi')
-process.MessageLogger.cerr.FwkReport.reportEvery = 100
+process.MessageLogger.cerr.FwkReport.reportEvery = 5000
 if not doProducer:
 	process.load('CommonTools.UtilAlgos.TFileService_cfi')
 	process.TFileService.fileName=cms.string('JRA.root')
@@ -135,9 +135,9 @@ from JetMETAnalysis.JetAnalyzers.addAlgorithm import addAlgorithm
 
 #algsizetype = {'ak':[3,5]}
 algsizetype = {'ak':[3,4,5,6,7,8,9,10]}
-jettype = ['pf']
+jettype = ['pfchs']
 #jettype = ['calo','pf','pfchs']
-corrs = ['','l1']
+corrs = ['']
 #corrs = ['','l1','l2l3']
 
 algorithms = []
@@ -272,11 +272,11 @@ for algorithm in algorithms:
     outCom.extend(['keep *_'+algorithm+'_*_*'])
 
 #process.ak5CaloJets.jetPtMin = 1.0
-process.ak5PFJets.jetPtMin = 1.0
+#process.ak5PFJets.jetPtMin = 1.0
 #process.ak7CaloJets.jetPtMin = 1.0
-process.ak7PFJets.jetPtMin = 1.0
-#process.ak5PFchsJets.jetPtMin = 1.0
-#process.ak7PFchsJets.jetPtMin = 1.0
+#process.ak7PFJets.jetPtMin = 1.0
+process.ak5PFchsJets.jetPtMin = 1.0
+process.ak7PFchsJets.jetPtMin = 1.0
 
 
 #!
