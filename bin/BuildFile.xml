@@ -33,3 +33,7 @@
 <bin   name="jet_combine_pu_distributions_x"   file="jet_combine_pu_distributions_x.cc" />
 <bin   name="jet_draw_pileup_comparison_x"	   file="jet_draw_pileup_comparison_x.cc" />
 <bin   name="jet_copyFiles_x"                  file="jet_copyFiles_x.cc" />
+<bin   name="jet_synchtest_x"                  file="jet_synchtest_x.cc" />
+<bin   name="jet_synchfit_x"                   file="jet_synchfit_x.cc" />
+<bin   name="jet_synchplot_x"                  file="jet_synchplot_x.cc" />
+<bin   name="DelphesNtupleToJRANtuple_x"       file="DelphesNtupleToJRANtuple_x.cc" />
