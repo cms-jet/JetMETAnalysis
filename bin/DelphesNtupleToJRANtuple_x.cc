@@ -120,6 +120,7 @@ int main(int argc,char**argv) {
 
 	TString 	    inputFilename     = cl.getValue<TString> 	   ("inputFilename");
 	TString 	    outputDir         = cl.getValue<TString> 	   ("outputDir",          "./");
+    int             tnpu              = cl.getValue<int>           ("tnpu",                 20);
 	int             maxEvts           = cl.getValue<int>           ("maxEvts",               0);
 	//vector<TString> collections       = cl.getVector<TString>      ("collections", "GenJet:::CAJet:::Jet")    
 	bool    	 	doComposition_    = cl.getValue<bool>    	   ("doComposition",      true);
@@ -276,15 +277,46 @@ int main(int argc,char**argv) {
 			//Set values for the NPU Collection
 			ScalarHT *NPU = (ScalarHT*) branchNPU->At(0);
 			int nPUvertices_true = (int)NPU->HT;
-			vector<float>* tnpus = new vector<float>(3,0);
-			(*tnpus)[1] = nPUvertices_true;
-			ialg->second.second->tnpus = tnpus;
-			//delete npus; //uncomment after testing
+            //ialg->second.second->tnpus = new vector<float>(3,0);
+            //(*ialg->second.second->tnpus)[0] = nPUvertices_true;
+            //(*ialg->second.second->tnpus)[1] = nPUvertices_true;
+            //(*ialg->second.second->tnpus)[2] = nPUvertices_true;
+            ialg->second.second->npus.clear();
+            ialg->second.second->npus.push_back(nPUvertices_true);
+            ialg->second.second->npus.push_back(nPUvertices_true);
+            ialg->second.second->npus.push_back(nPUvertices_true);
+            ialg->second.second->tnpus.clear();
+            ialg->second.second->tnpus.push_back(tnpu);
+            ialg->second.second->tnpus.push_back(tnpu);
+            ialg->second.second->tnpus.push_back(tnpu);
+
+            //Set values for sumpt
+            ialg->second.second->sumpt_lowpt.clear();
+            ialg->second.second->sumpt_lowpt.push_back(0);
+            ialg->second.second->sumpt_lowpt.push_back(0);
+            ialg->second.second->sumpt_lowpt.push_back(0);
+            ialg->second.second->sumpt_highpt.clear();
+            ialg->second.second->sumpt_highpt.push_back(0);
+            ialg->second.second->sumpt_highpt.push_back(0);
+            ialg->second.second->sumpt_highpt.push_back(0);
+
+            //Set values for ntrks
+            ialg->second.second->ntrks_lowpt.clear();
+            ialg->second.second->ntrks_lowpt.push_back(0);
+            ialg->second.second->ntrks_lowpt.push_back(0);
+            ialg->second.second->ntrks_lowpt.push_back(0);
+            ialg->second.second->ntrks_highpt.clear();
+            ialg->second.second->ntrks_highpt.push_back(0);
+            ialg->second.second->ntrks_highpt.push_back(0);
+            ialg->second.second->ntrks_highpt.push_back(0);
 
 			//Set values for missing collections
 			ialg->second.second->pthat  = 0;
 			ialg->second.second->weight = 0;
-			ialg->second.second->npv    = 0;
+            if(ialg->first == "ak5pfl1")
+               ialg->second.second->npv    = (int)(1);
+            else
+               ialg->second.second->npv    = (int)(nPUvertices_true/0.74);
 			ialg->second.second->run    = 1;
 
 			ofile->cd(ialg->first.c_str());
