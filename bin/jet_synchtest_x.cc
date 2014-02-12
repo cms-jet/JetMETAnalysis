@@ -4,7 +4,7 @@
 
 #include "TFile.h"
 #include "TChain.h"
-#include "JetMETAnalysis/JetUtilities/interface/JECTree.h"
+#include "JetMETAnalysis/JetUtilities/interface/JRANtuple.h"
 #include "TH2D.h"
 #include "TProfile.h"
 #include "TProfile2D.h"
@@ -18,17 +18,27 @@
 using namespace std;
 
 class evtid {
-private:
-   int run_, ls_, evt_;
+//private:
+public:
+   Long64_t run_, ls_, evt_;
 public :
    evtid() : run_(0), ls_(0), evt_(0) {}
-   evtid(int run, int ls, int evt) : run_(run), ls_(ls), evt_(evt) {}
+   evtid(Long64_t run, Long64_t ls, Long64_t evt) : run_(run), ls_(ls), evt_(evt) {}
+   
    bool operator()(evtid const& a, evtid const& b) {
       if (a.run_ < b.run_) return true;
       if (a.ls_ < b.ls_) return true;
       if (a.evt_ < b.evt_) return true;
       else return false;
    }
+   /*
+   bool operator<(const evtid& rhs) {
+      if (this->run_ < rhs.run_) return true;
+      if (this->ls_ < rhs.ls_) return true;
+      if (this->evt_ < rhs.evt_) return true;
+      return false;
+   }
+   */
 };
 
 // To make notation clearer
@@ -93,16 +103,17 @@ void fillMap(map<evtid, pair<Long64_t, Long64_t>, evtid> & mapTree,
    // Load only what's needed this WAY FASTER.
    chain->SetBranchStatus("*",0);
    chain->SetBranchStatus("run",1);
+   chain->SetBranchStatus("lumi",1);
    chain->SetBranchStatus("evt",1);
 
    // Book 42X tree
-   TBranch *b_run, *b_evt; // *b_lbn
+   TBranch *b_run, *b_lumi, *b_evt;
    Long64_t run; 
-   Int_t    lbn = 0;
+   Int_t    lumi = 0;
    Long64_t evt; 
   
    chain->SetBranchAddress("run",&run,&b_run);
-   //chain->SetBranchAddress("lbn",&lbn,&b_lbn);
+   chain->SetBranchAddress("lumi",&lumi,&b_lumi);
    chain->SetBranchAddress("evt",&evt,&b_evt);
 
    cout << "Filling map with event signatures from: "<<endl;
@@ -116,10 +127,14 @@ void fillMap(map<evtid, pair<Long64_t, Long64_t>, evtid> & mapTree,
       Long64_t ientry = chain->LoadTree(jentry);
       if (ientry < 0) break;
       b_run->GetEntry(ientry);
-      //b_lbn->GetEntry(ientry);
+      b_lumi->GetEntry(ientry);
       b_evt->GetEntry(ientry);
 
-      mapTree[evtid(run, lbn, evt)] = std::make_pair(jentry, ientry);
+      if(mapTree.find(evtid(run, lumi, evt))!=mapTree.end()) {
+         cout << "\tWARNING::This evtid already exists in the map." << endl;
+      }
+
+      mapTree[evtid(run, lumi, evt)] = std::make_pair(jentry, ientry);
 
       if (jentry%100000==0) cout << "." << flush;
    }
@@ -132,7 +147,7 @@ void fillMap(map<evtid, pair<Long64_t, Long64_t>, evtid> & mapTree,
 }//fillMap
 
 // ------------------------------------------------------------------
-void fillJetMap(map<Int_t, Int_t> & jetMap, JECTree * t1, JECTree * t2){
+void fillJetMap(map<Int_t, Int_t> & jetMap, JRANtuple * t1, JRANtuple * t2){
 
    typedef map<double, pair<Int_t, Int_t> > ITJ;
 
@@ -184,16 +199,19 @@ void fillJetMap(map<Int_t, Int_t> & jetMap, JECTree * t1, JECTree * t2){
 void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int ApplyJEC = 0, TString JECPar="parameters_ak5pf.txt"){
   
    //TString basepath = "/uscms_data/d2/aperloff/JRA_outfiles_53X_20120911/JRA/";
-   TString basepath ="/fdata/hepx/store/user/aperloff/";
+   //TString basepath ="/fdata/hepx/store/user/aperloff/"; //run-independent && Delphes
+   TString basepath ="/fdata/hepx/store/user/delgado_andrea/"; //run-dependent
 
    //TString sample1 =  basepath+"JRA_outfiles_53X_20131228_pbs/JRA/JRA.root"; //PF // with latest L1's
    //TString sample1 =  basepath+"JRA_outfiles_53X_20140122_pbs/JRA/JRA.root"; //PFchs // with latest L1's
-   TString sample1 =  basepath+"Delphes_QCDjets_20PU_1M_v2/DelphesJRA.root"; //Delphes // with latest L1's
+   //TString sample1 =  basepath+"Delphes_QCDjets_20PU_1M_v2/DelphesJRA.root"; //Delphes // with latest L1's
+   TString sample1 =  basepath+"JRA_outfiles_53X_20140129_pbs/JRA/JRA.root"; //run-dependent
    TString algo1(calgo1);
 
    //TString sample2 =  basepath+"JRA_outfiles_53X_20131228_NoPileup_pbs/JRA/JRA.root"; //PF
    //TString sample2 =  basepath+"JRA_outfiles_53X_20140122_NoPileup_pbs/JRA/JRA.root"; //PFchs
-   TString sample2 =  basepath+"Delphes_QCDjets_20PU_1M_v2/DelphesJRA.root"; //Delphes
+   //TString sample2 =  basepath+"Delphes_QCDjets_20PU_1M_v2/DelphesJRA.root"; //Delphes
+   TString sample2 =  basepath+"JRA_outfiles_53X_20140129_NoPileup_pbs/JRA/JRA.root"; //run-dependent
    //TString algo2 = algo1;
    TString algo2(calgo2);
 
@@ -209,11 +227,11 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
 
    TFile * fpu = TFile::Open(sample1);
    fpu->cd(algo1);
-   JECTree * tpu   = new JECTree((TTree*) fpu->Get(algo1+"/"+treeName));
+   JRANtuple * tpu   = new JRANtuple((TTree*) fpu->Get(algo1+"/"+treeName));
 
    TFile * fnopu = TFile::Open(sample2);
    fnopu->cd(algo2);
-   JECTree * tnopu = new JECTree((TTree*) fnopu->Get(algo2+"/"+treeName));
+   JRANtuple * tnopu = new JRANtuple((TTree*) fnopu->Get(algo2+"/"+treeName));
 
    //A map holding the equivalance of jets in two given events
    map<Int_t,Int_t> mapJet;
@@ -476,8 +494,13 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
       if (nevs%10000==0) cout << "\t"<<nevs << endl;
 
       // if this entry does not exist on the second ntuple just skip this event
-      if (mapTreeNoPU.find(it->first) == mapTreeNoPU.end())
+      if (mapTreeNoPU.find(it->first) == mapTreeNoPU.end()) {
+         cout << "\tWARNING::mapTreeNoPU.find(it->first) == mapTreeNoPU.end() failed" << endl
+              << "\tit->first.run_ == " << it->first.run_ << endl
+              << "\tit->first.ls_ == " << it->first.ls_ << endl
+              << "\tit->first.evt_ == " << it->first.evt_ << endl;
          continue;
+      }
 
       // Load the entries at the proper place.
       tpu->GetEntry(mapTreePU[it->first].second);
@@ -665,8 +688,8 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
          double resp       = tpu->jtpt[jpu]/tpu->refpt[jpu];   // response relative to reference jet
          double respTonopu = tpu->jtpt[jpu]/tnopu->jtpt[jnopu];// response relative to no pu jet
          double respNopu	= tnopu->jtpt[jnopu]/tnopu->refpt[jnopu]; // response no pu jet to reference jet
-         double PUEff		= 0.020*(tpu->npus->at(0))+0.975*(tpu->npus->at(1))+0.005*(tpu->npus->at(2)); // effective pu
-         double GenSumPtOA	= (0.020*(tpu->sumpt_lowpt->at(0))+0.975*(tpu->sumpt_lowpt->at(1))+0.005*(tpu->sumpt_lowpt->at(2)))/tpu->jtarea[jpu];
+         double PUEff		= 0.020*(tpu->npus.at(0))+0.975*(tpu->npus.at(1))+0.005*(tpu->npus.at(2)); // effective pu
+         double GenSumPtOA	= (0.020*(tpu->sumpt_lowpt.at(0))+0.975*(tpu->sumpt_lowpt.at(1))+0.005*(tpu->sumpt_lowpt.at(2)))/tpu->jtarea[jpu];
          double offset_jtchf = tpu->jtpt[jpu]*tpu->jtchf[jpu]-tnopu->jtpt[jnopu]*tnopu->jtchf[jnopu];
          double offset_jtnhf = tpu->jtpt[jpu]*tpu->jtnhf[jpu]-tnopu->jtpt[jnopu]*tnopu->jtnhf[jnopu];
          double offset_jtnef = tpu->jtpt[jpu]*tpu->jtnef[jpu]-tnopu->jtpt[jnopu]*tnopu->jtnef[jnopu];
@@ -682,9 +705,9 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
          p_off_etaVsJetPt->Fill(tpu->jteta[jpu],tpu->jtpt[jpu],offset);
          p_offOverA_etaVsJetPt->Fill(tpu->jteta[jpu],tpu->jtpt[jpu],offsetOA);
       
-         p_offOverA_etaVsTnpusVsJetPt->Fill(tpu->jteta[jpu],tpu->tnpus->at(1),tpu->refpt[jpu],offsetOA);
-         p_PtAve_etaVsTnpusVsJetPt   ->Fill(tpu->jteta[jpu],tpu->tnpus->at(1),tpu->refpt[jpu],tpu->jtpt[jpu]);
-         p_RhoAve_etaVsTnpusVsJetPt  ->Fill(tpu->jteta[jpu],tpu->tnpus->at(1),tpu->refpt[jpu],tpu->rho);
+         p_offOverA_etaVsTnpusVsJetPt->Fill(tpu->jteta[jpu],tpu->tnpus.at(1),tpu->refpt[jpu],offsetOA);
+         p_PtAve_etaVsTnpusVsJetPt   ->Fill(tpu->jteta[jpu],tpu->tnpus.at(1),tpu->refpt[jpu],tpu->jtpt[jpu]);
+         p_RhoAve_etaVsTnpusVsJetPt  ->Fill(tpu->jteta[jpu],tpu->tnpus.at(1),tpu->refpt[jpu],tpu->rho);
 
          p_offOverA_etaVsRhoVsJetPt->Fill(tpu->jteta[jpu],tpu->rho,tpu->refpt[jpu],offsetOA);
          p_PtAve_etaVsRhoVsJetPt->Fill(tpu->jteta[jpu],tpu->rho,tpu->refpt[jpu],tpu->jtpt[jpu]);
