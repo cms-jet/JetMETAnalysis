@@ -40,8 +40,9 @@ public :
    Float_t         betaStar;
    Float_t         weight;
    Long64_t        npv;
-   Long64_t        evt;
    Long64_t        run;
+   Long64_t        lumi;
+   Long64_t        evt;
    UChar_t         nref;
    UChar_t         refrank[92];   //[nref]
    Int_t           refpdgid[92];   //[nref]
@@ -83,8 +84,9 @@ public :
    TBranch        *b_betaStar;   //!
    TBranch        *b_weight;   //!
    TBranch        *b_npv;   //!
-   TBranch        *b_evt;   //!
    TBranch        *b_run;   //!
+   TBranch        *b_lumi;   //!
+   TBranch        *b_evt;   //!
    TBranch        *b_nref;   //!
    TBranch        *b_refrank;   //!
    TBranch        *b_refpdgid;   //!
@@ -204,8 +206,9 @@ void JRANtuple::MakeTree(TTree *tree)
    fChain->Branch("betaStar", &betaStar, "betaStar/F");
    fChain->Branch("weight", &weight, "weight/F");
    fChain->Branch("npv", &npv, "npv/L");
-   fChain->Branch("evt", &evt, "evt/L");
    fChain->Branch("run", &run, "run/L");
+   fChain->Branch("lumi", &lumi, "lumi/L");
+   fChain->Branch("evt", &evt, "evt/L");
    fChain->Branch("nref", &nref, "nref/b");
    fChain->Branch("refrank", refrank, "refrank[nref]/b");
    fChain->Branch("refpdgid", refpdgid, "refpdgid[nref]/I");
@@ -272,8 +275,9 @@ void JRANtuple::Init(TTree *tree)
    fChain->SetBranchAddress("betaStar", &betaStar, &b_betaStar);
    fChain->SetBranchAddress("weight", &weight, &b_weight);
    fChain->SetBranchAddress("npv", &npv, &b_npv);
-   fChain->SetBranchAddress("evt", &evt, &b_evt);
    fChain->SetBranchAddress("run", &run, &b_run);
+   fChain->SetBranchAddress("lumi", &lumi, &b_lumi);
+   fChain->SetBranchAddress("evt", &evt, &b_evt);
    fChain->SetBranchAddress("nref", &nref, &b_nref);
    fChain->SetBranchAddress("refrank", refrank, &b_refrank);
    fChain->SetBranchAddress("refpdgid", refpdgid, &b_refpdgid);
