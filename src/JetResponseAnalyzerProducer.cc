@@ -159,8 +159,9 @@ void JetResponseAnalyzerProducer::produce(edm::Event& iEvent,
   }
  
   //EVENT INFORMATION
-  JRAEvt_->evt = iEvent.id().event();
   JRAEvt_->run = iEvent.id().run();
+  JRAEvt_->lumi = iEvent.id().luminosityBlock();
+  JRAEvt_->evt = iEvent.id().event();
 
   // MC PILEUP INFORMATION
   JRAEvt_->npus.clear();

@@ -124,8 +124,9 @@ private:
   Float_t       betaStar_;
   Float_t       weight_;
   Long64_t      npv_;
-  Long64_t      evt_;
   Long64_t      run_;
+  Long64_t      lumi_;
+  Long64_t      evt_;
 
   UChar_t       nref_;
   UChar_t       refrank_[100];
@@ -258,8 +259,9 @@ void JetResponseAnalyzer::beginJob()
   tree_->Branch("betaStar", &betaStar_,  "betaStar/F");
   tree_->Branch("weight",&weight_, "weight/F");
   tree_->Branch("npv",&npv_, "npv/L");
-  tree_->Branch("evt",&evt_, "evt/L");
   tree_->Branch("run",&run_, "run/L");
+  tree_->Branch("lumi",&lumi_, "lumi/L");
+  tree_->Branch("evt",&evt_, "evt/L");
 
   tree_->Branch("nref",  &nref_,   "nref/b");
   tree_->Branch("refrank",refrank_,"refrank[nref]/b");
@@ -361,8 +363,9 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
   }
  
   //EVENT INFORMATION
-  evt_ = iEvent.id().event();
   run_ = iEvent.id().run();
+  lumi_ = iEvent.id().luminosityBlock();
+  evt_ = iEvent.id().event();
 
   // MC PILEUP INFORMATION
   npus_.clear();
