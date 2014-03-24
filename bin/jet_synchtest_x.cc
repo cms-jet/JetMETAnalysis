@@ -21,24 +21,19 @@ class evtid {
 //private:
 public:
    Long64_t run_, ls_, evt_;
+   bool runDep_;
 public :
-   evtid() : run_(0), ls_(0), evt_(0) {}
-   evtid(Long64_t run, Long64_t ls, Long64_t evt) : run_(run), ls_(ls), evt_(evt) {}
+   evtid() : run_(0), ls_(0), evt_(0), runDep_(false) {}
+   evtid(Long64_t run, Long64_t ls, Long64_t evt, bool runDep) : run_(run), ls_(ls), evt_(evt), runDep_(runDep) {}
    
    bool operator()(evtid const& a, evtid const& b) {
-      if (a.run_ < b.run_) return true;
+      if (!a.runDep_ && !b.runDep_) {
+         if (a.run_ < b.run_) return true;
+      }
       if (a.ls_ < b.ls_) return true;
       if (a.evt_ < b.evt_) return true;
       else return false;
    }
-   /*
-   bool operator<(const evtid& rhs) {
-      if (this->run_ < rhs.run_) return true;
-      if (this->ls_ < rhs.ls_) return true;
-      if (this->evt_ < rhs.evt_) return true;
-      return false;
-   }
-   */
 };
 
 // To make notation clearer
@@ -62,6 +57,7 @@ const double vrho[NRHO+1] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,2
 
 TString detstr[4] ={"bb","ei","eo","ff"};
 TString PFstr[6] = {"chf","nhf","nef","cef","hfhf","hfef"};
+TString pdgidstr[7] = {"nJ","qJ","cJ","bJ","gJ","aJ","aqJ"};
 
 // ------------------------------------------------------------------
 int getNpvIndex(int npv){
@@ -89,11 +85,25 @@ int getDetIndex(double eta){
 
 }//getDetIndex
 
+// ------------------------------------------------------------------
+vector<int> getPDGIDIndecies(int pdgid) {
+   pdgid = fabs(pdgid);
+   vector<int> res;
 
+   if(pdgid==0) res.push_back(0);
+   if(pdgid>=1 && pdgid<=3) res.push_back(1);
+   if(pdgid==4) res.push_back(2);
+   if(pdgid==5) res.push_back(3);
+   if(pdgid==21) res.push_back(4);
+   res.push_back(5);
+   if(pdgid>=1 && pdgid<=6) res.push_back(6);
+
+   return res;
+}//getPDGIDIndecies
 
 // ------------------------------------------------------------------
 void fillMap(map<evtid, pair<Long64_t, Long64_t>, evtid> & mapTree,
-             TString filename, TString algo, TString treeName){
+             TString filename, TString algo, TString treeName, bool runDep){
 
    // Open the file and get the tree
    TFile * f = TFile::Open(filename);
@@ -103,7 +113,7 @@ void fillMap(map<evtid, pair<Long64_t, Long64_t>, evtid> & mapTree,
    // Load only what's needed this WAY FASTER.
    chain->SetBranchStatus("*",0);
    chain->SetBranchStatus("run",1);
-   chain->SetBranchStatus("lumi",1);
+   //chain->SetBranchStatus("lumi",1);
    chain->SetBranchStatus("evt",1);
 
    // Book 42X tree
@@ -113,7 +123,7 @@ void fillMap(map<evtid, pair<Long64_t, Long64_t>, evtid> & mapTree,
    Long64_t evt; 
   
    chain->SetBranchAddress("run",&run,&b_run);
-   chain->SetBranchAddress("lumi",&lumi,&b_lumi);
+   //chain->SetBranchAddress("lumi",&lumi,&b_lumi);
    chain->SetBranchAddress("evt",&evt,&b_evt);
 
    cout << "Filling map with event signatures from: "<<endl;
@@ -127,14 +137,14 @@ void fillMap(map<evtid, pair<Long64_t, Long64_t>, evtid> & mapTree,
       Long64_t ientry = chain->LoadTree(jentry);
       if (ientry < 0) break;
       b_run->GetEntry(ientry);
-      b_lumi->GetEntry(ientry);
+      //b_lumi->GetEntry(ientry);
       b_evt->GetEntry(ientry);
 
-      if(mapTree.find(evtid(run, lumi, evt))!=mapTree.end()) {
+      if(mapTree.find(evtid(run, lumi, evt, runDep))!=mapTree.end()) {
          cout << "\tWARNING::This evtid already exists in the map." << endl;
       }
 
-      mapTree[evtid(run, lumi, evt)] = std::make_pair(jentry, ientry);
+      mapTree[evtid(run, lumi, evt, runDep)] = std::make_pair(jentry, ientry);
 
       if (jentry%100000==0) cout << "." << flush;
    }
@@ -196,22 +206,23 @@ void fillJetMap(map<Int_t, Int_t> & jetMap, JRANtuple * t1, JRANtuple * t2){
 }//fillJetMap
 
 // ------------------------------------------------------------------
-void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int ApplyJEC = 0, TString JECPar="parameters_ak5pf.txt"){
+void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int ApplyJEC = 0, TString JECPar="parameters_ak5pf.txt", bool runDep = false, TString outputPath = "./"){
   
    //TString basepath = "/uscms_data/d2/aperloff/JRA_outfiles_53X_20120911/JRA/";
-   //TString basepath ="/fdata/hepx/store/user/aperloff/"; //run-independent && Delphes
-   TString basepath ="/fdata/hepx/store/user/delgado_andrea/"; //run-dependent
+   TString basepath ="/fdata/hepx/store/user/aperloff/"; //run-independent && Delphes
+   //TString basepath ="/fdata/hepx/store/user/delgado_andrea/"; //run-dependent
 
-   //TString sample1 =  basepath+"JRA_outfiles_53X_20131228_pbs/JRA/JRA.root"; //PF // with latest L1's
+   TString sample1 =  basepath+"JRA_outfiles_53X_20131228_pbs/JRA/JRA.root"; //PF 
+   //TString sample1 =  basepath+"JRA_outfiles_53X_20140109_pbs/JRA/JRA.root"// PF // with latest L1's
    //TString sample1 =  basepath+"JRA_outfiles_53X_20140122_pbs/JRA/JRA.root"; //PFchs // with latest L1's
    //TString sample1 =  basepath+"Delphes_QCDjets_20PU_1M_v2/DelphesJRA.root"; //Delphes // with latest L1's
-   TString sample1 =  basepath+"JRA_outfiles_53X_20140129_pbs/JRA/JRA.root"; //run-dependent
+   //TString sample1 =  basepath+"JRA_outfiles_53X_20140129_pbs/JRA/JRA.root"; //run-dependent
    TString algo1(calgo1);
 
-   //TString sample2 =  basepath+"JRA_outfiles_53X_20131228_NoPileup_pbs/JRA/JRA.root"; //PF
+   TString sample2 =  basepath+"JRA_outfiles_53X_20131228_NoPileup_pbs/JRA/JRA.root"; //PF
    //TString sample2 =  basepath+"JRA_outfiles_53X_20140122_NoPileup_pbs/JRA/JRA.root"; //PFchs
    //TString sample2 =  basepath+"Delphes_QCDjets_20PU_1M_v2/DelphesJRA.root"; //Delphes
-   TString sample2 =  basepath+"JRA_outfiles_53X_20140129_NoPileup_pbs/JRA/JRA.root"; //run-dependent
+   //TString sample2 =  basepath+"JRA_outfiles_53X_20140129_NoPileup_pbs/JRA/JRA.root"; //run-dependent
    //TString algo2 = algo1;
    TString algo2(calgo2);
 
@@ -219,11 +230,11 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
 
    // Make the first map and fill it
    map<evtid, pair<Long64_t, Long64_t>, evtid> mapTreePU;
-   fillMap(mapTreePU, sample1 ,algo1,treeName);
+   fillMap(mapTreePU, sample1 ,algo1,treeName, runDep);
 
    // Make the second map and fill it. Using same old tree for comparison. Needs to be changed
    map<evtid, pair<Long64_t, Long64_t>, evtid> mapTreeNoPU;
-   fillMap(mapTreeNoPU, sample2 ,algo2,treeName);
+   fillMap(mapTreeNoPU, sample2 ,algo2,treeName, runDep);
 
    TFile * fpu = TFile::Open(sample1);
    fpu->cd(algo1);
@@ -241,6 +252,7 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
    TString outputFilename = "output_"+algo1+"_"+algo2+".root";
    if (algo1.EqualTo(algo2)) 
       outputFilename = "output_"+algo1+".root";
+   outputFilename = outputPath+outputFilename;
    TFile * fout = new TFile(outputFilename,"RECREATE");
 
 //	Get the libraries ready if to apply JEC
@@ -277,8 +289,8 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
    TProfile * m_deltaPthat = new TProfile("m_deltaPthat","m_deltaPthat;pthat_{pu}(GeV);pthat_{pu}-pthat_{nopu}(GeV)",300,0,3000);		//ZQ
 
    // KEEP - to show the excees of jets at low-pt for the sample with pu. NICE!
-   TH1D * m_njet_pt_pu = new TH1D("m_njet_pt_pu","m_njet_pt_pu;jet pt;#jets;",NPtBins, vpt); // number of jets
-   TH1D * m_njet_pt_nopu = new TH1D("m_njet_pt_nopu","m_njet_pt-nopu;jet pt;#jets;",NPtBins, vpt); // number of jets
+   TH1D * m_njet_pt_pu = new TH1D("m_njet_pt_pu","m_njet_pt_pu;p_{T}^{RECO};#jets;",NPtBins, vpt); // number of jets
+   TH1D * m_njet_pt_nopu = new TH1D("m_njet_pt_nopu","m_njet_pt-nopu;p_{T}^{RECO};#jets;",NPtBins, vpt); // number of jets
   
    // KEEP  -  fraction of matched jets in all, barrel, endcap and forward regions
    TProfile * m_frac_nj_pt_b_match_pu   = new TProfile("m_frac_nj_pt_b_match_pu","m_frac_nj_pt_b_match_pu;pt_{jet};fraction of matched jets;", NPtBins, vpt);
@@ -370,11 +382,15 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
    TH2F * p_rhoVsoff	=	 new TH2F("p_rhoVsOff","p_rhoVsOff;<p_{T} Offset>_{jets} (GeV);Rho",80,0,80,80,0,80);		//ZQ
 
    TH2D *p_offresVsrefpt_bb[6];
+   TH2D *p_offresVsrefpt_bb_all;
    for (int iPF=0;iPF<6;iPF++)
    {
       TString hname = Form("p_offResVsrefpt_bb_%s",PFstr[iPF].Data());
       p_offresVsrefpt_bb[iPF] = new TH2D(hname,hname+";p_{T}^{ref};offset_"+PFstr[iPF]+" (GeV)",NPtBins,vpt,1000,-300,300);
    }
+   TString hname = Form("p_offResVsrefpt_bb_all");
+   p_offresVsrefpt_bb_all = new TH2D(hname,hname+";p_{T}^{ref};<offset> (GeV)",NPtBins,vpt,1000,-300,300);
+
   
    TH2D * p_npvVsoff_det[4], * p_rhoVsoff_det[4];																								//ZQ  Break into 4 different detector region
    for (int det=0;det<4;det++)
@@ -419,6 +435,25 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
       }//npv
    }//det
 
+   //  To obtain the response ratio to pt_nopu a function of pt and Npv
+   // generate 4 histograms for eta 4 detector regions, and 6 for the npv regions 
+   TH2D * p_nopures_refptVsNpv[4][6]; 
+   for (int det=0;det<4;det++){
+      for (int npv=0;npv<6;npv++){
+         TString hname = Form("p_nopuresVsrefpt_%s_npv%i_%i",detstr[det].Data(),npv*5,npv*5+4);
+         p_nopures_refptVsNpv[det][npv] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}^{nopu}/p_{T}^{ref};",NPtBins, vpt,100,0,5) ;
+      }//npv
+   }//det
+
+   //  To obtain the resolution as a function of pt and Npv
+   // generate 4 histograms for eta 4 detector regions, and 6 for the npv regions 
+   TH2D * p_nopures_refptVsRho[4][6]; 
+   for (int det=0;det<4;det++){
+      for (int npv=0;npv<6;npv++){
+         TString hname = Form("p_nopuresVsrefpt_%s_rho%i_%i",detstr[det].Data(),npv*5,npv*5+4);
+         p_nopures_refptVsRho[det][npv] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}^{nopu}/p_{T}^{ref};",NPtBins, vpt,100,0,5) ;
+      }//npv
+   }//det
 
    //  To obtain the response ratio to pt_nopu a function of pt and Npv
    // generate 4 histograms for eta 4 detector regions, and 6 for the npv regions 
@@ -447,7 +482,7 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
       np_res_refpt[det] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}^{nopu}/p_{T}^{ref};",NPtBins, vpt,100,0,5) ;
 
    }//det
-  
+
   
    //  To obtain the offset /response ratio to pt_nopu a function of pt and Npv-------------------ZQ
    // generate 4 histograms for eta 4 detector regions, and 6 for the npv regions 
@@ -459,6 +494,22 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
       }//npv
    }//det
 
+
+   TH2D * p_offresOrefpt_refptVsNpv[4][6]; 
+   for (int det=0;det<4;det++){
+      for (int npv=0;npv<6;npv++){
+         TString hname = Form("p_offresOrefptVsrefpt_%s_npv%i_%i",detstr[det].Data(),npv*5,npv*5+4);
+         p_offresOrefpt_refptVsNpv[det][npv] = new TH2D(hname,hname+";p^{ref}_{T}; (p_{T}^{pu}-p_{T}^{nopu})/p_{T}^{ref};",NPtBins, vpt,40,-10,10) ;
+      }//npv
+   }//det
+
+   TH2D * p_offAfterOoffBefore_refptVsNpv[4][6]; 
+   for (int det=0;det<4;det++){
+      for (int npv=0;npv<6;npv++){
+         TString hname = Form("p_offAfterOoffBeforeVsrefpt_%s_npv%i_%i",detstr[det].Data(),npv*5,npv*5+4);
+         p_offAfterOoffBefore_refptVsNpv[det][npv] = new TH2D(hname,hname+";p^{ref}_{T}; (p_{T}^{pu+L1}-p_{T}^{nopu})/(p_{T}^{pu}-p_{T}^{nopu});",NPtBins, vpt,40,-10,10) ;
+      }//rho
+   }//det
 
    //  To obtain the resolution as a function of pt and Rho
    // generate 4 histograms for eta 4 detector regions, and 6 for the Rho regions 
@@ -479,7 +530,44 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
          p_offres_refptVsRho[det][npv] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300) ;
       }//npv
    }//det
+
+   TH2D * p_offresOrefpt_refptVsRho[4][6]; 
+   for (int det=0;det<4;det++){
+      for (int npv=0;npv<6;npv++){
+         TString hname = Form("p_offresOrefptVsrefpt_%s_rho%i_%i",detstr[det].Data(),npv*5,npv*5+4);
+         p_offresOrefpt_refptVsRho[det][npv] = new TH2D(hname,hname+";p^{ref}_{T}; (p_{T}^{pu}-p_{T}^{nopu})/p_{T}^{ref};",NPtBins, vpt,40,-10,10) ;
+      }//rho
+   }//det
+
+   TH2D * p_offAfterOoffBefore_refptVsRho[4][6]; 
+   for (int det=0;det<4;det++){
+      for (int npv=0;npv<6;npv++){
+         TString hname = Form("p_offAfterOoffBeforeVsrefpt_%s_rho%i_%i",detstr[det].Data(),npv*5,npv*5+4);
+         p_offAfterOoffBefore_refptVsRho[det][npv] = new TH2D(hname,hname+";p^{ref}_{T}; (p_{T}^{pu+L1}-p_{T}^{nopu})/(p_{T}^{pu}-p_{T}^{nopu});",NPtBins, vpt,40,-10,10) ;
+      }//rho
+   }//det
+
+   //  To obtain the offset/response as a function of pt and Rho--------------------------ZQ
+   // generate 4 histograms for eta 4 detector regions, and 6 for the TNPU regions 
+   TH2D * p_offres_refptVsTnpu[4][6]; 
+   TH2D * p_offres_refptVsTnpuAll[4];
+   for (int det=0;det<4;det++){
+      for (int tnpu=0;tnpu<6;tnpu++){
+         TString hname = Form("p_offresVsrefpt_%s_tnpu%i_%i",detstr[det].Data(),tnpu*5,tnpu*5+4);
+         p_offres_refptVsTnpu[det][tnpu] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
+      }//npv
+      TString hname = Form("p_offresVsrefpt_%s_tnpu%i_%i",detstr[det].Data(),0,29);
+      p_offres_refptVsTnpuAll[det] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
+   }//det
   
+   TH2D * p_offres_refptVsPdgid[4][7];
+   //0, 1-3, 4, 5, 21, all, quarks
+   for (int det=0;det<4;det++){
+      for (int ipdgid=0;ipdgid<7;ipdgid++){
+         TString hname = Form("p_offresVsrefpt_%s_pdgid_%s",detstr[det].Data(),pdgidstr[ipdgid].Data());
+         p_offres_refptVsPdgid[det][ipdgid] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
+      }//pdgid
+   }//det
 
    //=========================================================
    //              DECLARATION OF HISTOS ENDS HERE
@@ -533,8 +621,10 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
 
       int inpv = getNpvIndex(tpu->npv);
       int irho = getNpvIndex(tpu->rho);
+      int itnpu = getNpvIndex(tpu->tnpus->at(1));
       //	Applying JEC from textfile
 
+      vector<double> tpu_jtpt_raw;
       if (ApplyJEC != 0)
       {
          for (int j1 = 0; j1 < tpu->nref; j1++)
@@ -545,6 +635,7 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
             JetCorrector->setRho(tpu->rho);
             double correction = JetCorrector->getCorrection();
 //         cout <<correction<<" "<<tpu->jtpt[j1]<<endl;
+            tpu_jtpt_raw.push_back(tpu->jtpt[j1]);
             tpu->jtpt[j1] *= correction;
 //         cout <<tpu->jtpt[j1]<<endl;
          }
@@ -680,7 +771,10 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
          int jpu = itj->first;
          int jnopu = itj->second;
          //double eta_avg = 0.5*(tpu->jteta[jpu]+tnopu->jteta[jnopu]);
-         double offset  = tpu->jtpt[jpu] - tnopu->jtpt[jnopu] ;
+         double offset  = tpu->jtpt[jpu] - tnopu->jtpt[jnopu];
+         double offset_raw = -1.0;
+         if(tpu_jtpt_raw.size()>0)
+            offset_raw = tpu_jtpt_raw[jpu] - tnopu->jtpt[jnopu];
 //      cout <<"=====  "<<tpu->jtpt[jpu]<<" "<<tnopu->jtpt[jnopu]<<endl;
          double areaDiff= tpu->jtarea[jpu]-tnopu->jtarea[jnopu];
          //double off_per_npv = 20.0 * offset / tpu->npv;
@@ -688,8 +782,8 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
          double resp       = tpu->jtpt[jpu]/tpu->refpt[jpu];   // response relative to reference jet
          double respTonopu = tpu->jtpt[jpu]/tnopu->jtpt[jnopu];// response relative to no pu jet
          double respNopu	= tnopu->jtpt[jnopu]/tnopu->refpt[jnopu]; // response no pu jet to reference jet
-         double PUEff		= 0.020*(tpu->npus.at(0))+0.975*(tpu->npus.at(1))+0.005*(tpu->npus.at(2)); // effective pu
-         double GenSumPtOA	= (0.020*(tpu->sumpt_lowpt.at(0))+0.975*(tpu->sumpt_lowpt.at(1))+0.005*(tpu->sumpt_lowpt.at(2)))/tpu->jtarea[jpu];
+         double PUEff		= 0.020*(tpu->npus->at(0))+0.975*(tpu->npus->at(1))+0.005*(tpu->npus->at(2)); // effective pu
+         double GenSumPtOA	= (0.020*(tpu->sumpt_lowpt->at(0))+0.975*(tpu->sumpt_lowpt->at(1))+0.005*(tpu->sumpt_lowpt->at(2)))/tpu->jtarea[jpu];
          double offset_jtchf = tpu->jtpt[jpu]*tpu->jtchf[jpu]-tnopu->jtpt[jnopu]*tnopu->jtchf[jnopu];
          double offset_jtnhf = tpu->jtpt[jpu]*tpu->jtnhf[jpu]-tnopu->jtpt[jnopu]*tnopu->jtnhf[jnopu];
          double offset_jtnef = tpu->jtpt[jpu]*tpu->jtnef[jpu]-tnopu->jtpt[jnopu]*tnopu->jtnef[jnopu];
@@ -697,6 +791,7 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
          double offset_jthfhf = tpu->jtpt[jpu]*tpu->jthfhf[jpu]-tnopu->jtpt[jnopu]*tnopu->jthfhf[jnopu];
          double offset_jthfef = tpu->jtpt[jpu]*tpu->jthfef[jpu]-tnopu->jtpt[jnopu]*tnopu->jthfef[jnopu];
          double offsetOA = offset/tpu->jtarea[jpu];
+         double offsetOrefpt = offset/tpu->refpt[jpu];
 
          p_off_etaVsNpv->Fill(tpu->jteta[jpu],tpu->npv,offset);
          p_off_etaVsRho->Fill(tpu->jteta[jpu],tpu->rho,offset);
@@ -705,9 +800,10 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
          p_off_etaVsJetPt->Fill(tpu->jteta[jpu],tpu->jtpt[jpu],offset);
          p_offOverA_etaVsJetPt->Fill(tpu->jteta[jpu],tpu->jtpt[jpu],offsetOA);
       
-         p_offOverA_etaVsTnpusVsJetPt->Fill(tpu->jteta[jpu],tpu->tnpus.at(1),tpu->refpt[jpu],offsetOA);
-         p_PtAve_etaVsTnpusVsJetPt   ->Fill(tpu->jteta[jpu],tpu->tnpus.at(1),tpu->refpt[jpu],tpu->jtpt[jpu]);
-         p_RhoAve_etaVsTnpusVsJetPt  ->Fill(tpu->jteta[jpu],tpu->tnpus.at(1),tpu->refpt[jpu],tpu->rho);
+         //cout << "tpu->tnpus.at(1) = " << tpu->tnpus->at(1) << endl;
+         p_offOverA_etaVsTnpusVsJetPt->Fill(tpu->jteta[jpu],tpu->tnpus->at(1),tpu->refpt[jpu],offsetOA);
+         p_PtAve_etaVsTnpusVsJetPt   ->Fill(tpu->jteta[jpu],tpu->tnpus->at(1),tpu->refpt[jpu],tpu->jtpt[jpu]);
+         p_RhoAve_etaVsTnpusVsJetPt  ->Fill(tpu->jteta[jpu],tpu->tnpus->at(1),tpu->refpt[jpu],tpu->rho);
 
          p_offOverA_etaVsRhoVsJetPt->Fill(tpu->jteta[jpu],tpu->rho,tpu->refpt[jpu],offsetOA);
          p_PtAve_etaVsRhoVsJetPt->Fill(tpu->jteta[jpu],tpu->rho,tpu->refpt[jpu],tpu->jtpt[jpu]);
@@ -722,7 +818,7 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
          p_offresVsrefpt_bb[3]->Fill(tpu->refpt[jpu],offset_jtcef);
          p_offresVsrefpt_bb[4]->Fill(tpu->refpt[jpu],offset_jthfhf);
          p_offresVsrefpt_bb[5]->Fill(tpu->refpt[jpu],offset_jthfef);
-
+         p_offresVsrefpt_bb_all->Fill(tpu->refpt[jpu],offset);
       
          p_areaVsrefpt->Fill(tpu->refpt[jpu],areaDiff);
          if (tpu->refpt[jpu]>1000)
@@ -743,12 +839,22 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
       
          p_res_refptVsNpv[idet][inpv]->Fill(tpu->refpt[jpu],resp);
          p_offres_refptVsNpv[idet][inpv]->Fill(tpu->refpt[jpu],offset);			//ZQ
-//      p_offresOrefpt_refptVsNpv[idet][inpv]->Fill(tpu->refpt[jpu],offset/tpu->refpt[jpu]);
+         p_offresOrefpt_refptVsNpv[idet][inpv]->Fill(tpu->refpt[jpu],offsetOrefpt);
          p_res_refptVsRho[idet][irho]->Fill(tpu->refpt[jpu],resp);
-         p_offres_refptVsRho[idet][irho]->Fill(tpu->refpt[jpu],offset);			//ZQ
-//      p_offresOrefpt_refptVsRho[idet][irho]->Fill(tpu->refpt[jpu],offset/tpu->refpt[jpu]);
+         p_offres_refptVsRho[idet][irho]->Fill(tpu->refpt[jpu],offset);       //ZQ
+         p_offresOrefpt_refptVsRho[idet][irho]->Fill(tpu->refpt[jpu],offsetOrefpt);
+         p_offres_refptVsTnpu[idet][itnpu]->Fill(tpu->refpt[jpu],offset);       //ZQ
+         p_offres_refptVsTnpuAll[idet]->Fill(tpu->refpt[jpu],offset);
+         vector<int> pdgid_indecies = getPDGIDIndecies(tpu->refpdgid[jpu]);
+         for (unsigned int ipdgid=0; ipdgid<pdgid_indecies.size(); ipdgid++) {
+           p_offres_refptVsPdgid[idet][pdgid_indecies[ipdgid]]->Fill(tpu->refpt[jpu],offset);
+         }
          p_resnopu_refptVsNpv[idet][inpv]->Fill(tpu->refpt[jpu],respTonopu);
          p_resnopu_refptVsRho[idet][irho]->Fill(tpu->refpt[jpu],respTonopu);
+         p_nopures_refptVsNpv[idet][inpv]->Fill(tpu->refpt[jpu],respNopu);
+         p_nopures_refptVsRho[idet][irho]->Fill(tpu->refpt[jpu],respNopu);
+         p_offAfterOoffBefore_refptVsNpv[idet][inpv]->Fill(tpu->refpt[jpu],offset/offset_raw);
+         p_offAfterOoffBefore_refptVsRho[idet][irho]->Fill(tpu->refpt[jpu],offset/offset_raw);
          if (offset > 15 && offset < 15.5)	p_npvVsRho_offset_15_15h->Fill(tpu->rho,tpu->npv);		//2D histo npv vs. rho with 15<offset<15.5---ZQ		    
          if (idet == 0) 
          {
@@ -800,12 +906,16 @@ int main(int argc,char**argv)
 {
    CommandLine cl;
    if (!cl.parse(argc,argv)) return 0;
-   string         algo1     = cl.getValue<string>  ("algo1",   "ak5pf");
-   string         algo2     = cl.getValue<string>  ("algo2",   "ak5pf");
-   int            iftest    = cl.getValue<int>     ("iftest",   0);
-   int            ApplyJEC  = cl.getValue<int>     ("ApplyJEC", 0);
-   string         JECpar    = cl.getValue<string>  ("JECpar",   "parameters_ak5pf.txt");
+   string         algo1      = cl.getValue<string>  ("algo1",                 "ak5pf");
+   string         algo2      = cl.getValue<string>  ("algo2",                 "ak5pf");
+   int            iftest     = cl.getValue<int>     ("iftest",                      0);
+   int            ApplyJEC   = cl.getValue<int>     ("ApplyJEC",                    0);
+   string         JECpar     = cl.getValue<string>  ("JECpar", "parameters_ak5pf.txt");
+   bool           runDep     = cl.getValue<bool>    ("runDep",                   true);
+   TString        outputPath = cl.getValue<TString> ("outputPath",               "./");
   
-  
-   SynchTest(algo1,algo2,iftest,ApplyJEC,JECpar);
+   if(outputPath.IsNull()) outputPath = string (gSystem->pwd())+"/";
+   if(!outputPath.EndsWith("/")) outputPath+="/";
+
+   SynchTest(algo1,algo2,iftest,ApplyJEC,JECpar,runDep,string(outputPath));
 }
