@@ -50,6 +50,14 @@ int colNpv15 = kBlue+2;
 int colNpv20 = kMagenta+2;
 int colNpv25 = kRed+2;
 
+int colnJ  = kYellow+2;
+int colqJ  = kGreen+2;
+int colcJ  = kCyan+2;
+int colbJ  = kBlue+2;
+int colgJ  = kRed+2;
+int colaJ  = kBlack;
+int colaqJ = kMagenta+2;
+
 int colDet[4] = {kGreen+3,kBlue+1,kYellow+2,kRed+1}; //bb,ei,eo,ff
 
 int binNum3035 = 15;
@@ -63,7 +71,7 @@ void setHistoColor(TH1* h, int c){
 }
 #include "JetMETAnalysis/JetUtilities/src/SynchFittingProcedure.hh"
 
-void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = "./images"){
+void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = "./images", bool fixedRange = true){
    TString algo1(calgo1);
    TString algo2(calgo2);
    TString algo12 = algo1+"_"+algo2;
@@ -149,6 +157,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
    TH2D	*	p_offResVsrefpt_bb_cef	=	(	TH2D	* )	fin->Get("p_offResVsrefpt_bb_cef");
    TH2D	*	p_offResVsrefpt_bb_hfhf	=	(	TH2D	* )	fin->Get("p_offResVsrefpt_bb_hfhf");
    TH2D	*	p_offResVsrefpt_bb_hfef	=	(	TH2D	* )	fin->Get("p_offResVsrefpt_bb_hfef");
+   TH2D	*	p_offResVsrefpt_bb_all	=	(	TH2D	* )	fin->Get("p_offResVsrefpt_bb_all");
    TH2D	*	p_npvVsOff_bb	=	(	TH2D	* )	fin->Get("p_npvVsOff_bb");
    TH2D	*	p_rhoVsOff_bb	=	(	TH2D	* )	fin->Get("p_rhoVsOff_bb");
    TH2D	*	p_npvVsOff_ei	=	(	TH2D	* )	fin->Get("p_npvVsOff_ei");
@@ -213,6 +222,30 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
    TH2D	*	p_resnopuVsrefpt_ff_rho15_19	=	(	TH2D	* )	fin->Get("p_resnopuVsrefpt_ff_rho15_19");
    TH2D	*	p_resnopuVsrefpt_ff_rho20_24	=	(	TH2D	* )	fin->Get("p_resnopuVsrefpt_ff_rho20_24");
    TH2D	*	p_resnopuVsrefpt_ff_rho25_29	=	(	TH2D	* )	fin->Get("p_resnopuVsrefpt_ff_rho25_29");
+   TH2D  *  p_nopuresVsrefpt_bb_rho0_4    =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_bb_rho0_4");
+   TH2D  *  p_nopuresVsrefpt_bb_rho5_9    =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_bb_rho5_9");
+   TH2D  *  p_nopuresVsrefpt_bb_rho10_14  =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_bb_rho10_14");
+   TH2D  *  p_nopuresVsrefpt_bb_rho15_19  =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_bb_rho15_19");
+   TH2D  *  p_nopuresVsrefpt_bb_rho20_24  =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_bb_rho20_24");
+   TH2D  *  p_nopuresVsrefpt_bb_rho25_29  =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_bb_rho25_29");
+   TH2D  *  p_nopuresVsrefpt_ei_rho0_4    =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_ei_rho0_4");
+   TH2D  *  p_nopuresVsrefpt_ei_rho5_9    =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_ei_rho5_9");
+   TH2D  *  p_nopuresVsrefpt_ei_rho10_14  =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_ei_rho10_14");
+   TH2D  *  p_nopuresVsrefpt_ei_rho15_19  =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_ei_rho15_19");
+   TH2D  *  p_nopuresVsrefpt_ei_rho20_24  =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_ei_rho20_24");
+   TH2D  *  p_nopuresVsrefpt_ei_rho25_29  =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_ei_rho25_29");
+   TH2D  *  p_nopuresVsrefpt_eo_rho0_4    =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_eo_rho0_4");
+   TH2D  *  p_nopuresVsrefpt_eo_rho5_9    =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_eo_rho5_9");
+   TH2D  *  p_nopuresVsrefpt_eo_rho10_14  =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_eo_rho10_14");
+   TH2D  *  p_nopuresVsrefpt_eo_rho15_19  =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_eo_rho15_19");
+   TH2D  *  p_nopuresVsrefpt_eo_rho20_24  =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_eo_rho20_24");
+   TH2D  *  p_nopuresVsrefpt_eo_rho25_29  =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_eo_rho25_29");
+   TH2D  *  p_nopuresVsrefpt_ff_rho0_4    =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_ff_rho0_4");
+   TH2D  *  p_nopuresVsrefpt_ff_rho5_9    =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_ff_rho5_9");
+   TH2D  *  p_nopuresVsrefpt_ff_rho10_14  =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_ff_rho10_14");
+   TH2D  *  p_nopuresVsrefpt_ff_rho15_19  =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_ff_rho15_19");
+   TH2D  *  p_nopuresVsrefpt_ff_rho20_24  =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_ff_rho20_24");
+   TH2D  *  p_nopuresVsrefpt_ff_rho25_29  =  (  TH2D  * )   fin->Get("p_nopuresVsrefpt_ff_rho25_29");
    TH2D	*	p_resVsrefpt_bb_npv0_4	=	(	TH2D	* )	fin->Get("p_resVsrefpt_bb_npv0_4");
    TH2D	*	p_resVsrefpt_bb_npv5_9	=	(	TH2D	* )	fin->Get("p_resVsrefpt_bb_npv5_9");
    TH2D	*	p_resVsrefpt_bb_npv10_14	=	(	TH2D	* )	fin->Get("p_resVsrefpt_bb_npv10_14");
@@ -269,6 +302,30 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
    TH2D	*	p_offresVsrefpt_ff_npv15_19	=	(	TH2D	* )	fin->Get("p_offresVsrefpt_ff_npv15_19");
    TH2D	*	p_offresVsrefpt_ff_npv20_24	=	(	TH2D	* )	fin->Get("p_offresVsrefpt_ff_npv20_24");
    TH2D	*	p_offresVsrefpt_ff_npv25_29	=	(	TH2D	* )	fin->Get("p_offresVsrefpt_ff_npv25_29");
+   TH2D  *  p_offresOrefptVsrefpt_bb_npv0_4     =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_bb_npv0_4");
+   TH2D  *  p_offresOrefptVsrefpt_bb_npv5_9     =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_bb_npv5_9");
+   TH2D  *  p_offresOrefptVsrefpt_bb_npv10_14   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_bb_npv10_14");
+   TH2D  *  p_offresOrefptVsrefpt_bb_npv15_19   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_bb_npv15_19");
+   TH2D  *  p_offresOrefptVsrefpt_bb_npv20_24   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_bb_npv20_24");
+   TH2D  *  p_offresOrefptVsrefpt_bb_npv25_29   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_bb_npv25_29");
+   TH2D  *  p_offresOrefptVsrefpt_ei_npv0_4     =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ei_npv0_4");
+   TH2D  *  p_offresOrefptVsrefpt_ei_npv5_9     =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ei_npv5_9");
+   TH2D  *  p_offresOrefptVsrefpt_ei_npv10_14   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ei_npv10_14");
+   TH2D  *  p_offresOrefptVsrefpt_ei_npv15_19   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ei_npv15_19");
+   TH2D  *  p_offresOrefptVsrefpt_ei_npv20_24   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ei_npv20_24");
+   TH2D  *  p_offresOrefptVsrefpt_ei_npv25_29   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ei_npv25_29");
+   TH2D  *  p_offresOrefptVsrefpt_eo_npv0_4     =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_eo_npv0_4");
+   TH2D  *  p_offresOrefptVsrefpt_eo_npv5_9     =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_eo_npv5_9");
+   TH2D  *  p_offresOrefptVsrefpt_eo_npv10_14   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_eo_npv10_14");
+   TH2D  *  p_offresOrefptVsrefpt_eo_npv15_19   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_eo_npv15_19");
+   TH2D  *  p_offresOrefptVsrefpt_eo_npv20_24   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_eo_npv20_24");
+   TH2D  *  p_offresOrefptVsrefpt_eo_npv25_29   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_eo_npv25_29");
+   TH2D  *  p_offresOrefptVsrefpt_ff_npv0_4     =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ff_npv0_4");
+   TH2D  *  p_offresOrefptVsrefpt_ff_npv5_9     =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ff_npv5_9");
+   TH2D  *  p_offresOrefptVsrefpt_ff_npv10_14   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ff_npv10_14");
+   TH2D  *  p_offresOrefptVsrefpt_ff_npv15_19   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ff_npv15_19");
+   TH2D  *  p_offresOrefptVsrefpt_ff_npv20_24   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ff_npv20_24");
+   TH2D  *  p_offresOrefptVsrefpt_ff_npv25_29   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ff_npv25_29");
    TH2D	*	p_resVsrefpt_bb_rho0_4	=	(	TH2D	* )	fin->Get("p_resVsrefpt_bb_rho0_4");
    TH2D	*	p_resVsrefpt_bb_rho5_9	=	(	TH2D	* )	fin->Get("p_resVsrefpt_bb_rho5_9");
    TH2D	*	p_resVsrefpt_bb_rho10_14	=	(	TH2D	* )	fin->Get("p_resVsrefpt_bb_rho10_14");
@@ -317,6 +374,87 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
    TH2D	*	p_offresVsrefpt_ff_rho15_19	=	(	TH2D	* )	fin->Get("p_offresVsrefpt_ff_rho15_19");
    TH2D	*	p_offresVsrefpt_ff_rho20_24	=	(	TH2D	* )	fin->Get("p_offresVsrefpt_ff_rho20_24");
    TH2D	*	p_offresVsrefpt_ff_rho25_29	=	(	TH2D	* )	fin->Get("p_offresVsrefpt_ff_rho25_29");
+   TH2D  *  p_offresOrefptVsrefpt_bb_rho0_4     =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_bb_rho0_4");
+   TH2D  *  p_offresOrefptVsrefpt_bb_rho5_9     =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_bb_rho5_9");
+   TH2D  *  p_offresOrefptVsrefpt_bb_rho10_14   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_bb_rho10_14");
+   TH2D  *  p_offresOrefptVsrefpt_bb_rho15_19   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_bb_rho15_19");
+   TH2D  *  p_offresOrefptVsrefpt_bb_rho20_24   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_bb_rho20_24");
+   TH2D  *  p_offresOrefptVsrefpt_bb_rho25_29   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_bb_rho25_29");
+   TH2D  *  p_offresOrefptVsrefpt_ei_rho0_4     =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ei_rho0_4");
+   TH2D  *  p_offresOrefptVsrefpt_ei_rho5_9     =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ei_rho5_9");
+   TH2D  *  p_offresOrefptVsrefpt_ei_rho10_14   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ei_rho10_14");
+   TH2D  *  p_offresOrefptVsrefpt_ei_rho15_19   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ei_rho15_19");
+   TH2D  *  p_offresOrefptVsrefpt_ei_rho20_24   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ei_rho20_24");
+   TH2D  *  p_offresOrefptVsrefpt_ei_rho25_29   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ei_rho25_29");
+   TH2D  *  p_offresOrefptVsrefpt_eo_rho0_4     =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_eo_rho0_4");
+   TH2D  *  p_offresOrefptVsrefpt_eo_rho5_9     =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_eo_rho5_9");
+   TH2D  *  p_offresOrefptVsrefpt_eo_rho10_14   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_eo_rho10_14");
+   TH2D  *  p_offresOrefptVsrefpt_eo_rho15_19   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_eo_rho15_19");
+   TH2D  *  p_offresOrefptVsrefpt_eo_rho20_24   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_eo_rho20_24");
+   TH2D  *  p_offresOrefptVsrefpt_eo_rho25_29   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_eo_rho25_29");
+   TH2D  *  p_offresOrefptVsrefpt_ff_rho0_4     =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ff_rho0_4");
+   TH2D  *  p_offresOrefptVsrefpt_ff_rho5_9     =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ff_rho5_9");
+   TH2D  *  p_offresOrefptVsrefpt_ff_rho10_14   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ff_rho10_14");
+   TH2D  *  p_offresOrefptVsrefpt_ff_rho15_19   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ff_rho15_19");
+   TH2D  *  p_offresOrefptVsrefpt_ff_rho20_24   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ff_rho20_24");
+   TH2D  *  p_offresOrefptVsrefpt_ff_rho25_29   =  (  TH2D  * )   fin->Get("p_offresOrefptVsrefpt_ff_rho25_29");
+   TH2D  *  p_offresVsrefpt_bb_tnpu0_4          =  (  TH2D  * )   fin->Get("p_offresVsrefpt_bb_tnpu0_4");
+   TH2D  *  p_offresVsrefpt_bb_tnpu5_9          =  (  TH2D  * )   fin->Get("p_offresVsrefpt_bb_tnpu5_9");
+   TH2D  *  p_offresVsrefpt_bb_tnpu10_14        =  (  TH2D  * )   fin->Get("p_offresVsrefpt_bb_tnpu10_14");
+   TH2D  *  p_offresVsrefpt_bb_tnpu15_19        =  (  TH2D  * )   fin->Get("p_offresVsrefpt_bb_tnpu15_19");
+   TH2D  *  p_offresVsrefpt_bb_tnpu20_24        =  (  TH2D  * )   fin->Get("p_offresVsrefpt_bb_tnpu20_24");
+   TH2D  *  p_offresVsrefpt_bb_tnpu25_29        =  (  TH2D  * )   fin->Get("p_offresVsrefpt_bb_tnpu25_29");
+   TH2D  *  p_offresVsrefpt_bb_tnpu0_29         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_bb_tnpu0_29");
+   TH2D  *  p_offresVsrefpt_ei_tnpu0_4          =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ei_tnpu0_4");
+   TH2D  *  p_offresVsrefpt_ei_tnpu5_9          =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ei_tnpu5_9");
+   TH2D  *  p_offresVsrefpt_ei_tnpu10_14        =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ei_tnpu10_14");
+   TH2D  *  p_offresVsrefpt_ei_tnpu15_19        =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ei_tnpu15_19");
+   TH2D  *  p_offresVsrefpt_ei_tnpu20_24        =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ei_tnpu20_24");
+   TH2D  *  p_offresVsrefpt_ei_tnpu25_29        =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ei_tnpu25_29");
+   TH2D  *  p_offresVsrefpt_ei_tnpu0_29         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ei_tnpu0_29");
+   TH2D  *  p_offresVsrefpt_eo_tnpu0_4          =  (  TH2D  * )   fin->Get("p_offresVsrefpt_eo_tnpu0_4");
+   TH2D  *  p_offresVsrefpt_eo_tnpu5_9          =  (  TH2D  * )   fin->Get("p_offresVsrefpt_eo_tnpu5_9");
+   TH2D  *  p_offresVsrefpt_eo_tnpu10_14        =  (  TH2D  * )   fin->Get("p_offresVsrefpt_eo_tnpu10_14");
+   TH2D  *  p_offresVsrefpt_eo_tnpu15_19        =  (  TH2D  * )   fin->Get("p_offresVsrefpt_eo_tnpu15_19");
+   TH2D  *  p_offresVsrefpt_eo_tnpu20_24        =  (  TH2D  * )   fin->Get("p_offresVsrefpt_eo_tnpu20_24");
+   TH2D  *  p_offresVsrefpt_eo_tnpu25_29        =  (  TH2D  * )   fin->Get("p_offresVsrefpt_eo_tnpu25_29");
+   TH2D  *  p_offresVsrefpt_eo_tnpu0_29         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_eo_tnpu0_29");
+   TH2D  *  p_offresVsrefpt_ff_tnpu0_4          =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ff_tnpu0_4");
+   TH2D  *  p_offresVsrefpt_ff_tnpu5_9          =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ff_tnpu5_9");
+   TH2D  *  p_offresVsrefpt_ff_tnpu10_14        =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ff_tnpu10_14");
+   TH2D  *  p_offresVsrefpt_ff_tnpu15_19        =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ff_tnpu15_19");
+   TH2D  *  p_offresVsrefpt_ff_tnpu20_24        =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ff_tnpu20_24");
+   TH2D  *  p_offresVsrefpt_ff_tnpu25_29        =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ff_tnpu25_29");
+   TH2D  *  p_offresVsrefpt_ff_tnpu0_29         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ff_tnpu0_29");
+   TH2D  *  p_offresVsrefpt_bb_pdgid_nJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_bb_pdgid_nJ");
+   TH2D  *  p_offresVsrefpt_bb_pdgid_qJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_bb_pdgid_qJ");
+   TH2D  *  p_offresVsrefpt_bb_pdgid_cJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_bb_pdgid_cJ");
+   TH2D  *  p_offresVsrefpt_bb_pdgid_bJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_bb_pdgid_bJ");
+   TH2D  *  p_offresVsrefpt_bb_pdgid_gJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_bb_pdgid_gJ");
+   TH2D  *  p_offresVsrefpt_bb_pdgid_aJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_bb_pdgid_aJ");
+   TH2D  *  p_offresVsrefpt_bb_pdgid_aqJ        =  (  TH2D  * )   fin->Get("p_offresVsrefpt_bb_pdgid_aqJ");
+   TH2D  *  p_offresVsrefpt_ei_pdgid_nJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ei_pdgid_nJ");
+   TH2D  *  p_offresVsrefpt_ei_pdgid_qJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ei_pdgid_qJ");
+   TH2D  *  p_offresVsrefpt_ei_pdgid_cJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ei_pdgid_cJ");
+   TH2D  *  p_offresVsrefpt_ei_pdgid_bJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ei_pdgid_bJ");
+   TH2D  *  p_offresVsrefpt_ei_pdgid_gJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ei_pdgid_gJ");
+   TH2D  *  p_offresVsrefpt_ei_pdgid_aJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ei_pdgid_aJ");
+   TH2D  *  p_offresVsrefpt_ei_pdgid_aqJ        =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ei_pdgid_aqJ");
+   TH2D  *  p_offresVsrefpt_eo_pdgid_nJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_eo_pdgid_nJ");
+   TH2D  *  p_offresVsrefpt_eo_pdgid_qJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_eo_pdgid_qJ");
+   TH2D  *  p_offresVsrefpt_eo_pdgid_cJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_eo_pdgid_cJ");
+   TH2D  *  p_offresVsrefpt_eo_pdgid_bJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_eo_pdgid_bJ");
+   TH2D  *  p_offresVsrefpt_eo_pdgid_gJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_eo_pdgid_gJ");
+   TH2D  *  p_offresVsrefpt_eo_pdgid_aJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_eo_pdgid_aJ");
+   TH2D  *  p_offresVsrefpt_eo_pdgid_aqJ        =  (  TH2D  * )   fin->Get("p_offresVsrefpt_eo_pdgid_aqJ");
+   TH2D  *  p_offresVsrefpt_ff_pdgid_nJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ff_pdgid_nJ");
+   TH2D  *  p_offresVsrefpt_ff_pdgid_qJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ff_pdgid_qJ");
+   TH2D  *  p_offresVsrefpt_ff_pdgid_cJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ff_pdgid_cJ");
+   TH2D  *  p_offresVsrefpt_ff_pdgid_bJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ff_pdgid_bJ");
+   TH2D  *  p_offresVsrefpt_ff_pdgid_gJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ff_pdgid_gJ");
+   TH2D  *  p_offresVsrefpt_ff_pdgid_aJ         =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ff_pdgid_aJ");
+   TH2D  *  p_offresVsrefpt_ff_pdgid_aqJ        =  (  TH2D  * )   fin->Get("p_offresVsrefpt_ff_pdgid_aqJ");
+
    TProfile * m_all_nj_npv = (TProfile * ) fin->Get("m_all_nj_npv");
    TProfile * m_matched_nj_npv = (TProfile * ) fin->Get("m_matched_nj_npv");
    TProfile * m_unmatched_nj_npv = (TProfile * ) fin->Get("m_unmatched_nj_npv");
@@ -349,6 +487,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
    c->SetLogx();
    setHistoColor(m_njet_pt_pu, colPU);
    setHistoColor(m_njet_pt_nopu, colNoPU);
+   m_njet_pt_pu->GetYaxis()->SetRangeUser(0,4.5e6);
    m_njet_pt_pu->Draw("E");
    m_njet_pt_nopu->Draw("sameE");
   
@@ -357,6 +496,21 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
    leg->SetBorderSize(0);
    leg->AddEntry(m_njet_pt_pu, "PU sample","lep");
    leg->AddEntry(m_njet_pt_nopu, "NoPU sample","lep");
+   leg->Draw();
+
+   // Ratio of number of Jets vs PT in both samples
+   c = new TCanvas("NJetsVsPt_Ratio","NJetsVsPt_Ratio");
+   c->SetLogx();
+   TH1D* ratio = (TH1D*)m_njet_pt_pu->Clone("NJetsVsPt_Ratio");
+   ratio->Sumw2();
+   ratio->GetYaxis()->SetRangeUser(0,10);
+   ratio->Divide(m_njet_pt_nopu);
+   ratio->Draw("E");
+  
+   leg = new TLegend(0.7,0.4,0.9,0.6);
+   leg->SetFillColor(0);
+   leg->SetBorderSize(0);
+   leg->AddEntry(ratio, "#frac{PU sample}{NoPU sample}","lep");
    leg->Draw();
   
    // njet vs npv
@@ -686,7 +840,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
    c->SetLogx();
    p_drVsrefpt->Draw();
    p_drVsrefpt->GetYaxis()->SetRangeUser(0,0.3);
-   p_drVsrefpt->GetYaxis()->SetTitle("<#Delta> R #pm #sigma(#Delta R)");
+   p_drVsrefpt->GetYaxis()->SetTitle("<#DeltaR> #pm #sigma(#DeltaR)");
 
   
   
@@ -893,39 +1047,44 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
    // do the fitting in each eta range and return the parameters. 
    // the last parameter is the name of the file name with which all functions are saved to.
    c = getCanvasFromFittingProcedure("ParametersVsNpv",p_off_etaVsNpv,"fittingFunctionsNpv_"+algo+".root");
-   c->Draw();
+   if(c)
+      c->Draw();
    fin->cd();
 
    // do the fitting in each eta range and return the parameters
    c = getCanvasFromFittingProcedure("ParametersVsRho",p_off_etaVsRho,"fittingFunctionsRho_"+algo+".root");
-   c->Draw();
+   if(c)
+      c->Draw();
    fin->cd();
   
    // do the fitting in each eta range and return the parameters. 
    // the last parameter is the name of the file name with which all functions are saved to.
    c = getCanvasFromFittingProcedure("ParametersVsPUEff",p_off_etaVsPUEff,"fittingFunctionsPUEff_"+algo+".root");
-  
-   c->Draw();
+   if(c)
+      c->Draw();
    fin->cd();
   
   
    // do the fitting in each eta range and return the parameters. 
    // the last parameter is the name of the file name with which all functions are saved to.
    c = getCanvasFromFittingProcedure("ParametersVsGenSumPtOA",p_off_etaVsGenSumPtOA,"fittingFunctionsGenSumPtOA_"+algo+".root");
-   c->Draw();
+   if(c)
+      c->Draw();
    fin->cd();
 
    // do the fitting in each eta range and return the parameters. 
    // the last parameter is the name of the file name with which all functions are saved to.
    c = getCanvasFromFittingProcedure("ParametersOffOverAVsJetPt",p_offOverA_etaVsJetPt,"fittingFunctionsOffOverAJetPt_"+algo+".root");
 //  c->SetLogy();
-   c->Draw();
+   if(c)
+      c->Draw();
    fin->cd();
 
 
    // get the canvas from the resolution for bb
    TH2 * hResRho[6];
    TH2 * hOffRho[6];
+   TH2 * hOffPdgid[7];
    hResRho[0] = p_resnopuVsrefpt_bb_rho0_4  ;  
    hResRho[1] = p_resnopuVsrefpt_bb_rho5_9  ;
    hResRho[2] = p_resnopuVsrefpt_bb_rho10_14;
@@ -1004,6 +1163,87 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
    c = getCanvasResolution("ResolutionRhoRef_FF",algo,"#sigma(p_{T}/p_{T}^{ref})/<p_{T}/p_{T}^{ref}>",hResRho,0);
    c->Draw();
 
+
+   //Resolution of response for hard scatter
+   // get the canvas from the resolution for bb
+   hResRho[0] = p_nopuresVsrefpt_bb_rho0_4  ;  
+   hResRho[1] = p_nopuresVsrefpt_bb_rho5_9  ;
+   hResRho[2] = p_nopuresVsrefpt_bb_rho10_14;
+   hResRho[3] = p_nopuresVsrefpt_bb_rho15_19;
+   hResRho[4] = p_nopuresVsrefpt_bb_rho20_24;
+   hResRho[5] = p_nopuresVsrefpt_bb_rho25_29;
+   c = getCanvasResolution("ResolutionRhoNoPU_BB",algo, "#sigma(p_{T}^{nopu}/p_{T}^{ref})/<p_{T}^{nopu}/p_{T}^{ref}>",hResRho,0);
+   c->Draw();
+
+   hResRho[0] = p_nopuresVsrefpt_ei_rho0_4  ;
+   hResRho[1] = p_nopuresVsrefpt_ei_rho5_9  ;
+   hResRho[2] = p_nopuresVsrefpt_ei_rho10_14;
+   hResRho[3] = p_nopuresVsrefpt_ei_rho15_19;
+   hResRho[4] = p_nopuresVsrefpt_ei_rho20_24;
+   hResRho[5] = p_nopuresVsrefpt_ei_rho25_29;
+   c = getCanvasResolution("ResolutionRhoNoPU_EI",algo, "#sigma(p_{T}^{nopu}/p_{T}^{ref})/<p_{T}^{nopu}/p_{T}^{ref}>",hResRho,0);
+   c->Draw();
+
+
+   hResRho[0] = p_nopuresVsrefpt_eo_rho0_4  ;
+   hResRho[1] = p_nopuresVsrefpt_eo_rho5_9  ;
+   hResRho[2] = p_nopuresVsrefpt_eo_rho10_14;
+   hResRho[3] = p_nopuresVsrefpt_eo_rho15_19;
+   hResRho[4] = p_nopuresVsrefpt_eo_rho20_24;
+   hResRho[5] = p_nopuresVsrefpt_eo_rho25_29;
+   c = getCanvasResolution("ResolutionRhoNoPU_EO",algo,"#sigma(p_{T}^{nopu}/p_{T}^{ref})/<p_{T}^{nopu}/p_{T}^{ref}>",hResRho,0);
+   c->Draw();
+
+
+   hResRho[0] = p_nopuresVsrefpt_ff_rho0_4  ;
+   hResRho[1] = p_nopuresVsrefpt_ff_rho5_9  ;
+   hResRho[2] = p_nopuresVsrefpt_ff_rho10_14;
+   hResRho[3] = p_nopuresVsrefpt_ff_rho15_19;
+   hResRho[4] = p_nopuresVsrefpt_ff_rho20_24;
+   hResRho[5] = p_nopuresVsrefpt_ff_rho25_29;
+   c = getCanvasResolution("ResolutionRhoNoPU_FF",algo,"#sigma(p_{T}^{nopu}/p_{T}^{ref})/<p_{T}^{nopu}/p_{T}^{ref}>",hResRho,0);
+   c->Draw();
+
+
+   //Resolution of response for PU
+   // get the canvas from the resolution for bb
+   hResRho[0] = p_offresOrefptVsrefpt_bb_rho0_4  ;  
+   hResRho[1] = p_offresOrefptVsrefpt_bb_rho5_9  ;
+   hResRho[2] = p_offresOrefptVsrefpt_bb_rho10_14;
+   hResRho[3] = p_offresOrefptVsrefpt_bb_rho15_19;
+   hResRho[4] = p_offresOrefptVsrefpt_bb_rho20_24;
+   hResRho[5] = p_offresOrefptVsrefpt_bb_rho25_29;
+   c = getCanvasResolution("ResolutionOffResRho_BB",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{ref})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{ref}>",hResRho,0);
+   c->Draw();
+
+   hResRho[0] = p_offresOrefptVsrefpt_ei_rho0_4  ;  
+   hResRho[1] = p_offresOrefptVsrefpt_ei_rho5_9  ;
+   hResRho[2] = p_offresOrefptVsrefpt_ei_rho10_14;
+   hResRho[3] = p_offresOrefptVsrefpt_ei_rho15_19;
+   hResRho[4] = p_offresOrefptVsrefpt_ei_rho20_24;
+   hResRho[5] = p_offresOrefptVsrefpt_ei_rho25_29;
+   c = getCanvasResolution("ResolutionOffResRho_EI",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{ref})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{ref}>",hResRho,0);
+   c->Draw();
+
+   hResRho[0] = p_offresOrefptVsrefpt_eo_rho0_4  ;  
+   hResRho[1] = p_offresOrefptVsrefpt_eo_rho5_9  ;
+   hResRho[2] = p_offresOrefptVsrefpt_eo_rho10_14;
+   hResRho[3] = p_offresOrefptVsrefpt_eo_rho15_19;
+   hResRho[4] = p_offresOrefptVsrefpt_eo_rho20_24;
+   hResRho[5] = p_offresOrefptVsrefpt_eo_rho25_29;
+   c = getCanvasResolution("ResolutionOffResRho_EO",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{ref})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{ref}>",hResRho,0);
+   c->Draw();
+
+   hResRho[0] = p_offresOrefptVsrefpt_ff_rho0_4  ;  
+   hResRho[1] = p_offresOrefptVsrefpt_ff_rho5_9  ;
+   hResRho[2] = p_offresOrefptVsrefpt_ff_rho10_14;
+   hResRho[3] = p_offresOrefptVsrefpt_ff_rho15_19;
+   hResRho[4] = p_offresOrefptVsrefpt_ff_rho20_24;
+   hResRho[5] = p_offresOrefptVsrefpt_ff_rho25_29;
+   c = getCanvasResolution("ResolutionOffResRho_FF",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{ref})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{ref}>",hResRho,0);
+   c->Draw();
+
+
    hResRho[0] = p_offResVsrefpt_bb_chf  ;  
    hResRho[1] = p_offResVsrefpt_bb_nhf  ;
    hResRho[2] = p_offResVsrefpt_bb_nef;
@@ -1011,10 +1251,12 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
    hResRho[4] = p_offResVsrefpt_bb_hfhf;
    hResRho[5] = p_offResVsrefpt_bb_hfef;
    c = getCanvasResolution("ResolutionOffRefPF_BB",algo,"#sigma(p_{T}^{pu}-p_{T}^{nopu})",hResRho,1);
+   c->Draw();  
+   c = getGausMeanOffset("MeanOffRefPF_BB","<p_{T}^{pu}-p_{T}^{nopu}>",algo,hResRho,fixedRange);
    c->Draw();
-  
-   c = getGausMeanOffset("MeanOffRefPF_BB","<p_{T}^{pu}-p_{T}^{nopu}>",algo,hResRho);
- 
+   c = getGausMeanOffsetWithSum("MeanOffRefPF_BB","<p_{T}^{pu}-p_{T}^{nopu}>",algo,hResRho,p_offResVsrefpt_bb_all,fixedRange);
+   c->Draw();
+
    // get the canvas from the resolution for bb
    hResRho[0] = p_resVsrefpt_bb_rho0_4  ;  
    hResRho[1] = p_resVsrefpt_bb_rho5_9  ;
@@ -1022,7 +1264,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
    hResRho[3] = p_resVsrefpt_bb_rho15_19;
    hResRho[4] = p_resVsrefpt_bb_rho20_24;
    hResRho[5] = p_resVsrefpt_bb_rho25_29;
-   hOffRho[0] = p_offresVsrefpt_bb_rho0_4  ;  
+   hOffRho[0] = p_offresVsrefpt_bb_rho0_4  ;
    hOffRho[1] = p_offresVsrefpt_bb_rho5_9  ;
    hOffRho[2] = p_offresVsrefpt_bb_rho10_14;
    hOffRho[3] = p_offresVsrefpt_bb_rho15_19;
@@ -1031,9 +1273,23 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
   
    c = getCanvasResolution_v2("OffResolutionRhoRef_BB",algo,"#sigma(p_{T}^{PU}-p_{T}^{noPU})/<p_{T}^{noPU}/p_{T}^{ref}>",hResRho,hOffRho);
    c->Draw();
-   c = getGausMeanOffset("OffMeanrhoRef_BB","<offset>",algo,hOffRho);
+   c = getGausMeanOffset("OffMeanrhoRef_BB","<offset>",algo,hOffRho,fixedRange);
    c->Draw();
-   c = getGausMeanOffsetOverPtref("OffMeanOverPtrhoRef_BB","<offset>/p_{T}^{ref}",algo,hOffRho);
+   c = getGausMeanOffsetOverPtref("OffMeanOverPtrhoRef_BB","<offset>/p_{T}^{ref}",algo,hOffRho,fixedRange);
+   c->Draw();
+
+   hOffRho[0] = p_offresVsrefpt_bb_tnpu0_4  ;
+   hOffRho[1] = p_offresVsrefpt_bb_tnpu5_9  ;
+   hOffRho[2] = p_offresVsrefpt_bb_tnpu10_14;
+   hOffRho[3] = p_offresVsrefpt_bb_tnpu15_19;
+   hOffRho[4] = p_offresVsrefpt_bb_tnpu20_24;
+   hOffRho[5] = p_offresVsrefpt_bb_tnpu25_29;
+
+   c = getGausMeanOffset("OffMeantnpuRef_BB","<offset>",algo,hOffRho,fixedRange);
+   c->Draw();
+   c = getGausMeanOffsetWithSum("OffMeantnpuRefWithSum_BB","<offset>",algo,hOffRho,p_offresVsrefpt_bb_tnpu0_29,fixedRange);
+   c->Draw();
+   c = getGausMeanOffsetOverPtref("OffMeanOverPttnpuRef_BB","<offset>/p_{T}^{ref}",algo,hOffRho,fixedRange);
    c->Draw();
 
 
@@ -1052,8 +1308,22 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
   
    c = getCanvasResolution_v2("OffResolutionRhoRef_EI",algo,"#sigma(p_{T}^{PU}-p_{T}^{noPU})/<p_{T}^{noPU}/p_{T}^{ref}>",hResRho,hOffRho);
    c->Draw();
-   c = getGausMeanOffset("OffMeanrhoRef_EI","<offset>",algo,hOffRho);
-   c->Draw();  
+   c = getGausMeanOffset("OffMeanrhoRef_EI","<offset>",algo,hOffRho,fixedRange);
+   c->Draw();
+
+   hOffRho[0] = p_offresVsrefpt_ei_tnpu0_4  ;
+   hOffRho[1] = p_offresVsrefpt_ei_tnpu5_9  ;
+   hOffRho[2] = p_offresVsrefpt_ei_tnpu10_14;
+   hOffRho[3] = p_offresVsrefpt_ei_tnpu15_19;
+   hOffRho[4] = p_offresVsrefpt_ei_tnpu20_24;
+   hOffRho[5] = p_offresVsrefpt_ei_tnpu25_29;
+
+   c = getGausMeanOffset("OffMeantnpuRef_EI","<offset>",algo,hOffRho,fixedRange);
+   c->Draw();
+   c = getGausMeanOffsetWithSum("OffMeantnputRefWithSum_EI","<offset>",algo,hOffRho,p_offresVsrefpt_ei_tnpu0_29,fixedRange);
+   c->Draw();
+   c = getGausMeanOffsetOverPtref("OffMeanOverPttnpuRef_EI","<offset>/p_{T}^{ref}",algo,hOffRho,fixedRange);
+   c->Draw();
   
 
    hResRho[0] = p_resVsrefpt_eo_rho0_4  ;  
@@ -1071,9 +1341,22 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
   
    c = getCanvasResolution_v2("OffResolutionRhoRef_EO",algo,"#sigma(p_{T}^{PU}-p_{T}^{noPU})/<p_{T}^{noPU}/p_{T}^{ref}>",hResRho,hOffRho);
    c->Draw();
-   c = getGausMeanOffset("OffMeanrhoRef_EO","<offset>",algo,hOffRho);
+   c = getGausMeanOffset("OffMeanrhoRef_EO","<offset>",algo,hOffRho,fixedRange);
    c->Draw();  
   
+   hOffRho[0] = p_offresVsrefpt_eo_tnpu0_4  ;
+   hOffRho[1] = p_offresVsrefpt_eo_tnpu5_9  ;
+   hOffRho[2] = p_offresVsrefpt_eo_tnpu10_14;
+   hOffRho[3] = p_offresVsrefpt_eo_tnpu15_19;
+   hOffRho[4] = p_offresVsrefpt_eo_tnpu20_24;
+   hOffRho[5] = p_offresVsrefpt_eo_tnpu25_29;
+
+   c = getGausMeanOffset("OffMeantnpuRef_EO","<offset>",algo,hOffRho,fixedRange);
+   c->Draw();
+   c = getGausMeanOffsetWithSum("OffMeantnputRefWithSum_EO","<offset>",algo,hOffRho,p_offresVsrefpt_eo_tnpu0_29,fixedRange);
+   c->Draw();
+   c = getGausMeanOffsetOverPtref("OffMeanOverPttnpuRef_EO","<offset>/p_{T}^{ref}",algo,hOffRho,fixedRange);
+   c->Draw();
 
    hResRho[0] = p_resVsrefpt_ff_rho0_4  ;  
    hResRho[1] = p_resVsrefpt_ff_rho5_9  ;
@@ -1090,9 +1373,61 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
   
    c = getCanvasResolution_v2("OffResolutionRhoRef_FF",algo,"#sigma(p_{T}^{PU}-p_{T}^{noPU})/<p_{T}^{noPU}/p_{T}^{ref}>",hResRho,hOffRho);
    c->Draw(); 
-   c = getGausMeanOffset("OffMeanrhoRef_FF","<offset>",algo,hOffRho);
+   c = getGausMeanOffset("OffMeanrhoRef_FF","<offset>",algo,hOffRho,fixedRange);
+   c->Draw();
+
+   hOffRho[0] = p_offresVsrefpt_ff_tnpu0_4  ;
+   hOffRho[1] = p_offresVsrefpt_ff_tnpu5_9  ;
+   hOffRho[2] = p_offresVsrefpt_ff_tnpu10_14;
+   hOffRho[3] = p_offresVsrefpt_ff_tnpu15_19;
+   hOffRho[4] = p_offresVsrefpt_ff_tnpu20_24;
+   hOffRho[5] = p_offresVsrefpt_ff_tnpu25_29;
+
+   c = getGausMeanOffset("OffMeantnpuRef_FF","<offset>",algo,hOffRho,fixedRange);
+   c->Draw();
+   c = getGausMeanOffsetWithSum("OffMeantnputRefWithSum_FF","<offset>",algo,hOffRho,p_offresVsrefpt_ff_tnpu0_29,fixedRange);
+   c->Draw();
+   c = getGausMeanOffsetOverPtref("OffMeanOverPttnpuRef_FF","<offset>/p_{T}^{ref}",algo,hOffRho,fixedRange);
    c->Draw();
  
+
+   //Resolution of response for PU
+   // get the canvas from the resolution for bb
+   hResRho[0] = p_offresOrefptVsrefpt_bb_npv0_4  ;  
+   hResRho[1] = p_offresOrefptVsrefpt_bb_npv5_9  ;
+   hResRho[2] = p_offresOrefptVsrefpt_bb_npv10_14;
+   hResRho[3] = p_offresOrefptVsrefpt_bb_npv15_19;
+   hResRho[4] = p_offresOrefptVsrefpt_bb_npv20_24;
+   hResRho[5] = p_offresOrefptVsrefpt_bb_npv25_29;
+   c = getCanvasResolution("ResolutionOffResNpv_BB",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{ref})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{ref}>",hResRho,0);
+   c->Draw();
+
+   hResRho[0] = p_offresOrefptVsrefpt_ei_npv0_4  ;  
+   hResRho[1] = p_offresOrefptVsrefpt_ei_npv5_9  ;
+   hResRho[2] = p_offresOrefptVsrefpt_ei_npv10_14;
+   hResRho[3] = p_offresOrefptVsrefpt_ei_npv15_19;
+   hResRho[4] = p_offresOrefptVsrefpt_ei_npv20_24;
+   hResRho[5] = p_offresOrefptVsrefpt_ei_npv25_29;
+   c = getCanvasResolution("ResolutionOffResNpv_EI",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{ref})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{ref}>",hResRho,0);
+   c->Draw();
+
+   hResRho[0] = p_offresOrefptVsrefpt_eo_npv0_4  ;  
+   hResRho[1] = p_offresOrefptVsrefpt_eo_npv5_9  ;
+   hResRho[2] = p_offresOrefptVsrefpt_eo_npv10_14;
+   hResRho[3] = p_offresOrefptVsrefpt_eo_npv15_19;
+   hResRho[4] = p_offresOrefptVsrefpt_eo_npv20_24;
+   hResRho[5] = p_offresOrefptVsrefpt_eo_npv25_29;
+   c = getCanvasResolution("ResolutionOffResNpv_EO",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{ref})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{ref}>",hResRho,0);
+   c->Draw();
+
+   hResRho[0] = p_offresOrefptVsrefpt_ff_npv0_4  ;  
+   hResRho[1] = p_offresOrefptVsrefpt_ff_npv5_9  ;
+   hResRho[2] = p_offresOrefptVsrefpt_ff_npv10_14;
+   hResRho[3] = p_offresOrefptVsrefpt_ff_npv15_19;
+   hResRho[4] = p_offresOrefptVsrefpt_ff_npv20_24;
+   hResRho[5] = p_offresOrefptVsrefpt_ff_npv25_29;
+   c = getCanvasResolution("ResolutionOffResNpv_FF",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{ref})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{ref}>",hResRho,0);
+   c->Draw();
 
    // get the canvas from the resolution for bb
    hResRho[0] = p_resVsrefpt_bb_npv0_4  ;  
@@ -1114,15 +1449,15 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
    c = getResolutionNumDenom("OffResolutionnpvRef_BB_N_D","bb_npv15_19",algo, hResRho[3], hOffRho[3]);
    c->Draw();
 
-   c = getGausMeanOffset("OffMeannpvRef_BB","<offset>",algo,hOffRho);
+   c = getGausMeanOffset("OffMeannpvRef_BB","<offset>",algo,hOffRho,fixedRange);
    c->Draw();
-   c = getGausMeanOffsetOverPtref("OffMeanOverPtnpvRef_BB","<offset>/p_{T}^{ref}",algo,hOffRho);
+   c = getGausMeanOffsetOverPtref("OffMeanOverPtnpvRef_BB","<offset>/p_{T}^{ref}",algo,hOffRho,fixedRange);
    c->Draw();
 
-   c = getGausMeanOffsetScale("OffMeannpvRef_BB_3035","<offset>/<offset(30<pt<35)>",algo,hOffRho,binNum3035);
+   c = getGausMeanOffsetScale("OffMeannpvRef_BB_3035","<offset>/<offset(30<pt<35)>",algo,hOffRho,binNum3035,fixedRange);
    c->Draw();
   
-   c = getGausMeanOffsetScale("OffMeannpvRef_BB_2023","<offset>/<offset(20<pt<23)>",algo,hOffRho,binNum2023);
+   c = getGausMeanOffsetScale("OffMeannpvRef_BB_2023","<offset>/<offset(20<pt<23)>",algo,hOffRho,binNum2023,fixedRange);
    c->Draw();
   
    hResRho[0] = p_resVsrefpt_ei_npv0_4  ;  
@@ -1141,13 +1476,13 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
    c = getCanvasResolution_v2("OffResolutionnpvRef_EI",algo,"#sigma(p_{T}^{PU}-p_{T}^{noPU})/<p_{T}^{noPU}/p_{T}^{ref}>",hResRho,hOffRho);
    c->Draw();
   
-   c = getGausMeanOffset("OffMeannpvRef_EI","<offset>",algo,hOffRho);
+   c = getGausMeanOffset("OffMeannpvRef_EI","<offset>",algo,hOffRho,fixedRange);
    c->Draw();
   
-   c = getGausMeanOffsetScale("OffMeannpvRef_EI_3035","<offset>/<offset(30<pt<35)>",algo,hOffRho,binNum3035);
+   c = getGausMeanOffsetScale("OffMeannpvRef_EI_3035","<offset>/<offset(30<pt<35)>",algo,hOffRho,binNum3035,fixedRange);
    c->Draw();
   
-   c = getGausMeanOffsetScale("OffMeannpvRef_EI_2023","<offset>/<offset(20<pt<23)>",algo,hOffRho,binNum2023);
+   c = getGausMeanOffsetScale("OffMeannpvRef_EI_2023","<offset>/<offset(20<pt<23)>",algo,hOffRho,binNum2023,fixedRange);
    c->Draw();  
 
    hResRho[0] = p_resVsrefpt_eo_npv0_4  ;  
@@ -1165,13 +1500,13 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
   
    c = getCanvasResolution_v2("OffResolutionnpvRef_EO",algo,"#sigma(p_{T}^{PU}-p_{T}^{noPU})/<p_{T}^{noPU}/p_{T}^{ref}>",hResRho,hOffRho);
    c->Draw();
-   c = getGausMeanOffset("OffMeannpvRef_EO","<offset>",algo,hOffRho);
+   c = getGausMeanOffset("OffMeannpvRef_EO","<offset>",algo,hOffRho,fixedRange);
    c->Draw();  
   
-   c = getGausMeanOffsetScale("OffMeannpvRef_EO_3035","<offset>/<offset(30<pt<35)>",algo,hOffRho,binNum3035);
+   c = getGausMeanOffsetScale("OffMeannpvRef_EO_3035","<offset>/<offset(30<pt<35)>",algo,hOffRho,binNum3035,fixedRange);
    c->Draw();
   
-   c = getGausMeanOffsetScale("OffMeannpvRef_EO_2023","<offset>/<offset(20<pt<23)>",algo,hOffRho,binNum2023);
+   c = getGausMeanOffsetScale("OffMeannpvRef_EO_2023","<offset>/<offset(20<pt<23)>",algo,hOffRho,binNum2023,fixedRange);
    c->Draw();  
   
 
@@ -1190,14 +1525,26 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
   
    c = getCanvasResolution_v2("OffResolutionnpvRef_FF",algo,"#sigma(p_{T}^{PU}-p_{T}^{noPU})/<p_{T}^{noPU}/p_{T}^{ref}>",hResRho,hOffRho);
    c->Draw(); 
-   c = getGausMeanOffset("OffMeannpvRef_FF","<offset>",algo,hOffRho);
+   c = getGausMeanOffset("OffMeannpvRef_FF","<offset>",algo,hOffRho,fixedRange);
    c->Draw();
   
-   c = getGausMeanOffsetScale("OffMeannpvRef_FF_3035","<offset>/<offset(30<pt<35)>",algo,hOffRho,binNum3035);
+   c = getGausMeanOffsetScale("OffMeannpvRef_FF_3035","<offset>/<offset(30<pt<35)>",algo,hOffRho,binNum3035,fixedRange);
    c->Draw();
   
-   c = getGausMeanOffsetScale("OffMeannpvRef_FF_2023","<offset>/<offset(20<pt<23)>",algo,hOffRho,binNum2023);
+   c = getGausMeanOffsetScale("OffMeannpvRef_FF_2023","<offset>/<offset(20<pt<23)>",algo,hOffRho,binNum2023,fixedRange);
    c->Draw();  
+
+
+   hOffPdgid[0] = p_offresVsrefpt_bb_pdgid_nJ;
+   hOffPdgid[1] = p_offresVsrefpt_bb_pdgid_qJ;
+   hOffPdgid[2] = p_offresVsrefpt_bb_pdgid_cJ;
+   hOffPdgid[3] = p_offresVsrefpt_bb_pdgid_bJ;
+   hOffPdgid[4] = p_offresVsrefpt_bb_pdgid_gJ;
+   hOffPdgid[5] = p_offresVsrefpt_bb_pdgid_aJ;
+   hOffPdgid[6] = p_offresVsrefpt_bb_pdgid_aqJ;
+   c = getGausMeanOffset("OffMeanpdgidRef_BB","<offset>",algo,hOffPdgid,fixedRange);
+   c->Draw();
+
   
    if (writeFlag == true)
    {
@@ -1245,9 +1592,10 @@ int main(int argc,char**argv)
 {
    CommandLine cl;
    if (!cl.parse(argc,argv)) return 0;
-   string         algo1     = cl.getValue<string>  ("algo1",   "ak5pf");
-   string         algo2     = cl.getValue<string>  ("algo2",   "ak5pf");
-   string         outDir    = cl.getValue<string>  ("outDir",  "./images");
+   string         algo1      = cl.getValue<string>  ("algo1",     "ak5pf");
+   string         algo2      = cl.getValue<string>  ("algo2",     "ak5pf");
+   string         outDir     = cl.getValue<string>  ("outDir", "./images");
+   bool           fixedRange = cl.getValue<bool>    ("fixedRange",   true);
    setREStyle();
-   SynchPlots(algo1, algo2, outDir);
+   SynchPlots(algo1, algo2, outDir, fixedRange);
 }
