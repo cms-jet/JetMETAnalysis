@@ -19,9 +19,10 @@ TH1 * getMeanHistoFromHisto(TString cname, TString title, TH2 *off_in,double & m
 TCanvas * getCanvasResponseResolution(TString cname, TString algo, TString title, TH2 * prof[4]);
 TCanvas * getCanvasResolution(TString cname, TString algo, TString title, TH2 * prof[6],int modeNo);
 TCanvas * getResolutionNumDenom(TString cname, TString ctitle, TString algo, TH2 * prof, TH2 * off);
-TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, TH2 * off[6]);
-TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo, TH2 * off[6]);
-TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, TH2 * off[6],int scaleNo);
+TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, TH2 * off[6], bool fixedRange);
+TCanvas * getGausMeanOffsetWithSum(TString cname, TString ctitle, TString algo, TH2 * off[6], TH2* sum, bool fixedRange);
+TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo, TH2 * off[6], bool fixedRange);
+TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, TH2 * off[6],int scaleNo, bool fixedRange);
 TCanvas * getCanvasResolution_v2(TString cname, TString algo, TString title, TH2 * prof[6], TH2 * off[6]);
 TCanvas * getCanvasIntegral(TString cname, TString algo, TString title, TProfile * prof[6]);
 TH1 * getIntegralHistoFromHisto(TString cname, TString title,TProfile *off_in);
@@ -480,25 +481,36 @@ TCanvas * getCanvasResolution(TString cname, TString algo, TString title, TH2 * 
       NPV_Rho = 1;
    else if (cname.Contains("rho",TString::kIgnoreCase))
       NPV_Rho = 2;
+   else if (cname.Contains("tnpu",TString::kIgnoreCase))
+      NPV_Rho = 3;
    else
       NPV_Rho = 0;
    if (NPV_Rho == 1)
    {
-      leg->AddEntry(hh[0]," 0 <= N_{PV}<5","lep");
-      leg->AddEntry(hh[1]," 5 <= N_{PV}<10","lep");
-      leg->AddEntry(hh[2],"10 <= N_{PV}<15","lep");
-      leg->AddEntry(hh[3],"15 <= N_{PV}<20","lep");
-      leg->AddEntry(hh[4],"20 <= N_{PV}<25","lep");
-      leg->AddEntry(hh[5],"25 <= N_{PV}<30","lep");
+      leg->AddEntry(hh[0]," 0 <= N_{PV} < 5","lep");
+      leg->AddEntry(hh[1]," 5 <= N_{PV} < 10","lep");
+      leg->AddEntry(hh[2],"10 <= N_{PV} < 15","lep");
+      leg->AddEntry(hh[3],"15 <= N_{PV} < 20","lep");
+      leg->AddEntry(hh[4],"20 <= N_{PV} < 25","lep");
+      leg->AddEntry(hh[5],"25 <= N_{PV} < 30","lep");
    }
    else if (NPV_Rho == 2)
    {
-      leg->AddEntry(hh[0]," 0 <= Rho<5","lep");
-      leg->AddEntry(hh[1]," 5 <= Rho<10","lep");
-      leg->AddEntry(hh[2],"10 <= Rho<15","lep");
-      leg->AddEntry(hh[3],"15 <= Rho<20","lep");
-      leg->AddEntry(hh[4],"20 <= Rho<25","lep");
-      leg->AddEntry(hh[5],"25 <= Rho<30","lep");
+      leg->AddEntry(hh[0]," 0 <= Rho < 5","lep");
+      leg->AddEntry(hh[1]," 5 <= Rho < 10","lep");
+      leg->AddEntry(hh[2],"10 <= Rho < 15","lep");
+      leg->AddEntry(hh[3],"15 <= Rho < 20","lep");
+      leg->AddEntry(hh[4],"20 <= Rho < 25","lep");
+      leg->AddEntry(hh[5],"25 <= Rho < 30","lep");
+   }
+   else if (NPV_Rho == 3)
+   {
+      leg->AddEntry(hh[0]," 0 <= True NPU < 5","lep");
+      leg->AddEntry(hh[1]," 5 <= True NPU < 10","lep");
+      leg->AddEntry(hh[2],"10 <= True NPU < 15","lep");
+      leg->AddEntry(hh[3],"15 <= True NPU < 20","lep");
+      leg->AddEntry(hh[4],"20 <= True NPU < 25","lep");
+      leg->AddEntry(hh[5],"25 <= True NPU < 30","lep");
    }
    else
    {
@@ -621,21 +633,36 @@ TCanvas * getResolutionNumDenom(TString cname, TString ctitle, TString algo, TH2
 //getGausMeanOffset
 // output mean of each x slice
 // Legend depends on cname. If cname contains "rho", output rho legend. If cname contains "npv", output npv legend. Otherwise, output PF legend.
-TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, TH2 * off[6]){
+TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, TH2 * off[7], bool fixedRange){
 
    cout<<"\t Doing fits for Mean "<<cname<<endl;
    algo.ToUpper();
   
-  
+   int NPV_Rho;
+   if (cname.Contains("npv",TString::kIgnoreCase))
+      NPV_Rho = 1;
+   else if (cname.Contains("rho",TString::kIgnoreCase))
+      NPV_Rho = 2;
+   else if (cname.Contains("tnpu",TString::kIgnoreCase))
+      NPV_Rho = 3;
+   else if (cname.Contains("pdgid",TString::kIgnoreCase))
+      NPV_Rho = 4;
+   else
+      NPV_Rho = 0;
+
    TCanvas * c = new TCanvas(cname,cname);
    c->SetLogx();
-   TH1 * hh[6];
+   TH1 * hh[7];
    double maxy = 0;
-   for (int j=0;j<6;j++){
+   int upper_limit = 0;
+   if (NPV_Rho == 4)
+      upper_limit = 7;
+   else
+      upper_limit = 6;
+   for (int j=0;j<upper_limit;j++){
       TString hname = cname;
       hname += Form("_%i",j);
       hh[j] = getMeanHistoFromHisto(hname, ctitle, off[j],maxy);
-
    }
    setHistoColor(hh[0],colNpv0);
    setHistoColor(hh[1],colNpv5);
@@ -643,41 +670,66 @@ TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, TH2 * o
    setHistoColor(hh[3],colNpv15);
    setHistoColor(hh[4],colNpv20);
    setHistoColor(hh[5],colNpv25);
+   if(NPV_Rho == 4) {
+      setHistoColor(hh[0],colnJ);
+      setHistoColor(hh[1],colqJ);
+      setHistoColor(hh[2],colcJ);
+      setHistoColor(hh[3],colbJ);
+      setHistoColor(hh[4],colgJ);
+      setHistoColor(hh[5],colaJ);
+      setHistoColor(hh[6],colaqJ);
+   }
 
-   //hh[0]->GetYaxis()->SetRangeUser(0,1.25*maxy);
-   hh[0]->GetYaxis()->SetRangeUser(-3,3);
+   if(fixedRange)
+      hh[0]->GetYaxis()->SetRangeUser(-3,3);
+   else
+      hh[0]->GetYaxis()->SetRangeUser(0,1.25*maxy);
    hh[0]->Draw("E");
-   for (int j=1;j<6;j++)
+   for (int j=1;j<upper_limit;j++)
       hh[j]->Draw("sameE");
 
    TLegend * leg = new TLegend(0.2,0.72,0.45,0.99);
    leg->SetHeader(algo);
    leg->SetFillColor(0);
    leg->SetBorderSize(0);
-   int NPV_Rho;
-   if (cname.Contains("npv",TString::kIgnoreCase))
-      NPV_Rho = 1;
-   else if (cname.Contains("rho",TString::kIgnoreCase))
-      NPV_Rho = 2;
-   else
-      NPV_Rho = 0;
+   leg->SetName(cname+"_leg");
+
    if (NPV_Rho == 1)
    {
-      leg->AddEntry(hh[0]," 0 <= N_{PV}<5","lep");
-      leg->AddEntry(hh[1]," 5 <= N_{PV}<10","lep");
-      leg->AddEntry(hh[2],"10 <= N_{PV}<15","lep");
-      leg->AddEntry(hh[3],"15 <= N_{PV}<20","lep");
-      leg->AddEntry(hh[4],"20 <= N_{PV}<25","lep");
-      leg->AddEntry(hh[5],"25 <= N_{PV}<30","lep");
+      leg->AddEntry(hh[0]," 0 <= N_{PV} < 5","lep");
+      leg->AddEntry(hh[1]," 5 <= N_{PV} < 10","lep");
+      leg->AddEntry(hh[2],"10 <= N_{PV} < 15","lep");
+      leg->AddEntry(hh[3],"15 <= N_{PV} < 20","lep");
+      leg->AddEntry(hh[4],"20 <= N_{PV} < 25","lep");
+      leg->AddEntry(hh[5],"25 <= N_{PV} < 30","lep");
    }
    else if (NPV_Rho == 2)
    {
-      leg->AddEntry(hh[0]," 0 <= Rho<5","lep");
-      leg->AddEntry(hh[1]," 5 <= Rho<10","lep");
-      leg->AddEntry(hh[2],"10 <= Rho<15","lep");
-      leg->AddEntry(hh[3],"15 <= Rho<20","lep");
-      leg->AddEntry(hh[4],"20 <= Rho<25","lep");
-      leg->AddEntry(hh[5],"25 <= Rho<30","lep");
+      leg->AddEntry(hh[0]," 0 <= Rho < 5","lep");
+      leg->AddEntry(hh[1]," 5 <= Rho < 10","lep");
+      leg->AddEntry(hh[2],"10 <= Rho < 15","lep");
+      leg->AddEntry(hh[3],"15 <= Rho < 20","lep");
+      leg->AddEntry(hh[4],"20 <= Rho < 25","lep");
+      leg->AddEntry(hh[5],"25 <= Rho < 30","lep");
+   }
+   else if (NPV_Rho == 3)
+   {
+      leg->AddEntry(hh[0]," 0 <= True NPU < 5","lep");
+      leg->AddEntry(hh[1]," 5 <= True NPU < 10","lep");
+      leg->AddEntry(hh[2],"10 <= True NPU < 15","lep");
+      leg->AddEntry(hh[3],"15 <= True NPU < 20","lep");
+      leg->AddEntry(hh[4],"20 <= True NPU < 25","lep");
+      leg->AddEntry(hh[5],"25 <= True NPU < 30","lep");
+   }
+   else if (NPV_Rho == 4)
+   {
+      leg->AddEntry(hh[0],"nJ (unknown PDGID)","lep");
+      leg->AddEntry(hh[1],"qJ","lep");
+      leg->AddEntry(hh[2],"cJ","lep");
+      leg->AddEntry(hh[3],"bJ","lep");
+      leg->AddEntry(hh[4],"gJ","lep");
+      leg->AddEntry(hh[5],"aJ (all jets)","lep");
+      leg->AddEntry(hh[6],"aqJ (quark jets)","lep");
    }
    else
    {
@@ -694,11 +746,50 @@ TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, TH2 * o
 
 }//getGausMeanOffset
 
+TCanvas * getGausMeanOffsetWithSum(TString cname, TString ctitle, TString algo, TH2 * off[6], TH2 * sum, bool fixedRange){
+
+   TCanvas * baseCanvas = getGausMeanOffset(cname,ctitle,algo,off,fixedRange);
+   baseCanvas->cd();
+
+   TH1 * hh;
+   double maxy = 0;
+   TString hname = cname;
+   hname += Form("_6");
+   hh = getMeanHistoFromHisto(hname, ctitle, sum, maxy);
+   setHistoColor(hh,1);
+
+   hh->Draw("sameE");
+   
+   TLegend* leg = (TLegend*)baseCanvas->GetPrimitive(cname+"_leg");
+   int NPV_Rho;
+   if (cname.Contains("npv",TString::kIgnoreCase))
+      NPV_Rho = 1;
+   else if (cname.Contains("rho",TString::kIgnoreCase))
+      NPV_Rho = 2;
+   else if (cname.Contains("tnpu",TString::kIgnoreCase))
+      NPV_Rho = 3;
+   else
+      NPV_Rho = 0;
+   if (NPV_Rho == 1)
+      leg->AddEntry(hh," 0 <= N_{PV} < 30","lep");
+   else if (NPV_Rho == 2)
+      leg->AddEntry(hh,"0 <= Rho < 30","lep");
+   else if (NPV_Rho == 3)
+      leg->AddEntry(hh,"0 <= True NPU < 30","lep");
+   else
+      leg->AddEntry(hh,"Total <offset>","lep");
+
+   leg->Draw();
+   //baseCanvas->Update();
+
+   return baseCanvas;
+}//getGausMeanOffsetWithSum
+
 //-----------------------------------------------
 //getGausMeanOffsetOverPtref
 // output mean of each x slice
 // Legend depends on cname. If cname contains "rho", output rho legend. If cname contains "npv", output npv legend. Otherwise, output PF legend.
-TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo, TH2 * off[6]){
+TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo, TH2 * off[6],bool fixedRange){
 
    cout<<"\t Doing fits for Mean "<<cname<<endl;
    algo.ToUpper();
@@ -721,8 +812,12 @@ TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo
    setHistoColor(hh[4],colNpv20);
    setHistoColor(hh[5],colNpv25);
 
-   //hh[0]->GetYaxis()->SetRangeUser(0,1.25*maxy);
-   hh[0]->GetYaxis()->SetRangeUser(-0.1,0.1);
+   if(fixedRange) {
+      hh[0]->GetYaxis()->SetRangeUser(-0.1,0.1);
+   }
+   else {
+      hh[0]->GetYaxis()->SetRangeUser(0,1.25*maxy);
+   }
    hh[0]->Draw("E");
    for (int j=1;j<6;j++)
       hh[j]->Draw("sameE");
@@ -736,25 +831,36 @@ TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo
       NPV_Rho = 1;
    else if (cname.Contains("rho",TString::kIgnoreCase))
       NPV_Rho = 2;
+   else if (cname.Contains("tnpu",TString::kIgnoreCase))
+      NPV_Rho = 3;
    else
       NPV_Rho = 0;
    if (NPV_Rho == 1)
    {
-      leg->AddEntry(hh[0]," 0 <= N_{PV}<5","lep");
-      leg->AddEntry(hh[1]," 5 <= N_{PV}<10","lep");
-      leg->AddEntry(hh[2],"10 <= N_{PV}<15","lep");
-      leg->AddEntry(hh[3],"15 <= N_{PV}<20","lep");
-      leg->AddEntry(hh[4],"20 <= N_{PV}<25","lep");
-      leg->AddEntry(hh[5],"25 <= N_{PV}<30","lep");
+      leg->AddEntry(hh[0]," 0 <= N_{PV} < 5","lep");
+      leg->AddEntry(hh[1]," 5 <= N_{PV} < 10","lep");
+      leg->AddEntry(hh[2],"10 <= N_{PV} < 15","lep");
+      leg->AddEntry(hh[3],"15 <= N_{PV} < 20","lep");
+      leg->AddEntry(hh[4],"20 <= N_{PV} < 25","lep");
+      leg->AddEntry(hh[5],"25 <= N_{PV} < 30","lep");
    }
    else if (NPV_Rho == 2)
    {
-      leg->AddEntry(hh[0]," 0 <= Rho<5","lep");
-      leg->AddEntry(hh[1]," 5 <= Rho<10","lep");
-      leg->AddEntry(hh[2],"10 <= Rho<15","lep");
-      leg->AddEntry(hh[3],"15 <= Rho<20","lep");
-      leg->AddEntry(hh[4],"20 <= Rho<25","lep");
-      leg->AddEntry(hh[5],"25 <= Rho<30","lep");
+      leg->AddEntry(hh[0]," 0 <= Rho < 5","lep");
+      leg->AddEntry(hh[1]," 5 <= Rho < 10","lep");
+      leg->AddEntry(hh[2],"10 <= Rho < 15","lep");
+      leg->AddEntry(hh[3],"15 <= Rho < 20","lep");
+      leg->AddEntry(hh[4],"20 <= Rho < 25","lep");
+      leg->AddEntry(hh[5],"25 <= Rho < 30","lep");
+   }
+   else if (NPV_Rho == 3)
+   {
+      leg->AddEntry(hh[0]," 0 <= True NPU < 5","lep");
+      leg->AddEntry(hh[1]," 5 <= True NPU < 10","lep");
+      leg->AddEntry(hh[2],"10 <= True NPU < 15","lep");
+      leg->AddEntry(hh[3],"15 <= True NPU < 20","lep");
+      leg->AddEntry(hh[4],"20 <= True NPU < 25","lep");
+      leg->AddEntry(hh[5],"25 <= True NPU < 30","lep");
    }
    else
    {
@@ -777,7 +883,7 @@ TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo
 // getGausMeanOffsetScale
 // output mean of each x slice and scale so that the *scaleNo* bin is 1.
 // Legend depends on cname. If cname contains "rho", output rho legend. If cname contains "npv", output npv legend. Otherwise, output PF legend.
-TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, TH2 * off[6],int scaleNo){
+TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, TH2 * off[6],int scaleNo, bool fixedRange){
 
    cout<<"\t Doing fits for Mean "<<cname<<endl;
    algo.ToUpper();
@@ -816,8 +922,12 @@ TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, TH
    setHistoColor(hh[4],colNpv20);
    setHistoColor(hh[5],colNpv25);
 
-   //hh[0]->GetYaxis()->SetRangeUser(0,1.25*maxy);
-   hh[0]->GetYaxis()->SetRangeUser(0.2,3);
+   if(fixedRange){
+      hh[0]->GetYaxis()->SetRangeUser(0.2,3);
+   }
+   else {
+      hh[0]->GetYaxis()->SetRangeUser(0,1.25*maxy);
+   }
    hh[0]->Draw("E");
    for (int j=1;j<6;j++)
       hh[j]->Draw("sameE");
@@ -831,25 +941,36 @@ TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, TH
       NPV_Rho = 1;
    else if (cname.Contains("rho",TString::kIgnoreCase))
       NPV_Rho = 2;
+   else if (cname.Contains("tnpu",TString::kIgnoreCase))
+      NPV_Rho = 3;
    else
       NPV_Rho = 0;
    if (NPV_Rho == 1)
    {
-      leg->AddEntry(hh[0]," 0 <= N_{PV}<5","lep");
-      leg->AddEntry(hh[1]," 5 <= N_{PV}<10","lep");
-      leg->AddEntry(hh[2],"10 <= N_{PV}<15","lep");
-      leg->AddEntry(hh[3],"15 <= N_{PV}<20","lep");
-      leg->AddEntry(hh[4],"20 <= N_{PV}<25","lep");
-      leg->AddEntry(hh[5],"25 <= N_{PV}<30","lep");
+      leg->AddEntry(hh[0]," 0 <= N_{PV} < 5","lep");
+      leg->AddEntry(hh[1]," 5 <= N_{PV} < 10","lep");
+      leg->AddEntry(hh[2],"10 <= N_{PV} < 15","lep");
+      leg->AddEntry(hh[3],"15 <= N_{PV} < 20","lep");
+      leg->AddEntry(hh[4],"20 <= N_{PV} < 25","lep");
+      leg->AddEntry(hh[5],"25 <= N_{PV} < 30","lep");
    }
    else if (NPV_Rho == 2)
    {
-      leg->AddEntry(hh[0]," 0 <= Rho<5","lep");
-      leg->AddEntry(hh[1]," 5 <= Rho<10","lep");
-      leg->AddEntry(hh[2],"10 <= Rho<15","lep");
-      leg->AddEntry(hh[3],"15 <= Rho<20","lep");
-      leg->AddEntry(hh[4],"20 <= Rho<25","lep");
-      leg->AddEntry(hh[5],"25 <= Rho<30","lep");
+      leg->AddEntry(hh[0]," 0 <= Rho < 5","lep");
+      leg->AddEntry(hh[1]," 5 <= Rho < 10","lep");
+      leg->AddEntry(hh[2],"10 <= Rho < 15","lep");
+      leg->AddEntry(hh[3],"15 <= Rho < 20","lep");
+      leg->AddEntry(hh[4],"20 <= Rho < 25","lep");
+      leg->AddEntry(hh[5],"25 <= Rho < 30","lep");
+   }
+   else if (NPV_Rho == 3)
+   {
+      leg->AddEntry(hh[0]," 0 <= True NPU < 5","lep");
+      leg->AddEntry(hh[1]," 5 <= True NPU < 10","lep");
+      leg->AddEntry(hh[2],"10 <= True NPU < 15","lep");
+      leg->AddEntry(hh[3],"15 <= True NPU < 20","lep");
+      leg->AddEntry(hh[4],"20 <= True NPU < 25","lep");
+      leg->AddEntry(hh[5],"25 <= True NPU < 30","lep");
    }
    else
    {
@@ -907,25 +1028,36 @@ TCanvas * getCanvasResolution_v2(TString cname, TString algo, TString title, TH2
       NPV_Rho = 1;
    else if (cname.Contains("rho",TString::kIgnoreCase))
       NPV_Rho = 2;
+   else if (cname.Contains("tnpu",TString::kIgnoreCase))
+      NPV_Rho = 3;
    else
       NPV_Rho = 0;
    if (NPV_Rho == 1)
    {
-      leg->AddEntry(hh[0]," 0 <= N_{PV}<5","lep");
-      leg->AddEntry(hh[1]," 5 <= N_{PV}<10","lep");
-      leg->AddEntry(hh[2],"10 <= N_{PV}<15","lep");
-      leg->AddEntry(hh[3],"15 <= N_{PV}<20","lep");
-      leg->AddEntry(hh[4],"20 <= N_{PV}<25","lep");
-      leg->AddEntry(hh[5],"25 <= N_{PV}<30","lep");
+      leg->AddEntry(hh[0]," 0 <= N_{PV} < 5","lep");
+      leg->AddEntry(hh[1]," 5 <= N_{PV} < 10","lep");
+      leg->AddEntry(hh[2],"10 <= N_{PV} < 15","lep");
+      leg->AddEntry(hh[3],"15 <= N_{PV} < 20","lep");
+      leg->AddEntry(hh[4],"20 <= N_{PV} < 25","lep");
+      leg->AddEntry(hh[5],"25 <= N_{PV} < 30","lep");
    }
    else if (NPV_Rho == 2)
    {
-      leg->AddEntry(hh[0]," 0 <= Rho<5","lep");
-      leg->AddEntry(hh[1]," 5 <= Rho<10","lep");
-      leg->AddEntry(hh[2],"10 <= Rho<15","lep");
-      leg->AddEntry(hh[3],"15 <= Rho<20","lep");
-      leg->AddEntry(hh[4],"20 <= Rho<25","lep");
-      leg->AddEntry(hh[5],"25 <= Rho<30","lep");
+      leg->AddEntry(hh[0]," 0 <= Rho < 5","lep");
+      leg->AddEntry(hh[1]," 5 <= Rho < 10","lep");
+      leg->AddEntry(hh[2],"10 <= Rho < 15","lep");
+      leg->AddEntry(hh[3],"15 <= Rho < 20","lep");
+      leg->AddEntry(hh[4],"20 <= Rho < 25","lep");
+      leg->AddEntry(hh[5],"25 <= Rho < 30","lep");
+   }
+   else if (NPV_Rho == 3)
+   {
+      leg->AddEntry(hh[0]," 0 <= True NPU < 5","lep");
+      leg->AddEntry(hh[1]," 5 <= True NPU < 10","lep");
+      leg->AddEntry(hh[2],"10 <= True NPU < 15","lep");
+      leg->AddEntry(hh[3],"15 <= True NPU < 20","lep");
+      leg->AddEntry(hh[4],"20 <= True NPU < 25","lep");
+      leg->AddEntry(hh[5],"25 <= True NPU < 30","lep");
    }
    else
    {
@@ -979,11 +1111,11 @@ TCanvas * getCanvasIntegral(TString cname, TString algo, TString title, TProfile
    leg->SetHeader(algo);
    leg->SetFillColor(0);
    leg->SetBorderSize(0);
-   leg->AddEntry(hh[0]," 0 <= N_{PV}<5","lep");
-   leg->AddEntry(hh[1]," 5 <= N_{PV}<10","lep");
-   leg->AddEntry(hh[2],"10 <= N_{PV}<15","lep");
-   leg->AddEntry(hh[3],"15 <= N_{PV}<20","lep");
-   leg->AddEntry(hh[4],"20 <= N_{PV}<25","lep");
+   leg->AddEntry(hh[0]," 0 <= N_{PV} < 5","lep");
+   leg->AddEntry(hh[1]," 5 <= N_{PV} < 10","lep");
+   leg->AddEntry(hh[2],"10 <= N_{PV} < 15","lep");
+   leg->AddEntry(hh[3],"15 <= N_{PV} < 20","lep");
+   leg->AddEntry(hh[4],"20 <= N_{PV} < 25","lep");
    leg->AddEntry(hh[5],"25 <= N_{PV}   ","lep");
    leg->Draw();
 
@@ -1058,11 +1190,11 @@ TCanvas * getCanvasAverage(TString cname, TString algo, TString title, TProfile 
    leg->SetHeader(algo);
    leg->SetFillColor(0);
    leg->SetBorderSize(0);
-   leg->AddEntry(hh[0]," 0 <= N_{PV}<5","lep");
-   leg->AddEntry(hh[1]," 5 <= N_{PV}<10","lep");
-   leg->AddEntry(hh[2],"10 <= N_{PV}<15","lep");
-   leg->AddEntry(hh[3],"15 <= N_{PV}<20","lep");
-   leg->AddEntry(hh[4],"20 <= N_{PV}<25","lep");
+   leg->AddEntry(hh[0]," 0 <= N_{PV} < 5","lep");
+   leg->AddEntry(hh[1]," 5 <= N_{PV} < 10","lep");
+   leg->AddEntry(hh[2],"10 <= N_{PV} < 15","lep");
+   leg->AddEntry(hh[3],"15 <= N_{PV} < 20","lep");
+   leg->AddEntry(hh[4],"20 <= N_{PV} < 25","lep");
    leg->AddEntry(hh[5],"25 <= N_{PV}   ","lep");
    leg->Draw();
 
