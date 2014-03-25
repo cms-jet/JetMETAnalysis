@@ -66,7 +66,7 @@ int main(int argc,char**argv)
   TString         path         = cl.getValue<TString>  ("path",             "");
   bool            mpv          = cl.getValue<bool>     ("mpv",            true);
   TString         outputDir    = cl.getValue<TString>  ("outputDir",  "images");
-  TString         outputFormat = cl.getValue<TString>  ("outputFormat", ".png");
+  vector<TString> outputFormat = cl.getVector<TString> ("outputFormat", ".png:::.eps:::.pdf");
   bool            tdr          = cl.getValue<bool>     ("tdr",           false);
 
   if (!cl.check()) return 0;
@@ -198,7 +198,23 @@ int main(int argc,char**argv)
           pave[j] = new TPaveText(0.3,0.75,0.8,0.9,"NDC");
           if (tdr) {
              pave[j]->AddText("QCD Monte Carlo");
-             pave[j]->AddText("Anti-kT R=0.5, PFlow");
+
+             TString algNameLong;
+             if(TString(algs[a]).Contains("ak"))        algNameLong += "Anti-kT";
+             if(TString(algs[a]).Contains("3"))         algNameLong += " R=0.3";
+             else if(TString(algs[a]).Contains("4"))    algNameLong += " R=0.4";
+             else if(TString(algs[a]).Contains("5"))    algNameLong += " R=0.5";
+             else if(TString(algs[a]).Contains("6"))    algNameLong += " R=0.6";
+             else if(TString(algs[a]).Contains("7"))    algNameLong += " R=0.7";
+             else if(TString(algs[a]).Contains("8"))    algNameLong += " R=0.8";
+             else if(TString(algs[a]).Contains("9"))    algNameLong += " R=0.9";
+             else if(TString(algs[a]).Contains("10"))   algNameLong += " R=1.0";
+             if(TString(algs[a]).Contains("pfchs"))     algNameLong += ", PFlow+CHS";
+             else if(TString(algs[a]).Contains("pf"))   algNameLong += ", PFlow";
+             else if(TString(algs[a]).Contains("calo")) algNameLong += ", Calo";
+             else if(TString(algs[a]).Contains("jpt"))  algNameLong += ", JPT";
+
+             pave[j]->AddText(algNameLong);
           }
           else {
              pave[j]->AddText(algs[a]);
@@ -244,7 +260,9 @@ int main(int argc,char**argv)
           pave[j]->SetTextSize(0.05);
           pave[j]->Draw("EP");
           if (tdr) cmsPrelim();
-          can[j]->SaveAs(outputDir+ss+outputFormat);
+          for(unsigned int iformat=0; iformat<outputFormat.size(); iformat++) {
+            can[j]->SaveAs(outputDir+ss+outputFormat[iformat]);
+          }
           hClosure[j]->Write();
           can[j]->Write();
         }//for(int j=0;j<3;j++)
@@ -273,7 +291,9 @@ int main(int argc,char**argv)
         pave[c]->Draw();
         if (tdr) cmsPrelim();
       }
-      ove->SaveAs(outputDir+ss+outputFormat);
+      for(unsigned int iformat=0; iformat<outputFormat.size(); iformat++) {
+        ove->SaveAs(outputDir+ss+outputFormat[iformat]);
+      }
       ove->Write();
 
       //
@@ -329,7 +349,21 @@ int main(int argc,char**argv)
          pave[c] = new TPaveText(0.35,0.8,0.75,0.9,"NDC");
          if (tdr) {
             pave[c]->AddText("QCD Monte Carlo");
-            pave[c]->AddText("Anti-kT R=0.5, PFlow");
+            TString algNameLong;
+            if(TString(algs[a]).Contains("ak"))        algNameLong += "Anti-kT";
+            if(TString(algs[a]).Contains("3"))         algNameLong += " R=0.3";
+            else if(TString(algs[a]).Contains("4"))    algNameLong += " R=0.4";
+            else if(TString(algs[a]).Contains("5"))    algNameLong += " R=0.5";
+            else if(TString(algs[a]).Contains("6"))    algNameLong += " R=0.6";
+            else if(TString(algs[a]).Contains("7"))    algNameLong += " R=0.7";
+            else if(TString(algs[a]).Contains("8"))    algNameLong += " R=0.8";
+            else if(TString(algs[a]).Contains("9"))    algNameLong += " R=0.9";
+            else if(TString(algs[a]).Contains("10"))   algNameLong += " R=1.0";
+            if(TString(algs[a]).Contains("pfchs"))     algNameLong += ", PFlow+CHS";
+            else if(TString(algs[a]).Contains("pf"))   algNameLong += ", PFlow";
+            else if(TString(algs[a]).Contains("calo")) algNameLong += ", Calo";
+            else if(TString(algs[a]).Contains("jpt"))  algNameLong += ", JPT";
+            pave[c]->AddText(algNameLong);
          }
          else {
             pave[c]->AddText(algs[a]);
@@ -342,7 +376,9 @@ int main(int argc,char**argv)
          leg->Draw("same");
       }
       if (tdr) cmsPrelim();
-      ove2->SaveAs(outputDir+ss+outputFormat);
+      for(unsigned int iformat=0; iformat<outputFormat.size(); iformat++) {
+        ove2->SaveAs(outputDir+ss+outputFormat[iformat]);
+      }
       ove2->Write();
       
       outf->Close();

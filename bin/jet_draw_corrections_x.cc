@@ -12,9 +12,9 @@
 // it will produce validation plots as well.
 ///////////////////////////////////////////////////////////////////
 
-#include "JetMETAnalysis/JetAnalyzers/interface/Settings.h"
 #include "JetMETAnalysis/JetAnalyzers/interface/Style.h"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
+#include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
 
@@ -58,7 +58,7 @@ TCanvas * getCorrectionVsEtaCanvas(TString algo, FactorizedJetCorrector * jetCor
 TCanvas * getCorrectionVsEtaCanvasTDR(TString algo, FactorizedJetCorrector * jetCorr, TString suffix);
 
 TCanvas * getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, vector<pair<FactorizedJetCorrector*,TString> > allJetCorrs,
-                                                TString suffix);
+                                                TString suffix, TString normAlg = "");
 
 TCanvas * getCorrectionVsPtCanvas(TString algo, FactorizedJetCorrector * jetCorr, TString suffix);
 
@@ -71,7 +71,7 @@ vector<Int_t> getMarkerNumbers();
 
 string getAlias(TString s);
 
-TString getAlgNameLong(TString algo);
+TString getAlgNameLong(TString algo, int coneSize = 0);
 
 ///CMS Preliminary label;
 void cmsPrelim(double intLUMI = 0);
@@ -207,6 +207,7 @@ void analyzeAllAlgs(vector<TString>& algs, vector<pair<FactorizedJetCorrector*,T
   string          outputDir    = cl.getValue<string>   ("outputDir",         "images");
   vector<TString> outputFormat = cl.getVector<TString> ("outputFormat", ".png:::.eps");
   bool            tdr          = cl.getValue<bool>     ("tdr",                   true);
+  TString         normAlg      = cl.getValue<TString>  ("normAlg",                 "");
 
   if (tdr) {
      setStyle();
@@ -241,7 +242,7 @@ void analyzeAllAlgs(vector<TString>& algs, vector<pair<FactorizedJetCorrector*,T
 
   // get the canvas of correction vs eta in tdr format, write and save to file
   if(tdr) {
-     TCanvas * ovetdr = getCorrectionVsEtaComparisonCanvasTDR(algs, allJetCorrs, suffix);
+     TCanvas * ovetdr = getCorrectionVsEtaComparisonCanvasTDR(algs, allJetCorrs, suffix, normAlg);
      for(unsigned int of=0; of<outputFormat.size(); of++) {
         ovetdr->SaveAs(outputDir+string(ovetdr->GetName())+outputFormat[of]);
      }
@@ -468,7 +469,15 @@ TCanvas * getCorrectionVsEtaCanvasTDR(TString algo, FactorizedJetCorrector * jet
 
 //---------------------------------------------------------------------
 TCanvas * getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, vector<pair<FactorizedJetCorrector*,TString> > allJetCorrs,
-                                                TString suffix) {
+                                                TString suffix, TString normAlg) {
+
+  vector<TString> normHSTR;
+  int normAlgIndex = -1;
+  if(!normAlg.IsNull()) {
+    normAlgIndex = JetInfo::vfind(algs,normAlg);
+    if(normAlgIndex>-1)
+      algs.insert(algs.begin(),algs[normAlgIndex]);
+  }
 
   //Create canvas vs eta for different pts  
   vector<double> PtVals;
@@ -492,15 +501,32 @@ TCanvas * getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, vector<pa
   vector<TLegend*> legs;
 
   // loop over all pt values.
-  map<TString,vector<TH1F*> > cc;
+  map<TString,TH1F*> cc;
   for (unsigned int c = 0; c < PtVals.size(); c++) {
 
     ove->cd(c+1);
 
-    legs.push_back(new TLegend(0.15,0.5,0.85,0.9));
-    legs.back()->SetTextSize(0.04);
-    legs.back()->SetBorderSize(0);
+    bool allAlgsSame = true;
+    for(unsigned int ialg=0; ialg<algs.size(); ialg++) {
+      if(getAlgNameLong(algs[0],1).CompareTo(getAlgNameLong(algs[ialg],1))!=0) {
+        allAlgsSame=false;
+        break;
+      }
+    }
+    if(allAlgsSame) {
+      legs.push_back(new TLegend(0.195,0.75,0.885,0.92));
+      legs.back()->SetNColumns(3);
+      legs.back()->SetBorderSize(1);
+    }
+    else {
+      legs.push_back(new TLegend(0.20,0.5,0.83,0.9));
+      legs.back()->SetBorderSize(0);
+      legs.back()->SetFillStyle(0);
+    }
+    legs.back()->SetTextSize(0.029);
     legs.back()->SetFillColor(0);
+    
+
     TString ptstr;
     if (PtVals[c]<0.1)
        ptstr.Form("%f",PtVals[c]);
@@ -508,18 +534,38 @@ TCanvas * getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, vector<pa
        ptstr.Form("%.0f",PtVals[c]);
     //leg->AddEntry(cc,"P_{T} = "+ptstr+" GeV","p");
     legs.back()->AddEntry((TObject*)0,"P_{T} = "+ptstr+" GeV","");
+    if(allAlgsSame)
+      legs.back()->AddEntry((TObject*)0,getAlgNameLong(algs[0],1),"");
     legs.back()->AddEntry((TObject*)0,"","");
 
     for (unsigned int ialg=0; ialg<algs.size(); ialg++) {
       //Create and fill the histo
       TString hstr; hstr.Form("EtaSF_TDR_%d_%s",c,algs[ialg].Data());
-      TH1F * cc = new TH1F(hstr,hstr,NETA,veta);
-      for (int b = 1; b <= cc->GetNbinsX(); b++){
-         allJetCorrs[ialg].first->setJetPt(PtVals[c]);
-         allJetCorrs[ialg].first->setJetEta(cc->GetBinCenter(b));
-         double cor = allJetCorrs[ialg].first->getCorrection();
+      if(!normAlg.IsNull() && ialg==0) {
+        hstr.Form("EtaSF_TDR_%d_%s_norm",c,algs[ialg].Data());
+        normHSTR.push_back(hstr);
+      }
+      cc[hstr] = new TH1F(hstr,hstr,NETA,veta);
+
+      for (int b = 1; b <= cc[hstr]->GetNbinsX(); b++){
+         double cor = 1.0;
+         if(!normAlg.IsNull() && ialg==0) {
+            allJetCorrs[normAlgIndex].first->setJetPt(PtVals[c]);
+            allJetCorrs[normAlgIndex].first->setJetEta(cc[hstr]->GetBinCenter(b));
+            cor = allJetCorrs[normAlgIndex].first->getCorrection();
+         }
+         else if (!normAlg.IsNull() && ialg>0){
+            allJetCorrs[ialg-1].first->setJetPt(PtVals[c]);
+            allJetCorrs[ialg-1].first->setJetEta(cc[hstr]->GetBinCenter(b));
+            cor = allJetCorrs[ialg-1].first->getCorrection();
+         }
+         else {
+            allJetCorrs[ialg].first->setJetPt(PtVals[c]);
+            allJetCorrs[ialg].first->setJetEta(cc[hstr]->GetBinCenter(b));
+            cor = allJetCorrs[ialg].first->getCorrection();
+         }
          if (std::isnan((double)cor) || std::isinf((double)cor) ){
-            cout<<" *** ERROR *** getCorrectionVsEtaComparisonCanvas(). For eta="<<cc->GetBinCenter(b)
+            cout<<" *** ERROR *** getCorrectionVsEtaComparisonCanvas(). For eta="<<cc[hstr]->GetBinCenter(b)
                 <<" and pt="<<PtVals[c]<<" the correction is "<<cor<<"!!"<<endl;
             cor = 10000;
          }
@@ -527,39 +573,66 @@ TCanvas * getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, vector<pa
             cout<<" WARNING  *** getCorrectionVsEtaComparisonCanvas(). Correction of "<<cor<<" is out of the (0.8,3) range"<<endl;
             }
          
-         cc->SetBinContent(b,cor);
+         cc[hstr]->SetBinContent(b,cor);
       }//for eta bins
 
-      cc->GetXaxis()->SetTitle("#eta");
-      cc->GetYaxis()->SetTitle("Corr. Factor");
+      cc[hstr]->GetXaxis()->SetTitle("#eta");
+      cc[hstr]->GetYaxis()->SetTitle("Corr. Factor");
+      if(!normAlg.IsNull())
+        cc[hstr]->GetYaxis()->SetTitle(Form("Corr. Factor / Corr. Factor (%s)",getAlias(normAlg).c_str()));
       if(algs[ialg].Contains("calo"))
-         cc->GetYaxis()->SetRangeUser(0.90,2.5);
+         cc[hstr]->GetYaxis()->SetRangeUser(0.90,2.5);
       else
-         cc->GetYaxis()->SetRangeUser(0.90,1.8);
-      cc->SetFillColor(30);
-      cc->SetFillStyle(3001);
+         cc[hstr]->GetYaxis()->SetRangeUser(0.90,1.8);
+      if(!normAlg.IsNull())
+         cc[hstr]->GetYaxis()->SetRangeUser(0.90,1.1);
+      cc[hstr]->SetFillColor(30);
+      cc[hstr]->SetFillStyle(3001);
 
       //Set marker colors and styles
-      cc->SetMarkerSize(0.7);
-      cc->SetMarkerStyle(markers[ialg]);
-      cc->SetMarkerColor(colors[ialg]);
-      cc->SetLineColor(colors[ialg]);
+      cc[hstr]->SetMarkerSize(0.7);
+      if(!normAlg.IsNull() && ialg>0) {
+        cc[hstr]->SetMarkerStyle(markers[ialg-1]);
+        cc[hstr]->SetMarkerColor(colors[ialg-1]);
+        cc[hstr]->SetLineColor(colors[ialg-1]);
+      }
+      else {
+        cc[hstr]->SetMarkerStyle(markers[ialg]);
+        cc[hstr]->SetMarkerColor(colors[ialg]);
+        cc[hstr]->SetLineColor(colors[ialg]);
+      }
 
-      if(ialg == 0)
-         cc->Draw("P");
-      else
-         cc->Draw("Psame");
+      if(!normAlg.IsNull() && ialg!=0) {
+        //cout << hstr << " is being divided by " << normHSTR.back() << endl;
+        cc[hstr]->Divide(cc[normHSTR.back()]);
+      }
+
+      if( (ialg == 0 && normAlg.IsNull()) || (ialg==1 && !normAlg.IsNull()) ) {
+         cc[hstr]->Draw("P");
+      }
+      else if (ialg == 0 && !normAlg.IsNull()) {
+         continue;
+      }
+      else {
+         cc[hstr]->Draw("Psame");
+      }
 
       //Create a pave indicating the algorithm name
-      TString algNameLong = getAlgNameLong(algs[ialg]);
-      legs.back()->AddEntry(cc,algNameLong,"p");
+      if ( (normAlg.IsNull()) || (ialg>0 && !normAlg.IsNull()) ) {
+        if(allAlgsSame)
+          legs.back()->AddEntry(cc[hstr],getAlgNameLong(algs[ialg],2),"p");
+        else
+          legs.back()->AddEntry(cc[hstr],getAlgNameLong(algs[ialg]),"p");
+      }
     }//for alg
 
     //pave->Draw("same");
     legs.back()->Draw("same");
     cmsPrelim();
   }//for pt bins
-  
+
+  algs.erase(algs.begin());
+
   // return the canvas
   return ove;
 
@@ -680,7 +753,7 @@ TCanvas * getCorrectionVsPtComparisonCanvasTDR(vector<TString>& algs, vector<pai
 
     ovp->cd(c+1)->SetLogx(1);
 
-    legs.push_back(new TLegend(0.15,0.5,0.85,0.9));
+    legs.push_back(new TLegend(0.20,0.5,0.85,0.9));
     legs.back()->SetTextSize(0.04);
     legs.back()->SetBorderSize(0);
     legs.back()->SetFillColor(0);
@@ -940,23 +1013,31 @@ string getAlias(TString s)
 }
 
 //______________________________________________________________________________
-TString getAlgNameLong(TString algo) {
+//coneSize = 0 the entire name
+//coneSize = 1 no cone size
+//coneSize = 2 only cone size
+TString getAlgNameLong(TString algo, int coneSize) {
   TString algNameLong;
 
-  if(algo.Contains("ak"))        algNameLong += "Anti-kT";
-  if(algo.Contains("3"))         algNameLong += " R=0.3";
-  else if(algo.Contains("4"))    algNameLong += " R=0.4";
-  else if(algo.Contains("5"))    algNameLong += " R=0.5";
-  else if(algo.Contains("6"))    algNameLong += " R=0.6";
-  else if(algo.Contains("7"))    algNameLong += " R=0.7";
-  else if(algo.Contains("8"))    algNameLong += " R=0.8";
-  else if(algo.Contains("9"))    algNameLong += " R=0.9";
-  else if(algo.Contains("10"))   algNameLong += " R=1.0";
-  if(algo.Contains("pfchs"))     algNameLong += ", PFlow+CHS";
-  //else if(algo.Contains("pf"))   algNameLong += ", PFlow";
-  else if(algo.Contains("pf"))   algNameLong += ", Particle-Flow Jets";
-  else if(algo.Contains("calo")) algNameLong += ", Calo";
-  else if(algo.Contains("jpt"))  algNameLong += ", JPT";
+  if (coneSize<2)
+    if(algo.Contains("ak"))        algNameLong += "Anti-kT";
+  if(coneSize==0 || coneSize==2) {
+    if(algo.Contains("3"))         algNameLong += " R=0.3";
+    else if(algo.Contains("4"))    algNameLong += " R=0.4";
+    else if(algo.Contains("5"))    algNameLong += " R=0.5";
+    else if(algo.Contains("6"))    algNameLong += " R=0.6";
+    else if(algo.Contains("7"))    algNameLong += " R=0.7";
+    else if(algo.Contains("8"))    algNameLong += " R=0.8";
+    else if(algo.Contains("9"))    algNameLong += " R=0.9";
+    else if(algo.Contains("10"))   algNameLong += " R=1.0";
+  }
+  if(coneSize<2) {
+    if(algo.Contains("pfchs"))     algNameLong += ", PFlow+CHS";
+    //else if(algo.Contains("pf"))   algNameLong += ", PFlow";
+    else if(algo.Contains("pf"))   algNameLong += ", Particle-Flow Jets";
+    else if(algo.Contains("calo")) algNameLong += ", Calo";
+    else if(algo.Contains("jpt"))  algNameLong += ", JPT";
+  }
 
   return algNameLong;
 }

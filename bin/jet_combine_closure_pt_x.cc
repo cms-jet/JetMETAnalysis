@@ -5,9 +5,9 @@
 //            10/18/2011 Alexx Perloff  <aperloff@physics.tamu.edu>
 ///////////////////////////////////////////////////////////////////
 
-#include "JetMETAnalysis/JetAnalyzers/interface/Settings.h"
 #include "JetMETAnalysis/JetAnalyzers/interface/Style.h"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
+#include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
 
 #include "TROOT.h"
 #include "TSystem.h"
@@ -61,7 +61,7 @@ int main(int argc,char**argv)
   TString         flavor       = cl.getValue<TString>  ("flavor",           "");
   vector<TString> paths        = cl.getVector<TString> ("paths",            "");
   TString         outputDir    = cl.getValue<TString>  ("outputDir",  "images");
-  TString         outputFormat = cl.getValue<TString>  ("outputFormat", ".png");
+  vector<TString> outputFormat = cl.getVector<TString> ("outputFormat", ".png:::.eps:::.pdf");
   bool            combinePU    = cl.getValue<bool>     ("combinePU",     false);
   TString         divByNPU0    = cl.getValue<TString>  ("divByNPU0",        "");
   bool            tdr          = cl.getValue<bool>     ("tdr",           false);
@@ -128,11 +128,19 @@ int main(int argc,char**argv)
   line->SetLineColor(1);
   line->SetLineWidth(1);
   line->SetLineStyle(2);
-  TF1 *linePlus = new TF1("linePlus","0*x+1.02",0,5000);
+  TF1 *linePlus;
+  if(tdr)
+     linePlus = new TF1("linePlus","0*x+1.01",0,5000);
+  else
+     linePlus = new TF1("linePlus","0*x+1.02",0,5000);
   linePlus->SetLineColor(1);
   linePlus->SetLineWidth(1);
   linePlus->SetLineStyle(2);
-  TF1 *lineMinus = new TF1("lineMinus","0*x+0.98",0,5000);
+  TF1 *lineMinus;
+  if(tdr)
+     lineMinus = new TF1("lineMinus","0*x+0.99",0,5000);
+  else
+     lineMinus = new TF1("lineMinus","0*x+0.98",0,5000);
   lineMinus->SetLineColor(1);
   lineMinus->SetLineWidth(1);
   lineMinus->SetLineStyle(2);
@@ -167,8 +175,14 @@ int main(int argc,char**argv)
   //
   for(int j=0;j<3;j++)
     {
-      leg.push_back(new TLegend(0.7,0.8,1.0,1.0));
-      pave[j] = new TPaveText(0.3,0.9,0.8,1.0,"NDC");
+      if(tdr)
+         leg.push_back(new TLegend(0.7,0.7,0.88,0.9));
+      else
+         leg.push_back(new TLegend(0.7,0.8,1.0,1.0));
+      if(tdr)
+         pave[j] = new TPaveText(0.3,0.8,0.8,0.9,"NDC");
+      else
+         pave[j] = new TPaveText(0.3,0.9,0.8,1.0,"NDC");
       pave[j]->AddText(Text[j]);      
       sprintf(name,"ClosureVsPt_%d",j);
       TString ss(name);
@@ -256,8 +270,9 @@ int main(int argc,char**argv)
           //if (a>=4) hClosure[j][4]->Draw("same");
           hClosure[j][a]->Write();
 
-          if(combinePU) leg[j]->AddEntry(hClosure[j][a],puLabelsVec[a]+"_"+algs[a/paths.size()],"le");
-          else leg[j]->AddEntry(hClosure[j][a],algs[a/paths.size()],"le");
+          if(combinePU) leg[j]->AddEntry(hClosure[j][a],puLabelsVec[a]+"_"+algs[a/paths.size()],"lep");
+          //else leg[j]->AddEntry(hClosure[j][a],algs[a/paths.size()],"lep");
+          else leg[j]->AddEntry(hClosure[j][a],JetInfo::get_legend_title(string(algs[a/paths.size()]),true).c_str(),"lep");
         }
       line->Draw("same");
       linePlus->Draw("same");
@@ -271,9 +286,10 @@ int main(int argc,char**argv)
       leg[j]->SetLineColor(0);
       leg[j]->Draw("same");
       if (tdr) cmsPrelim();
-      can[j]->SaveAs(outputDir+ss+outputFormat);
       can[j]->Write();
-
+      for(unsigned int iformat=0; iformat<outputFormat.size(); iformat++) {
+         can[j]->SaveAs(outputDir+ss+outputFormat[iformat]);
+      }
     }
   outf->Close();
   
@@ -292,12 +308,12 @@ void cmsPrelim(double intLUMI)
   latex.SetTextSize(0.04);
 
   latex.SetTextAlign(31); // align right
-  latex.DrawLatex(0.93,0.96,"#sqrt{s} = 7 TeV");
+  latex.DrawLatex(0.93,0.96,"#sqrt{s} = 8 TeV");
   if (LUMINOSITY > 0.) {
     latex.SetTextAlign(31); // align right
     //latex.DrawLatex(0.82,0.7,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //Original
     latex.DrawLatex(0.65,0.85,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //29/07/2011
   }
   latex.SetTextAlign(11); // align left
-  latex.DrawLatex(0.16,0.96,"CMS preliminary 2012");
+  latex.DrawLatex(0.16,0.96,"CMS preliminary 2014");
 }

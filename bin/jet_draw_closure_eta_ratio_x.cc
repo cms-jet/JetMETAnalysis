@@ -463,12 +463,12 @@ string get_legend_title(const string& alg)
 {
   string title;
   string tmp(alg);
-  if      (alg.find("kt")==0) { title = "k_{T}, D=";      tmp = tmp.substr(2); }
+  if      (alg.find("kt")==0) { title = "k_{T}, R=";      tmp = tmp.substr(2); }
   else if (alg.find("sc")==0) { title = "SISCone, R=";    tmp = tmp.substr(2); }
   else if (alg.find("ic")==0) { title = "ItCone, R=";     tmp = tmp.substr(2); }
   else if (alg.find("mc")==0) { title = "MidCone. R=";    tmp = tmp.substr(2); }
-  else if (alg.find("ca")==0) { title = "Cam/Aachen, D="; tmp = tmp.substr(2); }
-  else if (alg.find("ak")==0) { title = "Anti k_{T}, D="; tmp = tmp.substr(2); }
+  else if (alg.find("ca")==0) { title = "Cam/Aachen, R="; tmp = tmp.substr(2); }
+  else if (alg.find("ak")==0) { title = "Anti k_{T}, R="; tmp = tmp.substr(2); }
   else return alg;
   
   string reco[9] = { "gen", "caloHLT", "calo", "pfHLT", "pfchsHLT", "pfchs", "pf", "trk", "jpt" };
