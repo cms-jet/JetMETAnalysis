@@ -78,6 +78,7 @@ int main(int argc,char**argv)
   bool           batch     = cl.getValue<bool>    ("batch",      false);
   bool           l2l3      = cl.getValue<bool>    ("l2l3",       false);
   bool           mpv       = cl.getValue<bool>    ("mpv",        false);
+  bool           delphes   = cl.getValue<bool>    ("delphes",    false);
 
   if (!cl.check()) return 0;
   cl.print();
@@ -292,8 +293,14 @@ int main(int argc,char**argv)
                 //
                 // offline
                 //
-                else
-                   fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",xmin,xmax);
+                else {
+                   TString fcn = "[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))";
+                   if(delphes) {
+                      //fcn = "[0]+[1]*log10(x)+[2]*pow(log10(x),2)+[3]*pow(log10(x),3)+[4]*pow(log10(x),4)+[5]*pow(log10(x),5)+[6]*pow(log10(x),6)+[7]*pow(log10(x),7)+[8]*pow(log10(x),8)+[9]*pow(log10(x),9)";
+                     fcn = "[0]+[1]*log10(x)+[2]*pow(log10(x),2)+([3]/pow(log10(x),3))+([4]/pow(log10(x),4))+([5]/pow(log10(x),5))";
+                   }
+                   fabscor=new TF1("fit",fcn.Data(),xmin,xmax);
+                }
                 
                 fabscor->SetParameter(0,0.5);
                 fabscor->SetParameter(1,9.0);
@@ -466,7 +473,7 @@ int main(int argc,char**argv)
        else grelcor = vrelcor_eta[ieta]; //For L2 & L3 Corrections Separate
        TF1* frelcor = (TF1*)grelcor->GetListOfFunctions()->First();
        if(frelcor!=0) {
-         if(ieta==0) fout<<"{1 JetEta 1 JetPt "<<frelcor->GetExpFormula()<<" Correction L2Relative}"<<endl;
+         if(ieta==0 || (ieta==1 && delphes)) fout<<"{1 JetEta 1 JetPt "<<frelcor->GetExpFormula()<<" Correction L2Relative}"<<endl;
          double  etamin  = hl_jetpt.minimum(0,ieta);
          double  etamax  = hl_jetpt.maximum(0,ieta);
          double  ptmin = grelcor->GetX()[0];
