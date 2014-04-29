@@ -132,7 +132,11 @@ TCanvas * getCanvasFromFittingProcedure(TString cname , TProfile2D * prof, TStri
 TH1 * getResolutionHistoFromHisto(TString cname, TString title, TH2 * histo_in){
 
    // make an empty copy to fill and return
-   TH1 * histo = histo_in->ProjectionX(cname);
+   TH1 * histo = 0;
+   if(histo_in)
+      histo = histo_in->ProjectionX(cname);
+   else
+      return histo;
    histo->Reset();
    //histo->Clear();
    histo->GetYaxis()->SetTitle(title);
@@ -254,7 +258,7 @@ TH1 * getResolutionHistoFromHisto_v2(TString cname, TString title, TH2 * histo_i
          TFitResultPtr fr2= aux2->Fit("gaus","0qS");
          //cout <<cname<<"Here2"<<endl;
          // Skip if fit failed
-         if (!fr->Status() && !fr2->Status()){
+         if (fr.Get() && fr2.Get() && !fr->Status() && !fr2->Status()){
             double mean    = fr->Parameter(1);
             double meanerr = fr->ParError(1);
             //double rms     = fr->Parameter(2);
@@ -292,7 +296,11 @@ TH1 * getResolutionHistoFromHisto_v2(TString cname, TString title, TH2 * histo_i
 TH1 * getMeanHistoFromHisto(TString cname, TString title, TH2 *off_in,double & maxy){
 
    // make an empty copy to fill and return
-   TH1 * histo = off_in->ProjectionX(cname);
+   TH1 * histo = 0;
+   if(off_in)
+      histo = off_in->ProjectionX(cname);
+   else
+      return histo;
    histo->Reset();
    //histo->Clear();
    histo->GetYaxis()->SetTitle(title);
@@ -310,10 +318,10 @@ TH1 * getMeanHistoFromHisto(TString cname, TString title, TH2 *off_in,double & m
       if (aux->GetEntries() > 0) {
 
          TFitResultPtr fr = aux->Fit("gaus","0qS");
-         //cout <<cname<<"Here1"<<endl;
+         //cout << cname << "sfsg1\tnb=" << nb << endl;
 
          // Skip if fit failed
-         if (!fr->Status()){
+         if (fr.Get() && !fr->Status()){
             double mean    = fr->Parameter(1);
             double meanerr = fr->ParError(1);
             //double rms     = fr->Parameter(2);
@@ -347,7 +355,11 @@ TH1 * getMeanHistoFromHisto(TString cname, TString title, TH2 *off_in,double & m
 TH1 * getMeanOverBinCenterHistoFromHisto(TString cname, TString title, TH2 *off_in,double & maxy){
 
    // make an empty copy to fill and return
-   TH1 * histo = off_in->ProjectionX(cname);
+   TH1 * histo = 0;
+   if(off_in)
+      histo = off_in->ProjectionX(cname);
+   else
+      return histo;
    histo->Reset();
    //histo->Clear();
    histo->GetYaxis()->SetTitle(title);
@@ -368,7 +380,7 @@ TH1 * getMeanOverBinCenterHistoFromHisto(TString cname, TString title, TH2 *off_
          //cout <<cname<<"Here1"<<endl;
 
          // Skip if fit failed
-         if (!fr->Status()){
+         if (fr.Get() && !fr->Status()){
             double mean    = fr->Parameter(1);
             double meanerr = fr->ParError(1);
             //double rms     = fr->Parameter(2);
@@ -456,6 +468,11 @@ TCanvas * getCanvasResolution(TString cname, TString algo, TString title, TH2 * 
          hh[j] = getResolutionHistoFromHisto(hname, title, prof[j]);
       else
          hh[j] = getResolutionHistoFromHisto_v3(hname, title, prof[j]);
+   }
+   if(!hh[0]) {
+      cout << "WARNING::getCanvasResolution histogram hh[0] was not set by getResolutionHistoFromHisto." << endl
+           << "Returning blank histogram." << endl;
+      return c;
    }
    setHistoColor(hh[0],colNpv0);
    setHistoColor(hh[1],colNpv5);
@@ -664,6 +681,11 @@ TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, TH2 * o
       hname += Form("_%i",j);
       hh[j] = getMeanHistoFromHisto(hname, ctitle, off[j],maxy);
    }
+   if(!hh[0]) {
+      cout << "WARNING::getCanvasResolution histogram hh[0] was not set by getMeanHistoFromHisto." << endl
+           << "Returning blank histogram." << endl;
+      return c;
+   }
    setHistoColor(hh[0],colNpv0);
    setHistoColor(hh[1],colNpv5);
    setHistoColor(hh[2],colNpv10);
@@ -756,6 +778,11 @@ TCanvas * getGausMeanOffsetWithSum(TString cname, TString ctitle, TString algo, 
    TString hname = cname;
    hname += Form("_6");
    hh = getMeanHistoFromHisto(hname, ctitle, sum, maxy);
+   if(!hh) {
+      cout << "WARNING::getCanvasResolution histogram hh was not set by getMeanHistoFromHisto." << endl
+           << "Returning basic canvas." << endl;
+      return baseCanvas;
+   }
    setHistoColor(hh,1);
 
    hh->Draw("sameE");
@@ -804,6 +831,11 @@ TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo
       hname += Form("_%i",j);
       hh[j] = getMeanOverBinCenterHistoFromHisto(hname, ctitle, off[j],maxy);
 
+   }
+   if(!hh[0]) {
+      cout << "WARNING::getCanvasResolution histogram hh[0] was not set by getMeanOverBinCenterHistoFromHisto." << endl
+           << "Returning blank canvas." << endl;
+      return c;
    }
    setHistoColor(hh[0],colNpv0);
    setHistoColor(hh[1],colNpv5);
