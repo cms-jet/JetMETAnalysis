@@ -15,6 +15,7 @@
 #include "TCanvas.h"
 #include "TGraph.h"
 #include "TGraphErrors.h"
+#include "TMultiGraph.h"
 #include "TF1.h"
 #include "TLegend.h"
 #include "TString.h"
@@ -62,7 +63,6 @@ int main(int argc,char**argv)
   TString     outputDir    = cl.getValue<TString> ("outputDir",  "images");
   TString     outputFormat = cl.getValue<TString> ("outputFormat", ".png");
   TString     absOrRelCor  = cl.getValue<TString> ("absOrRelCor",   "Abs");
-  bool        sameCanvas   = cl.getValue<bool>    ("sameCanvas",     true);
   
   if (!cl.check()) return 0;
   cl.print();
@@ -76,84 +76,69 @@ int main(int argc,char**argv)
   //
   // catch incorrect graph names
   //
-  if(absOrRelCor.CompareTo("Abs")!=0 && absOrRelCor.CompareTo("Rel")!=0)
-    {
-      cout << "The variable absOrRelCor did not equal either \"Abs\" or \"Rel\"." << endl 
-           << "The variable must be equal to one of those choices. Please try again." << endl 
-           << "The program will now exit." << endl;
-      return 0;
-    }
+  if(absOrRelCor.CompareTo("Abs")!=0 && absOrRelCor.CompareTo("Rel")!=0) {
+    cout << "The variable absOrRelCor did not equal either \"Abs\" or \"Rel\"." << endl 
+         << "The variable must be equal to one of those choices. Please try again." << endl 
+         << "The program will now exit." << endl;
+    return 0;
+  }
 
   //
   // Open the file containing the l2 graphs
   //
   TFile* file = new TFile(path+filename,"READ");
   TDirectoryFile *idir = (TDirectoryFile*)file->Get(alg);
-  vector<TCanvas*> cans;
   vector<TGraphErrors*> graphs;
-  TLegend* leg = new TLegend(0.65,0.6,1.0,0.8);
-  int overviewList[12] = {0,6,11,18,29,40,41,52,63,70,75,81};
+  vector<TMultiGraph*> mgs;
+  vector<TLegend*> legs;
+  TCanvas* can = new TCanvas("can","can",1200,800);
+  can->Divide(4,3);
+  int ican = 1;
+  int ngpc = 7;
+  TString axisDrawn = "";
 
-  if(sameCanvas) cans.push_back(new TCanvas("can","can",1200,800));
-  TCanvas *ove = new TCanvas("can_overview","can_overview",1200,800);
-  ove->Divide(4,3);
+  for(int i=0; i<NETA; i++) {
+    cout << "Doing eta " << i << " ... "<< endl;
+    if(i%ngpc == 0) {
+      cout << "\tDoing canvas " << ican << " ... " << endl;
+      can->cd(ican++)->SetLogx();
+      legs.push_back(new TLegend(0.40,0.15,0.9,0.45));
+      legs.back()->SetFillColor(0);
+      legs.back()->SetFillStyle(0);
+      legs.back()->SetBorderSize(0);
+      //legs.back()->AddEntry((TObject*)0,Form("%sCorVsJetPt_JetEta",absOrRelCor.Data()),"");
+      legs.back()->SetHeader(Form("%sCorVsJetPt_JetEta",absOrRelCor.Data()));
+      legs.back()->SetNColumns(2);
+      mgs.push_back(new TMultiGraph(Form("mg%i",ican-1),Form("mg%i",ican-1)));
+    }
 
-  for(int i=0; i<NETA; i++)
-    {
-      if(!sameCanvas && i%12 == 0)
-        {
-          cans.push_back(new TCanvas(concatString("can_",i/12).c_str(),concatString("can_",i/12).c_str(),800,800));
-          cans.back()->Divide(4,3);
-        }
-
-      //
-      // read in original L2 graphs
-      //
-      TString graphName = absOrRelCor+"CorVsJetPt_JetEta" + eta_boundaries[i] + "to" + eta_boundaries[i+1];
-      graphs.push_back((TGraphErrors*)idir->Get(graphName));
-      if(graphs.back() == 0) continue;
-
+    //
+    // read in original L2 graphs
+    //
+    TString graphName = absOrRelCor+"CorVsJetPt_JetEta" + eta_boundaries[i] + "to" + eta_boundaries[i+1];
+    graphs.push_back((TGraphErrors*)idir->Get(graphName));
+    if(graphs.back() == 0 && i%ngpc==0) axisDrawn = "A";
+    else axisDrawn = "";
+    if(graphs.back() == 0) {
+      cout << "WARNING::Could not find graph " << graphName << endl;
+    }
+    else {
       //
       // draw and format graphs
       //
-      if(!sameCanvas)
-        {
-          cans.back()->cd((i%12)+1)->SetLogx();
-          graphs.back()->Draw("AP");
-        }
-      else if(sameCanvas && i==0)
-        {
-          cans.back()->cd()->SetLogx();
-          graphs.back()->Draw("AP");
-        }
-      else
-        {
-          graphs.back()->SetMarkerColor(i+1);
-          graphs.back()->GetFunction("fit")->SetLineColor(i+1);
-          graphs.back()->Draw("P");
-        }
-
-      //
-      // draw overview canvas (specific graphs)
-      //
-      for(unsigned int j=0; j<12; j++)
-        {
-          if(i==overviewList[j])
-            {
-              ove->cd(j+1)->SetLogx();
-              graphs.back()->Draw("AP");
-            } 
-        }
-
+      graphs.back()->SetMarkerColor(i%ngpc+1);
+      graphs.back()->SetLineColor(i%ngpc+1);
+      graphs.back()->GetFunction("fit")->SetLineColor(i%ngpc+1);
       graphs.back()->SetTitle(graphName);
-      leg->AddEntry(graphs.back(),graphs.back()->GetName(),"le");
+      mgs.back()->Add(graphs.back());
+      legs.back()->AddEntry(graphs.back(),Form("%sto%s",eta_boundaries[i],eta_boundaries[i+1]),"l");
     }
 
-  if(sameCanvas)
-    {
-      leg->SetFillColor(0);
-      leg->Draw();
+    if((i+1)%ngpc == 0 || i==NETA-1) {
+      mgs.back()->Draw("AP");
+      legs.back()->Draw("same");
     }
+  }
 
   //
   // Open/create the output directory and file
@@ -166,14 +151,8 @@ int main(int argc,char**argv)
   //
   // save output
   //
-  for(unsigned int i=0; i<cans.size(); i++)
-    {
-      string canName = cans[i]->GetName();
-      cans[i]->SaveAs(outputDir+"L2"+absOrRelCor+"CorGraphs_"+alg+"_"+canName+outputFormat);
-      cans[i]->Write();
-    }
-  ove->SaveAs(outputDir+"L2"+absOrRelCor+"CorGraphs_"+alg+"_Overview"+outputFormat);
-  ove->Write();
-
+  string canName = can->GetName();
+  can->SaveAs(outputDir+"L2"+absOrRelCor+"CorGraphs_"+alg+outputFormat);
+  can->Write();
   outf->Close();
 }
