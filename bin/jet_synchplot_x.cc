@@ -151,6 +151,9 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
 //   TProfile3D	*	p_PtAve_etaVsN_RVsJetPt	=	(	TProfile3D	* )	fin->Get("p_PtAve_etaVsN_RVsJetPt");
    TH2F	*	p_npvVsOff	=	(	TH2F	* )	fin->Get("p_npvVsOff");
    TH2F	*	p_rhoVsOff	=	(	TH2F	* )	fin->Get("p_rhoVsOff");
+   TProfile * p_rhoVsRho   = ( TProfile * ) fin->Get("p_rhoVsRho");
+   TProfile * p_npvVsNpv   = ( TProfile * ) fin->Get("p_npvVsNpv");
+   TProfile * p_tnpuVsTnpu = ( TProfile * ) fin->Get("p_tnpuVsTnpu");
    TH2D	*	p_offResVsrefpt_bb_chf	=	(	TH2D	* )	fin->Get("p_offResVsrefpt_bb_chf");
    TH2D	*	p_offResVsrefpt_bb_nhf	=	(	TH2D	* )	fin->Get("p_offResVsrefpt_bb_nhf");
    TH2D	*	p_offResVsrefpt_bb_nef	=	(	TH2D	* )	fin->Get("p_offResVsrefpt_bb_nef");
@@ -868,7 +871,43 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
    leg->AddEntry(p_rhoVsOff_prof," Rho ","lep");
    leg->Draw();
   
-  
+   // Profiles of npv, rho, tnpu vs themselves
+   c = new TCanvas("XVsX","XVsX {x=N_{PV},#rho,TNPU}",1200,400);
+   c->Divide(3,1);
+   c->cd(1);
+   p_npvVsNpv->SetErrorOption("s");
+   setHistoColor(p_npvVsNpv,colPU);
+   p_npvVsNpv->Draw("E1");
+   p_npvVsNpv->GetYaxis()->SetRangeUser(0,45);
+   //p_npvVsNpv->GetYaxis()->SetTitle("<X> #pm #sigma(X)");
+   leg = new TLegend(0.2,0.72,0.4,0.92);
+   leg->SetFillColor(0);
+   leg->SetBorderSize(0);
+   leg->AddEntry(p_npvVsNpv," N_{PV}","lep");
+   leg->Draw();
+   c->cd(2);
+   p_rhoVsRho->SetErrorOption("s");
+   setHistoColor(p_rhoVsRho,colPU);
+   p_rhoVsRho->Draw("E1");
+   p_rhoVsRho->GetYaxis()->SetRangeUser(0,45);
+   //p_rhoVsRho->GetYaxis()->SetTitle("<X> #pm #sigma(X)");
+   leg = new TLegend(0.2,0.72,0.4,0.92);
+   leg->SetFillColor(0);
+   leg->SetBorderSize(0);
+   leg->AddEntry(p_rhoVsRho," #rho","lep");
+   leg->Draw();
+   c->cd(3);
+   p_tnpuVsTnpu->SetErrorOption("s");
+   setHistoColor(p_tnpuVsTnpu,colPU);
+   p_tnpuVsTnpu->Draw("E1");
+   p_tnpuVsTnpu->GetYaxis()->SetRangeUser(0,45);
+   //p_tnpuVsTnpu->GetYaxis()->SetTitle("<X> #pm #sigma(X)");
+   leg = new TLegend(0.2,0.72,0.4,0.92);
+   leg->SetFillColor(0);
+   leg->SetBorderSize(0);
+   leg->AddEntry(p_tnpuVsTnpu," TNPU","lep");
+   leg->Draw();
+
    //
    //	2D plot of npv vs offset PU
    //
@@ -1173,7 +1212,8 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
    hResRho[4] = p_nopuresVsrefpt_bb_rho20_24;
    hResRho[5] = p_nopuresVsrefpt_bb_rho25_29;
    c = getCanvasResolution("ResolutionRhoNoPU_BB",algo, "#sigma(p_{T}^{nopu}/p_{T}^{ref})/<p_{T}^{nopu}/p_{T}^{ref}>",hResRho,0);
-   c->Draw();
+   if(c)
+      c->Draw();
 
    hResRho[0] = p_nopuresVsrefpt_ei_rho0_4  ;
    hResRho[1] = p_nopuresVsrefpt_ei_rho5_9  ;
