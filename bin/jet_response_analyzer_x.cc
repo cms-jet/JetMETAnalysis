@@ -78,19 +78,28 @@ void fill_histo(int pdgid,float value,float weight,float x,float y,
 bool contains(const vector<string>& collection,const string& element);
 
 /// check the amount of IT pileup and see if it is in the specified range
-bool it_pileup(int itlow, int ithigh, vector<int>* npus);
+bool it_pileup(int itlow, int ithigh, vector<int>* npus, int iIT);
 
 /// check the amount of OOT pileup before nad after the event and see if it is in the specified range
 bool oot_pileup(int earlyootlow, int earlyoothigh, int lateootlow, int lateoothigh,
-                vector<int>* npus);
+                vector<int>* npus, int iIT);
 
 /// check the sum of the OOT pileup before and after the event and see if it is in the specified range
-bool total_oot_pileup(int totalootlow, int totaloothigh, vector<int>* npus);
+bool total_oot_pileup(int totalootlow, int totaloothigh, vector<int>* npus, int iIT);
 
 /// combines the booleans from the IT, OOT, and TotalOOT functions into one boolean
 bool pileup_cut(int itlow, int ithigh, int earlyootlow, int earlyoothigh, 
                 int lateootlow, int lateoothigh, int totalootlow, int totaloothigh, 
-                vector<int>* npus);
+                vector<int>* npus, vector<int>* bxns);
+
+/// returns the index in bxns, npus, and tnpus that corresponds to the IT PU
+int itIndex(vector<int>* bxns);
+
+/// returns the number of PUs before the index iIT (i.e. the current BX index)
+double sumEOOT(vector<int>* npus, unsigned int iIT);
+
+/// returns the number of PUs after the index iIT (i.e. the current BX index)
+double sumLOOT(vector<int>* npus, unsigned int iIT);
 
 //______________________________________________________________________________
 int main(int argc,char**argv)
@@ -264,6 +273,7 @@ int main(int argc,char**argv)
     float jty[100];
     float refdrjt[100];
     float refdphijt[100];
+    vector<int>* bxns = new vector<int>;
     vector<int>* npus = new vector<int>;
     vector<float>* tnpus = new vector<float>;
     
@@ -277,6 +287,7 @@ int main(int argc,char**argv)
     tree->SetBranchAddress("jteta",   jteta);
     tree->SetBranchAddress("jtphi",   jtphi);
     tree->SetBranchAddress("jty",     jty);
+    tree->SetBranchAddress("bxns",    &bxns);
     tree->SetBranchAddress("npus",    &npus);
     tree->SetBranchAddress("tnpus",   &tnpus);
     if (xsection>0.0) { weight = xsection/tree->GetEntries(); useweight = false; }
@@ -1006,7 +1017,7 @@ int main(int argc,char**argv)
           if (jtpt[iref]<jtptmin) continue;
 
           if (!pileup_cut(itlow,ithigh,earlyootlow,earlyoothigh,lateootlow,lateoothigh,
-                             totalootlow,totaloothigh,npus)) continue;
+                          totalootlow,totaloothigh,npus,bxns)) continue;
 
           float eta    =
             (binseta.size()&&binseta.front()>=0.)?std::abs(jteta[iref]):jteta[iref];
@@ -1045,7 +1056,7 @@ int main(int argc,char**argv)
           else
              flavorWeight = weight;
           if(!MCPUReWeighting.IsNull() && !DataPUReWeighting.IsNull()) {
-             double LumiWeight = LumiWeights_.weight((*tnpus)[1]);
+             double LumiWeight = LumiWeights_.weight((*tnpus)[itIndex(bxns)]);
              //if (ievt<10)
              //   cout << "LumiWeight = " << LumiWeight << "\tweight (before) = "<< weight;
              weight *= LumiWeight;
@@ -1575,27 +1586,28 @@ bool contains(const vector<string>& collection,const string& element)
 
 
 //______________________________________________________________________________
-bool it_pileup(int itlow, int ithigh, vector<int>* npus)
+bool it_pileup(int itlow, int ithigh, vector<int>* npus, int iIT)
 {
-  if((*npus)[1]>=itlow && (*npus)[1]<=ithigh) return true;
+   if((*npus)[iIT]>=itlow && (*npus)[iIT]<=ithigh) return true;
   return false;
 }
 
 
 //______________________________________________________________________________
 bool oot_pileup(int earlyootlow, int earlyoothigh, int lateootlow, int lateoothigh,
-                vector<int>* npus)
+                vector<int>* npus, int iIT)
 {
-  if((*npus)[0]>=earlyootlow && (*npus)[0]<=earlyoothigh && 
-     (*npus)[2]>=lateootlow && (*npus)[2]<=lateoothigh) return true;
+  if(sumEOOT(npus,iIT)>=earlyootlow && sumEOOT(npus,iIT)<=earlyoothigh && 
+     sumLOOT(npus,iIT)>=lateootlow && sumLOOT(npus,iIT)<=lateoothigh) return true;
   return false;
 }
 
 
 //______________________________________________________________________________
-bool total_oot_pileup(int totalootlow, int totaloothigh, vector<int>* npus)
+bool total_oot_pileup(int totalootlow, int totaloothigh, vector<int>* npus, int iIT)
 {
-  if((*npus)[0]+(*npus)[2]>=totalootlow && (*npus)[0]+(*npus)[2]<=totaloothigh) return true;
+  double sumOOT = sumEOOT(npus,iIT)+sumLOOT(npus,iIT);
+  if(sumOOT>=totalootlow && sumOOT<=totaloothigh) return true;
   return false;
 }
 
@@ -1603,10 +1615,39 @@ bool total_oot_pileup(int totalootlow, int totaloothigh, vector<int>* npus)
 //______________________________________________________________________________
 bool pileup_cut(int itlow, int ithigh, int earlyootlow, int earlyoothigh, 
                 int lateootlow, int lateoothigh, int totalootlow, int totaloothigh, 
-                vector<int>* npus)
+                vector<int>* npus, vector<int>* bxns)
 {
-  if(it_pileup(itlow,ithigh,npus) && 
-     total_oot_pileup(totalootlow,totaloothigh,npus) && 
-     oot_pileup(earlyootlow,earlyoothigh,lateootlow,lateoothigh,npus)) return true;
+  int iIT = itIndex(bxns);
+  if(it_pileup(itlow,ithigh,npus,iIT) && 
+     total_oot_pileup(totalootlow,totaloothigh,npus,iIT) && 
+     oot_pileup(earlyootlow,earlyoothigh,lateootlow,lateoothigh,npus,iIT)) return true;
   return false;
+}
+
+//______________________________________________________________________________
+int itIndex(vector<int>* bxns) {
+   for(unsigned int ibx=0; ibx<(*bxns).size(); ibx++) {
+      if((*bxns)[ibx]==0) return ibx;
+   }
+   return -1;
+}
+
+//______________________________________________________________________________
+double sumEOOT(vector<int>* npus, unsigned int iIT) {
+   if(iIT>(*npus).size()-1) return 0;
+   double sum = 0;
+   for(unsigned int ipu=0; ipu<iIT; ipu++) {
+      sum+=(*npus)[ipu];
+   }
+   return sum;
+}
+
+//______________________________________________________________________________
+double sumLOOT(vector<int>* npus, unsigned int iIT) {
+   if(iIT>(*npus).size()-1) return 0;
+   double sum = 0;
+   for(unsigned int ipu=(*npus).size()-1; ipu>iIT; ipu--) {
+      sum+=(*npus)[ipu];
+   }
+   return sum;
 }

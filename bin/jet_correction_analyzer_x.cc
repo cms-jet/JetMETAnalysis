@@ -67,22 +67,31 @@ void makeResolutionHistogram(TH3F* RespVs_, TH1F* ResolutionVs_, TString slice, 
 void addErrorQuadrature(TProfile* hist, TProfile* ehist);
 
 /// check the amount of IT pileup and see if it is in the specified range
-bool it_pileup(int itlow, int ithigh, vector<int>* npus);
+bool it_pileup(int itlow, int ithigh, vector<int>* npus, int iIT);
 
 /// check the amount of OOT pileup before nad after the event and see if it is in the specified range
 bool oot_pileup(int earlyootlow, int earlyoothigh, int lateootlow, int lateoothigh,
-                vector<int>* npus);
+                vector<int>* npus, int iIT);
 
 /// check the sum of the OOT pileup before and after the event and see if it is in the specified range
-bool total_oot_pileup(int totalootlow, int totaloothigh, vector<int>* npus);
+bool total_oot_pileup(int totalootlow, int totaloothigh, vector<int>* npus, int iIT);
 
 /// check the sum of all of the pileup in the event and see if it is in the specified range
-bool total_pileup(int totallow, int totalhigh, vector<int>* npus);
+bool total_pileup(int totallow, int totalhigh, vector<int>* npus, int iIT);
 
 /// combines the booleans from the IT, OOT, and TotalOOT functions into one boolean
 bool pileup_cut(int itlow, int ithigh, int earlyootlow, int earlyoothigh, 
                 int lateootlow, int lateoothigh, int totalootlow, int totaloothigh, 
-                int totallow, int totalhigh, vector<int>* npus);
+                int totallow, int totalhigh, vector<int>* npus, vector<int>* bxns);
+
+/// returns the index in bxns, npus, and tnpus that corresponds to the IT PU
+int itIndex(vector<int>* bxns);
+
+/// returns the number of PUs before the index iIT (i.e. the current BX index)
+double sumEOOT(vector<int>* npus, unsigned int iIT);
+
+/// returns the number of PUs after the index iIT (i.e. the current BX index)
+double sumLOOT(vector<int>* npus, unsigned int iIT);
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -203,6 +212,7 @@ int main(int argc,char**argv)
       float refdrjt[100];
       float refdphijt[100];
       int   refpdgid[100];
+      vector<int>* bxns = new vector<int>;
       vector<int>* npus = new vector<int>;
       vector<float>* tnpus = new vector<float>;
       vector<float>* sumpt_lowpt = new vector<float>;
@@ -314,6 +324,7 @@ int main(int argc,char**argv)
       tree->SetBranchAddress("jtpt",        jtpt);
       tree->SetBranchAddress("jteta",       jteta);
       tree->SetBranchAddress("jtphi",       jtphi);
+      tree->SetBranchAddress("bxns",        &bxns);
       tree->SetBranchAddress("npus",        &npus);
       tree->SetBranchAddress("tnpus",       &tnpus);
       tree->SetBranchAddress("sumpt_lowpt", &sumpt_lowpt);
@@ -470,16 +481,17 @@ int main(int argc,char**argv)
             cout<<ievt<<endl;
          tree->GetEntry(ievt);
 
-         int npu = (*npus)[0]+(*npus)[1]+(*npus)[2];
-         int eootnpu = (*npus)[0];
-         int itnpu = (*npus)[1];
-         int lootnpu = (*npus)[2];
+         int iIT = itIndex(bxns);
+         int npu = sumEOOT(npus,iIT)+(*npus)[iIT]+sumLOOT(npus,iIT);
+         int eootnpu = (int)sumEOOT(npus,iIT);
+         int itnpu = (*npus)[iIT];
+         int lootnpu = (int)sumLOOT(npus,iIT);
          double sumpt = (*sumpt_lowpt)[1];
          if (printnpu) cout<<" ievt = "<<ievt<<"\tnpu = "<<npu<<endl;
          if (npu<min_npu) min_npu = npu;
 
          if (!pileup_cut(itlow,ithigh,earlyootlow,earlyoothigh,lateootlow,lateoothigh,
-                         totalootlow,totaloothigh,totallow,totalhigh,npus)) continue;
+                         totalootlow,totaloothigh,totallow,totalhigh,npus,bxns)) continue;
          if (dphimin>0 && abs(jtphi[0]-jtphi[1])<dphimin) continue;
 
          rhoVsRhoHLT->Fill(rho_hlt,rho);
@@ -519,7 +531,7 @@ int main(int argc,char**argv)
             if(weightHist!=0) weight = weightHist->GetBinContent(weightHist->FindBin(log10(ptgen)));
             else weight = 1;
             if(!MCPUReWeighting.IsNull() && !DataPUReWeighting.IsNull()) {
-               double LumiWeight = LumiWeights_.weight((*tnpus)[1]);
+               double LumiWeight = LumiWeights_.weight((*tnpus)[iIT]);
                weight *= LumiWeight;
             }
 
@@ -541,7 +553,7 @@ int main(int argc,char**argv)
             if(LowerDist->FindBin(scale*pt) > LowerDist->FindBin(ptgen)) LowerDist->Fill(scale*pt,weight);
             RespVsEtaVsPt->Fill(ptgen,eta,relrsp,weight);
             EtaVsPt->Fill(eta, log10(pt*scale),weight);
-            TPUDistribution->Fill((*tnpus)[1],weight);
+            TPUDistribution->Fill((*tnpus)[iIT],weight);
 
             j = getBin(ptgen,vpt,NPtBins);
             k = getBin(eta,veta,NETA);
@@ -559,9 +571,9 @@ int main(int argc,char**argv)
                   else
                      coord[2] = rho_hlt;
                   */
-                  coord[2] = (*npus)[0];
-                  coord[3] = (*npus)[1];
-                  coord[4] = (*npus)[2];
+                  coord[2] = sumEOOT(npus,iIT);
+                  coord[3] = (*npus)[iIT];
+                  coord[4] = sumLOOT(npus,iIT);
                   RespVsPileup->Fill(coord,relrsp);
                   
                   if(!algs[a].Contains("HLT"))
@@ -570,9 +582,9 @@ int main(int argc,char**argv)
                      RespVsRho->Fill(ptgen,eta,rho_hlt,relrsp);
 
                   coord2[0] = eta;
-                  coord2[1] = (*npus)[0];
-                  coord2[2] = (*npus)[1];
-                  coord2[3] = (*npus)[2];
+                  coord2[1] = sumEOOT(npus,iIT);
+                  coord2[2] = (*npus)[iIT];
+                  coord2[3] = sumLOOT(npus,iIT);
                   if(!algs[a].Contains("HLT"))
                      RhoVsPileupVsEta->Fill(coord2,rho);
                   else
@@ -589,19 +601,19 @@ int main(int argc,char**argv)
                      coord[2] = rho_hlt;
                   */
                   coord[2] = 5;
-                  coord[3] = (*npus)[1];
-                  coord[4] = (*npus)[2];
+                  coord[3] = (*npus)[iIT];
+                  coord[4] = sumLOOT(npus,iIT);
                   double resp_EOOT = RespVsPileup->GetBinContent(RespVsPileup->FindBin(coord));
                   double eresp_EOOT = RespVsPileup->GetBinError(RespVsPileup->FindBin(coord));
 
-                  coord[2] = (*npus)[0];
+                  coord[2] = sumEOOT(npus,iIT);
                   coord[3] = 5;
-                  coord[4] = (*npus)[2];
+                  coord[4] = sumLOOT(npus,iIT);
                   double resp_IT   = RespVsPileup->GetBinContent(RespVsPileup->FindBin(coord));
                   double eresp_IT = RespVsPileup->GetBinError(RespVsPileup->FindBin(coord));
 
-                  coord[2] = (*npus)[0];
-                  coord[3] = (*npus)[1];
+                  coord[2] = sumEOOT(npus,iIT);
+                  coord[3] = (*npus)[iIT];
                   coord[4] = 5;
                   double resp_LOOT = RespVsPileup->GetBinContent(RespVsPileup->FindBin(coord));
                   double eresp_LOOT = RespVsPileup->GetBinError(RespVsPileup->FindBin(coord));
@@ -993,47 +1005,78 @@ void addErrorQuadrature(TProfile* hist, TProfile* ehist)
 }
 
 //______________________________________________________________________________
-bool it_pileup(int itlow, int ithigh, vector<int>* npus)
+bool it_pileup(int itlow, int ithigh, vector<int>* npus, int iIT)
 {
-   if((*npus)[1]>=itlow && (*npus)[1]<=ithigh) return true;
+   if((*npus)[iIT]>=itlow && (*npus)[iIT]<=ithigh) return true;
    return false;
 }
 
 
 //______________________________________________________________________________
 bool oot_pileup(int earlyootlow, int earlyoothigh, int lateootlow, int lateoothigh,
-                vector<int>* npus)
+                vector<int>* npus, int iIT)
 {
-   if((*npus)[0]>=earlyootlow && (*npus)[0]<=earlyoothigh && 
-      (*npus)[2]>=lateootlow && (*npus)[2]<=lateoothigh) return true;
+   if(sumEOOT(npus,iIT)>=earlyootlow && sumEOOT(npus,iIT)<=earlyoothigh && 
+      sumLOOT(npus,iIT)>=lateootlow && sumLOOT(npus,iIT)<=lateoothigh) return true;
    return false;
 }
 
 
 //______________________________________________________________________________
-bool total_oot_pileup(int totalootlow, int totaloothigh, vector<int>* npus)
+bool total_oot_pileup(int totalootlow, int totaloothigh, vector<int>* npus, int iIT)
 {
-   if((*npus)[0]+(*npus)[2]>=totalootlow && (*npus)[0]+(*npus)[2]<=totaloothigh) return true;
+   double sumOOT = sumEOOT(npus,iIT) + sumLOOT(npus,iIT);
+   if(sumOOT>=totalootlow && sumOOT<=totaloothigh) return true;
    return false;
 }
 
 //______________________________________________________________________________
-bool total_pileup(int totallow, int totalhigh, vector<int>* npus)
+bool total_pileup(int totallow, int totalhigh, vector<int>* npus, int iIT)
 {
-   if((*npus)[0]+(*npus)[1]+(*npus)[2]>=totallow && (*npus)[0]+(*npus)[1]+(*npus)[2]<=totalhigh) return true;
+   double PU = sumEOOT(npus,iIT) + (*npus)[iIT] + sumLOOT(npus,iIT);
+   if(PU>=totallow && PU<=totalhigh) return true;
    return false;
 }
 
 //______________________________________________________________________________
 bool pileup_cut(int itlow, int ithigh, int earlyootlow, int earlyoothigh, 
                 int lateootlow, int lateoothigh, int totalootlow, int totaloothigh, 
-                int totallow, int totalhigh, vector<int>* npus)
+                int totallow, int totalhigh, vector<int>* npus, vector<int>* bxns)
 {
-   if(it_pileup(itlow,ithigh,npus) && 
-      total_oot_pileup(totalootlow,totaloothigh,npus) && 
-      oot_pileup(earlyootlow,earlyoothigh,lateootlow,lateoothigh,npus) &&
-      total_pileup(totallow,totalhigh,npus)) return true;
+   int iIT = itIndex(bxns);
+   if(it_pileup(itlow,ithigh,npus,iIT) && 
+      total_oot_pileup(totalootlow,totaloothigh,npus,iIT) && 
+      oot_pileup(earlyootlow,earlyoothigh,lateootlow,lateoothigh,npus,iIT) &&
+      total_pileup(totallow,totalhigh,npus,iIT)) return true;
    return false;
+}
+
+//______________________________________________________________________________
+int itIndex(vector<int>* bxns) {
+   for(unsigned int ibx=0; ibx<(*bxns).size(); ibx++) {
+      if((*bxns)[ibx]==0) return ibx;
+   }
+   return -1;
+}
+
+//______________________________________________________________________________
+double sumEOOT(vector<int>* npus, unsigned int iIT) {
+   if(iIT>(*npus).size()-1) return 0;
+   double sum = 0;
+   for(unsigned int ipu=0; ipu<iIT; ipu++) {
+      sum+=(*npus)[ipu];
+   }
+   return sum;
+}
+
+//______________________________________________________________________________
+double sumLOOT(vector<int>* npus, unsigned int iIT) {
+   if(iIT>(*npus).size()-1) return 0;
+   double sum = 0;
+   for(unsigned int ipu=(*npus).size()-1; ipu>iIT; ipu--) {
+      sum+=(*npus)[ipu];
+   }
+   return sum;
 }
 
 

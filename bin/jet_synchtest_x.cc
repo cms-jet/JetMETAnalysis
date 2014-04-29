@@ -206,23 +206,53 @@ void fillJetMap(map<Int_t, Int_t> & jetMap, JRANtuple * t1, JRANtuple * t2){
 }//fillJetMap
 
 // ------------------------------------------------------------------
+int itIndex(vector<int>* bxns) {
+   for(unsigned int ibx=0; ibx<(*bxns).size(); ibx++) {
+      if((*bxns)[ibx]==0) return ibx;
+   }
+   return -1;
+}
+
+// ------------------------------------------------------------------
+double sumEOOT(vector<int>* npus, unsigned int iIT) {
+   if(iIT>(*npus).size()-1) return 0;
+   double sum = 0;
+   for(unsigned int ipu=0; ipu<iIT; ipu++) {
+      sum+=(*npus)[ipu];
+   }
+   return sum;
+}
+
+// ------------------------------------------------------------------
+double sumLOOT(vector<int>* npus, unsigned int iIT) {
+   if(iIT>(*npus).size()-1) return 0;
+   double sum = 0;
+   for(unsigned int ipu=(*npus).size()-1; ipu>iIT; ipu--) {
+      sum+=(*npus)[ipu];
+   }
+   return sum;
+}
+
+// ------------------------------------------------------------------
 void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int ApplyJEC = 0, TString JECPar="parameters_ak5pf.txt", bool runDep = false, TString outputPath = "./"){
   
    //TString basepath = "/uscms_data/d2/aperloff/JRA_outfiles_53X_20120911/JRA/";
    TString basepath ="/fdata/hepx/store/user/aperloff/"; //run-independent && Delphes
    //TString basepath ="/fdata/hepx/store/user/delgado_andrea/"; //run-dependent
 
-   TString sample1 =  basepath+"JRA_outfiles_53X_20131228_pbs/JRA/JRA.root"; //PF 
+   //TString sample1 =  basepath+"JRA_outfiles_53X_20131228_pbs/JRA/JRA.root"; //PF 
    //TString sample1 =  basepath+"JRA_outfiles_53X_20140109_pbs/JRA/JRA.root"// PF // with latest L1's
+   TString sample1 =  basepath+"JRA_outfiles_53X_20131228_NoPileup_pbs/JRA/JRA.root"; //PF NoPU
    //TString sample1 =  basepath+"JRA_outfiles_53X_20140122_pbs/JRA/JRA.root"; //PFchs // with latest L1's
    //TString sample1 =  basepath+"Delphes_QCDjets_20PU_1M_v2/DelphesJRA.root"; //Delphes // with latest L1's
    //TString sample1 =  basepath+"JRA_outfiles_53X_20140129_pbs/JRA/JRA.root"; //run-dependent
    TString algo1(calgo1);
 
-   TString sample2 =  basepath+"JRA_outfiles_53X_20131228_NoPileup_pbs/JRA/JRA.root"; //PF
-   //TString sample2 =  basepath+"JRA_outfiles_53X_20140122_NoPileup_pbs/JRA/JRA.root"; //PFchs
-   //TString sample2 =  basepath+"Delphes_QCDjets_20PU_1M_v2/DelphesJRA.root"; //Delphes
-   //TString sample2 =  basepath+"JRA_outfiles_53X_20140129_NoPileup_pbs/JRA/JRA.root"; //run-dependent
+   //TString sample2 =  basepath+"JRA_outfiles_53X_20131228_pbs/JRA/JRA.root"; //PF 
+   TString sample2 =  basepath+"JRA_outfiles_53X_20131228_NoPileup_pbs/JRA/JRA.root"; //PF NoPU
+   //TString sample2 =  basepath+"JRA_outfiles_53X_20140122_NoPileup_pbs/JRA/JRA.root"; //PFchs NoPU
+   //TString sample2 =  basepath+"Delphes_QCDjets_20PU_1M_v2/DelphesJRA.root"; //Delphes NoPU
+   //TString sample2 =  basepath+"JRA_outfiles_53X_20140129_NoPileup_pbs/JRA/JRA.root"; //run-dependent NoPU
    //TString algo2 = algo1;
    TString algo2(calgo2);
 
@@ -365,6 +395,8 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
    TProfile2D * p_off_etaVsJetPt	= new TProfile2D("p_off_etaVsJetPt","p_off_etaVsJetPt;#eta_{j};p_{T}^{pu};Offset (p_{T}, GeV)",NETA, veta,NPtBins, vpt);
    TProfile2D * p_offOverA_etaVsJetPt	= new TProfile2D("p_offOverA_etaVsJetPt","p_offOverA_etaVsJetPt;#eta_{j};p_{T}^{pu};OffsetOverArea",NETA, veta,NPtBins, vpt);
 
+   TProfile3D * p_off_EOOTVsITVsLOOT = new TProfile3D("p_off_EOOTVsITVsLOOT","p_off_EOOTVsITVsLOOT;EOOT;IT;LOOT",NRHO,vrho,NRHO,vrho,NRHO,vrho);
+
    TProfile3D * p_offOverA_etaVsTnpusVsJetPt = new TProfile3D("p_offOverA_etaVsTnpusVsJetPt","p_offOverA_etaVsTnpusVsJetPt;#eta_{j};tnpu;p_{T}^{gen};OffsetOverAre",NETA,veta,NRHO,vrho,NPtBins,vpt);
    TProfile3D * p_PtAve_etaVsTnpusVsJetPt = new TProfile3D("p_PtAve_etaVsTnpusVsJetPt","p_PtAve_etaVsTnpusVsJetPt;#eta_{j};Tnpus;p_{T}^{gen};PtAve",NETA,veta,NRHO,vrho,NPtBins,vpt);
    TProfile3D * p_RhoAve_etaVsTnpusVsJetPt = new TProfile3D("p_RhoAve_etaVsTnpusVsJetPt","p_RhoAve_etaVsTnpusVsJetPt;#eta_{j};Tnpus;p_{T}^{gen};PtAve",NETA,veta,NRHO,vrho,NPtBins,vpt);
@@ -380,6 +412,9 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
   
    TH2F * p_npvVsoff	=	 new TH2F("p_npvVsOff","p_npvVsOff;<p_{T} Offset>_{jets} (GeV);N_{PV}",80,0,80,80,0,80);		//ZQ  
    TH2F * p_rhoVsoff	=	 new TH2F("p_rhoVsOff","p_rhoVsOff;<p_{T} Offset>_{jets} (GeV);Rho",80,0,80,80,0,80);		//ZQ
+   TProfile * p_rhoVsRho   = new TProfile ("p_rhoVsRho","p_rhoVsRho;",80,0,80);
+   TProfile * p_npvVsNpv   = new TProfile ("p_npvVsNpv","p_npvVsNpv;",80,0,80);
+   TProfile * p_tnpuVsTnpu = new TProfile ("p_tnpuVsTnpu","p_tnpuVsTnpu;",80,0,80);
 
    TH2D *p_offresVsrefpt_bb[6];
    TH2D *p_offresVsrefpt_bb_all;
@@ -618,10 +653,10 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
          continue;
       }
 
-
+      int iIT = itIndex(tpu->bxns);
       int inpv = getNpvIndex(tpu->npv);
       int irho = getNpvIndex(tpu->rho);
-      int itnpu = getNpvIndex(tpu->tnpus->at(1));
+      int itnpu = getNpvIndex(tpu->tnpus->at(iIT));
       //	Applying JEC from textfile
 
       vector<double> tpu_jtpt_raw;
@@ -782,7 +817,7 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
          double resp       = tpu->jtpt[jpu]/tpu->refpt[jpu];   // response relative to reference jet
          double respTonopu = tpu->jtpt[jpu]/tnopu->jtpt[jnopu];// response relative to no pu jet
          double respNopu	= tnopu->jtpt[jnopu]/tnopu->refpt[jnopu]; // response no pu jet to reference jet
-         double PUEff		= 0.020*(tpu->npus->at(0))+0.975*(tpu->npus->at(1))+0.005*(tpu->npus->at(2)); // effective pu
+         double PUEff		= 0.020*(sumEOOT(tpu->npus,iIT))+0.975*(tpu->npus->at(iIT))+0.005*(sumLOOT(tpu->npus,iIT)); // effective pu
          double GenSumPtOA	= (0.020*(tpu->sumpt_lowpt->at(0))+0.975*(tpu->sumpt_lowpt->at(1))+0.005*(tpu->sumpt_lowpt->at(2)))/tpu->jtarea[jpu];
          double offset_jtchf = tpu->jtpt[jpu]*tpu->jtchf[jpu]-tnopu->jtpt[jnopu]*tnopu->jtchf[jnopu];
          double offset_jtnhf = tpu->jtpt[jpu]*tpu->jtnhf[jpu]-tnopu->jtpt[jnopu]*tnopu->jtnhf[jnopu];
@@ -801,9 +836,11 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
          p_offOverA_etaVsJetPt->Fill(tpu->jteta[jpu],tpu->jtpt[jpu],offsetOA);
       
          //cout << "tpu->tnpus.at(1) = " << tpu->tnpus->at(1) << endl;
-         p_offOverA_etaVsTnpusVsJetPt->Fill(tpu->jteta[jpu],tpu->tnpus->at(1),tpu->refpt[jpu],offsetOA);
-         p_PtAve_etaVsTnpusVsJetPt   ->Fill(tpu->jteta[jpu],tpu->tnpus->at(1),tpu->refpt[jpu],tpu->jtpt[jpu]);
-         p_RhoAve_etaVsTnpusVsJetPt  ->Fill(tpu->jteta[jpu],tpu->tnpus->at(1),tpu->refpt[jpu],tpu->rho);
+         p_off_EOOTVsITVsLOOT->Fill(sumEOOT(tpu->npus,iIT),tpu->npus->at(iIT),sumLOOT(tpu->npus,iIT),offset);
+
+         p_offOverA_etaVsTnpusVsJetPt->Fill(tpu->jteta[jpu],tpu->tnpus->at(iIT),tpu->refpt[jpu],offsetOA);
+         p_PtAve_etaVsTnpusVsJetPt   ->Fill(tpu->jteta[jpu],tpu->tnpus->at(iIT),tpu->refpt[jpu],tpu->jtpt[jpu]);
+         p_RhoAve_etaVsTnpusVsJetPt  ->Fill(tpu->jteta[jpu],tpu->tnpus->at(iIT),tpu->refpt[jpu],tpu->rho);
 
          p_offOverA_etaVsRhoVsJetPt->Fill(tpu->jteta[jpu],tpu->rho,tpu->refpt[jpu],offsetOA);
          p_PtAve_etaVsRhoVsJetPt->Fill(tpu->jteta[jpu],tpu->rho,tpu->refpt[jpu],tpu->jtpt[jpu]);
@@ -879,6 +916,9 @@ void SynchTest(TString calgo1="ak5pf",TString calgo2="ak5pf",int iftest=0, int A
       }
       p_npvVsoff->Fill(avg_offset,tpu->npv);
       p_rhoVsoff->Fill(avg_offset,tpu->rho);
+      p_rhoVsRho->Fill(tpu->rho,tpu->rho);
+      p_npvVsNpv->Fill(tpu->npv,tpu->npv);
+      p_tnpuVsTnpu->Fill(tpu->tnpus->at(iIT),tpu->tnpus->at(iIT));
       p_matchedjet_off->Fill(avg_offset,mapJet.size());							//ZQ 10.29
 
 

@@ -281,34 +281,42 @@ int main(int argc,char**argv) {
             //(*ialg->second.second->tnpus)[0] = nPUvertices_true;
             //(*ialg->second.second->tnpus)[1] = nPUvertices_true;
             //(*ialg->second.second->tnpus)[2] = nPUvertices_true;
-            ialg->second.second->npus.clear();
-            ialg->second.second->npus.push_back(nPUvertices_true);
-            ialg->second.second->npus.push_back(nPUvertices_true);
-            ialg->second.second->npus.push_back(nPUvertices_true);
-            ialg->second.second->tnpus.clear();
-            ialg->second.second->tnpus.push_back(tnpu);
-            ialg->second.second->tnpus.push_back(tnpu);
-            ialg->second.second->tnpus.push_back(tnpu);
+            ialg->second.second->bxns->clear();
+            ialg->second.second->bxns->push_back(-1);
+            ialg->second.second->bxns->push_back(0);
+            ialg->second.second->bxns->push_back(1);
+            ialg->second.second->npus->clear();
+            ialg->second.second->npus->push_back(nPUvertices_true);
+            ialg->second.second->npus->push_back(nPUvertices_true);
+            ialg->second.second->npus->push_back(nPUvertices_true);
+            ialg->second.second->tnpus->clear();
+            //The bins in a poison distribution used to determine the pileup added to an event
+            ialg->second.second->tnpus->push_back(nPUvertices_true);
+            ialg->second.second->tnpus->push_back(nPUvertices_true);
+            ialg->second.second->tnpus->push_back(nPUvertices_true);
+            //ialg->second.second->tnpus.push_back(tnpu);
+            //ialg->second.second->tnpus.push_back(tnpu);
+            //ialg->second.second->tnpus.push_back(tnpu);
 
             //Set values for sumpt
-            ialg->second.second->sumpt_lowpt.clear();
-            ialg->second.second->sumpt_lowpt.push_back(0);
-            ialg->second.second->sumpt_lowpt.push_back(0);
-            ialg->second.second->sumpt_lowpt.push_back(0);
-            ialg->second.second->sumpt_highpt.clear();
-            ialg->second.second->sumpt_highpt.push_back(0);
-            ialg->second.second->sumpt_highpt.push_back(0);
-            ialg->second.second->sumpt_highpt.push_back(0);
+            ialg->second.second->sumpt_lowpt->clear();
+            ialg->second.second->sumpt_lowpt->push_back(0);
+            ialg->second.second->sumpt_lowpt->push_back(0);
+            ialg->second.second->sumpt_lowpt->push_back(0);
+            ialg->second.second->sumpt_highpt->clear();
+            ialg->second.second->sumpt_highpt->push_back(0);
+            ialg->second.second->sumpt_highpt->push_back(0);
+            ialg->second.second->sumpt_highpt->push_back(0);
 
             //Set values for ntrks
-            ialg->second.second->ntrks_lowpt.clear();
-            ialg->second.second->ntrks_lowpt.push_back(0);
-            ialg->second.second->ntrks_lowpt.push_back(0);
-            ialg->second.second->ntrks_lowpt.push_back(0);
-            ialg->second.second->ntrks_highpt.clear();
-            ialg->second.second->ntrks_highpt.push_back(0);
-            ialg->second.second->ntrks_highpt.push_back(0);
-            ialg->second.second->ntrks_highpt.push_back(0);
+            ialg->second.second->ntrks_lowpt->clear();
+            ialg->second.second->ntrks_lowpt->push_back(0);
+            ialg->second.second->ntrks_lowpt->push_back(0);
+            ialg->second.second->ntrks_lowpt->push_back(0);
+            ialg->second.second->ntrks_highpt->clear();
+            ialg->second.second->ntrks_highpt->push_back(0);
+            ialg->second.second->ntrks_highpt->push_back(0);
+            ialg->second.second->ntrks_highpt->push_back(0);
 
 			//Set values for missing collections
 			ialg->second.second->pthat  = 0;
