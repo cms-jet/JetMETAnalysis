@@ -1008,6 +1008,18 @@ string getAlias(TString s)
       return "KT6Calo";
    else if (s=="kt6pf")
       return "KT6PF";
+   else if (s=="ak5calordl1")
+      return "AK5CaloRDl1";
+   else if (s=="ak5pfrdl1")
+      return "AK5PFRDl1";
+   else if (s=="ak5pfchsrdl1")
+      return "AK5PFchsRDl1";
+   else if (s=="ak7calordl1")
+      return "AK7CaloRDl1";
+   else if (s=="ak7pfrdl1")
+      return "AK7PFRDl1";
+   else if (s=="ak7pfchsrdl1")
+      return "AK7PFchsRDl1";
    else
       return "unknown";
 }
@@ -1037,6 +1049,8 @@ TString getAlgNameLong(TString algo, int coneSize) {
     else if(algo.Contains("pf"))   algNameLong += ", Particle-Flow Jets";
     else if(algo.Contains("calo")) algNameLong += ", Calo";
     else if(algo.Contains("jpt"))  algNameLong += ", JPT";
+
+    if(algo.Contains("rd")) algNameLong += ", (RD)";
   }
 
   return algNameLong;
