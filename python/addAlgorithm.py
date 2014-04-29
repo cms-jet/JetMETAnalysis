@@ -586,7 +586,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
             jetPtEta.src = recLabel
         if correctl1:
             recJets.doAreaFastjet = True #Should this be on for L1Offset
-            recJets.Rho_EtaMax    = cms.double(5.0) # FIX LATER
+            recJets.Rho_EtaMax    = cms.double(4.4) # FIX LATER
         setattr(process, recLabel, recJets)
         sequence = cms.Sequence(recJets * sequence)
         if type == 'Track':
