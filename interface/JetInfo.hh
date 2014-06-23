@@ -13,6 +13,7 @@
 #include <vector>
 #include <sstream>
 #include <assert.h>
+#include <cmath>
 
 ////////////////////////////////////////////////////////////////////////////////
 // define class
@@ -62,6 +63,22 @@ public:
 
   /// transform the alg label into a title, e.g.: kt4calo -> k_{T}, D=0.4 (Calo)
   static std::string get_legend_title(const std::string& alg, bool withSize = true);
+
+  /// Get the abbreviation for each detector section
+  static TString get_detector_abbreviation(TString dn);
+
+  /// get the index corresponding to the correct NPV, Rho, or NPU bin
+  static int getBinIndex(int variable, int nbins = 6, int binWidth = 5);
+
+  /// get the properly formatted legend entry for a specific rho, npv, or npu bin
+  static TString getBinLegendEntry(int bin, TString type, int nbins = 6, int binWidth = 5);
+  static TString getBinLegendEntry(TString type, int lowEdge, int highEdge = -1);
+
+  /// get the index corresponding to the correct detector region
+  static int getDetIndex(double eta);
+
+  /// get the index corresponding to the correct PDGID bin
+  static std::vector<int> getPDGIDIndecies(int pdgid);
   
   bool operator<(const JetInfo& rhs) const {
     if (algorithm.CompareTo(rhs.algorithm) < 0) return true;

@@ -149,3 +149,82 @@ TString JetInfo::getAlias(TString s)
   res += getCorrString(s);
   return res;
 }
+
+//______________________________________________________________________________
+TString JetInfo::get_detector_abbreviation(TString dn) {
+  TObjArray* words = dn.Tokenize(" ");
+  if(words->GetEntries()==1) {
+    TString ret = dn(0,1);
+    ret.ToUpper();
+    ret+=ret;
+    return ret;
+  }
+  else if(words->GetEntries()>1) {
+    TString ret;
+    for(int w=0; w<words->GetEntries(); w++) {
+      ret = (((TObjString*)((*words)[w]))->String())(0,1) + ret;
+    }
+    ret.ToUpper();
+    return ret;
+  }
+  else {
+    cout << "ERROR::get_detector_abbreviation The number of words in the detector name is less than 1." << endl;
+    assert(words>0);
+  }
+  return "";
+}
+
+//______________________________________________________________________________
+int JetInfo::getBinIndex(int variable, int nbins, int binWidth){
+   if (variable<0)
+      return 0;
+   if (variable>(nbins*binWidth)-1)
+      return nbins-1;
+
+   return int (variable / binWidth);
+}//getBinIndex
+
+//______________________________________________________________________________
+TString JetInfo::getBinLegendEntry(int bin, TString type, int nbins, int binWidth) {
+  return Form("%i <= " + type + " < %i",bin*nbins, bin*nbins+binWidth);
+}//getBinLegendEntry
+
+//______________________________________________________________________________
+TString JetInfo::getBinLegendEntry(TString type, int lowEdge, int highEdge) {
+  if(highEdge>-1)
+    return Form("%i <= " + type + " < %i",lowEdge, highEdge);
+  else
+    return Form("%i <= " + type,lowEdge);
+}//getBinLegendEntry
+
+//______________________________________________________________________________
+int JetInfo::getDetIndex(double eta){
+   eta = fabs(eta);
+
+   if (eta<1.3)
+      return 0;
+   else if (eta<2.5)
+      return 1;
+   else if (eta<3)
+      return 2;
+
+   return 3;
+
+}//getDetIndex
+
+//______________________________________________________________________________
+vector<int> JetInfo::getPDGIDIndecies(int pdgid) {
+   pdgid = fabs(pdgid);
+   vector<int> res;
+
+   if(pdgid==0) res.push_back(0);
+   if(pdgid>=1 && pdgid<=3) res.push_back(1);
+   if(pdgid==4) res.push_back(2);
+   if(pdgid==5) res.push_back(3);
+   if(pdgid==21) res.push_back(4);
+   res.push_back(5);
+   if(pdgid>=1 && pdgid<=6) res.push_back(6);
+
+   return res;
+}//getPDGIDIndecies
+

@@ -8,27 +8,35 @@
 
 #include <iostream>
 
+//#include "JetMETAnalysis/JetAnalyzers/interface/Settings.h"
+
 using namespace std;
 
 // Forward decleration
+void setHistoColor(TH1* h, int c);
 TCanvas * getCanvasFromFittingProcedure(TString cname , TProfile2D * prof, TString fname);
 TH1 * getResolutionHistoFromHisto(TString cname, TString title, TH2 * histo_in);
 TH1 * getResolutionHistoFromHisto_v3(TString cname, TString title, TH2 * histo_in);
 TH1 * getResolutionHistoFromHisto_v2(TString cname, TString title, TH2 * histo_in, TH2 *off_in);
-TH1 * getMeanHistoFromHisto(TString cname, TString title, TH2 *off_in,double & maxy);
-TCanvas * getCanvasResponseResolution(TString cname, TString algo, TString title, TH2 * prof[4]);
-TCanvas * getCanvasResolution(TString cname, TString algo, TString title, TH2 * prof[6],int modeNo);
+TH1 * getMeanHistoFromHisto(TString cname, TString title, TH2 *off_in,double & miny, double & maxy);
+TCanvas * getCanvasResponseResolution(TString cname, TString algo, TString title, vector<TH2*> prof);
+TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector<TH2*> prof, int modeNo, vector<pair<int,int> > npvRhoNpuBins);
 TCanvas * getResolutionNumDenom(TString cname, TString ctitle, TString algo, TH2 * prof, TH2 * off);
-TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, TH2 * off[6], bool fixedRange);
-TCanvas * getGausMeanOffsetWithSum(TString cname, TString ctitle, TString algo, TH2 * off[6], TH2* sum, bool fixedRange);
-TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo, TH2 * off[6], bool fixedRange);
-TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, TH2 * off[6],int scaleNo, bool fixedRange);
-TCanvas * getCanvasResolution_v2(TString cname, TString algo, TString title, TH2 * prof[6], TH2 * off[6]);
-TCanvas * getCanvasIntegral(TString cname, TString algo, TString title, TProfile * prof[6]);
+TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, vector<TH2*> off, bool fixedRange, vector<pair<int,int> > npvRhoNpuBins);
+TCanvas * getGausMeanOffsetWithSum(TString cname, TString ctitle, TString algo, vector<TH2*> off, TH2* sum, bool fixedRange, vector<pair<int,int> > npvRhoNpuBins, pair<int,int> minmaxNpvRhoNpu);
+TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo, vector<TH2*> off, bool fixedRange, vector<pair<int,int> > npvRhoNpuBins);
+TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, vector<TH2*> off,int scaleNo, bool fixedRange, vector<pair<int,int> > npvRhoNpuBins);
+TCanvas * getCanvasResolution_v2(TString cname, TString algo, TString title, vector<TH2*> prof, vector<TH2*> off, vector<pair<int,int> > npvRhoNpuBins);
+TCanvas * getCanvasIntegral(TString cname, TString algo, TString title, vector<TProfile*> prof, vector<pair<int,int> > npvRhoNpuBins);
 TH1 * getIntegralHistoFromHisto(TString cname, TString title,TProfile *off_in);
-TCanvas * getCanvasAverage(TString cname, TString algo, TString title, TProfile * prof[6]);
+TCanvas * getCanvasAverage(TString cname, TString algo, TString title, vector<TProfile*> prof, vector<pair<int,int> > npvRhoNpuBins);
 TH1 * getAverageHistoFromHisto(TString cname, TString title,TProfile *off_in);
 
+// ------------------------------------------------------------------
+void setHistoColor(TH1* h, int c){
+   h->SetMarkerColor(c);
+   h->SetLineColor(c);
+}
 
 // ------------------------------------------------------------------
 TCanvas * getCanvasFromFittingProcedure(TString cname , TProfile2D * prof, TString fname){
@@ -155,7 +163,7 @@ TH1 * getResolutionHistoFromHisto(TString cname, TString title, TH2 * histo_in){
          TFitResultPtr fr = aux->Fit("gaus","0qS");
            
          // Skip if fit failed
-         if (!fr->Status()){
+         if (fr.Get() && !fr->Status()){
             double mean    = fr->Parameter(1);
             double meanerr = fr->ParError(1);
             double rms     = fr->Parameter(2);
@@ -293,7 +301,7 @@ TH1 * getResolutionHistoFromHisto_v2(TString cname, TString title, TH2 * histo_i
 
 // ------------------------------------------------------------------
 // get mean from histo. Return mean.
-TH1 * getMeanHistoFromHisto(TString cname, TString title, TH2 *off_in,double & maxy){
+TH1 * getMeanHistoFromHisto(TString cname, TString title, TH2 *off_in, double & miny, double & maxy){
 
    // make an empty copy to fill and return
    TH1 * histo = 0;
@@ -329,6 +337,7 @@ TH1 * getMeanHistoFromHisto(TString cname, TString title, TH2 *off_in,double & m
 
             val = mean ;//cout <<val<<" ";
             if (val>maxy) maxy=val;
+            if (val<miny) miny=val;
             valerr = meanerr;
 
          }
@@ -343,7 +352,8 @@ TH1 * getMeanHistoFromHisto(TString cname, TString title, TH2 *off_in,double & m
       delete aux;
 
    }
-   histo->GetYaxis()->SetRangeUser(0,maxy);
+   //histo->GetYaxis()->SetRangeUser(0,maxy);
+   histo->GetYaxis()->SetRangeUser(miny,maxy);
    // return
    return histo;
 
@@ -352,7 +362,7 @@ TH1 * getMeanHistoFromHisto(TString cname, TString title, TH2 *off_in,double & m
 
 // ------------------------------------------------------------------
 // get mean over bin center from histo. Return mean over bin center.
-TH1 * getMeanOverBinCenterHistoFromHisto(TString cname, TString title, TH2 *off_in,double & maxy){
+TH1 * getMeanOverBinCenterHistoFromHisto(TString cname, TString title, TH2 *off_in, double & maxy){
 
    // make an empty copy to fill and return
    TH1 * histo = 0;
@@ -410,35 +420,31 @@ TH1 * getMeanOverBinCenterHistoFromHisto(TString cname, TString title, TH2 *off_
 
 // ------------------------------------------------------------------
 // get the canvas from the resolution
-TCanvas * getCanvasResponseResolution(TString cname, TString algo, TString title, TH2 * prof[4]){
+TCanvas * getCanvasResponseResolution(TString cname, TString algo, TString title, vector<TH2*> prof){
 
    cout<<"\t Doing fits for Response Resolution "<<cname<<endl;
    algo.ToUpper();
    TCanvas * c = new TCanvas(cname,cname);
    c->SetLogx();
-   TH1 * hh[4];
-   for (int j=0;j<4;j++){
+   vector<TH1*> hh(prof.size(),(TH1*)0);
+   for (unsigned int j=0;j<prof.size();j++){
       TString hname = cname;
       hname += Form("_%i",j);
       hh[j] = getResolutionHistoFromHisto(hname, title, prof[j]);
-
+      setHistoColor(hh[j],colDet[j]);
    }
-   setHistoColor(hh[0],colDet[0]);
-   setHistoColor(hh[1],colDet[1]);
-   setHistoColor(hh[2],colDet[2]);
-   setHistoColor(hh[3],colDet[3]);
 
    hh[0]->GetYaxis()->SetRangeUser(0,0.4);
    hh[0]->Draw("E");
-   for (int j=1;j<4;j++)
+   for (unsigned int j=1;j<hh.size();j++)
       hh[j]->Draw("sameE");
 
    TLegend *leg = new TLegend(0.7,0.72,0.9,0.92);
    leg->SetFillColor(0);
    leg->SetBorderSize(0);
-   for (int det=0;det<4;det++)
+   for (int det=0;det<NDetectorNames;det++)
    {
-      leg->AddEntry(hh[det],detName[det],"lep");
+      leg->AddEntry(hh[det],detector_names[det],"lep");
    }
    leg->Draw();
 
@@ -454,41 +460,12 @@ TCanvas * getCanvasResponseResolution(TString cname, TString algo, TString title
 //      modeNo == 0: RMS/mean of each x slice
 //      modeNo == 1: RMS of each x slice
 // Legend depends on cname. If cname contains "rho", output rho legend. If cname contains "npv", output npv legend. Otherwise, output PF legend.
-TCanvas * getCanvasResolution(TString cname, TString algo, TString title, TH2 * prof[6],int modeNo){
+TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector<TH2*> prof, int modeNo, vector<pair<int,int> > npvRhoNpuBins){
 
    cout<<"\t Doing fits for Resolution "<<cname<<endl;
    algo.ToUpper();
    TCanvas * c = new TCanvas(cname,cname);
    c->SetLogx();
-   TH1 * hh[6];
-   for (int j=0;j<6;j++){
-      TString hname = cname;
-      hname += Form("_%i",j);
-      if (modeNo==0)
-         hh[j] = getResolutionHistoFromHisto(hname, title, prof[j]);
-      else
-         hh[j] = getResolutionHistoFromHisto_v3(hname, title, prof[j]);
-   }
-   if(!hh[0]) {
-      cout << "WARNING::getCanvasResolution histogram hh[0] was not set by getResolutionHistoFromHisto." << endl
-           << "Returning blank histogram." << endl;
-      return c;
-   }
-   setHistoColor(hh[0],colNpv0);
-   setHistoColor(hh[1],colNpv5);
-   setHistoColor(hh[2],colNpv10);
-   setHistoColor(hh[3],colNpv15);
-   setHistoColor(hh[4],colNpv20);
-   setHistoColor(hh[5],colNpv25);
-
-   if (modeNo==0)
-      hh[0]->GetYaxis()->SetRangeUser(0,0.5);
-   else
-      hh[0]->GetYaxis()->SetRangeUser(0,20);
-   hh[0]->Draw("E");
-   for (int j=1;j<6;j++)
-      hh[j]->Draw("sameE");
-
    TLegend * leg = new TLegend(0.65,0.56,0.9,0.85);
    leg->SetHeader(algo);
    leg->SetFillColor(0);
@@ -502,41 +479,49 @@ TCanvas * getCanvasResolution(TString cname, TString algo, TString title, TH2 * 
       NPV_Rho = 3;
    else
       NPV_Rho = 0;
-   if (NPV_Rho == 1)
-   {
-      leg->AddEntry(hh[0]," 0 <= N_{PV} < 5","lep");
-      leg->AddEntry(hh[1]," 5 <= N_{PV} < 10","lep");
-      leg->AddEntry(hh[2],"10 <= N_{PV} < 15","lep");
-      leg->AddEntry(hh[3],"15 <= N_{PV} < 20","lep");
-      leg->AddEntry(hh[4],"20 <= N_{PV} < 25","lep");
-      leg->AddEntry(hh[5],"25 <= N_{PV} < 30","lep");
+
+   vector<TH1*> hh;
+   for (unsigned int j=0;j<prof.size();j++){
+      TString hname = cname;
+      hname += Form("_%i",j);
+      if (modeNo==0)
+         hh.push_back(getResolutionHistoFromHisto(hname, title, prof[j]));
+      else
+         hh.push_back(getResolutionHistoFromHisto_v3(hname, title, prof[j]));
    }
-   else if (NPV_Rho == 2)
-   {
-      leg->AddEntry(hh[0]," 0 <= Rho < 5","lep");
-      leg->AddEntry(hh[1]," 5 <= Rho < 10","lep");
-      leg->AddEntry(hh[2],"10 <= Rho < 15","lep");
-      leg->AddEntry(hh[3],"15 <= Rho < 20","lep");
-      leg->AddEntry(hh[4],"20 <= Rho < 25","lep");
-      leg->AddEntry(hh[5],"25 <= Rho < 30","lep");
+   if(!hh[0]) {
+      cout << "WARNING::getCanvasResolution histogram hh[0] was not set by getResolutionHistoFromHisto." << endl
+           << "Returning blank histogram." << endl;
+      return c;
    }
-   else if (NPV_Rho == 3)
-   {
-      leg->AddEntry(hh[0]," 0 <= True NPU < 5","lep");
-      leg->AddEntry(hh[1]," 5 <= True NPU < 10","lep");
-      leg->AddEntry(hh[2],"10 <= True NPU < 15","lep");
-      leg->AddEntry(hh[3],"15 <= True NPU < 20","lep");
-      leg->AddEntry(hh[4],"20 <= True NPU < 25","lep");
-      leg->AddEntry(hh[5],"25 <= True NPU < 30","lep");
+   for (unsigned int j=0;j<hh.size();j++){
+      setHistoColor(hh[j],colNpv[j]);
    }
+
+   if (modeNo==0)
+      hh[0]->GetYaxis()->SetRangeUser(0,0.5);
    else
-   {
-      leg->AddEntry(hh[0],"chf","lep");
-      leg->AddEntry(hh[1],"nhf","lep");
-      leg->AddEntry(hh[2],"nef","lep");
-      leg->AddEntry(hh[3],"cef","lep");
-      leg->AddEntry(hh[4],"hfhf","lep");
-      leg->AddEntry(hh[5],"hfef","lep");
+      hh[0]->GetYaxis()->SetRangeUser(0,20);
+   for (unsigned int j=0;j<hh.size();j++) {
+      if(j==0)
+         hh[0]->Draw("E");
+      else
+         hh[j]->Draw("sameE");
+      TString var;
+
+      if (NPV_Rho == 1)
+         var = "N_{PV}";
+      else if (NPV_Rho == 2)
+         var = "Rho";
+      else if (NPV_Rho == 3)
+         var = "True NPU";
+      else
+         var = PFstr[j];
+
+      if(j<hh.size()-1)
+         leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first,npvRhoNpuBins[j].second+1),"lep");
+      else
+         leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first),"lep");
    }
    leg->Draw();
 
@@ -650,7 +635,7 @@ TCanvas * getResolutionNumDenom(TString cname, TString ctitle, TString algo, TH2
 //getGausMeanOffset
 // output mean of each x slice
 // Legend depends on cname. If cname contains "rho", output rho legend. If cname contains "npv", output npv legend. Otherwise, output PF legend.
-TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, TH2 * off[7], bool fixedRange){
+TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, vector<TH2*> off, bool fixedRange, vector<pair<int,int> > npvRhoNpuBins){
 
    cout<<"\t Doing fits for Mean "<<cname<<endl;
    algo.ToUpper();
@@ -669,98 +654,60 @@ TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, TH2 * o
 
    TCanvas * c = new TCanvas(cname,cname);
    c->SetLogx();
-   TH1 * hh[7];
-   double maxy = 0;
-   int upper_limit = 0;
-   if (NPV_Rho == 4)
-      upper_limit = 7;
-   else
-      upper_limit = 6;
-   for (int j=0;j<upper_limit;j++){
-      TString hname = cname;
-      hname += Form("_%i",j);
-      hh[j] = getMeanHistoFromHisto(hname, ctitle, off[j],maxy);
-   }
-   if(!hh[0]) {
-      cout << "WARNING::getCanvasResolution histogram hh[0] was not set by getMeanHistoFromHisto." << endl
-           << "Returning blank histogram." << endl;
-      return c;
-   }
-   setHistoColor(hh[0],colNpv0);
-   setHistoColor(hh[1],colNpv5);
-   setHistoColor(hh[2],colNpv10);
-   setHistoColor(hh[3],colNpv15);
-   setHistoColor(hh[4],colNpv20);
-   setHistoColor(hh[5],colNpv25);
-   if(NPV_Rho == 4) {
-      setHistoColor(hh[0],colnJ);
-      setHistoColor(hh[1],colqJ);
-      setHistoColor(hh[2],colcJ);
-      setHistoColor(hh[3],colbJ);
-      setHistoColor(hh[4],colgJ);
-      setHistoColor(hh[5],colaJ);
-      setHistoColor(hh[6],colaqJ);
-   }
-
-   if(fixedRange)
-      hh[0]->GetYaxis()->SetRangeUser(-3,3);
-   else
-      hh[0]->GetYaxis()->SetRangeUser(0,1.25*maxy);
-   hh[0]->Draw("E");
-   for (int j=1;j<upper_limit;j++)
-      hh[j]->Draw("sameE");
-
    TLegend * leg = new TLegend(0.2,0.72,0.45,0.99);
    leg->SetHeader(algo);
    leg->SetFillColor(0);
    leg->SetBorderSize(0);
    leg->SetName(cname+"_leg");
 
-   if (NPV_Rho == 1)
-   {
-      leg->AddEntry(hh[0]," 0 <= N_{PV} < 5","lep");
-      leg->AddEntry(hh[1]," 5 <= N_{PV} < 10","lep");
-      leg->AddEntry(hh[2],"10 <= N_{PV} < 15","lep");
-      leg->AddEntry(hh[3],"15 <= N_{PV} < 20","lep");
-      leg->AddEntry(hh[4],"20 <= N_{PV} < 25","lep");
-      leg->AddEntry(hh[5],"25 <= N_{PV} < 30","lep");
+   vector<TH1*> hh(off.size(),(TH1*)0);
+   double maxy = 0;
+   double miny = 0;
+   for (unsigned int j=0;j<off.size();j++){
+      TString hname = cname;
+      hname += Form("_%i",j);
+      hh[j] = getMeanHistoFromHisto(hname, ctitle, off[j], miny, maxy);
    }
-   else if (NPV_Rho == 2)
-   {
-      leg->AddEntry(hh[0]," 0 <= Rho < 5","lep");
-      leg->AddEntry(hh[1]," 5 <= Rho < 10","lep");
-      leg->AddEntry(hh[2],"10 <= Rho < 15","lep");
-      leg->AddEntry(hh[3],"15 <= Rho < 20","lep");
-      leg->AddEntry(hh[4],"20 <= Rho < 25","lep");
-      leg->AddEntry(hh[5],"25 <= Rho < 30","lep");
+   if(!hh[0]) {
+      cout << "WARNING::getCanvasResolution histogram hh[0] was not set by getMeanHistoFromHisto." << endl
+           << "Returning blank histogram." << endl;
+      return c;
    }
-   else if (NPV_Rho == 3)
-   {
-      leg->AddEntry(hh[0]," 0 <= True NPU < 5","lep");
-      leg->AddEntry(hh[1]," 5 <= True NPU < 10","lep");
-      leg->AddEntry(hh[2],"10 <= True NPU < 15","lep");
-      leg->AddEntry(hh[3],"15 <= True NPU < 20","lep");
-      leg->AddEntry(hh[4],"20 <= True NPU < 25","lep");
-      leg->AddEntry(hh[5],"25 <= True NPU < 30","lep");
+   for (unsigned int j=0;j<hh.size();j++){
+      if(NPV_Rho == 4)
+         setHistoColor(hh[j],colPDGID[j]);
+      else
+         setHistoColor(hh[j],colNpv[j]);
    }
-   else if (NPV_Rho == 4)
-   {
-      leg->AddEntry(hh[0],"nJ (unknown PDGID)","lep");
-      leg->AddEntry(hh[1],"qJ","lep");
-      leg->AddEntry(hh[2],"cJ","lep");
-      leg->AddEntry(hh[3],"bJ","lep");
-      leg->AddEntry(hh[4],"gJ","lep");
-      leg->AddEntry(hh[5],"aJ (all jets)","lep");
-      leg->AddEntry(hh[6],"aqJ (quark jets)","lep");
-   }
+
+   if(fixedRange)
+      hh[0]->GetYaxis()->SetRangeUser(-3,3);
    else
-   {
-      leg->AddEntry(hh[0],"chf","lep");
-      leg->AddEntry(hh[1],"nhf","lep");
-      leg->AddEntry(hh[2],"nef","lep");
-      leg->AddEntry(hh[3],"cef","lep");
-      leg->AddEntry(hh[4],"hfhf","lep");
-      leg->AddEntry(hh[5],"hfef","lep");
+      hh[0]->GetYaxis()->SetRangeUser(((miny >= 0) - (miny < 0))*1.25*fabs(miny),1.25*maxy);
+      //hh[0]->GetYaxis()->SetRangeUser(0,1.25*maxy);
+   for (unsigned int j=0;j<hh.size();j++) {
+      if(j==0)
+         hh[0]->Draw("E");
+      else
+         hh[j]->Draw("sameE");
+
+      TString var;
+
+      if (NPV_Rho == 1)
+         var = "N_{PV}";
+      else if (NPV_Rho == 2)
+         var = "Rho";
+      else if (NPV_Rho == 3)
+         var = "True NPU";
+      else if (NPV_Rho == 4)
+         var = pdgidstrLegend[j];
+      else
+         var = PFstr[j];
+
+      if(j<hh.size()-1)
+         leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first,npvRhoNpuBins[j].second+1),"lep");
+      else
+         leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first),"lep");
    }
    leg->Draw();
 
@@ -768,16 +715,17 @@ TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, TH2 * o
 
 }//getGausMeanOffset
 
-TCanvas * getGausMeanOffsetWithSum(TString cname, TString ctitle, TString algo, TH2 * off[6], TH2 * sum, bool fixedRange){
+TCanvas * getGausMeanOffsetWithSum(TString cname, TString ctitle, TString algo, vector<TH2*> off, TH2 * sum, bool fixedRange, vector<pair<int,int> > npvRhoNpuBins, pair<int,int> minmaxNpvRhoNpu){
 
-   TCanvas * baseCanvas = getGausMeanOffset(cname,ctitle,algo,off,fixedRange);
+   TCanvas * baseCanvas = getGausMeanOffset(cname,ctitle,algo,off,fixedRange,npvRhoNpuBins);
    baseCanvas->cd();
 
    TH1 * hh;
    double maxy = 0;
+   double miny = 0;
    TString hname = cname;
-   hname += Form("_6");
-   hh = getMeanHistoFromHisto(hname, ctitle, sum, maxy);
+   hname += Form("_%i",(unsigned int)off.size());
+   hh = getMeanHistoFromHisto(hname, ctitle, sum, miny, maxy);
    if(!hh) {
       cout << "WARNING::getCanvasResolution histogram hh was not set by getMeanHistoFromHisto." << endl
            << "Returning basic canvas." << endl;
@@ -797,14 +745,15 @@ TCanvas * getGausMeanOffsetWithSum(TString cname, TString ctitle, TString algo, 
       NPV_Rho = 3;
    else
       NPV_Rho = 0;
+
    if (NPV_Rho == 1)
-      leg->AddEntry(hh," 0 <= N_{PV} < 30","lep");
+      leg->AddEntry(hh,JetInfo::getBinLegendEntry("N_{PV}",minmaxNpvRhoNpu.first,minmaxNpvRhoNpu.second),"lep");
    else if (NPV_Rho == 2)
-      leg->AddEntry(hh,"0 <= Rho < 30","lep");
+      leg->AddEntry(hh,JetInfo::getBinLegendEntry("Rho",minmaxNpvRhoNpu.first,minmaxNpvRhoNpu.second),"lep");
    else if (NPV_Rho == 3)
-      leg->AddEntry(hh,"0 <= True NPU < 30","lep");
+      leg->AddEntry(hh,JetInfo::getBinLegendEntry("True NPU",minmaxNpvRhoNpu.first,minmaxNpvRhoNpu.second),"lep");
    else
-      leg->AddEntry(hh,"Total <offset>","lep");
+      leg->AddEntry(hh,JetInfo::getBinLegendEntry("Total <offset>",minmaxNpvRhoNpu.first,minmaxNpvRhoNpu.second),"lep");
 
    leg->Draw();
    //baseCanvas->Update();
@@ -816,7 +765,7 @@ TCanvas * getGausMeanOffsetWithSum(TString cname, TString ctitle, TString algo, 
 //getGausMeanOffsetOverPtref
 // output mean of each x slice
 // Legend depends on cname. If cname contains "rho", output rho legend. If cname contains "npv", output npv legend. Otherwise, output PF legend.
-TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo, TH2 * off[6],bool fixedRange){
+TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo, vector<TH2*> off, bool fixedRange, vector<pair<int,int> > npvRhoNpuBins){
 
    cout<<"\t Doing fits for Mean "<<cname<<endl;
    algo.ToUpper();
@@ -824,36 +773,6 @@ TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo
   
    TCanvas * c = new TCanvas(cname,cname);
    c->SetLogx();
-   TH1 * hh[6];
-   double maxy = 0;
-   for (int j=0;j<6;j++){
-      TString hname = cname;
-      hname += Form("_%i",j);
-      hh[j] = getMeanOverBinCenterHistoFromHisto(hname, ctitle, off[j],maxy);
-
-   }
-   if(!hh[0]) {
-      cout << "WARNING::getCanvasResolution histogram hh[0] was not set by getMeanOverBinCenterHistoFromHisto." << endl
-           << "Returning blank canvas." << endl;
-      return c;
-   }
-   setHistoColor(hh[0],colNpv0);
-   setHistoColor(hh[1],colNpv5);
-   setHistoColor(hh[2],colNpv10);
-   setHistoColor(hh[3],colNpv15);
-   setHistoColor(hh[4],colNpv20);
-   setHistoColor(hh[5],colNpv25);
-
-   if(fixedRange) {
-      hh[0]->GetYaxis()->SetRangeUser(-0.1,0.1);
-   }
-   else {
-      hh[0]->GetYaxis()->SetRangeUser(0,1.25*maxy);
-   }
-   hh[0]->Draw("E");
-   for (int j=1;j<6;j++)
-      hh[j]->Draw("sameE");
-
    TLegend * leg = new TLegend(0.2,0.72,0.45,0.99);
    leg->SetHeader(algo);
    leg->SetFillColor(0);
@@ -867,41 +786,50 @@ TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo
       NPV_Rho = 3;
    else
       NPV_Rho = 0;
-   if (NPV_Rho == 1)
-   {
-      leg->AddEntry(hh[0]," 0 <= N_{PV} < 5","lep");
-      leg->AddEntry(hh[1]," 5 <= N_{PV} < 10","lep");
-      leg->AddEntry(hh[2],"10 <= N_{PV} < 15","lep");
-      leg->AddEntry(hh[3],"15 <= N_{PV} < 20","lep");
-      leg->AddEntry(hh[4],"20 <= N_{PV} < 25","lep");
-      leg->AddEntry(hh[5],"25 <= N_{PV} < 30","lep");
+
+   vector<TH1*> hh(off.size(),(TH1*)0);
+   double maxy = 0;
+   for (unsigned int j=0;j<off.size();j++){
+      TString hname = cname;
+      hname += Form("_%i",j);
+      hh.push_back(getMeanOverBinCenterHistoFromHisto(hname, ctitle, off[j], maxy));
+
    }
-   else if (NPV_Rho == 2)
-   {
-      leg->AddEntry(hh[0]," 0 <= Rho < 5","lep");
-      leg->AddEntry(hh[1]," 5 <= Rho < 10","lep");
-      leg->AddEntry(hh[2],"10 <= Rho < 15","lep");
-      leg->AddEntry(hh[3],"15 <= Rho < 20","lep");
-      leg->AddEntry(hh[4],"20 <= Rho < 25","lep");
-      leg->AddEntry(hh[5],"25 <= Rho < 30","lep");
+   if(!hh[0]) {
+      cout << "WARNING::getGausMeanOffsetOverPtref histogram hh[0] was not set by getMeanOverBinCenterHistoFromHisto." << endl
+           << "Returning blank canvas." << endl;
+      return c;
    }
-   else if (NPV_Rho == 3)
-   {
-      leg->AddEntry(hh[0]," 0 <= True NPU < 5","lep");
-      leg->AddEntry(hh[1]," 5 <= True NPU < 10","lep");
-      leg->AddEntry(hh[2],"10 <= True NPU < 15","lep");
-      leg->AddEntry(hh[3],"15 <= True NPU < 20","lep");
-      leg->AddEntry(hh[4],"20 <= True NPU < 25","lep");
-      leg->AddEntry(hh[5],"25 <= True NPU < 30","lep");
+   for (unsigned int j=0;j<hh.size();j++){
+      setHistoColor(hh[j],colNpv[j]);
    }
-   else
-   {
-      leg->AddEntry(hh[0],"chf","lep");
-      leg->AddEntry(hh[1],"nhf","lep");
-      leg->AddEntry(hh[2],"nef","lep");
-      leg->AddEntry(hh[3],"cef","lep");
-      leg->AddEntry(hh[4],"hfhf","lep");
-      leg->AddEntry(hh[5],"hfef","lep");
+
+   if(fixedRange) {
+      hh[0]->GetYaxis()->SetRangeUser(-0.1,0.1);
+   }
+   else {
+      hh[0]->GetYaxis()->SetRangeUser(0,1.25*maxy);
+   }
+   for (unsigned int j=0;j<hh.size();j++) {
+      if(j==0)
+         hh[0]->Draw("E");
+      else
+         hh[j]->Draw("sameE");
+      TString var;
+
+      if (NPV_Rho == 1)
+         var = "N_{PV}";
+      else if (NPV_Rho == 2)
+         var = "Rho";
+      else if (NPV_Rho == 3)
+         var = "True NPU";
+      else
+         var = PFstr[j];
+
+      if(j<hh.size()-1)
+         leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first,npvRhoNpuBins[j].second+1),"lep");
+      else
+         leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first),"lep");
    }
    leg->Draw();
 
@@ -915,7 +843,7 @@ TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo
 // getGausMeanOffsetScale
 // output mean of each x slice and scale so that the *scaleNo* bin is 1.
 // Legend depends on cname. If cname contains "rho", output rho legend. If cname contains "npv", output npv legend. Otherwise, output PF legend.
-TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, TH2 * off[6],int scaleNo, bool fixedRange){
+TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, vector<TH2*> off, int scaleNo, bool fixedRange, vector<pair<int,int> > npvRhoNpuBins){
 
    cout<<"\t Doing fits for Mean "<<cname<<endl;
    algo.ToUpper();
@@ -923,47 +851,6 @@ TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, TH
   
    TCanvas * c = new TCanvas(cname,cname);
    c->SetLogx();
-   TH1 * hh[6];
-   TH1 * histo = off[0]->ProjectionX(cname);
-   histo->Reset();
-   //histo->Clear();
-   histo->Sumw2();
-  
-
-   double maxy = 0;
-   //double scaleFactor;
-   for (int j=0;j<6;j++){
-      TString hname = cname;
-      hname += Form("_%i",j);
-      hh[j] = getMeanHistoFromHisto(hname, ctitle, off[j],maxy);
-      //hh[j]->Sumw2();    
-      for (int nb = 1 ; nb <= histo->GetXaxis()->GetNbins() ; nb++)
-      {
-
-         histo->SetBinContent(nb,hh[j]->GetBinContent(scaleNo));
-         histo->SetBinError(nb,hh[j]->GetBinError(scaleNo));
-
-      }    
-
-      hh[j]->Divide(histo);
-   }
-   setHistoColor(hh[0],colNpv0);
-   setHistoColor(hh[1],colNpv5);
-   setHistoColor(hh[2],colNpv10);
-   setHistoColor(hh[3],colNpv15);
-   setHistoColor(hh[4],colNpv20);
-   setHistoColor(hh[5],colNpv25);
-
-   if(fixedRange){
-      hh[0]->GetYaxis()->SetRangeUser(0.2,3);
-   }
-   else {
-      hh[0]->GetYaxis()->SetRangeUser(0,1.25*maxy);
-   }
-   hh[0]->Draw("E");
-   for (int j=1;j<6;j++)
-      hh[j]->Draw("sameE");
-
    TLegend * leg = new TLegend(0.15,0.72,0.4,0.99);
    leg->SetHeader(algo);
    leg->SetFillColor(0);
@@ -977,41 +864,63 @@ TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, TH
       NPV_Rho = 3;
    else
       NPV_Rho = 0;
-   if (NPV_Rho == 1)
-   {
-      leg->AddEntry(hh[0]," 0 <= N_{PV} < 5","lep");
-      leg->AddEntry(hh[1]," 5 <= N_{PV} < 10","lep");
-      leg->AddEntry(hh[2],"10 <= N_{PV} < 15","lep");
-      leg->AddEntry(hh[3],"15 <= N_{PV} < 20","lep");
-      leg->AddEntry(hh[4],"20 <= N_{PV} < 25","lep");
-      leg->AddEntry(hh[5],"25 <= N_{PV} < 30","lep");
+
+   vector<TH1*> hh(off.size(),(TH1*)0);
+   TH1 * histo = off[0]->ProjectionX(cname);
+   histo->Reset();
+   //histo->Clear();
+   histo->Sumw2();
+  
+
+   double maxy = 0;
+   double miny = 0;
+   //double scaleFactor;
+   for (unsigned int j=0;j<off.size();j++){
+      TString hname = cname;
+      hname += Form("_%i",j);
+      hh[j] = getMeanHistoFromHisto(hname, ctitle, off[j], miny, maxy);
+      //hh[j]->Sumw2();    
+      for (int nb = 1 ; nb <= histo->GetXaxis()->GetNbins() ; nb++)
+      {
+
+         histo->SetBinContent(nb,hh[j]->GetBinContent(scaleNo));
+         histo->SetBinError(nb,hh[j]->GetBinError(scaleNo));
+
+      }    
+
+      hh[j]->Divide(histo);
    }
-   else if (NPV_Rho == 2)
-   {
-      leg->AddEntry(hh[0]," 0 <= Rho < 5","lep");
-      leg->AddEntry(hh[1]," 5 <= Rho < 10","lep");
-      leg->AddEntry(hh[2],"10 <= Rho < 15","lep");
-      leg->AddEntry(hh[3],"15 <= Rho < 20","lep");
-      leg->AddEntry(hh[4],"20 <= Rho < 25","lep");
-      leg->AddEntry(hh[5],"25 <= Rho < 30","lep");
+   for (unsigned int j=0;j<hh.size();j++){
+      setHistoColor(hh[j],colNpv[j]);
    }
-   else if (NPV_Rho == 3)
-   {
-      leg->AddEntry(hh[0]," 0 <= True NPU < 5","lep");
-      leg->AddEntry(hh[1]," 5 <= True NPU < 10","lep");
-      leg->AddEntry(hh[2],"10 <= True NPU < 15","lep");
-      leg->AddEntry(hh[3],"15 <= True NPU < 20","lep");
-      leg->AddEntry(hh[4],"20 <= True NPU < 25","lep");
-      leg->AddEntry(hh[5],"25 <= True NPU < 30","lep");
+
+   if(fixedRange){
+      hh[0]->GetYaxis()->SetRangeUser(0.2,3);
    }
-   else
-   {
-      leg->AddEntry(hh[0],"chf","lep");
-      leg->AddEntry(hh[1],"nhf","lep");
-      leg->AddEntry(hh[2],"nef","lep");
-      leg->AddEntry(hh[3],"cef","lep");
-      leg->AddEntry(hh[4],"hfhf","lep");
-      leg->AddEntry(hh[5],"hfef","lep");
+   else {
+      hh[0]->GetYaxis()->SetRangeUser(((miny >= 0) - (miny < 0))*1.25*fabs(miny),1.25*maxy);
+      //hh[0]->GetYaxis()->SetRangeUser(0,1.25*maxy);
+   }
+   for (unsigned int j=0;j<hh.size();j++) {
+      if(j==0)
+         hh[0]->Draw("E");
+      else
+         hh[j]->Draw("sameE");
+      TString var;
+
+      if (NPV_Rho == 1)
+         var = "N_{PV}";
+      else if (NPV_Rho == 2)
+         var = "Rho";
+      else if (NPV_Rho == 3)
+         var = "True NPU";
+      else
+         var = PFstr[j];
+
+      if(j<hh.size()-1)
+         leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first,npvRhoNpuBins[j].second+1),"lep");
+      else
+         leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first),"lep");
    }
    leg->Draw();
 
@@ -1024,7 +933,7 @@ TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, TH
 // get the canvas from the resolution_v2
 // output Return rms(off)/mean(prof)
 // Legend depends on cname. If cname contains "rho", output rho legend. If cname contains "npv", output npv legend. Otherwise, output PF legend.
-TCanvas * getCanvasResolution_v2(TString cname, TString algo, TString title, TH2 * prof[6], TH2 * off[6]){
+TCanvas * getCanvasResolution_v2(TString cname, TString algo, TString title, vector<TH2*> prof, vector<TH2*> off, vector<pair<int,int> > npvRhoNpuBins){
 
    cout<<"\t Doing fits for Resolution "<<cname<<endl;
    algo.ToUpper();
@@ -1032,25 +941,6 @@ TCanvas * getCanvasResolution_v2(TString cname, TString algo, TString title, TH2
   
    TCanvas * c = new TCanvas(cname,cname);
    c->SetLogx();
-   TH1 * hh[6];
-   for (int j=0;j<6;j++){
-      TString hname = cname;
-      hname += Form("_%i",j);
-      hh[j] = getResolutionHistoFromHisto_v2(hname, title, prof[j] , off[j]);
-
-   }
-   setHistoColor(hh[0],colNpv0);
-   setHistoColor(hh[1],colNpv5);
-   setHistoColor(hh[2],colNpv10);
-   setHistoColor(hh[3],colNpv15);
-   setHistoColor(hh[4],colNpv20);
-   setHistoColor(hh[5],colNpv25);
-
-   hh[0]->GetYaxis()->SetRangeUser(0,30);
-   hh[0]->Draw("E");
-   for (int j=1;j<6;j++)
-      hh[j]->Draw("sameE");
-
    TLegend * leg = new TLegend(0.2,0.56,0.45,0.85);
    leg->SetHeader(algo);
    leg->SetFillColor(0);
@@ -1064,41 +954,37 @@ TCanvas * getCanvasResolution_v2(TString cname, TString algo, TString title, TH2
       NPV_Rho = 3;
    else
       NPV_Rho = 0;
-   if (NPV_Rho == 1)
-   {
-      leg->AddEntry(hh[0]," 0 <= N_{PV} < 5","lep");
-      leg->AddEntry(hh[1]," 5 <= N_{PV} < 10","lep");
-      leg->AddEntry(hh[2],"10 <= N_{PV} < 15","lep");
-      leg->AddEntry(hh[3],"15 <= N_{PV} < 20","lep");
-      leg->AddEntry(hh[4],"20 <= N_{PV} < 25","lep");
-      leg->AddEntry(hh[5],"25 <= N_{PV} < 30","lep");
+
+   vector<TH1*> hh(prof.size(),(TH1*)0);
+   for (unsigned int j=0;j<prof.size();j++){
+      TString hname = cname;
+      hname += Form("_%i",j);
+      hh[j] = getResolutionHistoFromHisto_v2(hname, title, prof[j] , off[j]);
+
    }
-   else if (NPV_Rho == 2)
-   {
-      leg->AddEntry(hh[0]," 0 <= Rho < 5","lep");
-      leg->AddEntry(hh[1]," 5 <= Rho < 10","lep");
-      leg->AddEntry(hh[2],"10 <= Rho < 15","lep");
-      leg->AddEntry(hh[3],"15 <= Rho < 20","lep");
-      leg->AddEntry(hh[4],"20 <= Rho < 25","lep");
-      leg->AddEntry(hh[5],"25 <= Rho < 30","lep");
-   }
-   else if (NPV_Rho == 3)
-   {
-      leg->AddEntry(hh[0]," 0 <= True NPU < 5","lep");
-      leg->AddEntry(hh[1]," 5 <= True NPU < 10","lep");
-      leg->AddEntry(hh[2],"10 <= True NPU < 15","lep");
-      leg->AddEntry(hh[3],"15 <= True NPU < 20","lep");
-      leg->AddEntry(hh[4],"20 <= True NPU < 25","lep");
-      leg->AddEntry(hh[5],"25 <= True NPU < 30","lep");
-   }
-   else
-   {
-      leg->AddEntry(hh[0],"chf","lep");
-      leg->AddEntry(hh[1],"nhf","lep");
-      leg->AddEntry(hh[2],"nef","lep");
-      leg->AddEntry(hh[3],"cef","lep");
-      leg->AddEntry(hh[4],"hfhf","lep");
-      leg->AddEntry(hh[5],"hfef","lep");
+   for (unsigned int j=0;j<hh.size();j++) {
+      setHistoColor(hh[j],colNpv[j]);
+      if(j==0) {
+         hh[0]->GetYaxis()->SetRangeUser(0,30);
+         hh[0]->Draw("E");
+      }
+      else
+         hh[j]->Draw("sameE");
+      TString var;
+
+      if (NPV_Rho == 1)
+         var = "N_{PV}";
+      else if (NPV_Rho == 2)
+         var = "Rho";
+      else if (NPV_Rho == 3)
+         var = "True NPU";
+      else
+         var = PFstr[j];
+
+      if(j<hh.size()-1)
+         leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first,npvRhoNpuBins[j].second+1),"lep");
+      else
+         leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first),"lep");
    }
    leg->Draw();
 
@@ -1112,43 +998,37 @@ TCanvas * getCanvasResolution_v2(TString cname, TString algo, TString title, TH2
 // get the canvas from integral
 // output integral of each X slice
 // Legend is NPV legend
-TCanvas * getCanvasIntegral(TString cname, TString algo, TString title, TProfile * prof[6]){
+TCanvas * getCanvasIntegral(TString cname, TString algo, TString title, vector<TProfile*> prof, vector<pair<int,int> > npvRhoNpuBins){
    cout<<"\t Doing integration "<<cname<<endl;
    algo.ToUpper();
    TCanvas * c = new TCanvas(cname,cname);
    c->SetLogx();
-   TH1 * hh[6];
-  
-  
-  
-   for (int j=0;j<6;j++){
-      TString hname = cname;
-      hname += Form("_%i",j);
-      hh[j] = getIntegralHistoFromHisto(hname, title, prof[j]);
-
-   }
-   setHistoColor(hh[0],colNpv0);
-   setHistoColor(hh[1],colNpv5);
-   setHistoColor(hh[2],colNpv10);
-   setHistoColor(hh[3],colNpv15);
-   setHistoColor(hh[4],colNpv20);
-   setHistoColor(hh[5],colNpv25);
-
-   hh[0]->GetYaxis()->SetRangeUser(0,22);
-   hh[0]->Draw("E");
-   for (int j=1;j<6;j++)
-      hh[j]->Draw("sameE");
-
    TLegend * leg = new TLegend(0.65,0.56,0.9,0.85);
    leg->SetHeader(algo);
    leg->SetFillColor(0);
    leg->SetBorderSize(0);
-   leg->AddEntry(hh[0]," 0 <= N_{PV} < 5","lep");
-   leg->AddEntry(hh[1]," 5 <= N_{PV} < 10","lep");
-   leg->AddEntry(hh[2],"10 <= N_{PV} < 15","lep");
-   leg->AddEntry(hh[3],"15 <= N_{PV} < 20","lep");
-   leg->AddEntry(hh[4],"20 <= N_{PV} < 25","lep");
-   leg->AddEntry(hh[5],"25 <= N_{PV}   ","lep");
+
+   vector<TH1*> hh(prof.size(),(TH1*)0);
+  
+   for (unsigned int j=0;j<prof.size();j++){
+      TString hname = cname;
+      hname += Form("_%i",j);
+      hh[j] = getIntegralHistoFromHisto(hname, title, prof[j]);
+      setHistoColor(hh[j],colNpv[j]);
+   }
+
+   for (unsigned int j=0;j<hh.size();j++) {
+      if(j==0) {
+         hh[j]->GetYaxis()->SetRangeUser(0,22);
+         hh[j]->Draw("E");
+      }
+      else
+         hh[j]->Draw("sameE");
+      if(j<hh.size()-1)
+         leg->AddEntry(hh[j],JetInfo::getBinLegendEntry("N_{PV}",npvRhoNpuBins[j].first,npvRhoNpuBins[j].second+1),"lep");
+      else
+         leg->AddEntry(hh[j],JetInfo::getBinLegendEntry("N_{PV}",npvRhoNpuBins[j].first),"lep");
+   }
    leg->Draw();
 
    return c;
@@ -1190,44 +1070,37 @@ TH1 * getIntegralHistoFromHisto(TString cname, TString title,TProfile *off_in){
 // ------------------------------------------------------------------
 // get the canvas from average
 // output average of each X slice
-TCanvas * getCanvasAverage(TString cname, TString algo, TString title, TProfile * prof[6]){
+TCanvas * getCanvasAverage(TString cname, TString algo, TString title, vector<TProfile*> prof, vector<pair<int,int> > npvRhoNpuBins){
 
    cout<<"\t Doing Averaging "<<cname<<endl;
    algo.ToUpper();
    TCanvas * c = new TCanvas(cname,cname);
    c->SetLogx();
-   TH1 * hh[6];
-  
-  
-  
-   for (int j=0;j<6;j++){
-      TString hname = cname;
-      hname += Form("_%i",j);
-      hh[j] = getAverageHistoFromHisto(hname, title, prof[j]);
-
-   }
-   setHistoColor(hh[0],colNpv0);
-   setHistoColor(hh[1],colNpv5);
-   setHistoColor(hh[2],colNpv10);
-   setHistoColor(hh[3],colNpv15);
-   setHistoColor(hh[4],colNpv20);
-   setHistoColor(hh[5],colNpv25);
-
-   hh[0]->GetYaxis()->SetRangeUser(0,300);
-   hh[0]->Draw("E");
-   for (int j=1;j<6;j++)
-      hh[j]->Draw("sameE");
-
    TLegend * leg = new TLegend(0.65,0.56,0.9,0.85);
    leg->SetHeader(algo);
    leg->SetFillColor(0);
    leg->SetBorderSize(0);
-   leg->AddEntry(hh[0]," 0 <= N_{PV} < 5","lep");
-   leg->AddEntry(hh[1]," 5 <= N_{PV} < 10","lep");
-   leg->AddEntry(hh[2],"10 <= N_{PV} < 15","lep");
-   leg->AddEntry(hh[3],"15 <= N_{PV} < 20","lep");
-   leg->AddEntry(hh[4],"20 <= N_{PV} < 25","lep");
-   leg->AddEntry(hh[5],"25 <= N_{PV}   ","lep");
+
+   vector<TH1*> hh(prof.size(),(TH1*)0);
+  
+   for (unsigned int j=0;j<prof.size();j++){
+      TString hname = cname;
+      hname += Form("_%i",j);
+      hh[j] = getAverageHistoFromHisto(hname, title, prof[j]);
+      setHistoColor(hh[j],colNpv[j]);
+   }
+   for (unsigned int j=0;j<hh.size();j++) {
+      if(j==0) {
+         hh[j]->GetYaxis()->SetRangeUser(0,300);
+         hh[j]->Draw("E");
+      }
+      else
+         hh[j]->Draw("sameE");
+      if(j<hh.size()-1)
+         leg->AddEntry(hh[j],JetInfo::getBinLegendEntry("N_{PV}",npvRhoNpuBins[j].first,npvRhoNpuBins[j].second+1),"lep");
+      else
+         leg->AddEntry(hh[j],JetInfo::getBinLegendEntry("N_{PV}",npvRhoNpuBins[j].first),"lep");
+   }
    leg->Draw();
 
    return c;
