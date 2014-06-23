@@ -21,6 +21,14 @@ ak5PFHLTJets    = ak5PFJets.clone( src = 'hltAntiKT5PFJets' )
 ak5PFchsHLTJets = ak5PFJets.clone( src = 'hltAntiKT5PFJetsNoPUPixelVert' )
 kt6CaloJets50   = kt6CaloJets.clone()
 kt6PFJets50     = kt6PFJets.clone()
+
+
+ak1GenJets      = ak5GenJets.clone  ( rParam=0.1 )
+ak1PFJets       = ak5PFJets.clone   ( rParam=0.1 )
+ak1PFchsJets    = ak5PFchsJets.clone( rParam=0.1 )
+ak2GenJets      = ak5GenJets.clone  ( rParam=0.2 )
+ak2PFJets       = ak5PFJets.clone   ( rParam=0.2 )
+ak2PFchsJets    = ak5PFchsJets.clone( rParam=0.2 )
 ak3GenJets      = ak5GenJets.clone  ( rParam=0.3 )
 ak3PFJets       = ak5PFJets.clone   ( rParam=0.3 )
 ak3PFchsJets    = ak5PFchsJets.clone( rParam=0.3 )
@@ -76,6 +84,8 @@ ca7PFJets    = ca4PFJets.clone( rParam=0.7 )
 #ca7TrackJets = ca4TrackJets.clone( rParam=0.7 )
 
 # genjets without muons & neutrinos
+ak1GenJetsNoMuNoNu  = ak1GenJets.clone ( src = 'genParticlesForJetsNoMuNoNu' )
+ak2GenJetsNoMuNoNu  = ak2GenJets.clone ( src = 'genParticlesForJetsNoMuNoNu' )
 ak3GenJetsNoMuNoNu  = ak3GenJets.clone ( src = 'genParticlesForJetsNoMuNoNu' )
 ak4GenJetsNoMuNoNu  = ak4GenJets.clone ( src = 'genParticlesForJetsNoMuNoNu' )
 ak5GenJetsNoMuNoNu  = ak5GenJets.clone ( src = 'genParticlesForJetsNoMuNoNu' )
@@ -97,6 +107,8 @@ ca6GenJetsNoMuNoNu  = ca6GenJets.clone ( src = 'genParticlesForJetsNoMuNoNu' )
 ca7GenJetsNoMuNoNu  = ca7GenJets.clone ( src = 'genParticlesForJetsNoMuNoNu' )
 
 # genjets without neutrinos
+ak1GenJetsNoNu  = ak1GenJets.clone ( src = 'genParticlesForJetsNoNu' )
+ak2GenJetsNoNu  = ak2GenJets.clone ( src = 'genParticlesForJetsNoNu' )
 ak3GenJetsNoNu  = ak3GenJets.clone ( src = 'genParticlesForJetsNoNu' )
 ak4GenJetsNoNu  = ak4GenJets.clone ( src = 'genParticlesForJetsNoNu' )
 ak5GenJetsNoNu  = ak5GenJets.clone ( src = 'genParticlesForJetsNoNu' )

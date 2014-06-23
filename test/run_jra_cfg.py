@@ -41,9 +41,9 @@ process.source = cms.Source("PoolSource",
                             fileNames = inputFiles )
 
 
-#algsizetype = {'ak':[3,5]}
-algsizetype = {'ak':[3,4,5,6,7,8,9,10]}
-jettype = ['pfchs']
+algsizetype = {'ak':[4]}
+#algsizetype = {'ak':[3,4,5,6,7,8,9,10]}
+jettype = ['pf']
 #jettype = ['calo','pf','pfchs']
 corrs = ['']
 #corrs = ['','l1','l2l3']

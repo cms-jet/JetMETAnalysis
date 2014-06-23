@@ -16,13 +16,19 @@ const int RespHigh                    = 2;
 const int CorrLow                     = 0;
 const int CorrHigh                    = 10;
 const int NRhoBins                    = 1000;
+const int NRHO                        = 50;
 const int RhoLow                      = 0;
 const int RhoHigh                     = 100;
+const int NTNPU                       = 200;
 const int NAlgorithms                 = 6;
 const int NJetTypes                   = 8;
 const int NCorrectionLevels           = 7;
-const int NConeSizes                  = 8;
+const int NConeSizes                  = 10;
 const int NDetectorNames              = 4;
+const int NDetectorRegions            = 3;
+const int NPFcat                      = 6;
+const int NPDGIDcat                   = 7;
+const int NHistogramTypes             = 12;
 
 const char Pt[NPtBins+1][10]          = {"10","10.5","11","11.5","12","12.5","13","13.5","14","15","17","20","23","27","30","35","40","45","57","72","90","120","150","200","300","400","550","750","1000","1500","2000","2500","3000","3500","4000","4500","5000","10000"};
 
@@ -76,11 +82,24 @@ const double veta_HLT[NETA_HLT+1] = {-5.191,-4.538,-4.363,-4.191,-4.013,-3.839,-
 1.653,  1.74,  1.83,  1.93,  2.043, 2.172, 2.322 ,2.5,   2.65,  2.853,
 2.964,  3.139, 3.314, 3.489, 3.664, 3.839, 4.013 ,4.191, 4.363, 4.538,5.191};
 
-const double vpt[NPtBins+1] = {10,10.5,11,11.5,12,12.5,13,13.5,14,15,17,20,23,27,30,35,40,45,57,72,90,120,150,200,300,400,550,750,1000,1500,2000,2500,3000,3500,4000,4500,5000,10000};
+const double vpt[NPtBins+1] = {10,10.5,11,11.5,12,12.5,13,13.5,14,15,17,20,23,27,30,35,40,45,57,72,90,120,150,200,300,400,550,
+							   750,1000,1500,2000,2500,3000,3500,4000,4500,5000,10000};
 
-const double vpt_HLT[NPtBinsHLT+1] = {0.1,1,7,10,10.5,11,11.5,12,12.5,13,13.5,14,15,17,20,23,27,30,35,40,45,57,72,90,120,150,200,300,400,550,750,1000,1500,2000,2500,3000,3500,4000,4500,5000,10000};
+const double vpt_HLT[NPtBinsHLT+1] = {0.1,1,7,10,10.5,11,11.5,12,12.5,13,13.5,14,15,17,20,23,27,30,35,40,45,57,72,90,120,150,
+									  200,300,400,550,750,1000,1500,2000,2500,3000,3500,4000,4500,5000,10000};
 
 const double vphi[NPhi+1] = {-3.141,-2.700,-2.100,-1.500,-0.900,-0.300,0.300,0.900,1.500,2.100,2.700,3.141};
+
+const double vrho[NRHO+1] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
+							 36,37,38,39,40,41,42,43,44,45,46,47,48,49,50};
+
+const double vtnpu[NTNPU+1] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,
+							   36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,
+						   	   71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,
+						   	   106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,
+						   	   134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,
+						   	   162,163,164,165,166,167,168,169,170,171,172,173,174,175,176,177,178,179,180,181,182,183,184,185,186,187,188,189,
+						   	   190,191,192,193,194,195,196,197,198,199,200};
 
 const double vpileup[NPileup] = {0,0,1,5,6,10,11,15,16,25,26,1000};
 
@@ -94,6 +113,29 @@ const TString jet_types[NJetTypes] = {"Calo","PF","PFchs","JPT","CaloHLT","PFHLT
 
 const TString correction_levels[NCorrectionLevels] = {"L1Offset","L1FastJet","L2Relative","L3Absolute","L2L3Residual","L5Flavor","L7Parton"};
 
-const TString cone_sizes[NConeSizes] = {"0.3","0.4","0.5","0.6","0.7","0.8","0.9","1.0"};
+const TString cone_sizes[NConeSizes] = {"0.1","0.2","0.3","0.4","0.5","0.6","0.7","0.8","0.9","1.0"};
 
-const TString detector_names[NDetectorNames] ={"Barrel","Inner Endcap","Outer Endcap","Forward"};
+const TString detector_names[NDetectorNames] = {"Barrel","Inner Endcap","Outer Endcap","Forward"};
+
+const TString detector_regions[NDetectorRegions] = {"Barrel","Endcap","Forward"};
+
+const int colDet[NDetectorNames] = {kGreen+3,kBlue+1,kYellow+2,kRed+1};
+
+const int colDetRegions[NDetectorRegions] = {kGreen+3,kBlue+1,kRed+1};
+
+const TString PFstr[NPFcat] = {"chf","nhf","nef","cef","hfhf","hfef"};
+
+const TString pdgidstr[NPDGIDcat] = {"nJ","qJ","cJ","bJ","gJ","aJ","aqJ"};
+
+const TString pdgidstrLegend[NPDGIDcat] = {"nJ (unknown PDGID)","qJ","cJ","bJ","gJ","aJ (all jets)","aqJ (quark jets)"};
+
+const int colPDGID[NPDGIDcat] = {kYellow+2,kGreen+2,kCyan+2,kBlue+2,kRed+2,kBlack,kMagenta+2};
+
+//const int colNpv[6] = {kYellow+2,kGreen+2,kCyan+2,kBlue+2,kMagenta+2,kRed+2}; //0,5,10,15,20,25
+const int colNpv[48] = {kRed+2,kOrange+2,kYellow+2,kSpring+2,kGreen+2,kTeal+2,kCyan+2,kAzure+2,kBlue+2,kViolet+2,kMagenta+2,kPink+2,
+					   kRed,kOrange,kYellow,kSpring,kGreen,kTeal,kCyan,kAzure,kBlue,kViolet,kMagenta,kPink,
+					   kRed-7,kOrange-7,kYellow-7,kSpring-7,kGreen-7,kTeal-7,kCyan-7,kAzure-7,kBlue-7,kViolet-7,kMagenta-7,kPink-7,
+					   kRed-9,kOrange-9,kYellow-9,kSpring-9,kGreen-9,kTeal-9,kCyan-9,kAzure-9,kBlue-9,kViolet-9,kMagenta-9,kPink-9};
+
+const TString histogram_types[NHistogramTypes] = {"TH1","TH1F","TH1D","TH2","TH2F","TH2D","TH3","TH3F","TH3D","TProfile","TProfile2D","TProfile3D"};
+

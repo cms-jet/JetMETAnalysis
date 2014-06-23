@@ -21,9 +21,12 @@ Defaults.JetResponseParameters.doHLT = True
 #!
 #! PROCESS
 #!
-applyDBFile = False
-#era = Summer12_V1_MC
-era = "ConeSizeTest_MC_PFchs"
+applyDBFile = True
+#era = "Summer12_V1_MC"
+#era = "ConeSizeTest_MC_PFchs"
+#era = "Winter14_V1_MC"
+#era = "AK4_V2_MC"
+era = "CSA14_V1_MC"
 doProducer = False
 process = cms.Process("JRA")
 if doProducer:
@@ -44,45 +47,69 @@ if applyDBFile:
 #		cms.PSet(record = cms.string("JetCorrectionsRecord"),
 #				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK5Calo"),
 #				 label= cms.untracked.string("AK5Calo")),
-		cms.PSet(record = cms.string("JetCorrectionsRecord"),
-				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK5PF"),
-				 label= cms.untracked.string("AK5PF")),
 #		cms.PSet(record = cms.string("JetCorrectionsRecord"),
-#				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK5PFchs"),
-#				 label=cms.untracked.string("AK5PFchs")),
+#				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK5PF"),
+#				 label= cms.untracked.string("AK5PF")),
+		cms.PSet(record = cms.string("JetCorrectionsRecord"),
+				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK5PFchs"),
+				 label=cms.untracked.string("AK5PFchs")),
 #		cms.PSet(record = cms.string("JetCorrectionsRecord"),
 #				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK5JPT"),
 #				 label=cms.untracked.string("AK5JPT")),
 #		cms.PSet(record = cms.string("JetCorrectionsRecord"),
 #				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK7Calo"),
 #				 label= cms.untracked.string("AK7Calo")),
-		cms.PSet(record = cms.string("JetCorrectionsRecord"),
-				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK7PF"),
-				 label= cms.untracked.string("AK7PF")),
 #		cms.PSet(record = cms.string("JetCorrectionsRecord"),
-#				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK7PFchs"),
-#				 label=cms.untracked.string("AK7PFchs")),
+#				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK7PF"),
+#				 label= cms.untracked.string("AK7PF")),
+		cms.PSet(record = cms.string("JetCorrectionsRecord"),
+				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK7PFchs"),
+				 label=cms.untracked.string("AK7PFchs")),
 #		cms.PSet(record = cms.string("JetCorrectionsRecord"),
 #				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK7JPT"),
 #				 label=cms.untracked.string("AK7JPT")),
+#		cms.PSet(record = cms.string("JetCorrectionsRecord"),
+#				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK3PF"),
+#				 label= cms.untracked.string("AK3PF")),
+#		cms.PSet(record = cms.string("JetCorrectionsRecord"),
+#				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK4PF"),
+#				 label= cms.untracked.string("AK4PF")),
+#		cms.PSet(record = cms.string("JetCorrectionsRecord"),
+#				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK6PF"),
+#				 label= cms.untracked.string("AK6PF")),
+#		cms.PSet(record = cms.string("JetCorrectionsRecord"),
+#				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK8PF"),
+#				 label= cms.untracked.string("AK8PF")),
+#		cms.PSet(record = cms.string("JetCorrectionsRecord"),
+#				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK9PF"),
+#				 label= cms.untracked.string("AK9PF")),
+#		cms.PSet(record = cms.string("JetCorrectionsRecord"),
+#				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK10PF"),
+#				 label= cms.untracked.string("AK10PF")),
 		cms.PSet(record = cms.string("JetCorrectionsRecord"),
-				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK3PF"),
-				 label= cms.untracked.string("AK3PF")),
+				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK1PFchs"),
+				 label= cms.untracked.string("AK1PFchs")),
 		cms.PSet(record = cms.string("JetCorrectionsRecord"),
-				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK4PF"),
-				 label= cms.untracked.string("AK4PF")),
+				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK2PFchs"),
+				 label= cms.untracked.string("AK2PFchs")),
 		cms.PSet(record = cms.string("JetCorrectionsRecord"),
-				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK6PF"),
-				 label= cms.untracked.string("AK6PF")),
+				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK3PFchs"),
+				 label= cms.untracked.string("AK3PFchs")),
 		cms.PSet(record = cms.string("JetCorrectionsRecord"),
-				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK8PF"),
-				 label= cms.untracked.string("AK8PF")),
+				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK4PFchs"),
+				 label= cms.untracked.string("AK4PFchs")),
 		cms.PSet(record = cms.string("JetCorrectionsRecord"),
-				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK9PF"),
-				 label= cms.untracked.string("AK9PF")),
+				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK6PFchs"),
+				 label= cms.untracked.string("AK6PFchs")),
 		cms.PSet(record = cms.string("JetCorrectionsRecord"),
-				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK10PF"),
-				 label= cms.untracked.string("AK10PF")),	
+				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK8PFchs"),
+				 label= cms.untracked.string("AK8PFchs")),
+		cms.PSet(record = cms.string("JetCorrectionsRecord"),
+				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK9PFchs"),
+				 label= cms.untracked.string("AK9PFchs")),
+		cms.PSet(record = cms.string("JetCorrectionsRecord"),
+				 tag = cms.string("JetCorrectorParametersCollection_"+era+"_AK10PFchs"),
+				 label= cms.untracked.string("AK10PFchs")),
 		)
 							   )
 	process.es_prefer_jec = cms.ESPrefer("PoolDBESSource","jec")
@@ -94,10 +121,12 @@ qcdFiles = cms.untracked.vstring(
 ###########
 # with PU #
 ###########
-    '/store/mc/Summer12_DR53X/QCD_Pt-15to3000_TuneZ2star_Flat_8TeV_pythia6/AODSIM/PU_S10_START53_V7A-v1/0000/FA333B66-8ED2-E111-AF2E-0030487D8151.root',
+#    '/store/mc/Summer12_DR53X/QCD_Pt-15to3000_TuneZ2star_Flat_8TeV_pythia6/AODSIM/PU_S10_START53_V7A-v1/0000/FA333B66-8ED2-E111-AF2E-0030487D8151.root',
 #    '/store/mc/Summer12_DR53X/QCD_Pt-15to3000_TuneZ2star_Flat_8TeV_pythia6/AODSIM/PU_S10_START53_V7A-v1/0000/004CB136-A1D3-E111-B958-0030487E4B8D.root',
 #    '/store/mc/Summer12_DR53X/QCD_Pt-15to3000_TuneZ2star_Flat_8TeV_pythia6/AODSIM/PU_S10_START53_V7A-v1/0000/007D8FA7-B7D3-E111-B904-003048F0E1B0.root',
 #    '/store/mc/Summer12_DR53X/QCD_Pt-15to3000_TuneZ2star_Flat_8TeV_pythia6/AODSIM/PU_S10_START53_V7A-v1/0000/00E7FCBF-C2D3-E111-A9D5-003048F0E194.root',
+	
+	'/store/mc/Summer12_DR53X/QCD_Pt-15to3000_TuneZ2star_Flat_8TeV_pythia6/AODSIM/PU_RD1_START53_V7N-v1/00000/0432447C-346D-E311-A777-0025904B130A.root'
 ##############
 # without PU #
 ##############
@@ -133,11 +162,11 @@ process.pfNoPileUp.bottomCollection = 'particleFlow'
 #!
 from JetMETAnalysis.JetAnalyzers.addAlgorithm import addAlgorithm
 
-#algsizetype = {'ak':[3,5]}
-algsizetype = {'ak':[3,4,5,6,7,8,9,10]}
+#algsizetype = {'ak':[4]}
+algsizetype = {'ak':[1,2,3,4,5,6,7,8,9,10]}
 jettype = ['pfchs']
 #jettype = ['calo','pf','pfchs']
-corrs = ['']
+corrs = ['l1']
 #corrs = ['','l1','l2l3']
 
 algorithms = []
@@ -237,7 +266,6 @@ else:
     algorithms.append('ak7jptl1offl2l3')
 
 
-
     #
     # taus
     # ----
@@ -275,8 +303,8 @@ for algorithm in algorithms:
 #process.ak5PFJets.jetPtMin = 1.0
 #process.ak7CaloJets.jetPtMin = 1.0
 #process.ak7PFJets.jetPtMin = 1.0
-process.ak5PFchsJets.jetPtMin = 1.0
-process.ak7PFchsJets.jetPtMin = 1.0
+#process.ak5PFchsJets.jetPtMin = 1.0
+#process.ak7PFchsJets.jetPtMin = 1.0
 
 
 #!
