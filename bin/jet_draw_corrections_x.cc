@@ -916,6 +916,14 @@ string getAlias(TString s)
       return "AK5CaloHLT";
    else if (s=="ak5caloHLTl1")
       return "AK5CaloHLTl1";
+   else if (s=="ak1pf")
+      return "AK1PF";
+   else if (s=="ak1pfl1")
+      return "AK1PFl1";
+   else if (s=="ak2pf")
+      return "AK2PF";
+   else if (s=="ak2pfl1")
+      return "AK2PFl1";
    else if (s=="ak3pf")
       return "AK3PF";
    else if (s=="ak3pfl1")
@@ -954,6 +962,22 @@ string getAlias(TString s)
       return "AK10PF";
    else if (s=="ak10pfl1")
       return "AK10PFl1";
+   else if (s=="ak1pfchs")
+      return "AK1PFchs";
+   else if (s=="ak1pfchsl1")
+      return "AK1PFchsl1";
+   else if (s=="ak2pfchs")
+      return "AK2PFchs";
+   else if (s=="ak2pfchsl1")
+      return "AK2PFchsl1";
+   else if (s=="ak3pfchs")
+      return "AK3PFchs";
+   else if (s=="ak3pfchsl1")
+      return "AK3PFchsl1";
+   else if (s=="ak4pfchs")
+      return "AK4PFchs";
+   else if (s=="ak4pfchsl1")
+      return "AK4PFchsl1";
    else if (s=="ak5pfchs")
       return "AK5PFchs";
    else if (s=="ak5pfchsl1")
@@ -962,12 +986,28 @@ string getAlias(TString s)
       return "AK5PFchsl1";
    else if (s=="ak5pfchsl1off")
       return "AK5PFchsl1off";
+   else if (s=="ak6pfchs")
+      return "AK6PFchs";
+   else if (s=="ak6pfchsl1")
+      return "AK6PFchsl1";
    else if (s=="ak7pfchs")
       return "AK7PFchs";
    else if (s=="ak7pfchsl1")
       return "AK7PFchsl1";
    else if (s=="ak7pfchsl1off")
       return "AK7PFchsl1off";
+   else if (s=="ak8pfchs")
+      return "AK8PFchs";
+   else if (s=="ak8pfchsl1")
+      return "AK8PFchsl1";
+   else if (s=="ak9pfchs")
+      return "AK9PFchs";
+   else if (s=="ak9pfchsl1")
+      return "AK9PFchsl1";
+   else if (s=="ak10pfchs")
+      return "AK10PFchs";
+   else if (s=="ak10pfchsl1")
+      return "AK10PFchsl1";
    else if (s=="ak5pfHLT")
       return "AK5PFHLT";
   else if (s=="ak5pfHLTl1")
