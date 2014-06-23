@@ -266,7 +266,7 @@ int main(int argc,char**argv)
            // will be at least 5 Gev in raw energy.
            //
            //if (xmin<7) xmin=7;
-           if (npoints<3) {
+           if (npoints<3 && !delphes) {
               gabscor->SetPoint     (0, 10.0,1.0);
               gabscor->SetPointError(0,  0.0,0.0);
               gabscor->SetPoint     (1,100.0,1.0);
@@ -390,7 +390,7 @@ int main(int argc,char**argv)
      TH1F*           hjetpt(0);
      hl_jetpt.begin_loop();
      while ((hjetpt=hl_jetpt.next_object(indices))) {
-        
+
         unsigned int ieta = indices[0];
         unsigned int ipt  = indices[1];
         
@@ -401,11 +401,12 @@ int main(int argc,char**argv)
            ss<<hl_jetpt.minimum(0,ieta)<<"to"<<hl_jetpt.maximum(0,ieta);
            vrelcor_eta.back()->SetName(("RelCorVsJetPt_JetEta"+ss.str()).c_str());
         }
-        
+
         // only add a point to the graph if the current histo is not empty
         if (hjetpt->Integral()!=0) {
            TF1*   fabscor  =vabscor_eta[ieta]->GetFunction("fit");
            double jetpt    =hjetpt->GetMean();
+           if(!fabscor) continue;
            double refpt    =jetpt*fabscor->Eval(jetpt);
            double l3cor    = 1;
            if (!l2l3) l3cor = fl3rsp->Eval(refpt);
@@ -419,7 +420,7 @@ int main(int argc,char**argv)
               vrelcor_eta.back()->SetPoint(n,jetpt,relcor);
            }
         }
-        
+
         // fit the graph if the last pt of the current eta bin comes around
         if (ipt==hl_jetpt.nobjects(1)-1 && (vrelcor_eta.back())->GetN()!=0) {
            TGraph* grelcor = vrelcor_eta.back();
@@ -452,11 +453,11 @@ int main(int argc,char**argv)
            
            grelcor->Fit(frelcor,"QRB0");
            grelcor->GetListOfFunctions()->First()->ResetBit(TF1::kNotDraw);
-        grelcor->SetMarkerStyle(20); 
-        grelcor->Write();
+           grelcor->SetMarkerStyle(20); 
+           grelcor->Write();
         }
      }
-    
+
      //
      // write the L2 correction text file for the current algorithm
      //
