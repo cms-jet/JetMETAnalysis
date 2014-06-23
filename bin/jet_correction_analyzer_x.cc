@@ -261,6 +261,8 @@ int main(int argc,char**argv)
       TProfile2D *RhoVsOffETVsEta;
       TProfile2D *RhoVsOffITVsEta;
       TProfile2D *RhoVsOffLTVsEta;
+      TProfile2D *RespVsEtaVsPtProfile;
+      TProfile *RespVsPtProfile;
 
       //
       // Get the corrections from the text files
@@ -345,6 +347,9 @@ int main(int argc,char**argv)
       RespVsPt_End->Sumw2();
       RespVsPt_Fwd = new TH2F("RespVsPt_Fwd","RespVsPt_Fwd",NPtBins,vpt,NRespBins,RespLow,RespHigh);
       RespVsPt_Fwd->Sumw2();
+      RespVsPtProfile = new TProfile("RespVsPtProfile","RespVsPtProfile",NPtBins,vpt);
+      RespVsPtProfile->Sumw2();
+      RespVsPtProfile->SetErrorOption("s");
       HigherDist = new TH1F("HigherDist","HigherDist",1999,1,2000);
       MiddleDist = new TH1F("MiddleDist","MiddleDist",1999,1,2000);
       LowerDist = new TH1F("LowerDist","LowerDist",1999,1,2000);
@@ -352,6 +357,9 @@ int main(int argc,char**argv)
       ScaleVsEtaVsPt->Sumw2();
       RespVsEtaVsPt = new TH3F("RespVsEtaVsPt","RespVsEtaVsPt",NPtBins,vpt,NETA,veta,NRespBins,vresp);
       RespVsEtaVsPt->Sumw2();
+      RespVsEtaVsPtProfile = new TProfile2D("RespVsEtaVsPtProfile","RespVsEtaVsPtProfile",NPtBins,vpt,NETA,veta);
+      RespVsEtaVsPtProfile->Sumw2();
+      RespVsEtaVsPtProfile->SetErrorOption("s");
       RelRspVsSumPt = new TProfile("RelRspVsSumPt","RelRspVsSumPt",NPtBins,vpt);
       RelRspVsSumPt->Sumw2();
       ResolutionVsPt = new TH1F("ResolutionVsPt","ResolutionVsPt",NPtBins,vpt);
@@ -552,6 +560,8 @@ int main(int argc,char**argv)
             if(MiddleDist->FindBin(scale*pt) == MiddleDist->FindBin(ptgen)) MiddleDist->Fill(scale*pt,weight);
             if(LowerDist->FindBin(scale*pt) > LowerDist->FindBin(ptgen)) LowerDist->Fill(scale*pt,weight);
             RespVsEtaVsPt->Fill(ptgen,eta,relrsp,weight);
+            RespVsEtaVsPtProfile->Fill(ptgen,eta,relrsp,weight);
+            RespVsPtProfile->Fill(ptgen,relrsp,weight);
             EtaVsPt->Fill(eta, log10(pt*scale),weight);
             TPUDistribution->Fill((*tnpus)[iIT],weight);
 
@@ -713,6 +723,7 @@ int main(int argc,char**argv)
          makeResolutionHistogram(RespVsEtaVsPt,ResolutionVsEta[i],"y",mpv,i,i);
       }
       makeResolutionHistogram(RespVsEtaVsPt,ResolutionVsPt,"x",mpv);
+
       /*if(!readRespVsPileup.IsNull()) {
         for(int i=0; i<3; i++) {
         addErrorQuadrature(DPtVsNPU[i],ErrorForNPU[i]);
@@ -845,6 +856,22 @@ string getAlias(TString s)
       return "AK10PF";
    else if (s=="ak10pfl1")
       return "AK10PFl1";
+   else if (s=="ak1pfchs")
+      return "AK1PFchs";
+   else if (s=="ak1pfchsl1")
+      return "AK1PFchsl1";
+   else if (s=="ak2pfchs")
+      return "AK2PFchs";
+   else if (s=="ak2pfchsl1")
+      return "AK2PFchsl1";
+   else if (s=="ak3pfchs")
+      return "AK3PFchs";
+   else if (s=="ak3pfchsl1")
+      return "AK3PFchsl1";
+   else if (s=="ak4pfchs")
+      return "AK4PFchs";
+   else if (s=="ak4pfchsl1")
+      return "AK4PFchsl1";
    else if (s=="ak5pfchs")
       return "AK5PFchs";
    else if (s=="ak5pfchsl1")
@@ -853,12 +880,28 @@ string getAlias(TString s)
       return "AK5PFchsl1";
    else if (s=="ak5pfchsl1off")
       return "AK5PFchsl1off";
+   else if (s=="ak6pfchs")
+      return "AK6PFchs";
+   else if (s=="ak6pfchsl1")
+      return "AK6PFchsl1";
    else if (s=="ak7pfchs")
       return "AK7PFchs";
    else if (s=="ak7pfchsl1")
       return "AK7PFchsl1";
    else if (s=="ak7pfchsl1off")
       return "AK7PFchsl1off";
+   else if (s=="ak8pfchs")
+      return "AK8PFchs";
+   else if (s=="ak8pfchsl1")
+      return "AK8PFchsl1";
+   else if (s=="ak9pfchs")
+      return "AK9PFchs";
+   else if (s=="ak9pfchsl1")
+      return "AK9PFchsl1";
+   else if (s=="ak10pfchs")
+      return "AK10PFchs";
+   else if (s=="ak10pfchsl1")
+      return "AK10PFchsl1";
    else if (s=="ak5pfHLT")
       return "AK5PFHLT";
   else if (s=="ak5pfHLTl1")
