@@ -125,17 +125,21 @@ bool getInputProfiles(TString inputFilename, TProfile3D *& prof,
 
 //===========================================================================
 // This method creates a new fit function and fits it to the graph
-TF2 * doGraphFitting(TGraph2DErrors * graph){
+TF2 * doGraphFitting(TGraph2DErrors * graph, bool delphes){
    
    
    static double par0i = -0.5;
    static double par1i = 0.5;
    static double par2i = 0.1;
+   TF2* f4 = 0;
    cout << "\t(par01,par1i,par2i):  (" << par0i << "," << par1i << "," << par2i << ")" << endl;
+   if(delphes)
+      f4 = new TF2("f4","[0] + ([1] * x ) *(1 + [2] * log(y))", 5,200,10,3000);
    //Alexx
    //TF2 * f4 = new TF2("f4","[0] + ([1] * x ) *(1 + [2] * log(y))",0,50,0,1800);
    //ANDREA
-   TF2 * f4 = new TF2("f4","[0] + ([1] * x ) *(1 + [2] * log(y))", 5,50,10,3000);
+   else
+      f4 = new TF2("f4","[0] + ([1] * x ) *(1 + [2] * log(y))", 5,50,10,3000);
 //  VR1GPT1:
    //TF2 * f4 = new TF2("f4","[0] + ([1] * x ) *(1 + [2] * log(y))", 1,50,1,3000);
   
@@ -277,6 +281,11 @@ int main(int argc,char**argv){
    if (!cl.parse(argc,argv)) return 0;
    string         aalgo1     = cl.getValue<string>  ("algo1",   "ak5pf");
    string         aalgo2     = cl.getValue<string>  ("algo2",   "ak5pf");
+   bool           delphes    = cl.getValue<bool>    ("delphes",   false);
+
+   if (!cl.check()) return 0;
+   cl.print();
+
    TString algo1(aalgo1);
    TString algo2(aalgo2);
    
@@ -315,7 +324,7 @@ int main(int argc,char**argv){
       cout << "Graph for pT, Eta, Rho created successfully" << endl;
       
       // Do the fitting
-      TF2 * fitfunc = doGraphFitting(graph);
+      TF2 * fitfunc = doGraphFitting(graph, delphes);
       cout << "Fitted function" << endl << endl;
       
       // Put this fit result in the vector fitResults
