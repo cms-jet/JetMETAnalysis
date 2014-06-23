@@ -111,54 +111,61 @@ int main(int argc,char**argv)
   if (!cl.parse(argc,argv)) return 0;
 
   string         input             = cl.getValue<string> ("input");
-  vector<float>  binspt            = cl.getVector<float> ("binspt",               "");
-  vector<float>  binseta           = cl.getVector<float> ("binseta",              "");
-  vector<float>  binsphi           = cl.getVector<float> ("binsphi",              "");
-  vector<float>  binsy             = cl.getVector<float> ("binsy",                "");
-  string         treename          = cl.getValue<string> ("treename",            "t");
-  string         output            = cl.getValue<string> ("output",       "jra.root");
-  bool           useweight         = cl.getValue<bool>   ("useweight",         false);
-  float          xsection          = cl.getValue<float>  ("xsection",            0.0);
-  int            nrefmax           = cl.getValue<int>    ("nrefmax",               0);
-  int            nbinspt           = cl.getValue<int>    ("nbinspt",              50);
-  int            nbinseta          = cl.getValue<int>    ("nbinseta",             25);
-  int            nbinsphi          = cl.getValue<int>    ("nbinsphi",             25);
-  int            nbinsy            = cl.getValue<int>    ("nbinsy",               25);
-  float          etabarrelmin      = cl.getValue<float>  ("etabarrelmin",       -1.3);
-  float          etabarrelmax      = cl.getValue<float>  ("etabarrelmax",       +1.3);
-  bool           dobalance         = cl.getValue<bool>   ("dobalance",         false);
-  bool           doflavor          = cl.getValue<bool>   ("doflavor",          false);
-  bool           noabsflavors      = cl.getValue<bool>   ("noabsflavors",      false);
-  float          drmax             = cl.getValue<float>  ("drmax",               0.3);
-  float          dphimin           = cl.getValue<float>  ("dphimin",             2.7);
-  bool           dojetpt           = cl.getValue<bool>   ("dojetpt",           false);
-  bool           dorefpt           = cl.getValue<bool>   ("dorefpt",            true);
-  int            nbinsrelrsp       = cl.getValue<int>    ("nbinsrelrsp",          50);
-  float          relrspmin         = cl.getValue<float>  ("relrspmin",           0.0);
-  float          relrspmax         = cl.getValue<float>  ("relrspmax",           2.0);
-  int            nbinsabsrsp       = cl.getValue<int>    ("nbinsabsrsp",           0);
-  float          absrspmin         = cl.getValue<float>  ("absrspmin",        -250.0);
-  float          absrspmax         = cl.getValue<float>  ("absrspmax",         100.0);
-  int            nbinsetarsp       = cl.getValue<int>    ("nbinsetarsp",         100);
-  float          etarspmin         = cl.getValue<float>  ("etarspmin",          -1.0);
-  float          etarspmax         = cl.getValue<float>  ("etarspmax",           1.0);
-  int            nbinsphirsp       = cl.getValue<int>    ("nbinsphirsp",         100);
-  float          phirspmin         = cl.getValue<float>  ("phirspmin",          -1.0);
-  float          phirspmax         = cl.getValue<float>  ("phirspmax",           1.0);
-  float          jtptmin           = cl.getValue<float>  ("jtptmin",             1.0);
-  vector<string> algs              = cl.getVector<string>("algs",                 "");
-  vector<string> presel            = cl.getVector<string>("presel",               "");
-  int            itlow             = cl.getValue<int>    ("itlow",                 0);
-  int            ithigh            = cl.getValue<int>    ("ithigh",             1000);
-  int            earlyootlow       = cl.getValue<int>    ("earlyootlow",           0);
-  int            earlyoothigh      = cl.getValue<int>    ("earlyoothigh",       1000);
-  int            lateootlow        = cl.getValue<int>    ("lateootlow",            0);
-  int            lateoothigh       = cl.getValue<int>    ("lateoothigh",        1000);
-  int            totalootlow       = cl.getValue<int>    ("totalootlow",           0);
-  int            totaloothigh      = cl.getValue<int>    ("totaloothigh",       1000);
-  TString        weightfile        = cl.getValue<TString>("weightfile",           "");
-  TString        MCPUReWeighting   = cl.getValue<TString>("MCPUReWeighting",      "");
-  TString        DataPUReWeighting = cl.getValue<TString>("DataPUReWeighting",    "");
+  vector<float>  binspt            = cl.getVector<float> ("binspt",                     "");
+  vector<float>  binseta           = cl.getVector<float> ("binseta",                    "");
+  vector<float>  binsphi           = cl.getVector<float> ("binsphi",                    "");
+  vector<float>  binsy             = cl.getVector<float> ("binsy",                      "");
+  string         treename          = cl.getValue<string> ("treename",                  "t");
+  string         output            = cl.getValue<string> ("output",             "jra.root");
+  bool           useweight         = cl.getValue<bool>   ("useweight",               false);
+  float          xsection          = cl.getValue<float>  ("xsection",                  0.0);
+  int            nrefmax           = cl.getValue<int>    ("nrefmax",                     0);
+  int            nbinspt           = cl.getValue<int>    ("nbinspt",                    50);
+  int            nbinseta          = cl.getValue<int>    ("nbinseta",                   25);
+  int            nbinsphi          = cl.getValue<int>    ("nbinsphi",                   25);
+  int            nbinsy            = cl.getValue<int>    ("nbinsy",                     25);
+  float          etabarrelmin      = cl.getValue<float>  ("etabarrelmin",             -1.3);
+  float          etabarrelmax      = cl.getValue<float>  ("etabarrelmax",             +1.3);
+  float          etaendcapmin      = cl.getValue<float>  ("etaendcapmin",             -3.0);
+  float          etaendcapmax      = cl.getValue<float>  ("etaendcapmax",             +3.0);
+  float          etaforwardmin     = cl.getValue<float>  ("etaforwardmin",            -5.0);
+  float          etaforwardmax     = cl.getValue<float>  ("etaforwardmax",            +5.0);
+  bool           dobalance         = cl.getValue<bool>   ("dobalance",               false);
+  bool           doflavor          = cl.getValue<bool>   ("doflavor",                false);
+  bool           noabsflavors      = cl.getValue<bool>   ("noabsflavors",            false);
+  float          drmax             = cl.getValue<float>  ("drmax",                     0.3);
+  float          dphimin           = cl.getValue<float>  ("dphimin",                   2.7);
+  bool           dojetpt           = cl.getValue<bool>   ("dojetpt",                 false);
+  bool           dorefpt           = cl.getValue<bool>   ("dorefpt",                  true);
+  int            nbinsrelrsp       = cl.getValue<int>    ("nbinsrelrsp",                50);
+  float          relrspmin         = cl.getValue<float>  ("relrspmin",                 0.0);
+  float          relrspmax         = cl.getValue<float>  ("relrspmax",                 2.0);
+  int            nbinsabsrsp       = cl.getValue<int>    ("nbinsabsrsp",                 0);
+  float          absrspmin         = cl.getValue<float>  ("absrspmin",              -250.0);
+  float          absrspmax         = cl.getValue<float>  ("absrspmax",               100.0);
+  int            nbinsetarsp       = cl.getValue<int>    ("nbinsetarsp",               100);
+  float          etarspmin         = cl.getValue<float>  ("etarspmin",                -1.0);
+  float          etarspmax         = cl.getValue<float>  ("etarspmax",                 1.0);
+  int            nbinsphirsp       = cl.getValue<int>    ("nbinsphirsp",               100);
+  float          phirspmin         = cl.getValue<float>  ("phirspmin",                -1.0);
+  float          phirspmax         = cl.getValue<float>  ("phirspmax",                 1.0);
+  float          jtptmin           = cl.getValue<float>  ("jtptmin",                   1.0);
+  vector<string> algs              = cl.getVector<string>("algs",                       "");
+  vector<string> presel            = cl.getVector<string>("presel",                     "");
+  int            itlow             = cl.getValue<int>    ("itlow",                       0);
+  int            ithigh            = cl.getValue<int>    ("ithigh",                   1000);
+  int            earlyootlow       = cl.getValue<int>    ("earlyootlow",                 0);
+  int            earlyoothigh      = cl.getValue<int>    ("earlyoothigh",             1000);
+  int            lateootlow        = cl.getValue<int>    ("lateootlow",                  0);
+  int            lateoothigh       = cl.getValue<int>    ("lateoothigh",              1000);
+  int            totalootlow       = cl.getValue<int>    ("totalootlow",                 0);
+  int            totaloothigh      = cl.getValue<int>    ("totaloothigh",             1000);
+  TString        weightfile        = cl.getValue<TString>("weightfile",                 "");
+  TString        MCPUReWeighting   = cl.getValue<TString>("MCPUReWeighting",            "");
+  TString        MCPUHistoName     = cl.getValue<TString>("MCPUHistoName",        "pileup");
+  TString        DataPUReWeighting = cl.getValue<TString>("DataPUReWeighting",          "");
+  TString        DataPUHistoName   = cl.getValue<TString>("DataPUHistoName","pileup_jt400");
+  bool           verbose           = cl.getValue<bool>   ("verbose",                 false);
 
   if (!cl.check()) return 0;
   cl.print();
@@ -253,7 +260,7 @@ int main(int argc,char**argv)
     }
     edm::LumiReWeighting LumiWeights_;
     if(!MCPUReWeighting.IsNull() && !DataPUReWeighting.IsNull()) { 
-       LumiWeights_ = edm::LumiReWeighting(string(MCPUReWeighting),string(DataPUReWeighting),"pileup","pileup_jt400");
+       LumiWeights_ = edm::LumiReWeighting(string(MCPUReWeighting),string(DataPUReWeighting),string(MCPUHistoName),string(DataPUHistoName));
     }
 
     //
@@ -327,6 +334,10 @@ int main(int argc,char**argv)
     vector<TH1F**>  jetPtVsRefPt;
     vector<TH1F**>  refPtVsRefPtBarrel;
     vector<TH1F**>  jetPtVsRefPtBarrel;
+    vector<TH1F**>  refPtVsRefPtEndcap;
+    vector<TH1F**>  jetPtVsRefPtEndcap;
+    vector<TH1F**>  refPtVsRefPtForward;
+    vector<TH1F**>  jetPtVsRefPtForward;
     vector<TH1F**>  jetEtaVsJetEta;
     vector<TH1F**>  jetPhiVsJetPhi;
     vector<TH1F**>  jetYVsJetY;
@@ -340,6 +351,8 @@ int main(int argc,char**argv)
     vector<TH1F**>  relRspVsJetPt;
     vector<TH1F**>  relRspVsRefPt;
     vector<TH1F**>  relRspVsRefPtBarrel;
+    vector<TH1F**>  relRspVsRefPtEndcap;
+    vector<TH1F**>  relRspVsRefPtForward;
     vector<TH1F**>  relRspVsJetEta;
     vector<TH1F**>  relRspVsJetPhi;
     vector<TH1F**>  relRspVsJetY;
@@ -410,16 +423,28 @@ int main(int argc,char**argv)
 	
         if (dorefpt) {
           refPtVsRefPtBarrel.push_back(new TH1F*[flavor.size()]);
+          refPtVsRefPtEndcap.push_back(new TH1F*[flavor.size()]);
+          refPtVsRefPtForward.push_back(new TH1F*[flavor.size()]);
           for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
             hname=flavor[iflv]+"RefPt_Barrel_"+get_suffix("RefPt",ipt,binspt);
             refPtVsRefPtBarrel.back()[iflv]=new TH1F(hname.c_str(),
                                                      ";p_{T}^{ref} [GeV]",
                                                      nbinspt,ptmin,ptmax);
+            hname=flavor[iflv]+"RefPt_Endcap_"+get_suffix("RefPt",ipt,binspt);
+            refPtVsRefPtEndcap.back()[iflv]=new TH1F(hname.c_str(),
+                                                     ";p_{T}^{ref} [GeV]",
+                                                     nbinspt,ptmin,ptmax);
+            hname=flavor[iflv]+"RefPt_Forward_"+get_suffix("RefPt",ipt,binspt);
+            refPtVsRefPtForward.back()[iflv]=new TH1F(hname.c_str(),
+                                                      ";p_{T}^{ref} [GeV]",
+                                                      nbinspt,ptmin,ptmax);
           }
         }
 	
         if (dorefpt) {
           jetPtVsRefPtBarrel.push_back(new TH1F*[flavor.size()]);
+          jetPtVsRefPtEndcap.push_back(new TH1F*[flavor.size()]);
+          jetPtVsRefPtForward.push_back(new TH1F*[flavor.size()]);
           for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
             hname=flavor[iflv]+"JetPt_Barrel_"+get_suffix("RefPt",ipt,binspt);
             jetPtVsRefPtBarrel.back()[iflv]=new TH1F(hname.c_str(),
@@ -427,6 +452,18 @@ int main(int argc,char**argv)
                                                      3*nbinspt,
                                                      0,
                                                      3.0*ptmax);
+            hname=flavor[iflv]+"JetPt_Endcap_"+get_suffix("RefPt",ipt,binspt);
+            jetPtVsRefPtEndcap.back()[iflv]=new TH1F(hname.c_str(),
+                                                     ";p_{T} [GeV]",
+                                                     3*nbinspt,
+                                                     0,
+                                                     3.0*ptmax);
+            hname=flavor[iflv]+"JetPt_Forward_"+get_suffix("RefPt",ipt,binspt);
+            jetPtVsRefPtForward.back()[iflv]=new TH1F(hname.c_str(),
+                                                      ";p_{T} [GeV]",
+                                                      3*nbinspt,
+                                                      0,
+                                                      3.0*ptmax);
           }
         }
 	
@@ -450,12 +487,24 @@ int main(int argc,char**argv)
 
         if (dorelrsp&&dorefpt) {
           relRspVsRefPtBarrel.push_back(new TH1F*[flavor.size()]);
+          relRspVsRefPtEndcap.push_back(new TH1F*[flavor.size()]);
+          relRspVsRefPtForward.push_back(new TH1F*[flavor.size()]);
           for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
             hname=flavor[iflv]+"RelRsp_Barrel_"+get_suffix("RefPt",ipt,binspt);
             relRspVsRefPtBarrel.back()[iflv]=new TH1F(hname.c_str(),
                                                       ";p_{T}/p_{T}^{ref}",
                                                       nbinsrelrsp,
                                                       relrspmin,relrspmax);
+            hname=flavor[iflv]+"RelRsp_Endcap_"+get_suffix("RefPt",ipt,binspt);
+            relRspVsRefPtEndcap.back()[iflv]=new TH1F(hname.c_str(),
+                                                      ";p_{T}/p_{T}^{ref}",
+                                                      nbinsrelrsp,
+                                                      relrspmin,relrspmax);
+            hname=flavor[iflv]+"RelRsp_Forward_"+get_suffix("RefPt",ipt,binspt);
+            relRspVsRefPtForward.back()[iflv]=new TH1F(hname.c_str(),
+                                                       ";p_{T}/p_{T}^{ref}",
+                                                       nbinsrelrsp,
+                                                       relrspmin,relrspmax);
           }
         }
 	
@@ -1006,18 +1055,33 @@ int main(int argc,char**argv)
     unsigned int nevt = (unsigned) el->GetN();
     for (unsigned int ievt=0;ievt<nevt;ievt++)
       {
+        if(ievt%10000==0)
+          cout << "\tDoing event " << ievt << " ";
         const Long64_t ientry = el->GetEntry(ievt);
         tree->GetEntry(ientry);
         if (nrefmax>0) nref = std::min((int)nref,nrefmax);
         for (unsigned char iref=0;iref<nref;iref++) {
+          if(ievt%10000==0 && iref<nref-1)
+            cout << ".";
+          else if(ievt%10000==0 && iref==nref-1)
+            cout << ". DONE" << endl;
    
           if (( dobalance&&refdphijt[iref]<dphimin)||
-              (!dobalance&&refdrjt[iref]>drmax_alg)) continue;
+              (!dobalance&&refdrjt[iref]>drmax_alg)) {
+            if(verbose) cout << "WARNING::Failed refdrjt or refdphijt cut!" << endl;
+            continue;
+          }
         
-          if (jtpt[iref]<jtptmin) continue;
+          if (jtpt[iref]<jtptmin) {
+            if(verbose) cout << "WARNING::jtpt[" << iref << "]<" << jtptmin << endl;
+            continue;
+          }
 
           if (!pileup_cut(itlow,ithigh,earlyootlow,earlyoothigh,lateootlow,lateoothigh,
-                          totalootlow,totaloothigh,npus,bxns)) continue;
+                          totalootlow,totaloothigh,npus,bxns)) {
+            if(verbose) cout << "WARNING::Failed pileup cut!" << endl;
+            continue;
+          }
 
           float eta    =
             (binseta.size()&&binseta.front()>=0.)?std::abs(jteta[iref]):jteta[iref];
@@ -1086,6 +1150,42 @@ int main(int argc,char**argv)
                fill_histo(absrsp,weight,refpt[iref],binspt,absRspVsRefPtBarrel);
               if (doflavor) fill_histo(refpdgid[iref],absrsp,flavorWeight,
                                        refpt[iref],binspt,absRspVsRefPtBarrel,
+                                       noabsflavors);
+            }
+          }
+          if ((eta>=etaendcapmin&&etabarrelmin)||(eta>etabarrelmax&&eta<=etaendcapmax)) {
+            if (dorefpt) {
+               fill_histo(refpt[iref],weight,refpt[iref],binspt,refPtVsRefPtEndcap);
+               fill_histo(jtpt [iref],weight,refpt[iref],binspt,jetPtVsRefPtEndcap);
+              if (doflavor) {
+                fill_histo(refpdgid[iref],refpt[iref],flavorWeight,
+                           refpt[iref],binspt,refPtVsRefPtEndcap,noabsflavors);
+                fill_histo(refpdgid[iref],jtpt [iref],flavorWeight,
+                           refpt[iref],binspt,jetPtVsRefPtEndcap,noabsflavors);
+              }
+            }
+            if (dorelrsp&&dorefpt) {
+               fill_histo(relrsp,weight,refpt[iref],binspt,relRspVsRefPtEndcap);
+              if (doflavor) fill_histo(refpdgid[iref],relrsp,flavorWeight,
+                                       refpt[iref],binspt,relRspVsRefPtEndcap,
+                                       noabsflavors);
+            }
+          }
+          if ((eta>=etaforwardmin&&eta<etaendcapmin)||(eta>etaendcapmax&&eta<=etaforwardmax)) {
+            if (dorefpt) {
+               fill_histo(refpt[iref],weight,refpt[iref],binspt,refPtVsRefPtForward);
+               fill_histo(jtpt [iref],weight,refpt[iref],binspt,jetPtVsRefPtForward);
+              if (doflavor) {
+                fill_histo(refpdgid[iref],refpt[iref],flavorWeight,
+                           refpt[iref],binspt,refPtVsRefPtForward,noabsflavors);
+                fill_histo(refpdgid[iref],jtpt [iref],flavorWeight,
+                           refpt[iref],binspt,jetPtVsRefPtForward,noabsflavors);
+              }
+            }
+            if (dorelrsp&&dorefpt) {
+               fill_histo(relrsp,weight,refpt[iref],binspt,relRspVsRefPtForward);
+              if (doflavor) fill_histo(refpdgid[iref],relrsp,flavorWeight,
+                                       refpt[iref],binspt,relRspVsRefPtForward,
                                        noabsflavors);
             }
           }
