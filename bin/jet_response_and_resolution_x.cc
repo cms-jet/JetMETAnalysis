@@ -83,10 +83,15 @@ int main(int argc,char**argv)
   float          jptfitmin = cl.getValue<float>  ("jptfitmin",           -1.);
   float          pffitmin  = cl.getValue<float>  ("pffitmin",            -1.);
 
+  bool           semifitted= cl.getValue<bool>  ("semifitted",        false);
+
   if (!cl.check()) return 0;
   cl.print();
   
-  const string s_sigma="sqrt(((TMath::Sign(1,[0])*sq([0]/x))+(sq([1])*(x^([3]-1))))+sq([2]))";
+  //const string s_sigma="sqrt(((TMath::Sign(1,[0])*sq([0]/x))+(sq([1])*(x^([3]-1))))+sq([2]))";
+  const string s_sigma="[0]+[1]*log10(x)+[2]*pow(log10(x),2)+([3]/pow(log10(x),3))+"
+  					   "([4]/pow(log10(x),4))+([5]/pow(log10(x),5))";
+  const string s_sigma_jetEta="pol9";
   const string s_aone ="[0]";
   const string s_atwo ="[0]*x**[1]";
   const string s_pone ="TMath::Max(0.0,([0]-[3])/(1.+exp([1]*(x-[2])))+[3])";
@@ -106,6 +111,9 @@ int main(int argc,char**argv)
     variables.push_back("RelRsp:JetEta#1:RefPt");
     variables.push_back("RelRsp:JetY:RefPt");
     variables.push_back("RelRsp:JetY#1:RefPt");
+    variables.push_back("RelRsp_Barrel:RefPt");
+    variables.push_back("RelRsp_Endcap:RefPt");
+    variables.push_back("RelRsp_Forward:RefPt");
   }
   if (doabsrsp) {
     variables.push_back("AbsRsp:RefPt");
@@ -214,11 +222,11 @@ int main(int argc,char**argv)
     gROOT->cd();
     
     for (unsigned int ivar=0;ivar<variables.size();ivar++) {
-      
+      //cout << "Loading variable " << variables[ivar] << " ... ";      
       string variable = variables[ivar];
       ObjectLoader<TH1F> hlrsp;
       hlrsp.load_objects(idir,variable);
-      
+      //cout << "DONE";
       string varexp=hlrsp.variable(hlrsp.nvariables()-1)+
 	variable.substr(variable.find(':'));
       
@@ -236,7 +244,7 @@ int main(int argc,char**argv)
 
       hlrsp.begin_loop();
       while ((hrsp=hlrsp.next_object(indices))) {
-
+      	//cout << "Quantity = " << hlrsp.quantity() << endl;
 	// create new graphs for response & resolution
 	if (indices.back()==0) {
 	  grsp = new TGraphErrors(0);  vrsp.push_back(grsp);
@@ -249,9 +257,14 @@ int main(int argc,char**argv)
 
 	  // this is where the magic happens...
 	  string prefix = hlrsp.quantity().substr(0,3);
-	  string grsp_name=prefix+"RspVs"+hlrsp.variable(hlrsp.nvariables()-1);
-	  string gres_name=prefix+"ResVs"+hlrsp.variable(hlrsp.nvariables()-1);
-
+	  string suffix;
+	  if(hlrsp.quantity().size()>6) suffix = hlrsp.quantity().substr(hlrsp.quantity().find("_"),hlrsp.quantity().size()-hlrsp.quantity().find("_"));
+	  //string grsp_name=prefix+"RspVs"+hlrsp.variable(hlrsp.nvariables()-1);
+	  //string gres_name=prefix+"ResVs"+hlrsp.variable(hlrsp.nvariables()-1);
+	  string grsp_name=prefix+"RspVs"+hlrsp.variable(hlrsp.nvariables()-1)+suffix;
+	  string gres_name=prefix+"ResVs"+hlrsp.variable(hlrsp.nvariables()-1)+suffix;
+	  //cout << "suffix = " << suffix << endl;
+	  //cout << "gres_name = " << gres_name << endl;
 	  string gaone_name="AoneVs"+hlrsp.variable(hlrsp.nvariables()-1);
 	  string gatwo_name="AtwoVs"+hlrsp.variable(hlrsp.nvariables()-1);
 	  string gpone_name="PoneVs"+hlrsp.variable(hlrsp.nvariables()-1);
@@ -312,10 +325,10 @@ int main(int argc,char**argv)
 	
 	if (fractionRMS<1.) set_range_truncatedRMS(hrsp,fractionRMS);
 
-	double y  = (frsp==0) ? hrsp->GetMean()      : frsp->GetParameter(1);
-	double ey = (frsp==0) ? hrsp->GetMeanError() : frsp->GetParError(1);
-	double e  = (frsp==0) ? hrsp->GetRMS()       : frsp->GetParameter(2);
-	double ee = (frsp==0) ? hrsp->GetRMSError()  : frsp->GetParError(2);
+	double y  = (frsp==0 || (semifitted && x<40.0)) ? hrsp->GetMean()      : frsp->GetParameter(1);
+	double ey = (frsp==0 || (semifitted && x<40.0)) ? hrsp->GetMeanError() : frsp->GetParError(1);
+	double e  = (frsp==0 || (semifitted && x<40.0)) ? hrsp->GetRMS()       : frsp->GetParameter(2);
+	double ee = (frsp==0 || (semifitted && x<40.0)) ? hrsp->GetRMSError()  : frsp->GetParError(2);
 
 	// declare the addtional pars for the CB function
 
@@ -409,6 +422,7 @@ int main(int argc,char**argv)
 	for (unsigned int igraph=0;igraph<vres.size();igraph++) {
 	  
 	  TGraphErrors* g = vres[igraph];
+	  //cout << g->GetName() << endl;
 
 	  if (g->GetN()==0) continue;
 	  double xmin(g->GetX()[0]);
@@ -418,21 +432,36 @@ int main(int argc,char**argv)
 
 	  if (fitmin!=0.0) xmin = fitmin;
 
-	  TF1* fnc=new TF1("fit",
-			   s_sigma.c_str(),
-			   xmin,xmax);
+	  //TF1* fnc=new TF1("fit",
+		//	   s_sigma.c_str(),
+		//	   xmin,xmax);
+	  TF1* fnc = 0;
+	  if(TString(g->GetName()).Contains("VsJetEta")) {
+	  	fnc = new TF1("fit",s_sigma_jetEta.c_str(),xmin,xmax);
+	  }
+	  else {
+	  	fnc = new TF1("fit",s_sigma.c_str(),xmin,xmax);
+	  }
 			   
 	  fnc->SetLineWidth(2);
 	  fnc->SetLineColor(g->GetLineColor());
-	  fnc->SetParameter(0,2.0);
-	  fnc->SetParameter(1,0.5);
-	  fnc->SetParameter(2,0.1);
-	  fnc->SetParameter(3,0.2);
+	  //fnc->SetParameter(0,2.0);
+	  //fnc->SetParameter(1,0.5);
+	  //fnc->SetParameter(2,0.1);
+	  //fnc->SetParameter(3,0.2);
 
-	  fnc->FixParameter(2,0.);
-	  
+	  //fnc->FixParameter(2,0.);
 
-	  int fitstatus = g->Fit(fnc,"QR");
+	  if(!TString(g->GetName()).Contains("VsJetEta")) {
+		fnc->SetParameter(0,0.5);
+	    fnc->SetParameter(1,9.0);
+	    fnc->SetParameter(2,8.0);
+	    fnc->SetParameter(3,-0.3);
+	    fnc->SetParameter(4,0.6);
+	    fnc->SetParameter(5,1.0);
+	  }	  
+
+	  int fitstatus = g->Fit(fnc,"QR+");
 
 	  if (0==fitstatus) resolutions.addEntry(g->GetName(),fnc);
 
@@ -446,6 +475,13 @@ int main(int argc,char**argv)
 	    if (verbose)
 	      cout<<"...fnc deleted!"<<endl;
 	  }
+	  /*
+	  else {
+	  	if (verbose)
+	  	cout<<"Fit successful: "<<fitstatus<<" chi2/NDF: "<<fnc->GetChisquare()/fnc->GetNDF()
+	  		<<" alg: "<<alg<<" var: "<<variable<<" name: "<<g->GetName()<<endl;
+	  }
+	  */
 	} // SIGMA
 
 	if (docbfits) {
