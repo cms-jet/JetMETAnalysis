@@ -41,3 +41,33 @@ void JRANtuple::Loop()
       // if (Cut(ientry) < 0) continue;
    }
 }
+
+//______________________________________________________________________________
+int JRANtuple::itIndex() {
+   for(unsigned int ibx=0; ibx<(*bxns).size(); ibx++) {
+      if((*bxns)[ibx]==0) return ibx;
+   }
+   return -1;
+}
+
+//______________________________________________________________________________
+double JRANtuple::sumEOOT() {
+   int iIT = itIndex();
+   if(iIT>(int)(*npus).size()-1) return 0;
+   double sum = 0;
+   for(int ipu=0; ipu<iIT; ipu++) {
+      sum+=(*npus)[ipu];
+   }
+   return sum;
+}
+
+//______________________________________________________________________________
+double JRANtuple::sumLOOT() {
+   int iIT = itIndex();
+   if(iIT>(int)(*npus).size()-1) return 0;
+   double sum = 0;
+   for(int ipu=(*npus).size()-1; ipu>iIT; ipu--) {
+      sum+=(*npus)[ipu];
+   }
+   return sum;
+}
