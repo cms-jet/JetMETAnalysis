@@ -473,6 +473,12 @@ string getAlias(TString s)
       return "KT6Calo";
    else if (s=="kt6pf")
       return "KT6PF";
+   else if (s=="ak4pf")
+      return "AK4PF";
+   else if (s=="ak4pfl1")
+      return "AK4PFl1";
+   else if (s=="ak4pfl1l2l3")
+      return "AK4PFl1l2l3";
    else
       return "unknown";
 }

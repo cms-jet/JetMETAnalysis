@@ -164,41 +164,53 @@ int main(int argc,char**argv) {
   	ExRootTreeReader *treeReader = new ExRootTreeReader(&chain);
   	Long64_t numberOfEntries = treeReader->GetEntries();
 
+    // Turn off unwanted all branches and turn on only the ones we want
+    treeReader->SetBranchStatus("*",0);
+    treeReader->SetBranchStatus("RawJetNoPU*",1);
+    treeReader->SetBranchStatus("RawJet*",1);
+    treeReader->SetBranchStatus("GenJet*",1);
+    treeReader->SetBranchStatus("Jet*",1);
+    treeReader->SetBranchStatus("Rho*",1);
+    treeReader->SetBranchStatus("NPU*",1);
+    //treeReader->SetBranchStatus("EFlowTrack*",1);
+    //treeReader->SetBranchStatus("EFlowTower*",1);
+    //treeReader->SetBranchStatus("EFlowMuon*",1);
+
 	// Get pointers to branches used in this analysis
 	TClonesArray *branchRawJetNoPU = treeReader->UseBranch("RawJetNoPU");
   	TClonesArray *branchRawJet = treeReader->UseBranch("RawJet");
   	TClonesArray *branchGenJet = treeReader->UseBranch("GenJet");
   	TClonesArray *branchJet = treeReader->UseBranch("Jet");
-	TClonesArray *branchCAJet = treeReader->UseBranch("CAJet");
+	//TClonesArray *branchCAJet = treeReader->UseBranch("CAJet");
   	TClonesArray *branchRho = treeReader->UseBranch("Rho");
   	TClonesArray *branchNPU = treeReader->UseBranch("NPU");
 
   	// Constituents will be 0 otherwise
-  	TClonesArray *branchEFlowTrack = treeReader->UseBranch("EFlowTrack");
-  	TClonesArray *branchEFlowTower = treeReader->UseBranch("EFlowTower");
-  	TClonesArray *branchEFlowMuon = treeReader->UseBranch("EFlowMuon");
+  	//TClonesArray *branchEFlowTrack = treeReader->UseBranch("EFlowTrack");
+  	//TClonesArray *branchEFlowTower = treeReader->UseBranch("EFlowTower");
+  	//TClonesArray *branchEFlowMuon = treeReader->UseBranch("EFlowMuon");
 
     // output file, tree, and branches
   	TFile* ofile = new TFile(outputDir+"/DelphesJRA.root","RECREATE");
-  	ofile->mkdir("ak5pf","genRawJet");
-  	ofile->mkdir("ak5pfl1","genRawNoPUJet");
-  	ofile->mkdir("ak5pfl1l2l3","genJet");
-  	ofile->mkdir("ca8pf","genCAJet");
+  	ofile->mkdir("ak4pf","genRawJet");
+  	ofile->mkdir("ak4pfl1","genRawNoPUJet");
+  	ofile->mkdir("ak4pfl1l2l3","genJet");
+  	//ofile->mkdir("ca8pf","genCAJet");
   	TTree* genRawJet_     = new TTree("t","t");
   	TTree* genRawNoPUJet_ = new TTree("t","t");
   	TTree* genJet_        = new TTree("t","t");
-  	TTree* genCAJet_      = new TTree("t","t");
+    //TTree* genCAJet_      = new TTree("t","t");
   	JRANtuple* genRawJet     = new JRANtuple(genRawJet_,true);
   	JRANtuple* genRawNoPUJet = new JRANtuple(genRawNoPUJet_,true);
   	JRANtuple* genJet        = new JRANtuple(genJet_,true);
-  	JRANtuple* genCAJet      = new JRANtuple(genCAJet_,true);
+  	//JRANtuple* genCAJet      = new JRANtuple(genCAJet_,true);
 
   	//Set vector of reco jet collections
   	NtupleMap_t recoJetMap;
-  	recoJetMap["ak5pf"]       = make_pair(branchRawJet,     genRawJet);
-  	recoJetMap["ak5pfl1"]     = make_pair(branchRawJetNoPU, genRawNoPUJet);
-  	recoJetMap["ak5pfl1l2l3"] = make_pair(branchJet,        genJet);
-  	recoJetMap["ca8pf"]       = make_pair(branchCAJet,      genCAJet);
+  	recoJetMap["ak4pf"]       = make_pair(branchRawJet,     genRawJet);
+  	recoJetMap["ak4pfl1"]     = make_pair(branchRawJetNoPU, genRawNoPUJet);
+  	recoJetMap["ak4pfl1l2l3"] = make_pair(branchJet,        genJet);
+  	//recoJetMap["ca8pf"]       = make_pair(branchCAJet,      genCAJet);
 
   	//Set up the matching maps
   	initMatchingMaps(recoJetMap);
@@ -239,7 +251,7 @@ int main(int argc,char**argv) {
 				ialg->second.second->refy[nref_]     = ref->P4().Rapidity();
 				//ialg->second.second->refdrjt[nref_]  = TMath::Sqrt(TMath::Power(iDelphes.GenJet_DeltaEta[nref_],2)+
 				//                                        TMath::Power(iDelphes.GenJet_DeltaPhi[nref_],2));
-				ialg->second.second->refdrjt[nref_]  = 0.0;
+				ialg->second.second->refdrjt[nref_]  = ref->P4().DeltaR(jet->P4());
 				ialg->second.second->refarea[nref_]  = ref->AreaP4().Pt();
 				ialg->second.second->refpdgid[nref_] = 0;
 				ialg->second.second->beta            = 0.0;//gen->Beta;
@@ -269,8 +281,13 @@ int main(int argc,char**argv) {
 			ialg->second.second->evt     = iEntry;
 
 			//Set values for the Rho Collection
-			ScalarHT *rho = (ScalarHT*) branchRho->At(0);
-			ialg->second.second->rho     = rho->HT;
+	   		size_t nRho = branchRho->GetEntries();
+            double avgRho = 0;
+	   		for(size_t iRho=0; iRho<nRho; iRho++) {
+               ScalarHT *rho = (ScalarHT*) branchRho->At(iRho);
+               avgRho+=rho->HT;
+            }
+			ialg->second.second->rho     = avgRho/nRho;
 			ialg->second.second->rho50   = 0;
 			ialg->second.second->rho_hlt = 0;
 
@@ -321,7 +338,7 @@ int main(int argc,char**argv) {
 			//Set values for missing collections
 			ialg->second.second->pthat  = 0;
 			ialg->second.second->weight = 0;
-            if(ialg->first == "ak5pfl1")
+            if(ialg->first == "ak4pfl1")
                ialg->second.second->npv    = (int)(1);
             else
                ialg->second.second->npv    = (int)(nPUvertices_true/0.74);
