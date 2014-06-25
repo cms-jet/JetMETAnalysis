@@ -239,6 +239,7 @@ void TProfileMDF::Add(TProfileMDF *h1, TProfileMDF *h2, Double_t c1, Double_t c2
          TH1F::SetBinContent(globalBin,cu);
          if (fSumw2.fN) {
             Double_t e1 = h1->GetBinError(globalBin)/width;
+            e1 = e1;
             fSumw2.fArray[globalBin] = TMath::Abs(c1)*er1[globalBin];
          }
          fBinEntries.fArray[globalBin] = TMath::Abs(c1)*en2[globalBin]/width;
@@ -252,6 +253,7 @@ void TProfileMDF::Add(TProfileMDF *h1, TProfileMDF *h2, Double_t c1, Double_t c2
          if (fSumw2.fN) {
             Double_t e1 = h1->GetBinError(globalBin);
             Double_t e2 = h2->GetBinError(globalBin);
+            e1 = e1; e2 = e2;
             fSumw2.fArray[globalBin] = TMath::Abs(c1)*er1[globalBin] + TMath::Abs(c2)*er2[globalBin];
          }
          fBinEntries.fArray[globalBin] = TMath::Abs(c1)*en1[globalBin] + TMath::Abs(c2)*en2[globalBin];
@@ -946,6 +948,7 @@ TProfileMDF* TProfileMDF::ReduceDimensions(TString name, UInt_t axisNumber, Int_
    Double_t cont,sw2,bent,bsw2;
    Double_t totcont = 0;
    Bool_t  computeErrors = h1->GetSumw2N();
+   computeErrors = computeErrors;
    vector<Int_t> inbins;
    inbins.assign(fAxes.size(),0);
    vector<Int_t> outbins;
