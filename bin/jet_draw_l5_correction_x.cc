@@ -344,7 +344,7 @@ void divTGraphErrors(TGraphErrors* num, TGraphErrors* den)
       double ey = 0;
       double normx = 0;
       double normy = 0;
-      double normex = 0;
+      //double normex = 0;
       double normey = 0;
       
       num->GetPoint(k,x,y);

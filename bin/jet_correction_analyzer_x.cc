@@ -202,7 +202,7 @@ int main(int argc,char**argv)
       unsigned int nrefmax = 2;
       unsigned char nref;
       char name[1024];
-      char title[1024];
+      //char title[1024];
       float refpt[100];
       float refeta[100];
       float refphi[100];
@@ -210,7 +210,7 @@ int main(int argc,char**argv)
       float jteta[100];
       float jtphi[100];
       float refdrjt[100];
-      float refdphijt[100];
+      //float refdphijt[100];
       int   refpdgid[100];
       vector<int>* bxns = new vector<int>;
       vector<int>* npus = new vector<int>;

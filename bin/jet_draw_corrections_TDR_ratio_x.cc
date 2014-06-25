@@ -341,6 +341,8 @@ int main(int argc,char**argv)
    ove->Write();
    ove2->Write();
    outf->Close();
+   file1->Close();
+   file2->Close();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

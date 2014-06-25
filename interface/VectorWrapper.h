@@ -38,6 +38,7 @@ public:
          TProfile3D* p = (TProfile3D*)gDirectory->Get(obj->GetName());
          if (p !=0 ) vec.push_back((TProfile3D*)p->Clone());
       }
+      f->Close();
    }
 
 private:
