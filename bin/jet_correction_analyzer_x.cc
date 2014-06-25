@@ -421,6 +421,7 @@ int main(int argc,char**argv)
       }
       else
       {
+         RhoVsPileupVsEta = new TProfileMDF("RhoVsPileupVsEta","RhoVsPileupVsEta");
          RespVsPileup = new TProfileMDF("RespVsPileup","RespVsPileup");
          RespVsPileup->ReadFromFile(readRespVsPileup,"RespVsPileup");
          coord.assign(RespVsPileup->GetNaxis(),0);

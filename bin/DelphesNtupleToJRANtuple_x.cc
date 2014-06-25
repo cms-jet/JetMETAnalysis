@@ -120,25 +120,25 @@ int main(int argc,char**argv) {
 
 	TString 	    inputFilename     = cl.getValue<TString> 	   ("inputFilename");
 	TString 	    outputDir         = cl.getValue<TString> 	   ("outputDir",          "./");
-    int             tnpu              = cl.getValue<int>           ("tnpu",                 20);
+    //int             tnpu              = cl.getValue<int>           ("tnpu",                 20);
 	int             maxEvts           = cl.getValue<int>           ("maxEvts",               0);
 	//vector<TString> collections       = cl.getVector<TString>      ("collections", "GenJet:::CAJet:::Jet")    
-	bool    	 	doComposition_    = cl.getValue<bool>    	   ("doComposition",      true);
-	bool    	 	doFlavor_         = cl.getValue<bool>    	   ("doFlavor",           true);
-	bool    	 	doJetPt_          = cl.getValue<bool>    	   ("doJetPt",            true);
-	bool 		 	doRefPt_          = cl.getValue<bool>    	   ("doRefPt",            true);
-	bool 		 	doHLT_            = cl.getValue<bool>    	   ("doHLT",              true);
+	//bool    	 	doComposition_    = cl.getValue<bool>    	   ("doComposition",      true);
+	//bool    	 	doFlavor_         = cl.getValue<bool>    	   ("doFlavor",           true);
+	//bool    	 	doJetPt_          = cl.getValue<bool>    	   ("doJetPt",            true);
+	//bool 		 	doRefPt_          = cl.getValue<bool>    	   ("doRefPt",            true);
+	//bool 		 	doHLT_            = cl.getValue<bool>    	   ("doHLT",              true);
 	unsigned int 	nRefMax_          = cl.getValue<unsigned int>  ("nRefMax",               0);
 	double       	deltaRMax_        = cl.getValue<double>  	   ("deltaRMax",           0.0);
 	double       	deltaPhiMin_      = cl.getValue<double>  	   ("deltaPhiMin",       3.141);
-	double       	deltaRPartonMax_  = cl.getValue<double>  	   ("deltaRPartonMax",     0.0);
+	//double       	deltaRPartonMax_  = cl.getValue<double>  	   ("deltaRPartonMax",     0.0);
  	bool         	doBalancing_      = cl.getValue<bool>    	   ("doBalancing",       false);
- 	bool         	getFlavorFromMap_ = cl.getValue<bool>   	   ("getFlavorFromMap_", false);
-	bool         	isCaloJet_;
-	bool         	isJPTJet_;
-	bool         	isPFJet_;
-	bool         	isTrackJet_;
-	bool         	isTauJet_;
+ 	//bool         	getFlavorFromMap_ = cl.getValue<bool>   	   ("getFlavorFromMap_", false);
+	//bool         	isCaloJet_;
+	//bool         	isJPTJet_;
+	//bool         	isPFJet_;
+	//bool         	isTrackJet_;
+	//bool         	isTauJet_;
 
 
 	if (!cl.check()) return 0;

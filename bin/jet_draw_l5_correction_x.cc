@@ -351,7 +351,7 @@ void divTGraphErrors(TGraphErrors* num, TGraphErrors* den)
       ex = num->GetErrorX(k);
       ey = num->GetErrorY(k);
       den->GetPoint(k,normx,normy);
-      normex = den->GetErrorX(k);
+      //normex = den->GetErrorX(k);
       normey = den->GetErrorY(k);
       
       if(x!=normx)
