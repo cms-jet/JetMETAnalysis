@@ -959,6 +959,7 @@ TProfileMDF* TProfileMDF::ReduceDimensions(TString name, UInt_t axisNumber, Int_
    // inbin is the axis being integrated. Loop is done only on the selected bins
    firstOutBin = 0;
    lastOutBin = h1->GetNbins();
+   firstOutBin = firstOutBin; lastOutBin = lastOutBin;
 
    for (Int_t outbin = 0; outbin < h1->GetNbins(); ++outbin) {
       cont = 0;

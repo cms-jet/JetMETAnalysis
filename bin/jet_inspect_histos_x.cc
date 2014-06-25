@@ -698,7 +698,7 @@ void draw_residual(TPad* pad,TH1* hist,TF1* func,
       if ( parmin >= parmax ) fixed++;
     }
     
-    NDF = nBins - npar + fixed;
+    NDF = nBins - npar + fixed; NDF = NDF;
     
     float hmax = std::max(abs(resiHist->GetMaximum()),abs(resiHist->GetMinimum()));
     hmax *=1.15;
