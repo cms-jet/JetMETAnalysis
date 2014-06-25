@@ -154,6 +154,7 @@ int main(int argc,char**argv) {
   	else if (deltaPhiMin_>=0) {
     	doBalancing_=true;
   	}
+    doBalancing_ = doBalancing_;
 
   	// Create chain of root trees
   	TChain chain("Delphes");

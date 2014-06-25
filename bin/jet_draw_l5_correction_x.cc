@@ -188,7 +188,7 @@ int main(int argc,char**argv)
                     << "\t\tSkipping this flavor" << endl;
                continue;
             }
-            if(normToAll)
+            if(normToAll && normalizationFit)
             {
                fits.push_back(graphs.back()->GetFunction("fit"));
                fits.back()->SetRange(normalizationFit->GetXmin(),normalizationFit->GetXmax());
@@ -198,7 +198,7 @@ int main(int argc,char**argv)
             //
             // draw and format graphs/hists
             //
-            if(normToAll && normalizationHist!=0)
+            if(normToAll && normalizationHist)
             {
                //
                // divide hist by normalization hist
