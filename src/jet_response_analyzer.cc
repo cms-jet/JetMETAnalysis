@@ -1056,7 +1056,7 @@ void jet_response_analyzer::fill_histo(int pdgid,float value,float weight,float 
   if(ix<0) return;
   if(!known_pdgid(pdgid)) return;
   int abspdgid=fabs(pdgid);
-  int iflv(-1);
+  //int iflv(-1);
   if(noabsflavors) {
     string hname = string(pdgid_to_flavor_name(pdgid))+prefix+get_suffix(varname,get_index(x,binsx),binsx);
     if(algHistos[alg].find(hname)!=algHistos[alg].end()) algHistos[alg][hname]->Fill(value,weight);
@@ -1095,7 +1095,7 @@ void jet_response_analyzer::fill_histo(int pdgid,float value,float weight,float 
   if(ix<0||iy<0) return;
   if(!known_pdgid(pdgid)) return;
   int abspdgid=fabs(pdgid);
-  int iflv(-1);
+  //int iflv(-1);
   if (noabsflavors) {
     string hname = string(pdgid_to_flavor_name(pdgid))+prefix+get_suffix(varname1,get_index(x,binsx),binsx)+"_"+
                    get_suffix(varname2,get_index(y,binsy),binsy);
