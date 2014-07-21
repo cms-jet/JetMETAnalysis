@@ -135,7 +135,8 @@ TString JetInfo::getCorrString(TString s) {
   for(int l = 0; l<corrArray->GetEntries(); l++) {
     corrLevels.push_back(((TObjString*)(*corrArray)[l])->String().Atoi());
   }
-
+  corrArray->Delete();
+  delete corrArray;
   return corrString;
 }
 
@@ -157,6 +158,8 @@ TString JetInfo::get_detector_abbreviation(TString dn) {
     TString ret = dn(0,1);
     ret.ToUpper();
     ret+=ret;
+    words->Delete();
+    delete words;
     return ret;
   }
   else if(words->GetEntries()>1) {
@@ -165,12 +168,16 @@ TString JetInfo::get_detector_abbreviation(TString dn) {
       ret = (((TObjString*)((*words)[w]))->String())(0,1) + ret;
     }
     ret.ToUpper();
+    words->Delete();
+    delete words;
     return ret;
   }
   else {
     cout << "ERROR::get_detector_abbreviation The number of words in the detector name is less than 1." << endl;
     assert(words>0);
   }
+  words->Delete();
+  delete words;
   return "";
 }
 
