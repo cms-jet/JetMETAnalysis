@@ -56,9 +56,11 @@ TGraph2DErrors * getGraph2D(int iEta, const TProfile3D * prof,
          nEvt += prof->GetBinEntries(Gbin);
          // avoid points with empty content or too small error
          if (prof   ->GetBinContent(iEta,irho,irefpt)  > 0 &&
-             prof   ->GetBinError  (iEta,irho,irefpt)  > 0.01 &&
-             profPt ->GetBinContent(iEta,irho,irefpt) != 0 && 
-             profRho->GetBinContent(iEta,irho,irefpt)  >0 ) {
+             prof   ->GetBinError  (iEta,irho,irefpt)  > 0.1 &&
+             profPt ->GetBinContent(iEta,irho,irefpt) != 0 &&
+             profPt ->GetBinError  (iEta,irho,irefpt)  > 0.1 &&
+             profRho->GetBinContent(iEta,irho,irefpt)  > 0 &&
+             profRho->GetBinError  (iEta,irho,irefpt)  > 0.1 ) {
             
             // get the relevant values
             double rho  = profRho->GetBinContent(iEta, irho, irefpt); 
@@ -125,7 +127,7 @@ bool getInputProfiles(TString inputFilename, TProfile3D *& prof,
 
 //===========================================================================
 // This method creates a new fit function and fits it to the graph
-TF2 * doGraphFitting(TGraph2DErrors * graph, bool delphes){
+TF2 * doGraphFitting(TGraph2DErrors * graph, bool delphes, int iEta, const TProfile3D * prof){
    
    
    static double par0i = -0.5;
@@ -139,7 +141,12 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool delphes){
    //TF2 * f4 = new TF2("f4","[0] + ([1] * x ) *(1 + [2] * log(y))",0,50,0,1800);
    //ANDREA
    else
-      f4 = new TF2("f4","[0] + ([1] * x ) *(1 + [2] * log(y))", 5,50,10,3000);
+      //Taylor expanded version
+      f4 = new TF2("f4","[0] + ([1] * (x-11)) *(1 + [2] * (log(y) -1.47))", 5,50,10,3000);
+
+      //Non-Taylor expanded version
+      //f4 = new TF2("f4","[0] + ([1] * x ) *(1 + [2] * log(y))", 5,50,10,3000);
+
 //  VR1GPT1:
    //TF2 * f4 = new TF2("f4","[0] + ([1] * x ) *(1 + [2] * log(y))", 1,50,1,3000);
   
@@ -157,12 +164,16 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool delphes){
    f4->SetParameter(0,par0i);
    f4->SetParameter(1,par1i);
    f4->SetParameter(2,par2i);
-   f4->SetParLimits(0,-5,5);
-   f4->SetParLimits(1,-5,5);
-   f4->SetParLimits(2,-1,5);
+   f4->SetParLimits(0,0,20);
+   f4->SetParLimits(1,0,2);
+   f4->SetParLimits(2,-2,5);
    //if (graph->GetN()<500)
    //f4->FixParameter(2,0.05);
    
+/*   if(fabs((prof->GetXaxis()->GetBinLowEdge(iEta)+ prof->GetXaxis()->GetBinLowEdge(iEta + 1))/2)>4.2){
+      f4->FixParameter(2,0);
+      }*/
+
    graph->Fit(f4,"0QMR");
    double rchi2 = f4->GetChisquare()/ f4->GetNDF();
    
@@ -324,7 +335,7 @@ int main(int argc,char**argv){
       cout << "Graph for pT, Eta, Rho created successfully" << endl;
       
       // Do the fitting
-      TF2 * fitfunc = doGraphFitting(graph, delphes);
+      TF2 * fitfunc = doGraphFitting(graph, delphes, iEta, prof);
       cout << "Fitted function" << endl << endl;
       
       // Put this fit result in the vector fitResults

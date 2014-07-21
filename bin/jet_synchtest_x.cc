@@ -120,7 +120,7 @@ MatchEventsAndJets::MatchEventsAndJets() : algo1("ak5pf"), algo2("ak5pf"), iftes
    noPUNpvGTOneEventCounter = 0;
    maxEvts = 0;
    algo1JetInfo = JetInfo(algo1);
-   algo1JetInfo = JetInfo(algo2);
+   algo2JetInfo = JetInfo(algo2);
    getMaxDeltaR();
 }
 
@@ -134,12 +134,19 @@ MatchEventsAndJets::MatchEventsAndJets(TString algo1_, TString algo2_, bool ifte
    noPUNpvGTOneEventCounter = 0;
    maxEvts = 0;
    getMaxDeltaR();
+   algo1JetInfo = JetInfo(algo1);
+   algo2JetInfo = JetInfo(algo2);
 }
 
 //______________________________________________________________________________
 void MatchEventsAndJets::getMaxDeltaR() {
+   cout << "algo1: " << algo1JetInfo.coneSize << " " << "algo2: " << algo2JetInfo.coneSize << endl;
+   cout << "algo1.alias: " << algo1JetInfo.alias << endl;
+   cout << "algo1.jettype: " << algo1JetInfo.jetType << endl;
    double minConeSize = min(algo1JetInfo.coneSize,algo2JetInfo.coneSize)/20.0;
+   cout << "minConeSize: " << minConeSize << endl;
    maxDeltaR = min(0.25,minConeSize);
+   cout << "maxDeltaR: " << maxDeltaR << endl;
 }
 
 //______________________________________________________________________________
