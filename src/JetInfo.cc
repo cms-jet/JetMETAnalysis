@@ -13,7 +13,7 @@ string JetInfo::get_legend_title(const string& alg, bool withSize)
   else if (alg.find("ic")==0) { title = "ItCone, R=";     tmp = tmp.substr(2); }
   else if (alg.find("mc")==0) { title = "MidCone. R=";    tmp = tmp.substr(2); }
   else if (alg.find("ca")==0) { title = "Cam/Aachen, R="; tmp = tmp.substr(2); }
-  else if (alg.find("ak")==0) { title = "Anti k_{T}, R="; tmp = tmp.substr(2); }
+  else if (alg.find("ak")==0) { title = "Anti-k_{T}, R="; tmp = tmp.substr(2); }
   else return alg;
   
   string reco[9] = { "gen", "caloHLT", "calo", "pfHLT", "pfchsHLT", "pfchs", "pf", "trk", "jpt" };
@@ -193,15 +193,15 @@ int JetInfo::getBinIndex(int variable, int nbins, int binWidth){
 
 //______________________________________________________________________________
 TString JetInfo::getBinLegendEntry(int bin, TString type, int nbins, int binWidth) {
-  return Form("%i <= " + type + " < %i",bin*nbins, bin*nbins+binWidth);
+  return Form("%i #leq " + type + " < %i",bin*binWidth, bin*binWidth+binWidth);
 }//getBinLegendEntry
 
 //______________________________________________________________________________
 TString JetInfo::getBinLegendEntry(TString type, int lowEdge, int highEdge) {
   if(highEdge>-1)
-    return Form("%i <= " + type + " < %i",lowEdge, highEdge);
+    return Form("%i #leq " + type + " < %i",lowEdge, highEdge);
   else
-    return Form("%i <= " + type,lowEdge);
+    return Form("%i #leq " + type,lowEdge);
 }//getBinLegendEntry
 
 //______________________________________________________________________________
@@ -218,6 +218,13 @@ int JetInfo::getDetIndex(double eta){
    return 3;
 
 }//getDetIndex
+
+//______________________________________________________________________________
+TString JetInfo::getDetRegion(TString name) {
+  int iRegion = vfind(detector_names,NDetectorNames,name);
+  if(iRegion>-1) return detector_regions_eta[iRegion];
+  else return "";
+}
 
 //______________________________________________________________________________
 vector<int> JetInfo::getPDGIDIndecies(int pdgid) {

@@ -48,18 +48,23 @@ public:
 
   /// get the jet algorithm
   TString getAlgorithm(TString s);
+  TString getAlgorithm() {return getAlgorithm(abbreviation);}
 
   /// get the jet cone size i.e. 5, 7
   TString getConeSize(TString s);
+  TString getConeSize() {return getConeSize(abbreviation);}
   
   /// get the jet type i.e. Calo, PF, PFchs, JPT
   TString getJetType(TString s);
+  TString getJetType() {return getJetType(abbreviation);}
   
   /// get the correction string i.e. l1l2l3
   TString getCorrString(TString s);
+  TString getCorrString() {return getCorrString(abbreviation);}
   
   /// get the uppercase version of the algorithm name
   TString getAlias(TString s);
+  TString getAlias() {return getAlias(abbreviation);}
 
   /// transform the alg label into a title, e.g.: kt4calo -> k_{T}, D=0.4 (Calo)
   static std::string get_legend_title(const std::string& alg, bool withSize = true);
@@ -76,6 +81,9 @@ public:
 
   /// get the index corresponding to the correct detector region
   static int getDetIndex(double eta);
+
+  /// get the eta region associated with a given detector region name
+  static TString getDetRegion(TString name);
 
   /// get the index corresponding to the correct PDGID bin
   static std::vector<int> getPDGIDIndecies(int pdgid);
