@@ -92,20 +92,22 @@ int main(int argc,char**argv)
       // book histograms and functions
       //
       char name[1024];
-      TH2F *RespVsPt[3];
+      TH2F *RespVsPt[4];
       RespVsPt[0] = (TH2F*)inf->Get("RespVsPt_Bar");
-      RespVsPt[1] = (TH2F*)inf->Get("RespVsPt_End");
-      RespVsPt[2] = (TH2F*)inf->Get("RespVsPt_Fwd");
+      RespVsPt[1] = (TH2F*)inf->Get("RespVsPt_IEnd");
+      RespVsPt[2] = (TH2F*)inf->Get("RespVsPt_OEnd");
+      RespVsPt[3] = (TH2F*)inf->Get("RespVsPt_Fwd");
   
-      TF1 *func[3][NPtBins];
-      TH1D *h[3][NPtBins];
-      TH1F *hClosure[3];
+      TF1 *func[4][NPtBins];
+      TH1D *h[4][NPtBins];
+      TH1F *hClosure[4];
       hClosure[0] = new TH1F("ClosureVsPt_Bar","ClosureVsPt_Bar",NPtBins,vpt);
-      hClosure[1] = new TH1F("ClosureVsPt_End","ClosureVsPt_End",NPtBins,vpt);
-      hClosure[2] = new TH1F("ClosureVsPt_Fwd","ClosureVsPt_Fwd",NPtBins,vpt);
-      double XminCalo[3] = {15,15,15};
-      double XminPF[3] = {5,5,5};
-      double Xmax[3] = {3000,3000,190};
+      hClosure[1] = new TH1F("ClosureVsPt_IEnd","ClosureVsPt_IEnd",NPtBins,vpt);
+      hClosure[2] = new TH1F("ClosureVsPt_OEnd","ClosureVsPt_OEnd",NPtBins,vpt);
+      hClosure[3] = new TH1F("ClosureVsPt_Fwd","ClosureVsPt_Fwd",NPtBins,vpt);
+      double XminCalo[4] = {15,15,15,15};
+      double XminPF[4] = {5,5,5,5};
+      double Xmax[4] = {3000,3000,3000,190};
 
       //
       // Find the mean peak of the gaussian fit or the mean of the histogram and 
@@ -113,7 +115,7 @@ int main(int argc,char**argv)
       //
       for(int i=0;i<NPtBins;i++)
         { 
-          for(int j=0;j<3;j++)
+          for(int j=0;j<4;j++)
             {
               sprintf(name,"CorResponse_%d_RefPt%sto%s",j,Pt[i],Pt[i+1]);
               h[j][i] = RespVsPt[j]->ProjectionY(name,i+1,i+1);
@@ -177,9 +179,10 @@ int main(int argc,char**argv)
       lineMinus->SetLineWidth(1);
       lineMinus->SetLineStyle(2);
 
-      TCanvas *can[3];
-      TString Text[3] = {"|#eta| < 1.3","1.3 < |#eta| < 3","3 < |#eta| < 5"};
-      TPaveText *pave[3];
+      TCanvas *can[4];
+      //TString Text[4] = {"|#eta| < 1.3","1.3 < |#eta| < 3","3 < |#eta| < 5"};
+      TString Text[4] = {"|#eta| < 1.3","1.3 < |#eta| < 2.5","2.5 < |#eta| < 3.0","3.0 < |#eta| < 5.0"};
+      TPaveText *pave[4];
 
       //
       // Open/create the output directory and file
@@ -193,7 +196,7 @@ int main(int argc,char**argv)
       //
       // Format and save the output
       //
-      for(int j=0;j<3;j++)
+      for(int j=0;j<4;j++)
         {
           pave[j] = new TPaveText(0.3,0.75,0.8,0.9,"NDC");
           if (tdr) {
@@ -201,7 +204,11 @@ int main(int argc,char**argv)
 
              TString algNameLong;
              if(TString(algs[a]).Contains("ak"))        algNameLong += "Anti-kT";
-             if(TString(algs[a]).Contains("3"))         algNameLong += " R=0.3";
+             if(TString(algs[a]).Contains("1")&&
+                !TString(algs[a]).Contains("10")&&
+                !TString(algs[a]).Contains("l1"))       algNameLong += " R=0.1";
+             else if(TString(algs[a]).Contains("2"))    algNameLong += " R=0.2";
+             else if(TString(algs[a]).Contains("3"))    algNameLong += " R=0.3";
              else if(TString(algs[a]).Contains("4"))    algNameLong += " R=0.4";
              else if(TString(algs[a]).Contains("5"))    algNameLong += " R=0.5";
              else if(TString(algs[a]).Contains("6"))    algNameLong += " R=0.6";
@@ -225,7 +232,7 @@ int main(int argc,char**argv)
           if(!flavor.IsNull()) ss+="_"+algs[a]+"_"+flavor;
           else ss+="_"+algs[a];
           can[j] = new TCanvas(ss,ss,800,800);
-          if (j<2)
+          if (j<3)
             gPad->SetLogx();
           if (ss.Contains("pf"))	
             hClosure[j]->GetXaxis()->SetRangeUser(XminPF[j],Xmax[j]);
@@ -274,11 +281,11 @@ int main(int argc,char**argv)
       if(!flavor.IsNull()) ss+="_"+algs[a]+"_"+flavor;
       else ss+="_"+algs[a];
 
-      TCanvas *ove = new TCanvas(ss,ss,1200,400);
-      ove->Divide(3,1);
-      for (int c=0;c<3;c++) {
+      TCanvas *ove = new TCanvas(ss,ss,1200,300);
+      ove->Divide(4,1);
+      for (int c=0;c<4;c++) {
         ove->cd(c+1);
-        if (c<2) 
+        if (c<3) 
           gPad->SetLogx();
         if (!tdr) {
            hClosure[c]->GetXaxis()->SetMoreLogLabels();
@@ -310,7 +317,7 @@ int main(int argc,char**argv)
       TCanvas *ove2 = new TCanvas(ss,ss,800,800);//600);
       ove2->cd();
       gPad->SetLogx();
-      for (int c=0;c<3;c++) {
+      for (int c=0;c<4;c++) {
          hClosure[c]->SetMaximum(1.05);
          hClosure[c]->SetMinimum(0.95);
          //hClosure[c]->SetMaximum(1.60);
@@ -405,7 +412,7 @@ void cmsPrelim(double intLUMI)
     latex.DrawLatex(0.65,0.85,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //29/07/2011
   }
   latex.SetTextAlign(11); // align left
-  latex.DrawLatex(0.16,0.96,"CMS preliminary");// 2012");
+  latex.DrawLatex(0.16,0.96,"CMS Simulation");// 2012");
 }
 
 //______________________________________________________________________________
@@ -433,6 +440,14 @@ TString getAlias(TString s)
       return "AK5CaloHLT";
    else if (s=="ak5caloHLTl1")
       return "AK5CaloHLTl1";
+   else if (s=="ak1pf")
+      return "AK1PF";
+   else if (s=="ak1pfl1")
+      return "AK1PFl1";
+   else if (s=="ak2pf")
+      return "AK2PF";
+   else if (s=="ak2pfl1")
+      return "AK2PFl1";
    else if (s=="ak3pf")
       return "AK3PF";
    else if (s=="ak3pfl1")
@@ -471,6 +486,22 @@ TString getAlias(TString s)
       return "AK10PF";
    else if (s=="ak10pfl1")
       return "AK10PFl1";
+   else if (s=="ak1pfchs")
+      return "AK1PFchs";
+   else if (s=="ak1pfchsl1")
+      return "AK1PFchsl1";
+   else if (s=="ak2pfchs")
+      return "AK2PFchs";
+   else if (s=="ak2pfchsl1")
+      return "AK2PFchsl1";
+   else if (s=="ak3pfchs")
+      return "AK3PFchs";
+   else if (s=="ak3pfchsl1")
+      return "AK3PFchsl1";
+   else if (s=="ak4pfchs")
+      return "AK4PFchs";
+   else if (s=="ak4pfchsl1")
+      return "AK4PFchsl1";
    else if (s=="ak5pfchs")
       return "AK5PFchs";
    else if (s=="ak5pfchsl1")
@@ -479,12 +510,28 @@ TString getAlias(TString s)
       return "AK5PFchsl1";
    else if (s=="ak5pfchsl1off")
       return "AK5PFchsl1off";
+   else if (s=="ak6pfchs")
+      return "AK6PFchs";
+   else if (s=="ak6pfchsl1")
+      return "AK6PFchsl1";
    else if (s=="ak7pfchs")
       return "AK7PFchs";
    else if (s=="ak7pfchsl1")
       return "AK7PFchsl1";
    else if (s=="ak7pfchsl1off")
       return "AK7PFchsl1off";
+   else if (s=="ak8pfchs")
+      return "AK8PFchs";
+   else if (s=="ak8pfchsl1")
+      return "AK8PFchsl1";
+   else if (s=="ak9pfchs")
+      return "AK9PFchs";
+   else if (s=="ak9pfchsl1")
+      return "AK9PFchsl1";
+   else if (s=="ak10pfchs")
+      return "AK10PFchs";
+   else if (s=="ak10pfchsl1")
+      return "AK10PFchsl1";
    else if (s=="ak5pfHLT")
       return "AK5PFHLT";
   else if (s=="ak5pfHLTl1")

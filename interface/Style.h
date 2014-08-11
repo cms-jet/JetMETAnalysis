@@ -1,10 +1,57 @@
 #include "TStyle.h"
 #include "TROOT.h"
 #include "TPad.h"
+#include "TLatex.h"
+#include "TGraph.h"
+#include "TLegend.h"
+#include "TCanvas.h"
+#include "TH1.h"
+#include "TGraph.h"
+
+#include <string>
+#include <assert.h>
+
+using std::string;
 
 // colors to use
 EColor tdrColors[13] = {kBlack, kBlue, kRed, kGreen, kYellow, kMagenta, kCyan,
                         kOrange, kSpring, kTeal, kAzure, kViolet, kPink};
+
+// Add useful short-hands
+void tdrDraw(TH1* h, string opt,
+       int marker=kFullCircle, int mcolor = kBlack,
+       int lstyle=kSolid, int lcolor=-1,
+       int fstyle=1001, int fcolor=kYellow+1) {
+  h->SetMarkerStyle(marker);
+  h->SetMarkerColor(mcolor);
+  h->SetLineStyle(lstyle);
+  h->SetLineColor(lcolor==-1 ? mcolor : lcolor);
+  h->SetFillStyle(fstyle);
+  h->SetFillColor(fcolor);
+  h->Draw((opt+"SAME").c_str());
+}
+
+void tdrDraw(TGraph* g, string opt,
+       int marker=kFullCircle, int mcolor = kBlack,
+       int lstyle=kSolid, int lcolor=-1,
+       int fstyle=1001, int fcolor=kYellow+1) {
+  g->SetMarkerStyle(marker);
+  g->SetMarkerColor(mcolor);
+  g->SetLineStyle(lstyle);
+  g->SetLineColor(lcolor==-1 ? mcolor : lcolor);
+  g->SetFillStyle(fstyle);
+  g->SetFillColor(fcolor);
+  g->Draw((opt+"SAME").c_str());
+}
+
+TLegend *tdrLeg(double x1, double y1, double x2, double y2) {
+  TLegend *leg = new TLegend(x1, y1, x2, y2, "", "brNDC");
+  leg->SetFillStyle(kNone);
+  leg->SetBorderSize(0);
+  leg->SetTextSize(0.045);
+  leg->Draw();
+  return leg;
+}
 
 // tdrGrid: Turns the grid lines on (true) or off (false)
 
@@ -130,7 +177,7 @@ TStyle* getTDRStyle() {
   tdrStyle->SetTitleSize(0.06, "XYZ");
   // tdrStyle->SetTitleXSize(Float_t size = 0.02); // Another way to set the size?
   // tdrStyle->SetTitleYSize(Float_t size = 0.02);
-  tdrStyle->SetTitleXOffset(0.9);
+  tdrStyle->SetTitleXOffset(1.0);
   tdrStyle->SetTitleYOffset(1.25);
   // tdrStyle->SetTitleOffset(1.3, "X"); // Another way to set the Offset
   // tdrStyle->SetTitleOffset(1.3, "Y"); // Another way to set the Offset
@@ -181,3 +228,53 @@ void setStyle() {
    TStyle* tdrStyle = getTDRStyle();
    gROOT->SetStyle(tdrStyle->GetName());
 }
+
+void cmsPrel(double intLumi=-1, bool wide = false) {
+
+  TLatex *latex = new TLatex();
+  latex->SetNDC();
+  latex->SetTextSize(0.045);
+  
+  latex->SetTextAlign(31); // align right
+  latex->DrawLatex(wide ? 0.98 : 0.95, 0.96, "#sqrt{s} = 8 TeV");
+  if (intLumi > 0.) {
+    latex->SetTextAlign(11); // align left
+    latex->DrawLatex(wide ? 0.06 : 0.15, 0.96,
+         Form("CMS preliminary, L = %.3g fb^{-1}",intLumi*0.001));
+  }
+  else if (intLumi==0) { // simulation
+    latex->SetTextAlign(11); // align left
+    //latex->DrawLatex(wide ? 0.06 : 0.15, 0.96, "CMS simulation (Summer12)");
+    latex->DrawLatex(wide ? 0.06 : 0.15, 0.96, "CMS Simulation");
+  }
+  else {
+    latex->SetTextAlign(11); // align left
+    latex->DrawLatex(0.15,0.96,"CMS preliminary 2012");
+  }
+} // cmsPrel
+
+void cmsFinal(double intLumi=-1, bool wide = false) {
+
+  TLatex *latex = new TLatex();
+  latex->SetNDC();
+  latex->SetTextSize(0.045);
+  
+  latex->SetTextAlign(31); // align right
+  latex->DrawLatex(wide ? 0.98 : 0.95, 0.96, "#sqrt{s} = 8 TeV");
+  if (intLumi > 0.) {
+    latex->SetTextAlign(11); // align left
+    latex->DrawLatex(wide ? 0.06 : 0.15, 0.96,
+         Form("CMS, L = %.2g fb^{-1}",intLumi*0.001));
+  }
+  else if (intLumi==0) { // simulation
+    latex->SetTextAlign(11); // align left
+    latex->DrawLatex(wide ? 0.06 : 0.15, 0.96, "CMS simulation (Pythia Z2*)");
+  }
+  else {
+    latex->SetTextAlign(11); // align left
+    latex->DrawLatex(0.15,0.96,"CMS 2012");
+  }
+} // cmsPrel
+
+//cmsPrel(); // to print just CMS and \sqrt{s}
+//cmsPrel(400);  // to print also the integrated luminosity.

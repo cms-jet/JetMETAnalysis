@@ -39,6 +39,12 @@ using namespace std;
 ///CMS Preliminary label;
 void cmsPrelim(double intLUMI = 0);
 
+///Get colors for the markers
+vector<Int_t> getColors();
+
+///Get styles for the markers
+vector<Int_t> getMarkerNumbers();
+
 ////////////////////////////////////////////////////////////////////////////////
 // main
 ////////////////////////////////////////////////////////////////////////////////
@@ -145,18 +151,21 @@ int main(int argc,char**argv)
   lineMinus->SetLineWidth(1);
   lineMinus->SetLineStyle(2);
   
-  TCanvas *can[3];
-  TString Text[3] = {"|#eta| < 1.3","1.3 < |#eta| < 3","3 < |#eta| < 5"};
-  TPaveText *pave[3];
+  TCanvas *can[4];
+  TString Text[4] = {"|#eta| < 1.3","1.3 < |#eta| < 2.5","2.5 < |#eta| < 3.0","3 < |#eta| < 5"};
+  TPaveText *pave[4];
 
-  double XminCalo[3] = {15,15,15};
-  double XminPF[3] = {5,5,5};
-  double Xmax[3] = {3000,3000,190};
+  double XminCalo[4] = {15,15,15,15};
+  double XminPF[4] = {5,5,5,5};
+  if(tdr) {XminPF[0] = 30; XminPF[1] = 30; XminPF[2] = 30; XminPF[3] = 30;}
+  double Xmax[4] = {3000,3000,3000,190};
+  if(tdr) {Xmax[0] = 1000; Xmax[1] = 1000; Xmax[2] = 390; Xmax[3] = 190;}
+  vector<Int_t> colors = getColors();
   
   char name[1024];
   TH1F *h=0;
-  vector<vector<TH1F*> > hNPU0 (3,vector<TH1F*>(infs.size(),h));
-  vector<vector<TH1F*> > hClosure (3,vector<TH1F*>(infs.size(),h));
+  vector<vector<TH1F*> > hNPU0 (4,vector<TH1F*>(infs.size(),h));
+  vector<vector<TH1F*> > hClosure (4,vector<TH1F*>(infs.size(),h));
   //cout << "size = " << infs.size() << endl;
   vector<TLegend*> leg;
 
@@ -173,16 +182,22 @@ int main(int argc,char**argv)
   //
   // Format and save the output
   //
-  for(int j=0;j<3;j++)
+  for(int j=0;j<4;j++)
     {
-      if(tdr)
-         leg.push_back(new TLegend(0.7,0.7,0.88,0.9));
+      if(tdr) {
+         leg.push_back(new TLegend(0.25,0.2,0.9,0.35));
+         leg.back()->SetNColumns(3);
+         leg.back()->SetTextSize(0.04);
+       }
       else
          leg.push_back(new TLegend(0.7,0.8,1.0,1.0));
       if(tdr)
-         pave[j] = new TPaveText(0.3,0.8,0.8,0.9,"NDC");
+         pave[j] = new TPaveText(0.3,0.75,0.8,0.9,"NDC");
       else
          pave[j] = new TPaveText(0.3,0.9,0.8,1.0,"NDC");
+      pave[j]->SetTextSize(0.04);
+      pave[j]->AddText("QCD Monte Carlo");
+      pave[j]->AddText(JetInfo::get_legend_title(string(algs[0]),false).c_str());
       pave[j]->AddText(Text[j]);      
       sprintf(name,"ClosureVsPt_%d",j);
       TString ss(name);
@@ -196,7 +211,6 @@ int main(int argc,char**argv)
   
       for(unsigned int a=0; a<infs.size(); a++)
         {
-          cout << "sfsg1" << endl;
           if(j==0)
             {
               hClosure[j][a] = (TH1F*)infs[a]->Get("ClosureVsPt_Bar");
@@ -207,13 +221,21 @@ int main(int argc,char**argv)
             }
           else if(j==1)
             {
-              hClosure[j][a] = (TH1F*)infs[a]->Get("ClosureVsPt_End");
+              hClosure[j][a] = (TH1F*)infs[a]->Get("ClosureVsPt_IEnd");
               if(!divByNPU0.IsNull())
                 { 
-                  hNPU0[j][a] = (TH1F*)infsNPU0[a]->Get("ClosureVsPt_End");
+                  hNPU0[j][a] = (TH1F*)infsNPU0[a]->Get("ClosureVsPt_IEnd");
                 }
             }
           else if(j==2)
+            {
+              hClosure[j][a] = (TH1F*)infs[a]->Get("ClosureVsPt_OEnd");
+              if(!divByNPU0.IsNull())
+                { 
+                  hNPU0[j][a] = (TH1F*)infsNPU0[a]->Get("ClosureVsPt_OEnd");
+                }
+            }
+          else if(j==3)
             {
               hClosure[j][a] = (TH1F*)infs[a]->Get("ClosureVsPt_Fwd");
               if(!divByNPU0.IsNull())
@@ -232,7 +254,7 @@ int main(int argc,char**argv)
             hClosure[j][a]->GetXaxis()->SetRangeUser(XminPF[j],Xmax[j]);
           else
             hClosure[j][a]->GetXaxis()->SetRangeUser(XminCalo[j],Xmax[j]);	    
-          hClosure[j][a]->GetXaxis()->SetTitle("GenJet p_{T} (GeV)"); 
+          hClosure[j][a]->GetXaxis()->SetTitle("p_{T}^{GEN} [GeV]"); 
           hClosure[j][a]->GetYaxis()->SetTitle("Corrected Response");
           hClosure[j][a]->GetYaxis()->SetTitleOffset(1.25);
           hClosure[j][a]->GetXaxis()->SetLabelSize(0.035);
@@ -241,15 +263,21 @@ int main(int argc,char**argv)
           hClosure[j][a]->GetYaxis()->SetLabelSize(0.035); 
           if (tdr) {
              hClosure[j][a]->SetMarkerStyle(20);
-             hClosure[j][a]->SetMarkerSize(0.5);
+             hClosure[j][a]->SetMarkerSize(1.2);
           }
           else {
              hClosure[j][a]->SetMarkerSize(2.0);
           }
-          hClosure[j][a]->SetMarkerColor(a+1);
-          hClosure[j][a]->SetLineColor(a+1);
-          hClosure[j][a]->SetMaximum(1.1);
-          hClosure[j][a]->SetMinimum(0.9);
+          hClosure[j][a]->SetMarkerColor(colors[a]); //a+1
+          hClosure[j][a]->SetLineColor(colors[a]); //a+1
+          if(tdr) {
+            hClosure[j][a]->SetMaximum(1.05);
+            hClosure[j][a]->SetMinimum(0.95);
+          }
+          else {
+            hClosure[j][a]->SetMaximum(1.1);
+            hClosure[j][a]->SetMinimum(0.9);
+          }
           if(!divByNPU0.IsNull() && !puLabelsVec[a].Contains("0_0"))
             {
               hClosure[j][a]->GetYaxis()->SetTitle("p_{T}^{RECO}/p_{T}^{GEN} (Relative to NPU=0)");
@@ -270,9 +298,11 @@ int main(int argc,char**argv)
           //if (a>=4) hClosure[j][4]->Draw("same");
           hClosure[j][a]->Write();
 
+          JetInfo ji(algs[a/paths.size()]);
           if(combinePU) leg[j]->AddEntry(hClosure[j][a],puLabelsVec[a]+"_"+algs[a/paths.size()],"lep");
           //else leg[j]->AddEntry(hClosure[j][a],algs[a/paths.size()],"lep");
-          else leg[j]->AddEntry(hClosure[j][a],JetInfo::get_legend_title(string(algs[a/paths.size()]),true).c_str(),"lep");
+          //else leg[j]->AddEntry(hClosure[j][a],JetInfo::get_legend_title(string(algs[a/paths.size()]),true).c_str(),"lep");
+          else leg[j]->AddEntry(hClosure[j][a],Form("R=%.1f",ji.coneSize/10.0),"lep");
         }
       line->Draw("same");
       linePlus->Draw("same");
@@ -315,5 +345,37 @@ void cmsPrelim(double intLUMI)
     latex.DrawLatex(0.65,0.85,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //29/07/2011
   }
   latex.SetTextAlign(11); // align left
-  latex.DrawLatex(0.16,0.96,"CMS preliminary 2014");
+  latex.DrawLatex(0.16,0.96,"CMS Simulation");
+}
+
+//______________________________________________________________________________
+vector<Int_t> getColors() {
+  vector<Int_t> ret;
+  ret.push_back(kBlack);
+  ret.push_back(kRed);
+  ret.push_back(kOrange+1);
+  ret.push_back(kYellow);
+  ret.push_back(kGreen);
+  ret.push_back(kCyan);
+  ret.push_back(kAzure+1);
+  ret.push_back(kViolet+1);
+  ret.push_back(kMagenta);
+  ret.push_back(kGray+2);
+  return ret;
+}
+
+//______________________________________________________________________________
+vector<Int_t> getMarkerNumbers() {
+  vector<Int_t> ret;
+  ret.push_back(20);
+  ret.push_back(33);
+  ret.push_back(22);
+  ret.push_back(21);
+  ret.push_back(24);
+  ret.push_back(27);
+  ret.push_back(26);
+  ret.push_back(25);
+  ret.push_back(28);
+  ret.push_back(34);
+  return ret;
 }

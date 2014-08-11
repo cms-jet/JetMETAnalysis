@@ -133,9 +133,9 @@ MatchEventsAndJets::MatchEventsAndJets(TString algo1_, TString algo2_, bool ifte
    npvRhoNpuBinWidth = 5;
    noPUNpvGTOneEventCounter = 0;
    maxEvts = 0;
-   getMaxDeltaR();
    algo1JetInfo = JetInfo(algo1);
    algo2JetInfo = JetInfo(algo2);
+   getMaxDeltaR();
 }
 
 //______________________________________________________________________________
@@ -319,6 +319,8 @@ void MatchEventsAndJets::DeclareHistograms() {
    // To show the excees of jets at low-pt for the sample with pu.
    histograms["m_njet_pt_pu"]   = new TH1D("m_njet_pt_pu","m_njet_pt_pu;p_{T}^{RECO};#jets;",NPtBins, vpt); // number of jets
    histograms["m_njet_pt_nopu"] = new TH1D("m_njet_pt_nopu","m_njet_pt-nopu;p_{T}^{RECO};#jets;",NPtBins, vpt); // number of jets
+   histograms["m_njet_pthigh_pu"]   = new TH1D("m_njet_pthigh_pu","m_njet_pthigh_pu;p_{T}^{RECO};#jets;",NPtBins, vpt); // number of jets
+   histograms["m_njet_pthigh_nopu"] = new TH1D("m_njet_pthigh_nopu","m_njet_pthigh_nopu;p_{T}^{RECO};#jets;",NPtBins, vpt); // number of jets
 
    // Fraction of matched jets in all, barrel, endcap and forward regions
    histograms["m_frac_nj_pt_b_match_pu"]   = new TProfile("m_frac_nj_pt_b_match_pu","m_frac_nj_pt_b_match_pu;pt_{jet};fraction of matched jets;", NPtBins, vpt);
@@ -387,7 +389,7 @@ void MatchEventsAndJets::DeclareHistograms() {
    histograms["p_npvVsNpv"]       = new TProfile ("p_npvVsNpv","p_npvVsNpv;",80,0,80);
    histograms["p_tnpuVsTnpu"]     = new TProfile ("p_tnpuVsTnpu","p_tnpuVsTnpu;",80,0,80);
    histograms["p_matchedjet_off"] = new TProfile("p_matchedjet_off","p_matchedjet_off;<p_{T} Offset>_{jets} (GeV);# of matched jets",80,0,80);
-   histograms["p_drVsrefpt"]      = new TProfile("p_drVsrefpt","p_drVsrefpt;p_{T}^{ref};d_{R}",NPtBins, vpt);        //ZQ
+   histograms["p_drVsrefpt"]      = new TProfile("p_drVsrefpt","p_drVsrefpt;p_{T}^{GEN};d_{R}",NPtBins, vpt);        //ZQ
 
    histograms["p_off_etaVsNpv"]        = new TProfile2D("p_off_etaVsNpv","p_off_etaVsNpv;#eta_{j};N_{PV};Offset (p_{T}, GeV)",NETA, veta, 50,0,50);
    histograms["p_off_etaVsRho"]        = new TProfile2D("p_off_etaVsRho","p_off_etaVsRho;#eta_{j};Rho;Offset (p_{T}, GeV)",NETA, veta, 50,0,50);
@@ -406,24 +408,24 @@ void MatchEventsAndJets::DeclareHistograms() {
    histograms["p_PtAve_etaVsRhoVsJetPt"]      = new TProfile3D("p_PtAve_etaVsRhoVsJetPt","p_PtAve_etaVsRhoVsJetPt;#eta_{j};Rho;p_{T}^{gen};PtAve",NETA,veta,NRHO,vrho,NPtBins,vpt);
    histograms["p_PtAve_etaVsNPVVsJetPt"]      = new TProfile3D("p_PtAve_etaVsNPVVsJetPt","p_PtAve_etaVsNPVVsJetPt;#eta_{j};NPV;p_{T}^{gen};PtAve",NETA,veta,NRHO,vrho,NPtBins,vpt);
    histograms["p_PtAve_etaVsN_RVsJetPt"]      = new TProfile3D("p_PtAve_etaVsN_RVsJetPt","p_PtAve_etaVsN_RVsJetPt;#eta_{j};(NPV+Rho)/2;p_{T}^{gen};PtAve",NETA,veta,NRHO,vrho,NPtBins,vpt);
-   histograms["p_offsetOA_rho_npv_refpt_BB"]  = new TProfile3D("p_offsetOA_rho_npv_refpt_BB","p_offsetOA_rho_npv_refpt_BB;Rho;N_{PV};p_{T}^{ref};offsetOA",NRHO,vrho,NRHO,vrho,NPtBins,vpt);
+   histograms["p_offsetOA_rho_npv_refpt_BB"]  = new TProfile3D("p_offsetOA_rho_npv_refpt_BB","p_offsetOA_rho_npv_refpt_BB;Rho;N_{PV};p_{T}^{GEN};offsetOA",NRHO,vrho,NRHO,vrho,NPtBins,vpt);
 
    histograms["p_npvVsoff"]               = new TH2F("p_npvVsOff","p_npvVsOff;<p_{T} Offset>_{jets} (GeV);N_{PV}",80,0,80,80,0,80);
    histograms["p_rhoVsoff"]               = new TH2F("p_rhoVsOff","p_rhoVsOff;<p_{T} Offset>_{jets} (GeV);Rho",80,0,80,80,0,80);
    histograms["p_npvVsRho_offset_15_15h"] = new TH2F("p_npvVsRho_offset_15_15h","p_npvVsRho_offset_15_15h;Rho;N_{PV}",80,0,80,80,0,80); //ZQ
-   histograms["p_areaVsrefpt"]            = new TH2F("p_areaVsrefpt","p_areaVsrefpt;p_{T}^{ref};jtarea^{pu}-jtarea^{nopu}",NPtBins, vpt,100,-1,1);
+   histograms["p_areaVsrefpt"]            = new TH2F("p_areaVsrefpt","p_areaVsrefpt;p_{T}^{GEN};jtarea^{pu}-jtarea^{nopu}",NPtBins, vpt,100,-1,1);
    histograms["p_areaVsoffset_1000"]      = new TH2F("p_areaVsoffset_1000","p_areaVsoffset_1000;offset;jtarea^{pu}-jtarea^{nopu}",100,-500,500,100,-1,1);
    histograms["p_areaVsoffset_30_50"]     = new TH2F("p_areaVsoffset_30_50","p_areaVsoffset_30_50;offset;jtarea^{pu}-jtarea^{nopu}",100,-100,100,100,-1,1);
 
-   histograms["p_rho_npv_refpt_BB"] = new TH3F("p_rho_npv_refpt_BB","p_rho_npv_refpt_BB;Rho;N_{PV};p_{T}^{ref}",NRHO,vrho,NRHO,vrho,NPtBins,vpt);
+   histograms["p_rho_npv_refpt_BB"] = new TH3F("p_rho_npv_refpt_BB","p_rho_npv_refpt_BB;Rho;N_{PV};p_{T}^{GEN}",NRHO,vrho,NRHO,vrho,NPtBins,vpt);
 
   TString hname = "";
   for (int iPF=0;iPF<NPFcat;iPF++) {
       hname = Form("p_offResVsrefpt_bb_%s",PFstr[iPF].Data());
-         histograms[hname] = new TH2D(hname,hname+";p_{T}^{ref};offset_"+PFstr[iPF]+" (GeV)",NPtBins,vpt,1000,-300,300);
+         histograms[hname] = new TH2D(hname,hname+";p_{T}^{GEN};offset_"+PFstr[iPF]+" (GeV)",NPtBins,vpt,1000,-300,300);
   }
   hname = Form("p_offResVsrefpt_bb_all");
-  histograms[hname] = new TH2D(hname,hname+";p_{T}^{ref};<offset> (GeV)",NPtBins,vpt,1000,-300,300);
+  histograms[hname] = new TH2D(hname,hname+";p_{T}^{GEN};<offset> (GeV)",NPtBins,vpt,1000,-300,300);
 
   // Break into 4 different detector region
   for (int det=0;det<NDetectorNames;det++) {
@@ -435,59 +437,63 @@ void MatchEventsAndJets::DeclareHistograms() {
       hname = Form("p_rhoVsOff_%s",detectorAbbreviation.Data());
       histograms[hname] =  new TH2D(hname,hname+";<p_{T} Offset>_{jets} (GeV);Rho",80,0,80,80,0,80);
       hname = Form("p_resVsrefpt_%s",detectorAbbreviation.Data());
-      histograms[hname] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}^{pu}/p_{T}^{ref};",NPtBins, vpt,100,0,5);
+      histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}^{pu}/p_{T}^{GEN};",NPtBins, vpt,100,0,5);
       hname = Form("np_resVsrefpt_%s",detectorAbbreviation.Data());
-      histograms[hname] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}^{nopu}/p_{T}^{ref};",NPtBins, vpt,100,0,5);
+      histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}^{nopu}/p_{T}^{GEN};",NPtBins, vpt,100,0,5);
 
       hname = Form("p_offresVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
-      histograms[hname] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
+      histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
       hname = Form("p_offresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
-      histograms[hname] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
+      histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
       hname = Form("p_offresVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
-      histograms[hname] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
+      histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
 
       // Generate 4 histograms for eta 4 detector regions, and 6 for the npv regions
       // 6 old NPV bins 0-4, 5-9, 10-14, 15-19, 20-24, 25-29
       for (int npv=0;npv<NBinsNpvRhoNpu;npv++) {
          // To obtain the response ratio to pt_nopu a function of pT and NPV
          hname = Form("p_resnopuVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
-         histograms[hname] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,100,0,5);
+         histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,100,0,5);
          hname = Form("p_nopuresVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
-         histograms[hname] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}^{nopu}/p_{T}^{ref};",NPtBins, vpt,100,0,5);
+         histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}^{nopu}/p_{T}^{GEN};",NPtBins, vpt,100,0,5);
          hname = Form("p_resVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
-         histograms[hname] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}^{pu}/p_{T}^{ref};",NPtBins, vpt,100,0,5);
+         histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}^{pu}/p_{T}^{GEN};",NPtBins, vpt,100,0,5);
 
          // To obtain the offset / response ratio to pt_nopu a function of pT and NPV
          hname = Form("p_offresVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
-         histograms[hname] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}^{pu}-p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
+         histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}^{pu}-p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
          hname = Form("p_offresOrefptVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
-         histograms[hname] = new TH2D(hname,hname+";p^{ref}_{T}; (p_{T}^{pu}-p_{T}^{nopu})/p_{T}^{ref};",NPtBins, vpt,40,-10,10);
+         histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; (p_{T}^{pu}-p_{T}^{nopu})/p_{T}^{GEN};",NPtBins, vpt,40,-10,10);
          hname = Form("p_offAfterOoffBeforeVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
-         histograms[hname] = new TH2D(hname,hname+";p^{ref}_{T}; (p_{T}^{pu+L1}-p_{T}^{nopu})/(p_{T}^{pu}-p_{T}^{nopu});",NPtBins, vpt,40,-10,10);
+         histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; (p_{T}^{pu+L1}-p_{T}^{nopu})/(p_{T}^{pu}-p_{T}^{nopu});",NPtBins, vpt,40,-10,10);
 
          // To obtain the resolution as a function of pT and Rho
          hname = Form("p_resnopuVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
-         histograms[hname] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,100,0,5);
+         histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,100,0,5);
          hname = Form("p_nopuresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
-         histograms[hname] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}^{nopu}/p_{T}^{ref};",NPtBins, vpt,100,0,5);
+         histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}^{nopu}/p_{T}^{GEN};",NPtBins, vpt,100,0,5);
          hname = Form("p_resVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
-         histograms[hname] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}^{pu}-p_{T}^{nopu};",NPtBins, vpt,100,0,5);
+         histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}^{pu}-p_{T}^{nopu};",NPtBins, vpt,100,0,5);
 
          // To obtain the offset/response as a function of pT and Rho
          hname = Form("p_offresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
-         histograms[hname] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
+         histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
          hname = Form("p_offresOrefptVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
-         histograms[hname] = new TH2D(hname,hname+";p^{ref}_{T}; (p_{T}^{pu}-p_{T}^{nopu})/p_{T}^{ref};",NPtBins, vpt,40,-10,10);
+         histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; (p_{T}^{pu}-p_{T}^{nopu})/p_{T}^{GEN};",NPtBins, vpt,40,-10,10);
          hname = Form("p_offAfterOoffBeforeVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
-         histograms[hname] = new TH2D(hname,hname+";p^{ref}_{T}; (p_{T}^{pu+L1}-p_{T}^{nopu})/(p_{T}^{pu}-p_{T}^{nopu});",NPtBins, vpt,40,-10,10);
+         histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; (p_{T}^{pu+L1}-p_{T}^{nopu})/(p_{T}^{pu}-p_{T}^{nopu});",NPtBins, vpt,40,-10,10);
          hname = Form("p_offresVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
-         histograms[hname] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
+         histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
+         hname = Form("p_nopuresVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
+         histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}^{nopu}/p_{T}^{GEN};",NPtBins,vpt,100,0,5);
+         hname = Form("p_resVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
+         histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}^{pu}-p_{T}^{nopu};",NPtBins,vpt,100,0,5);
     }//npv or rho
 
     //0, 1-3, 4, 5, 21, all, quarks
     for (int ipdgid=0;ipdgid<NPDGIDcat;ipdgid++) {
          hname = Form("p_offresVsrefpt_%s_pdgid_%s",detectorAbbreviation.Data(),pdgidstr[ipdgid].Data());
-         histograms[hname] = new TH2D(hname,hname+";p^{ref}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
+         histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
     }//pdgid
   }
 
@@ -641,6 +647,9 @@ bool MatchEventsAndJets::FillHistograms() {
     bool ismatchRG = tpu->refdrjt[j1]<getMaxDeltaR(algo1);
 
     histograms["m_njet_pt_pu"]->Fill(tpu->jtpt[j1]);
+    if(tpu->refpt[j1]>10){
+      histograms["m_njet_pthigh_pu"]->Fill(tpu->jtpt[j1]);
+    }
 
     avg_jtpt_all += tpu->jtpt[j1];
 
@@ -702,6 +711,9 @@ bool MatchEventsAndJets::FillHistograms() {
   for (int j1 = 0; j1 < tnopu->nref; j1++) {
 
     histograms["m_njet_pt_nopu"]->Fill(tnopu->jtpt[j1]);
+    if(tnopu->refpt[j1]>10){
+      histograms["m_njet_pthigh_nopu"]->Fill(tnopu->jtpt[j1]);
+    }
 
     bool ismatchRG = tnopu->refdrjt[j1]<getMaxDeltaR(algo2);
 
@@ -827,6 +839,8 @@ bool MatchEventsAndJets::FillHistograms() {
     histograms[hname]->Fill(tpu->refpt[jpu],offsetOrefpt);
     hname = Form("p_resVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
     histograms[hname]->Fill(tpu->refpt[jpu],resp);
+    hname = Form("p_resVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),itnpu_low,itnpu_high);
+    histograms[hname]->Fill(tpu->refpt[jpu],resp);
     hname = Form("p_offresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
     histograms[hname]->Fill(tpu->refpt[jpu],offset);
     hname = Form("p_offresOrefptVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
@@ -852,6 +866,8 @@ bool MatchEventsAndJets::FillHistograms() {
     hname = Form("p_nopuresVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
     histograms[hname]->Fill(tpu->refpt[jpu],respNopu);
     hname = Form("p_nopuresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
+    histograms[hname]->Fill(tpu->refpt[jpu],respNopu);
+    hname = Form("p_nopuresVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),itnpu_low,itnpu_high);
     histograms[hname]->Fill(tpu->refpt[jpu],respNopu);
     hname = Form("p_offAfterOoffBeforeVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
     histograms[hname]->Fill(tpu->refpt[jpu],offset/offset_raw);

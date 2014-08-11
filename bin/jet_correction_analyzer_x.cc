@@ -202,7 +202,7 @@ int main(int argc,char**argv)
       unsigned int nrefmax = 2;
       unsigned char nref;
       char name[1024];
-      //char title[1024];
+      char title[1024];
       float refpt[100];
       float refeta[100];
       float refphi[100];
@@ -210,7 +210,7 @@ int main(int argc,char**argv)
       float jteta[100];
       float jtphi[100];
       float refdrjt[100];
-      //float refdphijt[100];
+      float refdphijt[100];
       int   refpdgid[100];
       vector<int>* bxns = new vector<int>;
       vector<int>* npus = new vector<int>;
@@ -223,6 +223,8 @@ int main(int argc,char**argv)
       Long64_t run(0);
       TH2F *RespVsPt_Bar;
       TH2F *RespVsPt_End;
+      TH2F *RespVsPt_IEnd;
+      TH2F *RespVsPt_OEnd;
       TH2F *RespVsPt_Fwd;
       TH2F *RespVsEta[NPtBins];
       TH3F *RespVsEtaVsPt;
@@ -345,6 +347,10 @@ int main(int argc,char**argv)
       RespVsPt_Bar->Sumw2(); 
       RespVsPt_End = new TH2F("RespVsPt_End","RespVsPt_End",NPtBins,vpt,NRespBins,RespLow,RespHigh);
       RespVsPt_End->Sumw2();
+      RespVsPt_IEnd = new TH2F("RespVsPt_IEnd","RespVsPt_IEnd",NPtBins,vpt,NRespBins,RespLow,RespHigh);
+      RespVsPt_IEnd->Sumw2();
+      RespVsPt_OEnd = new TH2F("RespVsPt_OEnd","RespVsPt_OEnd",NPtBins,vpt,NRespBins,RespLow,RespHigh);
+      RespVsPt_OEnd->Sumw2();
       RespVsPt_Fwd = new TH2F("RespVsPt_Fwd","RespVsPt_Fwd",NPtBins,vpt,NRespBins,RespLow,RespHigh);
       RespVsPt_Fwd->Sumw2();
       RespVsPtProfile = new TProfile("RespVsPtProfile","RespVsPtProfile",NPtBins,vpt);
@@ -551,6 +557,14 @@ int main(int argc,char**argv)
             if ((fabs(eta)<=3.0) && (fabs(eta)>1.3))
             {
                RespVsPt_End->Fill(ptgen,relrsp,weight);
+            }
+            if ((fabs(eta)<=2.5) && (fabs(eta)>1.3))
+            {
+               RespVsPt_IEnd->Fill(ptgen,relrsp,weight);
+            }
+            if ((fabs(eta)<=3.0) && (fabs(eta)>2.5))
+            {
+               RespVsPt_OEnd->Fill(ptgen,relrsp,weight);
             }
             if ((fabs(eta)<=5.0) && (fabs(eta)>3))
             {
@@ -819,6 +833,14 @@ string getAlias(TString s)
       return "AK5CaloHLT";
    else if (s=="ak5caloHLTl1")
       return "AK5CaloHLTl1";
+   else if (s=="ak1pf")
+      return "AK1PF";
+   else if (s=="ak1pfl1")
+      return "AK1PFl1";
+   else if (s=="ak2pf")
+      return "AK2PF";
+   else if (s=="ak2pfl1")
+      return "AK2PFl1";
    else if (s=="ak3pf")
       return "AK3PF";
    else if (s=="ak3pfl1")

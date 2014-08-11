@@ -483,22 +483,23 @@ TCanvas * getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, vector<pa
   vector<double> PtVals;
   PtVals.push_back(30);
   PtVals.push_back(100);
-  PtVals.push_back(300);
-  PtVals.push_back(500);
+  //PtVals.push_back(300);
+  //PtVals.push_back(500);
   PtVals.push_back(1000);
-  PtVals.push_back(1500);
+  //PtVals.push_back(1500);
 
   //Create the canvas with multiple pads
   TString ss("CorrectionVsEta_Comparison_TDR");
   ss += suffix;
-  TCanvas *ove = new TCanvas(ss,ss,1200,800);
-  ove->Divide(3,2);
+  TCanvas *ove = new TCanvas(ss,ss,1200,400); //800->400
+  ove->Divide(3,1); //2->1
 
   vector<Int_t> colors = getColors();
   vector<Int_t> markers = getMarkerNumbers();
 
   // Create a legend for pt values
   vector<TLegend*> legs;
+  vector<TPaveText*> pave;
 
   // loop over all pt values.
   map<TString,TH1F*> cc;
@@ -514,29 +515,39 @@ TCanvas * getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, vector<pa
       }
     }
     if(allAlgsSame) {
-      legs.push_back(new TLegend(0.195,0.75,0.885,0.92));
-      legs.back()->SetNColumns(3);
-      legs.back()->SetBorderSize(1);
+      //legs.push_back(new TLegend(0.195,0.75,0.885,0.92));
+      //legs.back()->SetNColumns(3);
+      //legs.back()->SetBorderSize(1);
+      legs.push_back(new TLegend(0.25,0.55,0.9,0.75));
+      legs.back()->SetNColumns(2);
+      legs.back()->SetBorderSize(0);
     }
     else {
       legs.push_back(new TLegend(0.20,0.5,0.83,0.9));
       legs.back()->SetBorderSize(0);
       legs.back()->SetFillStyle(0);
     }
-    legs.back()->SetTextSize(0.029);
+    //legs.back()->SetTextSize(0.029);
+    legs.back()->SetTextSize(0.045);
     legs.back()->SetFillColor(0);
-    
 
     TString ptstr;
     if (PtVals[c]<0.1)
-       ptstr.Form("%f",PtVals[c]);
+       ptstr.Form("p_{T} = %f GeV",PtVals[c]);
     else 
-       ptstr.Form("%.0f",PtVals[c]);
-    //leg->AddEntry(cc,"P_{T} = "+ptstr+" GeV","p");
-    legs.back()->AddEntry((TObject*)0,"P_{T} = "+ptstr+" GeV","");
-    if(allAlgsSame)
-      legs.back()->AddEntry((TObject*)0,getAlgNameLong(algs[0],1),"");
-    legs.back()->AddEntry((TObject*)0,"","");
+       ptstr.Form("p_{T} = %.0f GeV",PtVals[c]);
+    //legs.back()->AddEntry((TObject*)0,"P_{T} = "+ptstr+" GeV","");
+    //if(allAlgsSame)
+    //  legs.back()->AddEntry((TObject*)0,getAlgNameLong(algs[0],1),"");
+    //legs.back()->AddEntry((TObject*)0,"","");
+
+    pave.push_back(new TPaveText(0.3,0.75,0.8,0.9,"NDC"));
+    pave.back()->SetTextSize(0.045);
+    pave.back()->SetFillColor(0);
+    pave.back()->SetBorderSize(0);
+    pave.back()->AddText("QCD Monte Carlo");
+    pave.back()->AddText(JetInfo::get_legend_title(string(algs[0]),false).c_str());
+    pave.back()->AddText(ptstr);      
 
     for (unsigned int ialg=0; ialg<algs.size(); ialg++) {
       //Create and fill the histo
@@ -628,7 +639,10 @@ TCanvas * getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, vector<pa
 
     //pave->Draw("same");
     legs.back()->Draw("same");
+    pave.back()->Draw("same");
     cmsPrelim();
+
+    gPad->RedrawAxis();
   }//for pt bins
 
   algs.erase(algs.begin());
@@ -1074,7 +1088,9 @@ TString getAlgNameLong(TString algo, int coneSize) {
   if (coneSize<2)
     if(algo.Contains("ak"))        algNameLong += "Anti-kT";
   if(coneSize==0 || coneSize==2) {
-    if(algo.Contains("3"))         algNameLong += " R=0.3";
+     if(algo.Contains("ak1") && !algo.Contains("ak10")) algNameLong += " R=0.1";
+    else if(algo.Contains("2"))    algNameLong += " R=0.2";
+    else if(algo.Contains("3"))    algNameLong += " R=0.3";
     else if(algo.Contains("4"))    algNameLong += " R=0.4";
     else if(algo.Contains("5"))    algNameLong += " R=0.5";
     else if(algo.Contains("6"))    algNameLong += " R=0.6";
@@ -1145,5 +1161,5 @@ void cmsPrelim(double intLUMI)
    }
    latex.SetTextAlign(11); // align left
    //latex.DrawLatex(0.16,0.96,"CMS preliminary");// 2012");
-   latex.DrawLatex(0.16,0.96,"CMS Simulation Preliminary");// 2012");
+   latex.DrawLatex(0.16,0.96,"CMS Simulation");// 2012");
 }
