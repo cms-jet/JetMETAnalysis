@@ -195,7 +195,7 @@ int main(int argc,char**argv) {
   	TFile* ofile = new TFile(outputDir+"/DelphesJRA.root","RECREATE");
   	ofile->mkdir("ak4pf","genRawJet");
   	ofile->mkdir("ak4pfl1","genRawNoPUJet");
-  	ofile->mkdir("ak4pfl1l2l3","genJet");
+  	ofile->mkdir("ak4pfchs","genJet");
   	//ofile->mkdir("ca8pf","genCAJet");
   	TTree* genRawJet_     = new TTree("t","t");
   	TTree* genRawNoPUJet_ = new TTree("t","t");
