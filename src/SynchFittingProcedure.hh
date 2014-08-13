@@ -738,7 +738,7 @@ TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, vector<
 
    TCanvas * c = new TCanvas(cname,cname);
    c->SetLogx();
-   TLegend * leg = new TLegend(0.2,0.65,0.45,0.92);
+   TLegend * leg = new TLegend(0.19,0.65,0.45,0.92);
    //leg->SetHeader(algo);
    leg->SetFillColor(0);
    leg->SetBorderSize(0);
@@ -812,11 +812,11 @@ TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, vector<
    cmsPrelim();
 
    //Draw Algo name and detector region eta using TLatex.
-   TPaveText* pave = new TPaveText(0.51,0.79,0.954,0.91,"NDC tr");
+   TPaveText* pave = new TPaveText(0.52,0.79,0.954,0.91,"NDC tr");
    pave->SetFillColor(0);
    pave->SetShadowColor(0);
    pave->SetBorderSize(0);
-   pave->SetTextSize(0.034965);
+   pave->SetTextSize(0.045);
    pave->SetTextAlign(31);
    pave->AddText(ji.get_legend_title(string(ji.abbreviation),true).c_str());
    if(cname.Contains("BB"))
