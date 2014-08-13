@@ -55,16 +55,20 @@ int main(int argc,char**argv) {
   CommandLine cl;
   if (!cl.parse(argc,argv)) return 0;
 
-  TString    path       = cl.getValue<TString> ("path");
-  TString    odir       = cl.getValue<TString> ("odir",        "./");
-  string     seta       = cl.getValue<string>  ("seta",        "BB");
-  bool       chs        = cl.getValue<bool>    ("chs",        false);
-  const bool _noaeff    = cl.getValue<bool>    ("noaeff",      true);
-  bool       pfAndPfchs = cl.getValue<bool>    ("pfAndPfchs", false);
-  bool       minimalist = cl.getValue<bool>    ("minimalist", false);
+  TString    path          = cl.getValue<TString> ("path");
+  TString    odir          = cl.getValue<TString> ("odir",           "./");
+  string     seta          = cl.getValue<string>  ("seta",           "BB");
+  bool       chs           = cl.getValue<bool>    ("chs",           false);
+  const bool _noaeff       = cl.getValue<bool>    ("noaeff",         true);
+  bool       pfAndPfchs    = cl.getValue<bool>    ("pfAndPfchs",    false);
+  bool       minimalist    = cl.getValue<bool>    ("minimalist",    false);
+  bool       modifiedError = cl.getValue<bool>    ("modifiedError", false);
 
   if (!cl.check()) return 0;
   cl.print();
+
+  if(modifiedError && !minimalist)
+    modifiedError = false;
 
   const char *ceta = seta.c_str();
   assert(seta=="BB"||seta=="EI"||seta=="EO"||seta=="FF");
@@ -118,6 +122,25 @@ int main(int argc,char**argv) {
   pgsachs->SetLineColor(kRed); pgsachs->SetMarkerColor(kRed); pgsachs->SetMarkerSize(1.0); pgsachs->SetMarkerStyle(kOpenCircle);
   TProfile *pgcachs = new TProfile(Form("pgcachs"),"",nrhoabins,rhoabins,"s");
   pgcachs->SetLineColor(kBlue); pgcachs->SetMarkerColor(kBlue); pgcachs->SetMarkerSize(1.0); pgcachs->SetMarkerStyle(kOpenCircle);
+
+  //Stores the min and max values for each point in the TProfile so that we can calculate the errors.
+  map<double,double> minPGNA, minPGSA, minPGCA, minPGNAchs, minPGSAchs, minPGCAchs;
+  map<double,double> maxPGNA, maxPGSA, maxPGCA, maxPGNAchs, maxPGSAchs, maxPGCAchs;
+
+  //Graphs to convert the TProfiles into graphs
+  TGraphErrors *agna = new TGraphErrors();
+  agna->SetLineColor(kBlack); agna->SetMarkerColor(kBlack); agna->SetMarkerSize(1.0); agna->SetMarkerStyle(kFullCircle);
+  TGraphErrors *agsa = new TGraphErrors();
+  agsa->SetLineColor(kRed); agsa->SetMarkerColor(kRed); agsa->SetMarkerSize(1.0); agsa->SetMarkerStyle(kFullCircle);
+  TGraphErrors *agca = new TGraphErrors();
+  agca->SetLineColor(kBlue); agca->SetMarkerColor(kBlue); agca->SetMarkerSize(1.0); agca->SetMarkerStyle(kFullCircle);
+
+  TGraphErrors *agnachs = new TGraphErrors();
+  agnachs->SetLineColor(kBlack); agnachs->SetMarkerColor(kBlack); agnachs->SetMarkerSize(1.0); agnachs->SetMarkerStyle(kOpenCircle);
+  TGraphErrors *agsachs = new TGraphErrors();
+  agsachs->SetLineColor(kRed); agsachs->SetMarkerColor(kRed); agsachs->SetMarkerSize(1.0); agsachs->SetMarkerStyle(kOpenCircle);
+  TGraphErrors *agcachs = new TGraphErrors();
+  agcachs->SetLineColor(kBlue); agcachs->SetMarkerColor(kBlue); agcachs->SetMarkerSize(1.0); agcachs->SetMarkerStyle(kOpenCircle);
 
   vector<TCanvas*> c1s(2*ncone);
   vector<TCanvas*> c2s(2*ncone);
@@ -428,8 +451,8 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
     if (ialg==0) {
       //TString axes_titles = ";#rho#timesA_{eff} (GeV);Fit parameter";
       //if (_noaeff) axes_titles = ";#rho#timesA (GeV);Fit parameter";
-      TString axes_titles = ";#mu#timesA_{eff} (GeV);Resolution Fit parameter";
-      if (_noaeff) axes_titles = ";#mu#timesA (GeV);Resolution Fit parameter";
+      TString axes_titles = ";#mu#timesA_{eff};Resolution Fit Parameter";
+      if (_noaeff) axes_titles = ";#mu#timesA;Resolution Fit Parameter";
       TH1D *h2a = new TH1D("h2a", axes_titles,
          110,0,110);
       h2a->SetMaximum(14-0.001);
@@ -461,11 +484,53 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
         pgnachs->Fill(gna->GetX()[i], gna->GetY()[i]);
         pgsachs->Fill(gsa->GetX()[i], gsa->GetY()[i]);
         pgcachs->Fill(gca->GetX()[i], gca->GetY()[i]);
+
+        if(cone>=0.1&&cone<=1.0) {
+          int binPGNAchs = pgnachs->FindBin(gna->GetX()[i]);
+          int binPGSAchs = pgsachs->FindBin(gsa->GetX()[i]);
+          int binPGCAchs = pgcachs->FindBin(gca->GetX()[i]);
+          //Get the minimum y value for each bin
+          if(minPGNAchs.find(binPGNAchs)==minPGNAchs.end() || gna->GetY()[i]<minPGNAchs[binPGNAchs])
+            minPGNAchs[binPGNAchs] = gna->GetY()[i];
+          if(minPGSAchs.find(binPGSAchs)==minPGSAchs.end() || gsa->GetY()[i]<minPGSAchs[binPGSAchs])
+            minPGSAchs[binPGSAchs] = gsa->GetY()[i];
+          if(minPGCAchs.find(binPGCAchs)==minPGCAchs.end() || gca->GetY()[i]<minPGCAchs[binPGCAchs])
+            minPGCAchs[binPGCAchs] = gca->GetY()[i];
+
+          //Get the maximum y value for each bin
+          if(maxPGNAchs.find(binPGNAchs)==maxPGNAchs.end() || gna->GetY()[i]>maxPGNAchs[binPGNAchs])
+            maxPGNAchs[binPGNAchs] = gna->GetY()[i];
+          if(maxPGSAchs.find(binPGSAchs)==maxPGSAchs.end() || gsa->GetY()[i]>maxPGSAchs[binPGSAchs])
+            maxPGSAchs[binPGSAchs] = gsa->GetY()[i];
+          if(maxPGCAchs.find(binPGCAchs)==maxPGCAchs.end() || gca->GetY()[i]>maxPGCAchs[binPGCAchs])
+            maxPGCAchs[binPGCAchs] = gca->GetY()[i];
+        }
       }
       else {
         pgna->Fill(gna->GetX()[i], gna->GetY()[i]);
         pgsa->Fill(gsa->GetX()[i], gsa->GetY()[i]);
         pgca->Fill(gca->GetX()[i], gca->GetY()[i]);
+
+        if(cone>=0.1&&cone<=1.0) {
+          int binPGNA = pgna->FindBin(gna->GetX()[i]);
+          int binPGSA = pgsa->FindBin(gsa->GetX()[i]);
+          int binPGCA = pgca->FindBin(gca->GetX()[i]);
+          //Get the minimum y value for each bin
+          if(minPGNA.find(binPGNA)==minPGNA.end() || gna->GetY()[i]<minPGNA[binPGNA])
+            minPGNA[binPGNA] = gna->GetY()[i];
+          if(minPGSA.find(binPGSA)==minPGSA.end() || gsa->GetY()[i]<minPGSA[binPGSA])
+            minPGSA[binPGSA] = gsa->GetY()[i];
+          if(minPGCA.find(binPGCA)==minPGCA.end() || gca->GetY()[i]<minPGCA[binPGCA])
+            minPGCA[binPGCA] = gca->GetY()[i];
+  
+          //Get the maximum y value for each bin
+          if(maxPGNA.find(binPGNA)==maxPGNA.end() || gna->GetY()[i]>maxPGNA[binPGNA])
+            maxPGNA[binPGNA] = gna->GetY()[i];
+          if(maxPGSA.find(binPGSA)==maxPGSA.end() || gsa->GetY()[i]>maxPGSA[binPGSA])
+            maxPGSA[binPGSA] = gsa->GetY()[i];
+          if(maxPGCA.find(binPGCA)==maxPGCA.end() || gca->GetY()[i]>maxPGCA[binPGCA])
+            maxPGCA[binPGCA] = gca->GetY()[i];
+        }
       }
     }
 
@@ -485,12 +550,42 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
 
   } // for ialg
   if(minimalist) {
+    if(modifiedError) {
+      //Set the bin errors
+      if(pgna->GetNbinsX() != (int)minPGNA.size())
+        cout << "WARNING::the number of bins in pgna (" << pgna->GetNbinsX() << ")and the number of min/max values ("<< minPGNA.size() << ") for that bin are not the same" << endl;
+      for(int ibin=1; ibin<=pgna->GetNbinsX(); ibin++) {
+        agna->SetPoint(ibin-1,pgna->GetBinCenter(ibin),pgna->GetBinContent(ibin));
+        agsa->SetPoint(ibin-1,pgsa->GetBinCenter(ibin),pgsa->GetBinContent(ibin));
+        agca->SetPoint(ibin-1,pgca->GetBinCenter(ibin),pgca->GetBinContent(ibin));
+        agnachs->SetPoint(ibin-1,pgnachs->GetBinCenter(ibin),pgnachs->GetBinContent(ibin));
+        agsachs->SetPoint(ibin-1,pgsachs->GetBinCenter(ibin),pgsachs->GetBinContent(ibin));
+        agcachs->SetPoint(ibin-1,pgcachs->GetBinCenter(ibin),pgcachs->GetBinContent(ibin));
+        agna->SetPointError(ibin-1,0.0,(maxPGNA[ibin]-minPGNA[ibin])/2.0);
+        agsa->SetPointError(ibin-1,0.0,(maxPGSA[ibin]-minPGSA[ibin])/2.0);
+        agca->SetPointError(ibin-1,0.0,(maxPGCA[ibin]-minPGCA[ibin])/2.0);
+        agnachs->SetPointError(ibin-1,0.0,(maxPGNAchs[ibin]-minPGNAchs[ibin])/2.0);
+        agsachs->SetPointError(ibin-1,0.0,(maxPGSAchs[ibin]-minPGSAchs[ibin])/2.0);
+        agcachs->SetPointError(ibin-1,0.0,(maxPGCAchs[ibin]-minPGCAchs[ibin])/2.0);
+        //cout << "bin = "<< ibin << "\tmin = " << minPGCAchs[ibin] << "\tmax = " << maxPGCAchs[ibin] 
+        //     << "\terror(set) = " << (maxPGCAchs[ibin]-minPGCAchs[ibin])/2.0 << "\terror(found) = " << agcachs->GetErrorY(ibin-1) << endl;
+
+        agna->Draw("SAMEPz");
+        agsa->Draw("SAMEPz");
+        agca->Draw("SAMEPz");
+        agnachs->Draw("SAMEPz");
+        agsachs->Draw("SAMEPz");
+        agcachs->Draw("SAMEPz");
+      }
+    }
+    else {
       pgna->Draw("SAMEPz");
       pgsa->Draw("SAMEPz");
       pgca->Draw("SAMEPz");
       pgnachs->Draw("SAMEPz");
       pgsachs->Draw("SAMEPz");
       pgcachs->Draw("SAMEPz");
+    }
   }
 
   // Fit all cones, all rhos at once
@@ -607,8 +702,8 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
         fc->SetMarkerStyle(kFullCircle); fc->SetMarkerColor(kBlue);
       }
       leg->AddEntry(f2,"N (GeV)","LP");
-      leg->AddEntry(fs,"S (1/#sqrt{GeV}) #times 10","LP");
-      leg->AddEntry(fc,"C (1/GeV) #times 100","LP");
+      leg->AddEntry(fs,"S (#sqrt{GeV}) #times 10","LP");
+      leg->AddEntry(fc,"C (1) #times 100","LP");
       leg->Draw();
 
       TLegend* leg2;
@@ -627,12 +722,24 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
       TLatex *tex = new TLatex();
       tex->SetNDC(); tex->SetTextSize(0.045);
       tex->DrawLatex(0.70, 0.87, seta_expanded);
-      if(minimalist) tex->DrawLatex(0.70, 0.82, "R=0.2-1.0");
-      if(!pfAndPfchs) tex->DrawLatex(0.70, 0.82, chs ? "PFchs" : "PF");
-      tex->DrawLatex(0.60, 0.20,
+      if(minimalist) {
+        tex->DrawLatex(0.70, 0.82, "R=0.2-1.0");
+        tex->SetTextSize(0.027);
+        //tex->DrawLatex(0.535, 0.21,"#frac{#sigma}{#LT#frac{p_{T}}{p_{T}^{GEN}}#GT} =   #sqrt{#frac{N#upoint|N|+#sigma_{PU}^{2}#muA}{p_{T}^{2}} + #frac{S^{2}}{p_{T}} + C^{2}}");
+        tex->DrawLatex(0.54, 0.19,"#frac{#sigma}{p_{T}} =   #sqrt{#frac{N_{0}#upoint|N_{0}|+#sigma_{PU}^{2}#muA}{p_{T}^{2}} + #frac{S^{2}}{p_{T}} + C^{2}}");
+        tex->SetTextSize(0.045);
+        tex->DrawLatex(0.20, 0.19,
          _noaeff ? "(A = #LTA_{jet}#GT = #piR^{2})" :
          (chs ? "A_{eff} = #pi(R^{2}+0.4^{2})" :
           "A_{eff} = #pi(R^{2}+0.2^{2})"));
+      }
+      else {
+         tex->DrawLatex(0.60, 0.20,
+         _noaeff ? "(A = #LTA_{jet}#GT = #piR^{2})" :
+         (chs ? "A_{eff} = #pi(R^{2}+0.4^{2})" :
+          "A_{eff} = #pi(R^{2}+0.2^{2})"));
+      }
+      if(!pfAndPfchs) tex->DrawLatex(0.70, 0.82, chs ? "PFchs" : "PF");
 
       cmsPrel(0);
     }
