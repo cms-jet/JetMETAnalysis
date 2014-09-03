@@ -54,7 +54,11 @@ jet_response_analyzer::jet_response_analyzer(const edm::ParameterSet& iConfig)
   , weightfile        (iConfig.getParameter<string>         ("weightfile"))
   , MCPUReWeighting   (iConfig.getParameter<string>    ("MCPUReWeighting"))
   , DataPUReWeighting (iConfig.getParameter<string>  ("DataPUReWeighting"))
+  //, getterOfProducts_(edm::ProcessMatch("JRAP"), this)
+  , getterOfProducts_(edm::ModuleLabelMatch(moduleLabel_), this)
 {
+
+  callWhenNewProductsRegistered(getterOfProducts_);
 
   dorelrsp=(nbinsrelrsp>0);
   doabsrsp=(nbinsabsrsp>0);
@@ -161,10 +165,6 @@ void jet_response_analyzer::beginJob() {
     //
     // create directory in output file and book histograms
     //
-    //edm::Selector s(edm::ProcessNameSelector("JRAP") && edm::ModuleLabelSelector("ak*"));
-    //edm::Selector s(edm::ProcessNameSelector("JRAP"));
-    //getCollections(iEvent, iSetup);
-  
     // create the histograms
     //cout << "\tCreating Histograms...";
     bookHistograms(fs,algs[ialg]);
@@ -943,13 +943,21 @@ void jet_response_analyzer::getCollections(const edm::Event& iEvent, const edm::
     //cout << algHandles[ialg].provenance()->moduleLabel() << endl;
   //}
 
+  //This used to work in 53X. It no longer works in 62X.
+  /*
   for(unsigned int ialg=0; ialg<algs.size(); ialg++) {
     edm::Selector s(edm::ProcessNameSelector("JRAP") && edm::ModuleLabelSelector(algs[ialg]));
     iEvent.getMany(s,algHandles);
     for(unsigned int ihandle=0;ihandle<algHandles.size();ihandle++) {
       assert ( algHandles[ihandle].isValid() );
-      //cout << algHandles[ihandle].provenance()->moduleLabel() << endl;
+      cout << algHandles[ihandle].provenance()->moduleLabel() << endl;
     }
+  }
+  */
+  getterOfProducts_.fillHandles(iEvent, algHandles);
+  for(unsigned int ihandle=0;ihandle<algHandles.size();ihandle++) {
+    assert ( algHandles[ihandle].isValid() );
+    //cout << algHandles[ihandle].provenance()->moduleLabel() << endl;
   }
 }
 
