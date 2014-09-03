@@ -40,7 +40,7 @@
 #include "FWCore/ServiceRegistry/interface/Service.h"
 
 #include "DataFormats/Common/interface/Handle.h"
-#include "DataFormats/Provenance/interface/ConstBranchDescription.h"
+#include "DataFormats/Provenance/interface/BranchDescription.h"
 
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 
