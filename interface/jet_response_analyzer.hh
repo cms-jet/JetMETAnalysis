@@ -28,8 +28,11 @@
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 #include "FWCore/Framework/interface/ESHandle.h"
-#include "FWCore/Framework/interface/Selector.h"
-#include "FWCore/Framework/interface/SelectorBase.h"
+//#include "FWCore/Framework/interface/Selector.h" --> Not in 62X
+//#include "FWCore/Framework/interface/SelectorBase.h" --> Not in 62X
+#include "FWCore/Framework/interface/GetterOfProducts.h" //62X version
+#include "FWCore/Framework/interface/ProcessMatch.h" //62X version
+#include "FWCore/Framework/interface/ModuleLabelMatch.h" //62X version
 #include "FWCore/Utilities/interface/value_ptr.h"
 #include "FWCore/Utilities/interface/InputTag.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
@@ -187,6 +190,7 @@ private:
    unsigned char  nref;
    bool           dorelrsp, doabsrsp, doetarsp, dophirsp, firstEvent;
    float          weight, flavorWeight;
+   edm::GetterOfProducts<JRAEvent> getterOfProducts_;
    vector<edm::Handle<JRAEvent> > algHandles;
    TH1D* weightHist;
    map<TString,TH2D*> weightMap;
