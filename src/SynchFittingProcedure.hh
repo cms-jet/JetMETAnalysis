@@ -534,7 +534,7 @@ TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector
    else
       hh[0]->GetYaxis()->SetRangeUser(0,20);
    hh[0]->GetYaxis()->SetLabelSize(0.04);
-   hh[0]->GetXaxis()->SetRangeUser(0,1000);
+   hh[0]->GetXaxis()->SetRangeUser(10,1000);
    hh[0]->GetXaxis()->SetMoreLogLabels();
    hh[0]->GetXaxis()->SetNoExponent();
    hh[0]->GetXaxis()->SetTitle("p_{T}^{GEN} [GeV]");
@@ -775,7 +775,7 @@ TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, vector<
       hh[0]->GetYaxis()->SetRangeUser(((miny >= 0) - (miny < 0))*1.25*fabs(miny),1.4*maxy);
       //hh[0]->GetYaxis()->SetRangeUser(0,45);
       //hh[0]->GetYaxis()->SetRangeUser(0,1.25*maxy);
-   hh[0]->GetXaxis()->SetRangeUser(0,1000);
+   hh[0]->GetXaxis()->SetRangeUser(10,1000);
    hh[0]->GetXaxis()->SetMoreLogLabels();
    hh[0]->GetXaxis()->SetNoExponent();
 
@@ -932,7 +932,7 @@ TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo
    else {
       hh[0]->GetYaxis()->SetRangeUser(0,1.25*maxy);
    }
-   hh[0]->GetXaxis()->SetRangeUser(0,1000);
+   hh[0]->GetXaxis()->SetRangeUser(10,1000);
    hh[0]->GetXaxis()->SetMoreLogLabels();
    hh[0]->GetXaxis()->SetNoExponent();
 
@@ -1029,7 +1029,7 @@ TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, ve
       hh[0]->GetYaxis()->SetRangeUser(((miny >= 0) - (miny < 0))*1.25*fabs(miny),1.25*maxy);
       //hh[0]->GetYaxis()->SetRangeUser(0,1.25*maxy);
    }
-   hh[0]->GetXaxis()->SetRangeUser(0,1000);
+   hh[0]->GetXaxis()->SetRangeUser(10,1000);
    hh[0]->GetXaxis()->SetMoreLogLabels();
    hh[0]->GetXaxis()->SetNoExponent();
 
@@ -1102,7 +1102,7 @@ TCanvas * getCanvasResolution_v2(TString cname, TString algo, TString title, vec
       if(j==0) {
          hh[0]->GetYaxis()->SetLabelSize(0.04);
          hh[0]->GetYaxis()->SetRangeUser(0,30);
-         hh[0]->GetXaxis()->SetRangeUser(0,1000);
+         hh[0]->GetXaxis()->SetRangeUser(10,1000);
          hh[0]->GetXaxis()->SetTitle("p_{T}^{GEN} [GeV]");
          hh[0]->GetXaxis()->SetLabelSize(0.04);
          hh[0]->GetXaxis()->SetMoreLogLabels();
