@@ -144,7 +144,7 @@ void MatchEventsAndJets::getMaxDeltaR() {
    cout << "algo1.alias: " << algo1JetInfo.alias << endl;
    cout << "algo1.jettype: " << algo1JetInfo.jetType << endl;
    double minConeSize = min(algo1JetInfo.coneSize,algo2JetInfo.coneSize)/20.0;
-   cout << "minConeSize: " << minConeSize << endl;
+   cout << "0.5 * minConeSize: " << minConeSize << endl;
    maxDeltaR = min(0.25,minConeSize);
    cout << "maxDeltaR: " << maxDeltaR << endl;
 }
@@ -402,6 +402,10 @@ void MatchEventsAndJets::DeclareHistograms() {
    histograms["p_offOverA_etaVsTnpusVsJetPt"] = new TProfile3D("p_offOverA_etaVsTnpusVsJetPt","p_offOverA_etaVsTnpusVsJetPt;#eta_{j};tnpu;p_{T}^{gen};OffsetOverAre",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
    histograms["p_PtAve_etaVsTnpusVsJetPt"]    = new TProfile3D("p_PtAve_etaVsTnpusVsJetPt","p_PtAve_etaVsTnpusVsJetPt;#eta_{j};Tnpus;p_{T}^{gen};PtAve",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
    histograms["p_RhoAve_etaVsTnpusVsJetPt"]   = new TProfile3D("p_RhoAve_etaVsTnpusVsJetPt","p_RhoAve_etaVsTnpusVsJetPt;#eta_{j};Tnpus;p_{T}^{gen};PtAve",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
+   histograms["p_offOverA_etaVsNpusVsJetPt"] = new TProfile3D("p_offOverA_etaVsNpusVsJetPt","p_offOverA_etaVsNpusVsJetPt;#eta_{j};npu;p_{T}^{gen};OffsetOverAre",NETA,veta,NNPU,vnpu,NPtBins,vpt);
+   histograms["p_PtAve_etaVsNpusVsJetPt"]    = new TProfile3D("p_PtAve_etaVsNpusVsJetPt","p_PtAve_etaVsNpusVsJetPt;#eta_{j};Npus;p_{T}^{gen};PtAve",NETA,veta,NNPU,vnpu,NPtBins,vpt);
+   histograms["p_RhoAve_etaVsNpusVsJetPt"]   = new TProfile3D("p_RhoAve_etaVsNpusVsJetPt","p_RhoAve_etaVsNpusVsJetPt;#eta_{j};Npus;p_{T}^{gen};PtAve",NETA,veta,NNPU,vnpu,NPtBins,vpt);
+   histograms["p_RhoAve_etaVsRhoVsJetPt"]   = new TProfile3D("p_RhoAve_etaVsRhoVsJetPt","p_RhoAve_etaVsRhoVsJetPt;#eta_{j};Rho;p_{T}^{gen};RhoAve",NETA,veta,NRHO,vrho,NPtBins,vpt);
    histograms["p_offOverA_etaVsRhoVsJetPt"]   = new TProfile3D("p_offOverA_etaVsRhoVsJetPt","p_offOverA_etaVsRhoVsJetPt;#eta_{j};Rho;p_{T}^{gen};OffsetOverAre",NETA,veta,NRHO,vrho,NPtBins,vpt);
    histograms["p_offOverA_etaVsNPVVsJetPt"]   = new TProfile3D("p_offOverA_etaVsNPVVsJetPt","p_offOverA_etaVsNPVVsJetPt;#eta_{j};NPV;p_{T}^{gen};OffsetOverAre",NETA,veta,NRHO,vrho,NPtBins,vpt);
    histograms["p_offOverA_etaVsN_RVsJetPt"]   = new TProfile3D("p_offOverA_etaVsN_RVsJetPt","p_offOverA_etaVsN_RVsJetPt;#eta_{j};(NPV+Rho)/2;p_{T}^{gen};OffsetOverAre",NETA,veta,NRHO,vrho,NPtBins,vpt);
@@ -803,7 +807,11 @@ bool MatchEventsAndJets::FillHistograms() {
     dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsTnpusVsJetPt"])->Fill(tpu->jteta[jpu],tpu->tnpus->at(iIT),tpu->refpt[jpu],offsetOA);
     dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsTnpusVsJetPt"])   ->Fill(tpu->jteta[jpu],tpu->tnpus->at(iIT),tpu->refpt[jpu],tpu->jtpt[jpu]);
     dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsTnpusVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->tnpus->at(iIT),tpu->refpt[jpu],tpu->rho);
+    dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNpusVsJetPt"])->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],offsetOA);
+    dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNpusVsJetPt"])   ->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],tpu->jtpt[jpu]);
+    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNpusVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],tpu->rho);
     dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->rho,tpu->refpt[jpu],offsetOA);
+    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->rho,tpu->refpt[jpu],tpu->rho);
     dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsRhoVsJetPt"])     ->Fill(tpu->jteta[jpu],tpu->rho,tpu->refpt[jpu],tpu->jtpt[jpu]);
     dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNPVVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->npv,tpu->refpt[jpu],offsetOA);
     dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNPVVsJetPt"])     ->Fill(tpu->jteta[jpu],tpu->npv,tpu->refpt[jpu],tpu->jtpt[jpu]);
