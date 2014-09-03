@@ -14,7 +14,7 @@ from JetMETAnalysis.JetAnalyzers.TrackJetReconstruction_cff import *
 #from JetMETAnalysis.JetAnalyzers.ak5PFHLTJets_cff import *
 
 # extra producerts for ak
-ak5PFchsJets    = ak5PFJets.clone( src = 'pfNoPileUp' )
+ak5PFchsJets    = ak5PFJets.clone( src = 'pfNoPileUpJME' )
 ak7PFchsJets    = ak5PFchsJets.clone( rParam=0.7 )
 ak5CaloHLTJets  = ak5CaloJets.clone( src = 'hltAntiKT5CaloJets' )
 ak5PFHLTJets    = ak5PFJets.clone( src = 'hltAntiKT5PFJets' )
@@ -38,6 +38,7 @@ ak4PFchsJets    = ak5PFchsJets.clone( rParam=0.4 )
 ak6GenJets      = ak5GenJets.clone  ( rParam=0.6 )
 ak6PFJets       = ak5PFJets.clone   ( rParam=0.6 )
 ak6PFchsJets    = ak5PFchsJets.clone( rParam=0.6 )
+ak7GenJets      = ak5GenJets.clone  ( rParam=0.7 )
 ak8GenJets      = ak5GenJets.clone  ( rParam=0.8 )
 ak8PFJets       = ak5PFJets.clone   ( rParam=0.8 )
 ak8PFchsJets    = ak5PFchsJets.clone( rParam=0.8 )
@@ -51,6 +52,7 @@ ak10PFchsJets   = ak5PFchsJets.clone( rParam=1.0 )
 
 # sc & ic clones
 sc5GenJets = sisCone5GenJets.clone()
+sisCone7GenJets = sisCone5GenJets.clone ( rParam=0.7 )
 sc7GenJets = sisCone7GenJets.clone()
 ic5GenJets = iterativeCone5GenJets.clone()
 sc5CaloJets = sisCone5CaloJets.clone()
