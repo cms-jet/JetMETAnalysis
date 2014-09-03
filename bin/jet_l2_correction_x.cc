@@ -363,7 +363,7 @@ int main(int argc,char**argv)
            //
            // obtain the best fit of the function fabscor to the histo gabscor
            //
-           perform_smart_fit(gabscor,fabscormaxFitIter);
+           perform_smart_fit(gabscor,fabscor,maxFitIter);
            if (alg.find("pf")!=string::npos)
               if (alg.find("HLT")!=string::npos) {
                  ((TF1*)gabscor->GetListOfFunctions()->First())->FixParameter(7,fabscor->Eval(fabscor->GetParameter(6)));
