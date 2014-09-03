@@ -14,41 +14,41 @@ partons = cms.EDProducer('PartonSelector',
 ## jet reconstruction
 ################################################################################
 from JetMETAnalysis.JetAnalyzers.JetReconstruction_cff import *
-from JetMETAnalysis.JetAnalyzers.TauReconstruction_cff import *
+#from JetMETAnalysis.JetAnalyzers.TauReconstruction_cff import *
 from JetMETAnalysis.JetAnalyzers.JPTReconstruction_cff import *
 from JetMETAnalysis.JetAnalyzers.JetCorrection_cff     import *
-from RecoTauTag.TauTagTools.tauDecayModes_cfi          import *
+#from RecoTauTag.TauTagTools.tauDecayModes_cfi          import *
 
-tauDiscriminatorDict = {
-    "ak5tauHPSloose"            : "hpsPFTauDiscriminationByLooseIsolation",
-    "ak5tauHPSmedium"           : "hpsPFTauDiscriminationByMediumIsolation",
-    "ak5tauHPStight"            : "hpsPFTauDiscriminationByTightIsolation",
-    "ak5tauHPSlooseDBcorr"      : "hpsPFTauDiscriminationByLooseIsolation",
-    "ak5tauHPSmediumDBcorr"     : "hpsPFTauDiscriminationByMediumIsolation",
-    "ak5tauHPStightDBcorr"      : "hpsPFTauDiscriminationByTightIsolation",
-    "ak5tauHPSlooseCombDBcorr"  : "hpsPFTauDiscriminationByLooseIsolation",
-    "ak5tauHPSmediumCombDBcorr" : "hpsPFTauDiscriminationByMediumIsolation",
-    "ak5tauHPStightCombDBcorr"  : "hpsPFTauDiscriminationByTightIsolation",
-    "ak5tauTaNCloose"           : "hpsTancTausDiscriminationByTancLoose",    
-    "ak5tauTaNCmedium"          : "hpsTancTausDiscriminationByTancMedium",
-    "ak5tauTaNCtight"           : "hpsTancTausDiscriminationByTancTight"
-}
-
-tauDecayModeDict = {
-    "All"                       : "*",
-    "OneProng0Pi0"              : "%i" % tauToOneProng0PiZero,
-    "OneProng1Pi0"              : "%i" % tauToOneProng1PiZero,
-    "OneProng2Pi0"              : "%i" % tauToOneProng2PiZero,
-    "ThreeProng0Pi0"            : "%i" % tauToThreeProng0PiZero
-}
-
-tauDiscriminators_and_DecayModes = {}
-for tauDiscriminator in tauDiscriminatorDict:
-    for tauDecayMode in tauDecayModeDict:
-        key = tauDiscriminator
-        if tauDecayModeDict[tauDecayMode] != "":
-            key += tauDecayMode
-        tauDiscriminators_and_DecayModes[key] = (tauDiscriminatorDict[tauDiscriminator], tauDecayModeDict[tauDecayMode])
+#tauDiscriminatorDict = {
+#    "ak5tauHPSloose"            : "hpsPFTauDiscriminationByLooseIsolation",
+#    "ak5tauHPSmedium"           : "hpsPFTauDiscriminationByMediumIsolation",
+#    "ak5tauHPStight"            : "hpsPFTauDiscriminationByTightIsolation",
+#    "ak5tauHPSlooseDBcorr"      : "hpsPFTauDiscriminationByLooseIsolation",
+#    "ak5tauHPSmediumDBcorr"     : "hpsPFTauDiscriminationByMediumIsolation",
+#    "ak5tauHPStightDBcorr"      : "hpsPFTauDiscriminationByTightIsolation",
+#    "ak5tauHPSlooseCombDBcorr"  : "hpsPFTauDiscriminationByLooseIsolation",
+#    "ak5tauHPSmediumCombDBcorr" : "hpsPFTauDiscriminationByMediumIsolation",
+#    "ak5tauHPStightCombDBcorr"  : "hpsPFTauDiscriminationByTightIsolation",
+#    "ak5tauTaNCloose"           : "hpsTancTausDiscriminationByTancLoose",    
+#    "ak5tauTaNCmedium"          : "hpsTancTausDiscriminationByTancMedium",
+#    "ak5tauTaNCtight"           : "hpsTancTausDiscriminationByTancTight"
+#}
+#
+#tauDecayModeDict = {
+#    "All"                       : "*",
+#    "OneProng0Pi0"              : "%i" % tauToOneProng0PiZero,
+#    "OneProng1Pi0"              : "%i" % tauToOneProng1PiZero,
+#    "OneProng2Pi0"              : "%i" % tauToOneProng2PiZero,
+#    "ThreeProng0Pi0"            : "%i" % tauToThreeProng0PiZero
+#}
+#
+#tauDiscriminators_and_DecayModes = {}
+#for tauDiscriminator in tauDiscriminatorDict:
+#    for tauDecayMode in tauDecayModeDict:
+#        key = tauDiscriminator
+#        if tauDecayModeDict[tauDecayMode] != "":
+#            key += tauDecayMode
+#        tauDiscriminators_and_DecayModes[key] = (tauDiscriminatorDict[tauDiscriminator], tauDecayModeDict[tauDecayMode])
 
 stdGenJetsDict = {
 #	'ak3calo'       : 'ak3GenJets',
@@ -92,14 +92,14 @@ stdGenJetsDict = {
     'kt6trk'        : 'kt6GenJets',
     'ak5jpt'        : 'ak5GenJets',
     'ak7jpt'        : 'ak7GenJets',
-    'ak5tauHPSall'  : 'tauGenJetsSelectorAllHadrons',
-    'ak5tauTaNCall' : 'tauGenJetsSelectorAllHadrons'
+#    'ak5tauHPSall'  : 'tauGenJetsSelectorAllHadrons',
+#    'ak5tauTaNCall' : 'tauGenJetsSelectorAllHadrons'
 }
-for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
-    if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
-        stdGenJetsDict[tauDiscriminator_and_DecayMode] = stdGenJetsDict["ak5tauHPSall"]
-    elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
-        stdGenJetsDict[tauDiscriminator_and_DecayMode] = stdGenJetsDict["ak5tauTaNCall"]
+#for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
+#    if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
+#        stdGenJetsDict[tauDiscriminator_and_DecayMode] = stdGenJetsDict["ak5tauHPSall"]
+#    elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
+#        stdGenJetsDict[tauDiscriminator_and_DecayMode] = stdGenJetsDict["ak5tauTaNCall"]
 
 genJetsDict = {
 #	'ak3calo'       : ('ak3GenJetsNoNu',               ak3GenJetsNoNu),
@@ -143,14 +143,14 @@ genJetsDict = {
     'kt6trk'        : ('kt6GenJetsNoNu',               kt6GenJetsNoNu),
     'ak5jpt'        : ('ak5GenJetsNoNu',               ak5GenJetsNoNu),
     'ak7jpt'        : ('ak7GenJetsNoNu',               ak7GenJetsNoNu),
-    'ak5tauHPSall'  : ('tauGenJetsSelectorAllHadrons', tauGenJetsSelectorAllHadrons),
-    'ak5tauTaNCall' : ('tauGenJetsSelectorAllHadrons', tauGenJetsSelectorAllHadrons)
+#    'ak5tauHPSall'  : ('tauGenJetsSelectorAllHadrons', tauGenJetsSelectorAllHadrons),
+#    'ak5tauTaNCall' : ('tauGenJetsSelectorAllHadrons', tauGenJetsSelectorAllHadrons)
 }    
-for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
-    if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
-        genJetsDict[tauDiscriminator_and_DecayMode] = genJetsDict["ak5tauHPSall"]
-    elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
-        genJetsDict[tauDiscriminator_and_DecayMode] = genJetsDict["ak5tauTaNCall"]
+#for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
+#    if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
+#        genJetsDict[tauDiscriminator_and_DecayMode] = genJetsDict["ak5tauHPSall"]
+#    elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
+#        genJetsDict[tauDiscriminator_and_DecayMode] = genJetsDict["ak5tauTaNCall"]
 
     
 stdRecJetsDict = {
@@ -193,14 +193,14 @@ stdRecJetsDict = {
     'kt4trk'        : 'kt4TrackJets',
     'ak5jpt'        : 'ak5JPTJets',
     'ak7jpt'        : 'ak7JPTJets',
-    'ak5tauHPSall'  : 'hpsPFTauProducer',
-    'ak5tauTaNCall' : 'hpsTancTaus'
+#    'ak5tauHPSall'  : 'hpsPFTauProducer',
+#    'ak5tauTaNCall' : 'hpsTancTaus'
 }
-for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
-    if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
-        stdRecJetsDict[tauDiscriminator_and_DecayMode] = stdRecJetsDict["ak5tauHPSall"]
-    elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
-        stdRecJetsDict[tauDiscriminator_and_DecayMode] = stdRecJetsDict["ak5tauTaNCall"]
+#for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
+#    if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
+#        stdRecJetsDict[tauDiscriminator_and_DecayMode] = stdRecJetsDict["ak5tauHPSall"]
+#    elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
+#        stdRecJetsDict[tauDiscriminator_and_DecayMode] = stdRecJetsDict["ak5tauTaNCall"]
 
 recJetsDict = {
 #    'ak3calo'       : ('ak3CaloJets',        ak3CaloJets),
@@ -242,14 +242,14 @@ recJetsDict = {
     'kt4trk'        : ('kt4TrackJets',       kt4TrackJets),
     'ak5jpt'        : ('ak5JPTJets',         ak5JPTJets),
     'ak7jpt'        : ('ak7JPTJets',         ak7JPTJets),
-    'ak5tauHPSall'  : ('hpsPFTauProducer',   hpsPFTauProducer),
-    'ak5tauTaNCall' : ('hpsTancTaus',        hpsTancTaus)
+#    'ak5tauHPSall'  : ('hpsPFTauProducer',   hpsPFTauProducer),
+#    'ak5tauTaNCall' : ('hpsTancTaus',        hpsTancTaus)
 }
-for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
-    if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
-        recJetsDict[tauDiscriminator_and_DecayMode] = recJetsDict["ak5tauHPSall"]
-    elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
-        recJetsDict[tauDiscriminator_and_DecayMode] = recJetsDict["ak5tauTaNCall"]
+#for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
+#    if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
+#        recJetsDict[tauDiscriminator_and_DecayMode] = recJetsDict["ak5tauHPSall"]
+#    elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
+#        recJetsDict[tauDiscriminator_and_DecayMode] = recJetsDict["ak5tauTaNCall"]
 
 
 corrJetsDict = {
@@ -389,21 +389,21 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('pf')]
         type          = 'PF'
         alg_size_type = alg_size + 'pf'
-    elif (alg_size_type_corr.find('tau') > 0) :
-        alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('tau')]
-        type          = 'TAU'
-        if "tauHPSall" in alg_size_type_corr:
-            alg_size_type = alg_size + 'tauHPSall'
-        elif "tauTaNCall" in alg_size_type_corr:
-            alg_size_type = alg_size + 'tauTaNCall'
-        else:
-            for tauDiscriminator in tauDiscriminatorDict:
-                if tauDiscriminator in alg_size_type_corr: 
-                    alg_size_type = tauDiscriminator
-            for tauDecayMode in tauDecayModeDict:
-                if tauDecayModeDict[tauDecayMode] != "" and \
-                   tauDecayMode in alg_size_type_corr:
-                    alg_size_type += tauDecayMode
+#    elif (alg_size_type_corr.find('tau') > 0) :
+#        alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('tau')]
+#        type          = 'TAU'
+#        if "tauHPSall" in alg_size_type_corr:
+#            alg_size_type = alg_size + 'tauHPSall'
+#        elif "tauTaNCall" in alg_size_type_corr:
+#            alg_size_type = alg_size + 'tauTaNCall'
+#        else:
+#            for tauDiscriminator in tauDiscriminatorDict:
+#                if tauDiscriminator in alg_size_type_corr: 
+#                    alg_size_type = tauDiscriminator
+#            for tauDecayMode in tauDecayModeDict:
+#                if tauDecayModeDict[tauDecayMode] != "" and \
+#                   tauDecayMode in alg_size_type_corr:
+#                    alg_size_type += tauDecayMode
                     
     elif (alg_size_type_corr.find('jpt') > 0) :
         alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('jpt')]
@@ -612,61 +612,61 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         if type == 'Track':
             process.load('JetMETAnalysis.JetAnalyzers.TrackJetReconstruction_cff')
             sequence = cms.Sequence(trackJetSequence * sequence)
-        elif type == 'TAU':
-            from PhysicsTools.PatAlgos.tools.helpers import massSearchReplaceParam
-            from RecoTauTag.TauTagTools.PFTauSelector_cfi import pfTauSelector
-            #process.load("TrackingTools/TransientTrack/TransientTrackBuilder_cfi")
-            process.load("RecoTauTag/Configuration/RecoPFTauTag_cff")
-
-            tauRecoSequence = cms.Sequence(process.recoTauCommonSequence)
-            if "HPS" in alg_size_type:
-                tauRecoSequence += process.recoTauClassicHPSSequence
-            elif "TaNC" in alg_size_type:
-                tauRecoSequence += process.recoTauHPSTancSequence
-
-            (tauIsoDiscriminator, tauDecayMode) = tauDiscriminators_and_DecayModes[alg_size_type]
-
-            if not (("HPSall" in alg_size_type or "TaNCall" in alg_size_type) and tauDecayMode == ""):
-                tauDiscriminators = []
-                if "HPS" in alg_size_type:
-                    tauDiscriminators = [
-                        "hpsPFTauDiscriminationByLooseElectronRejection",
-                        "hpsPFTauDiscriminationByTightMuonRejection",
-                        "hpsPFTauDiscriminationByDecayModeFinding",
-                    ]
-                elif "TaNC" in alg_size_type:
-                    tauDiscriminators = [
-                        "hpsTancTausDiscriminationByLooseElectronRejection",
-                        "hpsTancTausDiscriminationByTightMuonRejection",
-                        "hpsTancTausDiscriminationByDecayModeSelection"
-                    ]
-                tauDiscriminators.append(tauIsoDiscriminator)
-                                
-                tauDiscriminatorConfigs = []
-                for tauDiscriminator in tauDiscriminators:
-                    tauDiscriminatorConfigs.append(
-                        cms.PSet(
-                            discriminator = cms.InputTag(tauDiscriminator),
-                            selectionCut = cms.double(0.5)
-                        )
-                    )
-                
-                selTauModule = pfTauSelector.clone(
-                    src = cms.InputTag(recLabel),
-                    discriminators = cms.VPSet(tauDiscriminatorConfigs)
-                )
-                if tauDecayMode != "*":
-                    #setattr(selTauModule, "cut", cms.string("isDecayMode('%s')" % tauDecayMode))
-                    setattr(selTauModule, "cut", cms.string("decayMode() == %s" % tauDecayMode))
-                selTauModuleName = alg_size_type + "Selected"
-                setattr(process, selTauModuleName, selTauModule)
-                tauRecoSequence += getattr(process, selTauModuleName)
-                        
-                jetPtEta.src = cms.InputTag(selTauModuleName)
-            
-            process.load("PhysicsTools.JetMCAlgos.TauGenJets_cfi")
-
-            sequence = cms.Sequence(tauRecoSequence * process.tauGenJets * sequence)
+#        elif type == 'TAU':
+#            from PhysicsTools.PatAlgos.tools.helpers import massSearchReplaceParam
+#            from RecoTauTag.TauTagTools.PFTauSelector_cfi import pfTauSelector
+#            #process.load("TrackingTools/TransientTrack/TransientTrackBuilder_cfi")
+#            process.load("RecoTauTag/Configuration/RecoPFTauTag_cff")
+#
+#            tauRecoSequence = cms.Sequence(process.recoTauCommonSequence)
+#            if "HPS" in alg_size_type:
+#                tauRecoSequence += process.recoTauClassicHPSSequence
+#            elif "TaNC" in alg_size_type:
+#                tauRecoSequence += process.recoTauHPSTancSequence
+#
+#            (tauIsoDiscriminator, tauDecayMode) = tauDiscriminators_and_DecayModes[alg_size_type]
+#
+#            if not (("HPSall" in alg_size_type or "TaNCall" in alg_size_type) and tauDecayMode == ""):
+#                tauDiscriminators = []
+#                if "HPS" in alg_size_type:
+#                    tauDiscriminators = [
+#                        "hpsPFTauDiscriminationByLooseElectronRejection",
+#                        "hpsPFTauDiscriminationByTightMuonRejection",
+#                        "hpsPFTauDiscriminationByDecayModeFinding",
+#                    ]
+#                elif "TaNC" in alg_size_type:
+#                    tauDiscriminators = [
+#                        "hpsTancTausDiscriminationByLooseElectronRejection",
+#                        "hpsTancTausDiscriminationByTightMuonRejection",
+#                        "hpsTancTausDiscriminationByDecayModeSelection"
+#                    ]
+#                tauDiscriminators.append(tauIsoDiscriminator)
+#                                
+#                tauDiscriminatorConfigs = []
+#                for tauDiscriminator in tauDiscriminators:
+#                    tauDiscriminatorConfigs.append(
+#                        cms.PSet(
+#                            discriminator = cms.InputTag(tauDiscriminator),
+#                            selectionCut = cms.double(0.5)
+#                        )
+#                    )
+#                
+#                selTauModule = pfTauSelector.clone(
+#                    src = cms.InputTag(recLabel),
+#                    discriminators = cms.VPSet(tauDiscriminatorConfigs)
+#                )
+#                if tauDecayMode != "*":
+#                    #setattr(selTauModule, "cut", cms.string("isDecayMode('%s')" % tauDecayMode))
+#                    setattr(selTauModule, "cut", cms.string("decayMode() == %s" % tauDecayMode))
+#                selTauModuleName = alg_size_type + "Selected"
+#                setattr(process, selTauModuleName, selTauModule)
+#                tauRecoSequence += getattr(process, selTauModuleName)
+#                        
+#                jetPtEta.src = cms.InputTag(selTauModuleName)
+#            
+#            process.load("PhysicsTools.JetMCAlgos.TauGenJets_cfi")
+#
+#            sequence = cms.Sequence(tauRecoSequence * process.tauGenJets * sequence)
 
     # reconstruct genjets
     if reco:
@@ -779,7 +779,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
     
     ## add chs to path is needed
     if type == 'PFchs':
-        sequence = cms.Sequence(process.pfNoPileUpSequence * sequence)
+        sequence = cms.Sequence(process.pfNoPileUpJMESequence * sequence)
 
     ## create the path and put in the sequence
     sequence = cms.Sequence(sequence)
