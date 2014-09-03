@@ -136,7 +136,9 @@ int main(int argc,char**argv)
    //Create a pave indicating the algorithm name
    TString algNameLong;
    if(TString(algo).Contains("ak"))        algNameLong += "Anti-kT";
-   if(TString(algo).Contains("3"))         algNameLong += " R=0.3";
+   if(TString(algo).Contains("1")&&!TString(algo).Contains("10")) algNameLong += " R=0.1";
+   else if(TString(algo).Contains("2"))    algNameLong += " R=0.2";
+   else if(TString(algo).Contains("3"))    algNameLong += " R=0.3";
    else if(TString(algo).Contains("4"))    algNameLong += " R=0.4";
    else if(TString(algo).Contains("5"))    algNameLong += " R=0.5";
    else if(TString(algo).Contains("6"))    algNameLong += " R=0.6";
