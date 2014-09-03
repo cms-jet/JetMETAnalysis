@@ -96,7 +96,7 @@ TGraph2DErrors * getGraph2D(int iEta, const TProfile3D * prof,
 // It returns true if successfull
 bool getInputProfiles(TString inputFilename, TProfile3D *& prof, 
                       TProfile3D *& profPt, 
-                      TProfile3D *& profRho){
+                      TProfile3D *& profRho, bool useNPU){
    
    // Open the input file
    TFile *fin= new TFile(inputFilename);
@@ -107,15 +107,29 @@ bool getInputProfiles(TString inputFilename, TProfile3D *& prof,
    }
    
    // Get the histos
-   prof    = (TProfile3D*) fin->Get("p_offOverA_etaVsTnpusVsJetPt"); //offOverA(eta, rho, refpt) 
-   profPt  = (TProfile3D*) fin->Get("p_PtAve_etaVsTnpusVsJetPt"); // pt(eta, rho, refpt) 
-   profRho = (TProfile3D*) fin->Get("p_RhoAve_etaVsTnpusVsJetPt");// rho(eta, rho, refpt) 
+   if(useNPU) {
+      prof    = (TProfile3D*) fin->Get("p_offOverA_etaVsNpusVsJetPt"); //offOverA(eta, rho, refpt) 
+      profPt  = (TProfile3D*) fin->Get("p_PtAve_etaVsNpusVsJetPt"); // pt(eta, rho, refpt) 
+      profRho = (TProfile3D*) fin->Get("p_RhoAve_etaVsNpusVsJetPt");// rho(eta, rho, refpt) 
    
-   if (!prof || !profPt  || !profRho) {
-      cout<<"ERROR jet_synchfit_xx::getInputProfiles() could not retrieve TProfile3D named "
-          <<"either of  p_offOverA_etaVsTnpusVsJetPt, p_PtAve_etaVsTnpusVsJetPt, "
-          <<" or p_RhoAve_etaVsTnpusVsJetPt"<<endl;
-      return false;
+      if (!prof || !profPt  || !profRho) {
+         cout<<"ERROR jet_synchfit_xx::getInputProfiles() could not retrieve TProfile3D named "
+             <<"either of  p_offOverA_etaVsNpusVsJetPt, p_PtAve_etaVsNpusVsJetPt, "
+             <<" or p_RhoAve_etaVsNpusVsJetPt"<<endl;
+         return false;
+      }
+   }
+   else {
+      prof    = (TProfile3D*) fin->Get("p_offOverA_etaVsTnpusVsJetPt"); //offOverA(eta, rho, refpt) 
+      profPt  = (TProfile3D*) fin->Get("p_PtAve_etaVsTnpusVsJetPt"); // pt(eta, rho, refpt) 
+      profRho = (TProfile3D*) fin->Get("p_RhoAve_etaVsTnpusVsJetPt");// rho(eta, rho, refpt) 
+   
+      if (!prof || !profPt  || !profRho) {
+         cout<<"ERROR jet_synchfit_xx::getInputProfiles() could not retrieve TProfile3D named "
+             <<"either of  p_offOverA_etaVsTnpusVsJetPt, p_PtAve_etaVsTnpusVsJetPt, "
+             <<" or p_RhoAve_etaVsTnpusVsJetPt"<<endl;
+         return false;
+      }
    }
    
    // if everything went well just return true.
@@ -127,22 +141,28 @@ bool getInputProfiles(TString inputFilename, TProfile3D *& prof,
 
 //===========================================================================
 // This method creates a new fit function and fits it to the graph
-TF2 * doGraphFitting(TGraph2DErrors * graph, bool delphes, int iEta, const TProfile3D * prof){
+TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, bool logPol, int iEta, const TProfile3D * prof){
    
    
    static double par0i = -0.5;
    static double par1i = 0.5;
    static double par2i = 0.1;
    TF2* f4 = 0;
+   TString function;
+   if(logPol)
+      function = "[0] + ([1] * x ) *(1 + [2] * log(y))";
+   else
+      function = "[0] + ([1] * (x-11)) *(1 + [2] * (log(y) -1.47))";
+
    cout << "\t(par01,par1i,par2i):  (" << par0i << "," << par1i << "," << par2i << ")" << endl;
-   if(delphes)
-      f4 = new TF2("f4","[0] + ([1] * x ) *(1 + [2] * log(y))", 5,200,10,3000);
+   if(highPU)
+      f4 = new TF2("f4",function, 5,200,10,3000);
    //Alexx
    //TF2 * f4 = new TF2("f4","[0] + ([1] * x ) *(1 + [2] * log(y))",0,50,0,1800);
    //ANDREA
    else
       //Taylor expanded version
-      f4 = new TF2("f4","[0] + ([1] * (x-11)) *(1 + [2] * (log(y) -1.47))", 5,50,10,3000);
+      f4 = new TF2("f4",function, 5,50,10,3000);
 
       //Non-Taylor expanded version
       //f4 = new TF2("f4","[0] + ([1] * x ) *(1 + [2] * log(y))", 5,50,10,3000);
@@ -292,7 +312,9 @@ int main(int argc,char**argv){
    if (!cl.parse(argc,argv)) return 0;
    string         aalgo1     = cl.getValue<string>  ("algo1",   "ak5pf");
    string         aalgo2     = cl.getValue<string>  ("algo2",   "ak5pf");
-   bool           delphes    = cl.getValue<bool>    ("delphes",   false);
+   bool           highPU     = cl.getValue<bool>    ("highPU",    false);
+   bool           logPol     = cl.getValue<bool>    ("logPol",    false);
+   bool           useNPU     = cl.getValue<bool>    ("useNPU",    false);
 
    if (!cl.check()) return 0;
    cl.print();
@@ -312,7 +334,7 @@ int main(int argc,char**argv){
 // Open the input file and retrieve all relevant TProfile3D's
    TString inputFilename = "output_"+algo12+".root";
    TProfile3D *prof=0, *profPt=0, *profRho=0;
-   if (!getInputProfiles(inputFilename, prof, profPt, profRho))
+   if (!getInputProfiles(inputFilename, prof, profPt, profRho, useNPU))
       return 1;
    
 // Create the output file to store the graphs
@@ -335,7 +357,7 @@ int main(int argc,char**argv){
       cout << "Graph for pT, Eta, Rho created successfully" << endl;
       
       // Do the fitting
-      TF2 * fitfunc = doGraphFitting(graph, delphes, iEta, prof);
+      TF2 * fitfunc = doGraphFitting(graph, highPU, logPol, iEta, prof);
       cout << "Fitted function" << endl << endl;
       
       // Put this fit result in the vector fitResults
