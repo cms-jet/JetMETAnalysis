@@ -1,0 +1,9 @@
+#PBS -l nodes=1:ppn=8
+#PBS -l walltime=04:00:00
+#PBS -q hepxrt
+cd $HOME/JEC/CMSSW_4_2_4/src
+export SCRAM_ARCH=slc5_amd64_gcc434 
+eval `scramv1 runtime -sh`
+cd /gluster/hepx/store/user/aperloff/JRA_outfiles_newPayloads_rho/
+hadd JRA.root JRA_*.root
+exit 0

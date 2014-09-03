@@ -1,0 +1,9 @@
+#PBS -l nodes=1:ppn=1
+#PBS -l walltime=00:20:00
+#PBS -q short
+cd $HOME/JEC/CMSSW_4_2_4/src
+export SCRAM_ARCH=slc5_amd64_gcc434 
+eval `scramv1 runtime -sh`
+cd $HOME/JEC/CMSSW_4_2_4/src/JetMETAnalysis/JetAnalyzers/test
+cmsRun run_JRA_cfg.py
+exit 0
