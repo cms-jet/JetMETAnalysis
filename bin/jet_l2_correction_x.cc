@@ -53,7 +53,7 @@ string get_algorithm_suffix(const string& alg);
 
 /// this method performs consecutive fittings (up to maxFitIter) but uses the
 /// parameters from the one with the lowest chi2 that has not failed.
-void perform_smart_fit(TGraphErrors * gabscor, TF1 * fabscor);
+void perform_smart_fit(TGraphErrors * gabscor, TF1 * fabscor, int maxFitIter = 30);
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -79,6 +79,7 @@ int main(int argc,char**argv)
   bool           l2l3      = cl.getValue<bool>    ("l2l3",       false);
   bool           mpv       = cl.getValue<bool>    ("mpv",        false);
   bool           delphes   = cl.getValue<bool>    ("delphes",    false);
+  int            maxFitIter= cl.getValue<int>     ("maxFitIter",    30);
 
   if (!cl.check()) return 0;
   cl.print();
@@ -258,6 +259,7 @@ int main(int argc,char**argv)
            if (npoints > 0)
            {
               xmin = gabscor->GetX()[0];
+              //xmin = max(gabscor->GetX()[0],10.0);
               xmax = gabscor->GetX()[gabscor->GetN()-1];
            }
 
@@ -295,6 +297,7 @@ int main(int argc,char**argv)
                 //
                 else {
                    TString fcn = "[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))";
+                   //TString fcn = "(x>=8)*([0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5])))+(x<8)*(pol2)";
                    if(delphes) {
                       //fcn = "[0]+[1]*log10(x)+[2]*pow(log10(x),2)+[3]*pow(log10(x),3)+[4]*pow(log10(x),4)+[5]*pow(log10(x),5)+[6]*pow(log10(x),6)+[7]*pow(log10(x),7)+[8]*pow(log10(x),8)+[9]*pow(log10(x),9)";
                      fcn = "[0]+[1]*log10(x)+[2]*pow(log10(x),2)+([3]/pow(log10(x),3))+([4]/pow(log10(x),4))+([5]/pow(log10(x),5))";
@@ -360,7 +363,7 @@ int main(int argc,char**argv)
            //
            // obtain the best fit of the function fabscor to the histo gabscor
            //
-           perform_smart_fit(gabscor,fabscor);
+           perform_smart_fit(gabscor,fabscormaxFitIter);
            if (alg.find("pf")!=string::npos)
               if (alg.find("HLT")!=string::npos) {
                  ((TF1*)gabscor->GetListOfFunctions()->First())->FixParameter(7,fabscor->Eval(fabscor->GetParameter(6)));
@@ -606,9 +609,8 @@ string get_algorithm_suffix(const string& alg)
 }
 
 //______________________________________________________________________________
-void perform_smart_fit(TGraphErrors * gabscor, TF1 * fabscor) {
+void perform_smart_fit(TGraphErrors * gabscor, TF1 * fabscor, int maxFitIter) {
 
-  int maxFitIter = 30;
   int fitIter = 0;
   vector<double> bestPars;
   double bestRChi2 = 0;
