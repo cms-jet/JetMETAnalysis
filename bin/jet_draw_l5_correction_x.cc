@@ -30,6 +30,7 @@
 #include <vector>
 #include <iostream>
 #include <sstream>
+#include <assert.h>
 
 using namespace std;
 
@@ -109,8 +110,8 @@ int main(int argc,char**argv)
       vector<TF1*> fits;
       vector<TH1D*> fitHists;
       TGraphErrors* normalizationGraph;
-      TF1* normalizationFit;
-      TH1D* normalizationHist;
+      TF1* normalizationFit = new TF1();
+      TH1D* normalizationHist = new TH1D();
       vector<TLegend*> legs;
       vector<TPaveText*> paves;
 
@@ -150,14 +151,16 @@ int main(int argc,char**argv)
             TString graphName = "AbsCorVsJetPt_JetEta" + TString(eta_boundaries_coarse[i]) + 
                "to" + TString(eta_boundaries_coarse[i+1]);
             normalizationGraph = (TGraphErrors*)idir->Get(graphName);
-            if(normalizationGraph == 0)
+
+            if(normalizationGraph == 0) {
                cout << "\t\tWARNING::Could not open graph " << graphName << endl
                     << "\t\tGraphs will NOT be normalized to total correction" << endl;
-            else
-            {
-               normalizationFit = normalizationGraph->GetFunction("fit");
-               normalizationHist = (TH1D*)normalizationFit->GetHistogram();
+               assert(normalizationGraph);
             }
+            normalizationFit  = normalizationGraph->GetFunction("fit");
+            assert(normalizationFit);
+            normalizationHist = (TH1D*)normalizationFit->GetHistogram();
+            assert(normalizationHist);
          }
 
          //
@@ -188,8 +191,9 @@ int main(int argc,char**argv)
                     << "\t\tSkipping this flavor" << endl;
                continue;
             }
-            if(normToAll && normalizationFit)
+            if(normToAll)
             {
+               assert(normalizationFit);
                fits.push_back(graphs.back()->GetFunction("fit"));
                fits.back()->SetRange(normalizationFit->GetXmin(),normalizationFit->GetXmax());
                fitHists.push_back((TH1D*)fits.back()->GetHistogram());
@@ -198,8 +202,9 @@ int main(int argc,char**argv)
             //
             // draw and format graphs/hists
             //
-            if(normToAll && normalizationHist)
+            if(normToAll)
             {
+               assert(normalizationHist);
                //
                // divide hist by normalization hist
                //

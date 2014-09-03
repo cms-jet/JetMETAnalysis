@@ -167,7 +167,7 @@ int main(int argc,char**argv) {
 for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
 
     double cone = algs[ialg].second;
-    double ajet = TMath::Pi()*cone*cone;
+    //double ajet = TMath::Pi()*cone*cone;
     const char *a = algs[ialg].first.Data();
 
     // effective area to account for fluctuations in jet direction
@@ -224,7 +224,7 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
       TH1D *hjerc = (TH1D*)hjer->DrawClone("SAME");
       
       double rho = max(1.,rhos[ipu]);
-      double rhoa = rho*ajet;
+      //double rhoa = rho*ajet;
       double rhoaeff = rho*aeff;
       rhoas[ialg][ipu] = rhoaeff;
       for (int i = 1; i != hjer->GetNbinsX()+1; ++i) {
@@ -298,7 +298,7 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
       TH1D *hjer = (TH1D*)d1->Get(Form("ResolutionTnpuRef_%s_%d",ceta,jpu));
       assert(hjer);
       double rho = max(1.,rhos[ipu]);
-      double rhoa = rho*ajet;
+      //double rhoa = rho*ajet;
       double rhoaeff = rho*aeff;
       f1->SetLineStyle(kDotted);
       f1->SetLineWidth(2);

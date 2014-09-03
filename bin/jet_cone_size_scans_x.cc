@@ -549,7 +549,7 @@ void doOptimalConeSizeScans(map<JetInfo,TFile*>& ifiles, vector<double> scanPts,
           imapName = Form(plot+"_%s_%i_%s",JetInfo::get_detector_abbreviation(detector_names[dn]).Data(),
                           npvRhoNpuBins[inpvRhoNpuBin],it->first.abbreviation.Data());
           //map of all the cone sizes and their values.
-          double fivePercentCSUp, fivePercentCSDown, tenPercentCSUp, tenPercentCSDown;
+          double fivePercentCSUp = 0, fivePercentCSDown = 0, tenPercentCSUp = 0, tenPercentCSDown = 0;
           if(inpvRhoNpuBin==0 && dn==2 && it==ifiles.begin()) {
               leg->AddEntry(dummy,Form("%.0f GeV < p_{T}^{GEN} < %.0f GeV",
                             ihistograms[imapName]->GetBinLowEdge(ihistograms[imapName]->FindBin(scanPts[iscanPt])),
@@ -574,6 +574,7 @@ void doOptimalConeSizeScans(map<JetInfo,TFile*>& ifiles, vector<double> scanPts,
               if(ihistograms[upMapName]->GetBinContent(ihistograms[upMapName]->FindBin(scanPts[iscanPt]))<=(minPointValue*1.10) &&
                  ihistograms[upMapName]->GetBinContent(ihistograms[upMapName]->FindBin(scanPts[iscanPt]))!=0) {
                 tenPercentCSUp = it2->first.coneSize/10.0;
+                tenPercentCSUp = tenPercentCSUp;
               }
             }
             //Find the lower error bounds
@@ -587,6 +588,7 @@ void doOptimalConeSizeScans(map<JetInfo,TFile*>& ifiles, vector<double> scanPts,
               if(ihistograms[downMapName]->GetBinContent(ihistograms[downMapName]->FindBin(scanPts[iscanPt]))<=(minPointValue*1.10) &&
                  ihistograms[downMapName]->GetBinContent(ihistograms[downMapName]->FindBin(scanPts[iscanPt]))!=0) {
                 tenPercentCSDown = it2->first.coneSize/10.0;
+                tenPercentCSDown = tenPercentCSDown;
               }
             }
 
@@ -741,13 +743,13 @@ void combineCSPlots(map<JetInfo,TFile*>& ifiles, TString outputDir, vector<TStri
     ocanvases[ocanvasName]->cd()->SetLogx();
 
     int counter = 0;
+    mg = new TMultiGraph();
     for(map<JetInfo,TFile*>::iterator it=ifiles.begin(); it!=ifiles.end(); ++it) {
       imapName = Form(plots[iplot].second[0]+"_%s",it->first.abbreviation.Data());
       //cout << ihistograms[imapName]->GetName() << "\t" << ihistograms[imapName]->GetEntries() << endl;
       ographs[imapName] = new TGraph(ihistograms[imapName]);
       if(counter==0) {
         if(plots[iplot].first.Contains("drVsrefptMatchedJets")) {
-          mg = new TMultiGraph();
           mg->Add(ographs[imapName]);
           leg->AddEntry(ographs[imapName],it->first.title,"p");
           //ihistograms[imapName]->GetYaxis()->SetTitle("<#DeltaR> #pm #sigma(#DeltaR)");

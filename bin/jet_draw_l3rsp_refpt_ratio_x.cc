@@ -108,9 +108,9 @@ int main(int argc,char**argv)
       Double_t* numY = graphNum->GetY();
       Double_t* numEX = graphNum->GetEX();
       Double_t* numEY = graphNum->GetEY();
-      Double_t* denX = graphDen->GetX();
+      //Double_t* denX = graphDen->GetX();
       Double_t* denY = graphDen->GetY();
-      Double_t* denEX = graphDen->GetEX();
+      //Double_t* denEX = graphDen->GetEX();
       Double_t* denEY = graphDen->GetEY();
 
       //

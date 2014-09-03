@@ -182,7 +182,7 @@ int main(int argc,char**argv) {
       TH1D *hjerc = (TH1D*)hjer->DrawClone("SAME");
       
       double rho = max(1.,rhos[ipu]);
-      double rhoa = rho*ajet;
+      //double rhoa = rho*ajet;
       double rhoaeff = rho*aeff;
       rhoas[icone][ipu] = rhoaeff;
       for (int i = 1; i != hjer->GetNbinsX()+1; ++i) {
@@ -252,7 +252,7 @@ int main(int argc,char**argv) {
       TH1D *hjer = (TH1D*)d1->Get(Form("ResolutionRhoRef_%s_%d",ceta,jpu));
       assert(hjer);
       double rho = max(1.,rhos[ipu]);
-      double rhoa = rho*ajet;
+      //double rhoa = rho*ajet;
       double rhoaeff = rho*aeff;
       f1->SetLineStyle(kDotted);
       f1->SetLineWidth(2);
