@@ -118,7 +118,8 @@ int main(int argc,char**argv) {
 	CommandLine cl;
 	if (!cl.parse(argc,argv)) return 0;
 
-	TString 	    inputFilename     = cl.getValue<TString> 	   ("inputFilename");
+    TString         inputFilePath     = cl.getValue<TString>       ("inputFilePath");
+	TString 	    inputFilename     = cl.getValue<TString> 	   ("inputFilename",        "");
 	TString 	    outputDir         = cl.getValue<TString> 	   ("outputDir",          "./");
     //int             tnpu              = cl.getValue<int>           ("tnpu",                 20);
 	int             maxEvts           = cl.getValue<int>           ("maxEvts",               0);
@@ -158,8 +159,13 @@ int main(int argc,char**argv) {
 
   	// Create chain of root trees
   	TChain chain("Delphes");
-  	//chain.Add("/home/aperloff/fdata/Delphes_QCDjets_20PU_1M_v2/Delphes.root");
-  	chain.Add(inputFilename);
+  	//chain.Add(inputFilename);
+    cout<<"\tAdding "<<inputFilePath+"/"+inputFilename+"*.root"<<endl;
+    int file_count = chain.Add(inputFilePath+"/"+inputFilename+"*.root");
+    if (file_count==0){
+       cout << "\tNo files found!  Aborting.\n";
+       return 0;
+    }
 
 	// Create object of class ExRootTreeReader
   	ExRootTreeReader *treeReader = new ExRootTreeReader(&chain);
@@ -193,9 +199,9 @@ int main(int argc,char**argv) {
 
     // output file, tree, and branches
   	TFile* ofile = new TFile(outputDir+"/DelphesJRA.root","RECREATE");
-  	ofile->mkdir("ak4pf","genRawJet");
-  	ofile->mkdir("ak4pfl1","genRawNoPUJet");
-  	ofile->mkdir("ak4pfchs","genJet");
+  	ofile->mkdir("ak4pfchs","genRawJet");
+  	ofile->mkdir("ak4pfchsl1","genRawNoPUJet");
+  	ofile->mkdir("ak4pfchsrhocorrected","genJet");
   	//ofile->mkdir("ca8pf","genCAJet");
   	TTree* genRawJet_     = new TTree("t","t");
   	TTree* genRawNoPUJet_ = new TTree("t","t");
@@ -208,9 +214,9 @@ int main(int argc,char**argv) {
 
   	//Set vector of reco jet collections
   	NtupleMap_t recoJetMap;
-  	recoJetMap["ak4pf"]       = make_pair(branchRawJet,     genRawJet);
-  	recoJetMap["ak4pfl1"]     = make_pair(branchRawJetNoPU, genRawNoPUJet);
-  	recoJetMap["ak4pfl1l2l3"] = make_pair(branchJet,        genJet);
+  	recoJetMap["ak4pfchs"]       = make_pair(branchRawJet,     genRawJet);
+  	recoJetMap["ak4pfchsl1"]     = make_pair(branchRawJetNoPU, genRawNoPUJet);
+  	recoJetMap["ak4pfchsrhocorrected"] = make_pair(branchJet,        genJet);
   	//recoJetMap["ca8pf"]       = make_pair(branchCAJet,      genCAJet);
 
   	//Set up the matching maps
@@ -339,7 +345,7 @@ int main(int argc,char**argv) {
 			//Set values for missing collections
 			ialg->second.second->pthat  = 0;
 			ialg->second.second->weight = 0;
-            if(ialg->first == "ak4pfl1")
+            if(ialg->first == "ak4pfchsl1")
                ialg->second.second->npv    = (int)(1);
             else
                ialg->second.second->npv    = (int)(nPUvertices_true/0.74);
