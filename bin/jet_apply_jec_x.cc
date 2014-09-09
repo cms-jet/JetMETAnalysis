@@ -479,6 +479,12 @@ string getAlias(TString s)
       return "AK4PFl1";
    else if (s=="ak4pfl1l2l3")
       return "AK4PFl1l2l3";
+   else if (s=="ak4pfchs")
+      return "AK4PFchs";
+   else if (s=="ak4pfchsl1")
+      return "AK4PFchsl1";
+   else if (s=="ak4pfchsl1l2l3")
+      return "AK4PFchsl1l2l3";
    else
       return "unknown";
 }
