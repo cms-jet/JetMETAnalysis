@@ -227,9 +227,11 @@ void createTxtFile(TString txtFilename, const vector<FitRes> & fitResults){
       outF<<std::setw(11)<<fitResults[l].etalowedge
           <<std::setw(11)<<fitResults[l].etaupedge
           <<std::setw(11)<<9
-          <<std::setw(12)<<1<<std::setw(12)<<3500
+         //<<std::setw(12)<<1<<std::setw(12)<<3500
+          <<std::setw(12)<<fitResults[l].fit->GetYmin()<<std::setw(12)<<fitResults[l].fit->GetYmax()
           <<std::setw(12)<<0<<std::setw(12)<<10
-          <<std::setw(12)<<0<<std::setw(12)<<200;
+         //<<std::setw(12)<<0<<std::setw(12)<<200;
+          <<std::setw(12)<<fitResults[l].fit->GetXmin()<<std::setw(12)<<fitResults[l].fit->GetXmax();
       
       
       // ... followed by the parameters
