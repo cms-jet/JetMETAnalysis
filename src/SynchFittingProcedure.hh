@@ -157,7 +157,6 @@ TH1 * getResolutionHistoFromHisto(TString cname, TString title, TH2 * histo_in){
    histo->Reset();
    //histo->Clear();
    histo->GetYaxis()->SetTitle(title);
-
    // Now loop over the entries of prof and set the histo
    for (int nb = 1 ; nb <= histo->GetXaxis()->GetNbins() ; nb++){
 
@@ -170,7 +169,7 @@ TH1 * getResolutionHistoFromHisto(TString cname, TString title, TH2 * histo_in){
       if (aux->GetEntries() > 0) {
 
          TFitResultPtr fr = aux->Fit("gaus","0qS");
-           
+
          // Skip if fit failed
          if (fr.Get() && !fr->Status()){
             double mean    = fr->Parameter(1);
@@ -179,9 +178,7 @@ TH1 * getResolutionHistoFromHisto(TString cname, TString title, TH2 * histo_in){
             double rmserr  = fr->ParError(2);
             val = rms / mean ;
             valerr = val * sqrt( pow(rmserr/rms,2) + pow(meanerr/mean,2));
-
          }
-
       }
 
       histo->SetBinContent(nb,val);
@@ -473,7 +470,8 @@ TCanvas * getCanvasResponseResolution(TString cname, TString algo, TString title
 //      modeNo == 0: RMS/mean of each x slice
 //      modeNo == 1: RMS of each x slice
 // Legend depends on cname. If cname contains "rho", output rho legend. If cname contains "npv", output npv legend. Otherwise, output PF legend.
-TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector<TH2*> prof, int modeNo, vector<pair<int,int> > npvRhoNpuBins){
+template<typename T>
+TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector<TH2*> prof, int modeNo, vector<pair<T,T> > npvRhoNpuBins){
 
    cout<<"\t Doing fits for Resolution "<<cname<<endl;
    JetInfo ji(algo);
@@ -506,6 +504,8 @@ TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector
       NPV_Rho = 2;
    else if (cname.Contains("tnpu",TString::kIgnoreCase))
       NPV_Rho = 3;
+   else if (cname.Contains("resolutionptref",TString::kIgnoreCase))
+      NPV_Rho = 4;
    else
       NPV_Rho = 0;
 
@@ -537,7 +537,12 @@ TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector
    hh[0]->GetXaxis()->SetRangeUser(10,1000);
    hh[0]->GetXaxis()->SetMoreLogLabels();
    hh[0]->GetXaxis()->SetNoExponent();
-   hh[0]->GetXaxis()->SetTitle("p_{T}^{GEN} [GeV]");
+   if(NPV_Rho != 4)
+      hh[0]->GetXaxis()->SetTitle("p_{T}^{GEN} [GeV]");
+   else {
+      hh[0]->GetXaxis()->SetTitle("N_{PU}");
+      c->SetLogx(0);
+   }
    hh[0]->GetXaxis()->SetLabelSize(0.04);
 
    for (unsigned int j=0;j<hh.size();j++) {
@@ -562,6 +567,8 @@ TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector
          var = "#rho";
       else if (NPV_Rho == 3)
          var = "#mu";//True NPU->#mu
+      else if (NPV_Rho == 4)
+         var = "p_{T}^{GEN}";
       else
          var = PFstr[j];
 
@@ -779,14 +786,25 @@ TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, vector<
    hh[0]->GetXaxis()->SetMoreLogLabels();
    hh[0]->GetXaxis()->SetNoExponent();
 
+   bool hh0Drawn = false;
    for (unsigned int j=0;j<hh.size();j++) {
       scanHistoBinError(hh[j],0.4);
-      if(isHistoEmpty(hh[j])) continue;
+      if(isHistoEmpty(hh[j])) {
+         cout << "WARNING::getGausMeanOffset skipping histo hh[" << j << "] because it is empty." << endl;
+         continue;
+      }
 
       if(j==0)
          hh[0]->Draw("E");
-      else
-         hh[j]->Draw("sameE");
+      else {
+         if(hh0Drawn == false) {
+            hh0Drawn = true;
+            hh[j]->Draw("E");
+         }
+         else {
+            hh[j]->Draw("sameE");
+         }
+      }
 
       TString var;
 
@@ -1349,7 +1367,7 @@ void scanHistoBinError(TH1* histo, double maxBinError) {
 bool isHistoEmpty(TH1* histo) {
    bool isEmpty = true;
    for(int ibin=1; ibin<=histo->GetNbinsX(); ibin++) {
-      if(histo->GetBinContent(ibin)>0)
+      if(histo->GetBinContent(ibin)!=0)
          isEmpty = false;
    }
    return isEmpty;
