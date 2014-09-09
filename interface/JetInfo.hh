@@ -74,6 +74,8 @@ public:
 
   /// get the index corresponding to the correct NPV, Rho, or NPU bin
   static int getBinIndex(int variable, int nbins = 6, int binWidth = 5);
+  static int getBinIndex(float x, const double binsx[], const int size);
+  static int getBinIndex(float x, const std::vector<float>& binsx);
 
   /// get the properly formatted legend entry for a specific rho, npv, or npu bin
   static TString getBinLegendEntry(int bin, TString type, int nbins = 6, int binWidth = 5);

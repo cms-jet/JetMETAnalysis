@@ -192,6 +192,20 @@ int JetInfo::getBinIndex(int variable, int nbins, int binWidth){
 }//getBinIndex
 
 //______________________________________________________________________________
+int JetInfo::getBinIndex(float x, const double binsx[], const int size) {
+   for (int ix=0;ix<size-1;ix++)
+      if (x>=binsx[ix]&&x<binsx[ix+1]) return ix;
+   return -1;
+}//getBinIndex
+
+//______________________________________________________________________________
+int JetInfo::getBinIndex(float x,const vector<float>& binsx) {
+   for (unsigned int ix=0;ix<binsx.size()-1;ix++)
+      if (x>=binsx[ix]&&x<binsx[ix+1]) return ix;
+   return -1;
+}//getBinIndex
+
+//______________________________________________________________________________
 TString JetInfo::getBinLegendEntry(int bin, TString type, int nbins, int binWidth) {
   return Form("%i #leq " + type + " < %i",bin*binWidth, bin*binWidth+binWidth);
 }//getBinLegendEntry
