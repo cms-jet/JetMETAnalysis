@@ -50,6 +50,7 @@ int binNum2023 = 12;
 vector<pair<int,int> > npvRhoNpuBins;
 int minNpvRhoNpu;
 int maxNpvRhoNpu;
+vector<pair<double,double> > vptBins;
 
 void clearHistograms(vector<TH2*>& hResRho, vector<TH2*>& hOffRho, vector<TH2*>& hOffPdgid, int resetSize = -1) {
    hResRho.clear();
@@ -784,7 +785,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_resnopuVsrefpt_bb_rho%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionRho_BB",algo, "#sigma(p_{T}/p_{T}^{noPU})/<p_{T}/p_{T}^{noPU}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionRho_BB",algo, "#sigma(p_{T}/p_{T}^{noPU})/<p_{T}/p_{T}^{noPU}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
    clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -792,7 +793,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_resnopuVsrefpt_ei_rho%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionRho_EI",algo, "#sigma(p_{T}/p_{T}^{noPU})/<p_{T}/p_{T}^{noPU}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionRho_EI",algo, "#sigma(p_{T}/p_{T}^{noPU})/<p_{T}/p_{T}^{noPU}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
    clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -800,7 +801,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_resnopuVsrefpt_eo_rho%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionRho_EO",algo,"#sigma(p_{T}/p_{T}^{noPU})/<p_{T}/p_{T}^{noPU}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionRho_EO",algo,"#sigma(p_{T}/p_{T}^{noPU})/<p_{T}/p_{T}^{noPU}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
    clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -808,7 +809,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_resnopuVsrefpt_ff_rho%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionRho_FF",algo,"#sigma(p_{T}/p_{T}^{noPU})/<p_{T}/p_{T}^{noPU}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionRho_FF",algo,"#sigma(p_{T}/p_{T}^{noPU})/<p_{T}/p_{T}^{noPU}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -818,13 +819,13 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_resVsrefpt_bb_rho%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionRhoRef_BB",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionRhoRef_BB",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
    for(unsigned int ibin=0; ibin<npvRhoNpuBins.size(); ibin++) {
       hname = Form("p_nopuresVsrefpt_bb_rho%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho.push_back(dynamic_cast<TH2D*>(histograms[hname]));
    }
-   c = getCanvasResolution("ResolutionRhoRef_BB_PU_NoPU",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionRhoRef_BB_PU_NoPU",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -832,7 +833,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_resVsrefpt_ei_rho%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionRhoRef_EI",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionRhoRef_EI",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -840,7 +841,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_resVsrefpt_eo_rho%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionRhoRef_EO",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionRhoRef_EO",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -848,7 +849,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_resVsrefpt_ff_rho%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionRhoRef_FF",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionRhoRef_FF",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -856,13 +857,13 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_resVsrefpt_ei_tnpu%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionTnpuRef_EI",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionTnpuRef_EI",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
    for(unsigned int ibin=0; ibin<npvRhoNpuBins.size(); ibin++) {
       hname = Form("p_nopuresVsrefpt_ei_tnpu%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho.push_back(dynamic_cast<TH2D*>(histograms[hname]));
    }
-   c = getCanvasResolution("ResolutionTnpuRef_EI_PU_NoPU",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionTnpuRef_EI_PU_NoPU",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
    clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -870,13 +871,13 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_resVsrefpt_eo_tnpu%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionTnpuRef_EO",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionTnpuRef_EO",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
    for(unsigned int ibin=0; ibin<npvRhoNpuBins.size(); ibin++) {
       hname = Form("p_nopuresVsrefpt_eo_tnpu%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho.push_back(dynamic_cast<TH2D*>(histograms[hname]));
    }
-   c = getCanvasResolution("ResolutionTnpuRef_EO_PU_NoPU",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionTnpuRef_EO_PU_NoPU",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
    clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -884,13 +885,43 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_resVsrefpt_ff_tnpu%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionTnpuRef_FF",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionTnpuRef_FF",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
    for(unsigned int ibin=0; ibin<npvRhoNpuBins.size(); ibin++) {
       hname = Form("p_nopuresVsrefpt_ff_tnpu%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho.push_back(dynamic_cast<TH2D*>(histograms[hname]));
    }
-   c = getCanvasResolution("ResolutionTnpuRef_FF_PU_NoPU",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionTnpuRef_FF_PU_NoPU",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c->Draw();
+   clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
+
+   clearHistograms(hResRho,hOffRho,hOffPdgid,vptBins.size());
+   for(unsigned int ibin=0; ibin<vptBins.size(); ibin++) {
+      hname = Form("p_resVsnpu_bb_pt%.1f_%.1f",vptBins[ibin].first,vptBins[ibin].second);
+      hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
+   }
+   c = getCanvasResolution<double>("ResolutionPtRef_BB",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,vptBins);
+   c->Draw();
+   clearHistograms(hResRho,hOffRho,hOffPdgid,vptBins.size());
+   for(unsigned int ibin=0; ibin<vptBins.size(); ibin++) {
+      hname = Form("p_resVsnpu_ei_pt%.1f_%.1f",vptBins[ibin].first,vptBins[ibin].second);
+      hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
+   }
+   c = getCanvasResolution<double>("ResolutionPtRef_EI",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,vptBins);
+   c->Draw();
+   clearHistograms(hResRho,hOffRho,hOffPdgid,vptBins.size());
+   for(unsigned int ibin=0; ibin<vptBins.size(); ibin++) {
+      hname = Form("p_resVsnpu_eo_pt%.1f_%.1f",vptBins[ibin].first,vptBins[ibin].second);
+      hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
+   }
+   c = getCanvasResolution<double>("ResolutionPtRef_EO",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,vptBins);
+   c->Draw();
+   clearHistograms(hResRho,hOffRho,hOffPdgid,vptBins.size());
+   for(unsigned int ibin=0; ibin<vptBins.size(); ibin++) {
+      hname = Form("p_resVsnpu_ff_pt%.1f_%.1f",vptBins[ibin].first,vptBins[ibin].second);
+      hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
+   }
+   c = getCanvasResolution<double>("ResolutionPtRef_FF",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,vptBins);
    c->Draw();
    clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -900,7 +931,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_nopuresVsrefpt_bb_rho%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionRhoNoPU_BB",algo, "#sigma(p_{T}^{noPU}/p_{T}^{GEN})/<p_{T}^{noPU}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionRhoNoPU_BB",algo, "#sigma(p_{T}^{noPU}/p_{T}^{GEN})/<p_{T}^{noPU}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    if(c)
       c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
@@ -909,7 +940,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_nopuresVsrefpt_ei_rho%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionRhoNoPU_EI",algo, "#sigma(p_{T}^{noPU}/p_{T}^{GEN})/<p_{T}^{noPU}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionRhoNoPU_EI",algo, "#sigma(p_{T}^{noPU}/p_{T}^{GEN})/<p_{T}^{noPU}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -917,7 +948,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_nopuresVsrefpt_eo_rho%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionRhoNoPU_EO",algo,"#sigma(p_{T}^{noPU}/p_{T}^{GEN})/<p_{T}^{noPU}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionRhoNoPU_EO",algo,"#sigma(p_{T}^{noPU}/p_{T}^{GEN})/<p_{T}^{noPU}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -925,7 +956,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_nopuresVsrefpt_ff_rho%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionRhoNoPU_FF",algo,"#sigma(p_{T}^{noPU}/p_{T}^{GEN})/<p_{T}^{noPU}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionRhoNoPU_FF",algo,"#sigma(p_{T}^{noPU}/p_{T}^{GEN})/<p_{T}^{noPU}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -936,7 +967,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_offresOrefptVsrefpt_bb_rho%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionOffResRho_BB",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionOffResRho_BB",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -944,7 +975,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_offresOrefptVsrefpt_ei_rho%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionOffResRho_EI",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionOffResRho_EI",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -952,7 +983,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_offresOrefptVsrefpt_eo_rho%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionOffResRho_EO",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionOffResRho_EO",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -960,7 +991,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_offresOrefptVsrefpt_ff_rho%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionOffResRho_FF",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionOffResRho_FF",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,NPFcat);
 
@@ -969,7 +1000,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_offResVsrefpt_bb_%s",PFstr[ipf].Data());
       hResRho[ipf] = dynamic_cast<TH2D*>(histograms[hname]);  
    }
-   c = getCanvasResolution("ResolutionOffRefPF_BB",algo,"#sigma(p_{T}^{PU}-p_{T}^{noPU})",hResRho,1,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionOffRefPF_BB",algo,"#sigma(p_{T}^{PU}-p_{T}^{noPU})",hResRho,1,npvRhoNpuBins);
    c->Draw();  
    c = getGausMeanOffset("MeanOffRefPF_BB","<p_{T}^{PU}-p_{T}^{noPU}>",algo,hResRho,fixedRange,npvRhoNpuBins);
    c->Draw();
@@ -1011,13 +1042,13 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_resVsrefpt_bb_tnpu%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionTnpuRef_BB",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionTnpuRef_BB",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
    for(unsigned int ibin=0; ibin<npvRhoNpuBins.size(); ibin++) {
       hname = Form("p_nopuresVsrefpt_bb_tnpu%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho.push_back(dynamic_cast<TH2D*>(histograms[hname]));
    }
-   c = getCanvasResolution("ResolutionTnpuRef_BB_PU_NoPU",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionTnpuRef_BB_PU_NoPU",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
    clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -1106,7 +1137,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_offresOrefptVsrefpt_bb_npv%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionOffResNpv_BB",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionOffResNpv_BB",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -1114,7 +1145,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_offresOrefptVsrefpt_ei_npv%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionOffResNpv_EI",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionOffResNpv_EI",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -1122,7 +1153,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_offresOrefptVsrefpt_eo_npv%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionOffResNpv_EO",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionOffResNpv_EO",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -1130,7 +1161,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_offresOrefptVsrefpt_ff_npv%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionOffResNpv_FF",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution<int>("ResolutionOffResNpv_FF",algo, "#sigma((p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN})/<(p_{T}^{PU}-p_{T}^{noPU})/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,npvRhoNpuBins.size());
 
@@ -1274,16 +1305,17 @@ int main(int argc,char**argv)
 {
    CommandLine cl;
    if (!cl.parse(argc,argv)) return 0;
-   string         algo1             = cl.getValue<string>  ("algo1",       "ak5pf");
-   string         algo2             = cl.getValue<string>  ("algo2",       "ak5pf");
-   string         outDir            = cl.getValue<string>  ("outDir",   "./images");
-   bool           fixedRange        = cl.getValue<bool>    ("fixedRange",     true);
-   bool           tdr               = cl.getValue<bool>    ("tdr",           false);
-   int            npvRhoNpuBinWidth = cl.getValue<int>     ("npvRhoNpuBinWidth", 5);
-   int            NBinsNpvRhoNpu    = cl.getValue<int>     ("NBinsNpvRhoNpu",    6);
-   int            binOffset         = cl.getValue<int>     ("binOffset",         0);
-                  minNpvRhoNpu      = cl.getValue<int>     ("minNpvRhoNpu",      0);
-                  maxNpvRhoNpu      = cl.getValue<int>     ("maxNpvRhoNpu",    159);
+   string      algo1             = cl.getValue<string>  ("algo1",                         "ak5pf");
+   string      algo2             = cl.getValue<string>  ("algo2",                         "ak5pf");
+   string      outDir            = cl.getValue<string>  ("outDir",                     "./images");
+   bool        fixedRange        = cl.getValue<bool>    ("fixedRange",                       true);
+   bool        tdr               = cl.getValue<bool>    ("tdr",                             false);
+   int         npvRhoNpuBinWidth = cl.getValue<int>     ("npvRhoNpuBinWidth",                   5);
+   int         NBinsNpvRhoNpu    = cl.getValue<int>     ("NBinsNpvRhoNpu",                      6);
+   int         binOffset         = cl.getValue<int>     ("binOffset",                           0);
+               minNpvRhoNpu      = cl.getValue<int>     ("minNpvRhoNpu",                        0);
+               maxNpvRhoNpu      = cl.getValue<int>     ("maxNpvRhoNpu",                      159);
+   vector<int> vptBinsLow        = cl.getVector<int>    ("vptBins", "14:::18:::20:::24:::28:::30");
 
    if (!cl.check()) return 0;
    cl.print();
@@ -1297,6 +1329,9 @@ int main(int argc,char**argv)
    for(int ibin=0; ibin<NBinsNpvRhoNpu; ibin++) {
       if(ibin*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1+binOffset <= maxNpvRhoNpu)
          npvRhoNpuBins.push_back(make_pair(ibin*npvRhoNpuBinWidth+binOffset,ibin*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1+binOffset));
+   }
+   for(unsigned int ibin=0; ibin<vptBinsLow.size(); ibin++) {
+      vptBins.push_back(make_pair(vpt[vptBinsLow[ibin]],vpt[vptBinsLow[ibin]+1]));
    }
 
    SynchPlots(algo1, algo2, outDir, fixedRange);

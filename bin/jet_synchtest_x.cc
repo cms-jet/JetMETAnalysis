@@ -56,6 +56,7 @@ public:
    void OpenOutputFile(TString outputPath = "./");
    void SetJEC(TString JECPar = "parameters_ak5pf.txt");
    void SetNpvRhoNpuValues(int NBins, int Width) {NBinsNpvRhoNpu=NBins; npvRhoNpuBinWidth=Width;}
+   void SetVptBins(vector<int> vptb) {vptBins = vptb;}
    void DeclareHistograms();
    void LoopOverEvents();
    void FillJetMap();
@@ -98,6 +99,7 @@ private:
    int nevs;
    int NBinsNpvRhoNpu;
    int npvRhoNpuBinWidth;
+   vector<int> vptBins;
 
    //Debug
    bool iftest;
@@ -492,13 +494,18 @@ void MatchEventsAndJets::DeclareHistograms() {
          histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}^{nopu}/p_{T}^{GEN};",NPtBins,vpt,100,0,5);
          hname = Form("p_resVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
          histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}^{pu}-p_{T}^{nopu};",NPtBins,vpt,100,0,5);
-    }//npv or rho
+      }//npv or rho
 
-    //0, 1-3, 4, 5, 21, all, quarks
-    for (int ipdgid=0;ipdgid<NPDGIDcat;ipdgid++) {
+      for (int ipt=0;ipt<NPtBins;ipt++) {
+         hname = Form("p_resVsnpu_%s_pt%.1f_%.1f",detectorAbbreviation.Data(),vpt[ipt],vpt[ipt+1]);
+         histograms[hname] = new TH2D(hname,hname+";N_{PU}; p_{T}^{pu}-p_{T}^{nopu};",40,0,200,100,0,5);
+      }//pt
+
+      //0, 1-3, 4, 5, 21, all, quarks
+      for (int ipdgid=0;ipdgid<NPDGIDcat;ipdgid++) {
          hname = Form("p_offresVsrefpt_%s_pdgid_%s",detectorAbbreviation.Data(),pdgidstr[ipdgid].Data());
          histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
-    }//pdgid
+      }//pdgid
   }
 
   //=========================================================
@@ -620,6 +627,9 @@ bool MatchEventsAndJets::FillHistograms() {
   int itnpu      = JetInfo::getBinIndex(tpu->tnpus->at(iIT),NBinsNpvRhoNpu,npvRhoNpuBinWidth);
   int itnpu_low  = itnpu*npvRhoNpuBinWidth;
   int itnpu_high = itnpu*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
+  //int inpu       = JetInfo::getBinIndex(tpu->npus->at(iIT),NBinsNpvRhoNpu,npvRhoNpuBinWidth);
+  //int inpu_low   = inpu*npvRhoNpuBinWidth;
+  //int inpu_high  = inpu*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
   TString hname = "";
     
   //
@@ -849,6 +859,11 @@ bool MatchEventsAndJets::FillHistograms() {
     histograms[hname]->Fill(tpu->refpt[jpu],resp);
     hname = Form("p_resVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),itnpu_low,itnpu_high);
     histograms[hname]->Fill(tpu->refpt[jpu],resp);
+    hname = Form("p_resVsnpu_%s_pt%.1f_%.1f",detectorAbbreviation.Data(),
+                 vpt[JetInfo::getBinIndex(tpu->refpt[jpu],vpt,NPtBins)],vpt[JetInfo::getBinIndex(tpu->refpt[jpu],vpt,NPtBins)+1]);
+    if(tpu->refpt[jpu]>10.0) {
+       histograms[hname]->Fill(tpu->npus->at(iIT),resp);
+    }
     hname = Form("p_offresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
     histograms[hname]->Fill(tpu->refpt[jpu],offset);
     hname = Form("p_offresOrefptVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
@@ -947,21 +962,22 @@ int main(int argc,char**argv)
 {
    CommandLine cl;
    if (!cl.parse(argc,argv)) return 0;
-   TString samplePU          = cl.getValue<TString> ("samplePU");
-   TString sampleNoPU        = cl.getValue<TString> ("sampleNoPU");
-   TString basepath          = cl.getValue<TString> ("basepath", "/fdata/hepx/store/user/aperloff/");
-   TString algo1             = cl.getValue<TString> ("algo1",                               "ak5pf");
-   TString algo2             = cl.getValue<TString> ("algo2",                               "ak5pf");
-   bool    iftest            = cl.getValue<bool>    ("iftest",                                false);
-   int     maxEvts           = cl.getValue<int>     ("maxEvts",                               40000);
-   bool    ApplyJEC          = cl.getValue<bool>    ("ApplyJEC",                              false);
-   string  JECpar            = cl.getValue<string>  ("JECpar",               "parameters_ak5pf.txt");
-   bool    runDep            = cl.getValue<bool>    ("runDep",                                 true);
-   TString outputPath        = cl.getValue<TString> ("outputPath",                             "./");
-   TString treeName          = cl.getValue<TString> ("treeName",                                "t");
-   int     npvRhoNpuBinWidth = cl.getValue<int>     ("npvRhoNpuBinWidth",                         5);
-   int     NBinsNpvRhoNpu    = cl.getValue<int>     ("NBinsNpvRhoNpu",                            6);
-  
+   TString     samplePU          = cl.getValue<TString> ("samplePU");
+   TString     sampleNoPU        = cl.getValue<TString> ("sampleNoPU");
+   TString     basepath          = cl.getValue<TString> ("basepath", "/fdata/hepx/store/user/aperloff/");
+   TString     algo1             = cl.getValue<TString> ("algo1",                               "ak5pf");
+   TString     algo2             = cl.getValue<TString> ("algo2",                               "ak5pf");
+   bool        iftest            = cl.getValue<bool>    ("iftest",                                false);
+   int         maxEvts           = cl.getValue<int>     ("maxEvts",                               40000);
+   bool        ApplyJEC          = cl.getValue<bool>    ("ApplyJEC",                              false);
+   string      JECpar            = cl.getValue<string>  ("JECpar",               "parameters_ak5pf.txt");
+   bool        runDep            = cl.getValue<bool>    ("runDep",                                 true);
+   TString     outputPath        = cl.getValue<TString> ("outputPath",                             "./");
+   TString     treeName          = cl.getValue<TString> ("treeName",                                "t");
+   int         npvRhoNpuBinWidth = cl.getValue<int>     ("npvRhoNpuBinWidth",                         5);
+   int         NBinsNpvRhoNpu    = cl.getValue<int>     ("NBinsNpvRhoNpu",                            6);
+   vector<int> vptBins           = cl.getVector<int>    ("vptBins",       "14:::18:::20:::24:::28:::30");
+
    if (!cl.check()) return 0;
    cl.print();
 
@@ -981,6 +997,7 @@ int main(int argc,char**argv)
       cout << "DONE" << endl;
    }
    mej->SetNpvRhoNpuValues(NBinsNpvRhoNpu,npvRhoNpuBinWidth);
+   mej->SetVptBins(vptBins);
    mej->DeclareHistograms();
    mej->LoopOverEvents();
    mej->WriteOutput();
