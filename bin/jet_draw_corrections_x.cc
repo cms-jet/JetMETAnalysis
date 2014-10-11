@@ -80,6 +80,7 @@ void cmsPrelim(double intLUMI = 0);
 // global variables
 ////////////////////////////////////////////////////////////////////////////////
 vector<pair<FactorizedJetCorrector*,TString> > allJetCorrs;
+double fixedRho;
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -302,6 +303,8 @@ TCanvas * getCorrectionVsEtaCanvas(TString algo, FactorizedJetCorrector * jetCor
       for (int b = 1; b <= cc->GetNbinsX(); b++){
 	jetCorr->setJetPt(PtVals[c]);
 	jetCorr->setJetEta(cc->GetBinCenter(b));
+    jetCorr->setRho(fixedRho);
+    jetCorr->setJetA(TMath::Pi()*TMath::Power(JetInfo(algo).coneSize/10.0,2));
 	double cor = jetCorr->getCorrection();
 	if (std::isnan((double)cor) || std::isinf((double)cor) ){
 	  cout<<" *** ERROR *** getCorrectionVsEtaCanvas(). For eta="<<cc->GetBinCenter(b)
@@ -395,6 +398,8 @@ TCanvas * getCorrectionVsEtaCanvasTDR(TString algo, FactorizedJetCorrector * jet
      for (int b = 1; b <= cc->GetNbinsX(); b++){
         jetCorr->setJetPt(PtVals[c]);
         jetCorr->setJetEta(cc->GetBinCenter(b));
+        jetCorr->setRho(fixedRho);
+        jetCorr->setJetA(TMath::Pi()*TMath::Power(JetInfo(algo).coneSize/10.0,2));
         double cor = jetCorr->getCorrection();
         if (std::isnan((double)cor) || std::isinf((double)cor) ){
            cout<<" *** ERROR *** getCorrectionVsEtaCanvas(). For eta="<<cc->GetBinCenter(b)
@@ -563,16 +568,23 @@ TCanvas * getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, vector<pa
          if(!normAlg.IsNull() && ialg==0) {
             allJetCorrs[normAlgIndex].first->setJetPt(PtVals[c]);
             allJetCorrs[normAlgIndex].first->setJetEta(cc[hstr]->GetBinCenter(b));
+            allJetCorrs[normAlgIndex].first->setRho(fixedRho);
+            allJetCorrs[normAlgIndex].first->setJetA(TMath::Pi()*TMath::Power(JetInfo(algs[ialg]).coneSize/10.0,2));
             cor = allJetCorrs[normAlgIndex].first->getCorrection();
          }
          else if (!normAlg.IsNull() && ialg>0){
             allJetCorrs[ialg-1].first->setJetPt(PtVals[c]);
             allJetCorrs[ialg-1].first->setJetEta(cc[hstr]->GetBinCenter(b));
+            allJetCorrs[ialg-1].first->setRho(fixedRho);
+            allJetCorrs[ialg-1].first->setJetA(TMath::Pi()*TMath::Power(JetInfo(algs[ialg]).coneSize/10.0,2));
+
             cor = allJetCorrs[ialg-1].first->getCorrection();
          }
          else {
             allJetCorrs[ialg].first->setJetPt(PtVals[c]);
             allJetCorrs[ialg].first->setJetEta(cc[hstr]->GetBinCenter(b));
+            allJetCorrs[ialg].first->setRho(fixedRho);
+            allJetCorrs[ialg].first->setJetA(TMath::Pi()*TMath::Power(JetInfo(algs[ialg]).coneSize/10.0,2));
             cor = allJetCorrs[ialg].first->getCorrection();
          }
          if (std::isnan((double)cor) || std::isinf((double)cor) ){
@@ -689,6 +701,8 @@ TCanvas * getCorrectionVsPtCanvas(TString algo, FactorizedJetCorrector * jetCorr
       for (int b = 1; b <= cc->GetNbinsX(); b++){
 	jetCorr->setJetPt(cc->GetBinCenter(b));
 	jetCorr->setJetEta(EtaVals[c]);
+    jetCorr->setRho(fixedRho);
+    jetCorr->setJetA(TMath::Pi()*TMath::Power(JetInfo(algo).coneSize/10.0,2));
 	double cor = jetCorr->getCorrection();
 	if (std::isnan((double)cor) ||  std::isinf((double)cor) ){
 	  cout<<" *** ERROR *** getCorrectionVsPtCanvas(). For eta="<<EtaVals[c]
@@ -784,6 +798,8 @@ TCanvas * getCorrectionVsPtComparisonCanvasTDR(vector<TString>& algs, vector<pai
       for (int b = 1; b <= cc->GetNbinsX(); b++){
          allJetCorrs[ialg].first->setJetEta(EtaVals[c]);
          allJetCorrs[ialg].first->setJetPt(cc->GetBinCenter(b));
+         allJetCorrs[ialg].first->setRho(fixedRho);
+         allJetCorrs[ialg].first->setJetA(TMath::Pi()*TMath::Power(JetInfo(algs[ialg]).coneSize/10.0,2));
          double cor = allJetCorrs[ialg].first->getCorrection();
          if (std::isnan((double)cor) || std::isinf((double)cor) ){
             cout<<" *** ERROR *** getCorrectionVsEtaComparisonCanvas(). For eta="<<cc->GetBinCenter(b)
@@ -839,6 +855,7 @@ FactorizedJetCorrector * getFactorizedCorrector(TString algo, CommandLine & cl, 
   bool    useL2Cor     = cl.getValue<bool>   ("useL2Cor"     , false   );
   bool    useL3Cor     = cl.getValue<bool>   ("useL3Cor"     , false   );
   bool    useL2L3ResCor= cl.getValue<bool>   ("useL2L3ResCor", false   );
+          fixedRho     = cl.getValue<double> ("fixedRho"     , 10.0    );
 
   if (era.length()==0) {
     cout<<"ERROR flag -era must be specified"<<endl;
