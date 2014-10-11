@@ -28,7 +28,7 @@
 #include <string>
 #include <vector>
 #include <cmath>
-
+#include <sys/stat.h>
 
 using namespace std;
 
