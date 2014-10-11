@@ -337,9 +337,13 @@ int main(int argc,char**argv)
             hClosure[c]->SetMarkerColor(kBlue);
             hClosure[c]->SetLineColor(kBlue);
          }
-         else {
+         else if (c==2) {
             hClosure[c]->SetMarkerColor(kRed);
             hClosure[c]->SetLineColor(kRed);
+         }
+         else {
+            hClosure[c]->SetMarkerColor(kMagenta);
+            hClosure[c]->SetLineColor(kMagenta);
          }
          if (c==0)
             hClosure[c]->Draw("EP");
