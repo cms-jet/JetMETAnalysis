@@ -1,0 +1,315 @@
+////////////////////////////////////////////////////////////////////////////////
+//
+// ObjectLoader
+// ------------
+//
+//            12/15/2008 Philipp Schieferdecker <philipp.schieferdecker@cern.ch>
+////////////////////////////////////////////////////////////////////////////////
+
+
+#include <TKey.h>
+
+#include <cassert>
+#include <stdexcept>
+#include <iostream>
+#include <sstream>
+#include <map>
+
+
+using namespace std;
+
+
+////////////////////////////////////////////////////////////////////////////////
+// construction/destruction
+////////////////////////////////////////////////////////////////////////////////
+
+//______________________________________________________________________________
+template <class T>
+ObjectLoader<T>::ObjectLoader()
+  : iloop_(0)
+{
+  
+}
+
+
+//______________________________________________________________________________
+template <class T>
+ObjectLoader<T>::~ObjectLoader()
+{
+  
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// implementation of member functions
+////////////////////////////////////////////////////////////////////////////////
+
+//______________________________________________________________________________
+template<class T>
+bool ObjectLoader<T>::load_objects(TDirectory* d,const string& expression)
+{
+  string tmp=expression;
+  size_t pos=tmp.find(':');
+  quantity_=(pos==string::npos)?tmp:tmp.substr(0,pos);
+  tmp=(pos==string::npos)?"":tmp.substr(pos+1);
+  if (tmp!="") variables_=split(tmp,":");
+
+  for (unsigned int i=0;i<variables_.size();i++) variable_index_.push_back(i);
+  for (unsigned int i=0;i<variables_.size();i++) {
+    pos=variables_[i].find("#");
+    if (pos==string::npos) continue;
+    string index_as_string=variables_[i].substr(pos+1);
+    variables_[i]=variables_[i].substr(0,pos);
+    unsigned int index; stringstream ss; ss<<index_as_string;ss>>index;
+    assert(index<variable_index_.size());
+    unsigned int tmp=variable_index_[i];
+    variable_index_[i]=index;
+    variable_index_[index]=tmp;
+  }
+
+  map<int,double> fixed_values;
+  for (unsigned int i=0;i<variables_.size();i++) {
+    pos=variables_[i].find("@");
+    if (pos==string::npos) continue;
+    string value_as_string=variables_[i].substr(pos+1);
+    variables_[i]=variables_[i].substr(0,pos);
+    double value; stringstream ss; ss<<value_as_string;ss>>value;
+    fixed_values[i]=value;
+  }
+
+  nobjects_.clear();
+  for (unsigned int i=0;i<variables_.size();i++) nobjects_.push_back(0);
+  bounds_.resize(nobjects_.size());
+  
+  TIter next(d->GetListOfKeys());
+  TKey* key(0);
+  while ((key=(TKey*)next())) {
+    if (strcmp(key->GetClassName(),T::Class_Name())!=0) continue;
+    string histname(key->GetName());
+    if (histname.find(quantity_)!=0) continue;
+    vector<string> histo_variables;
+    if (histname!=quantity_)
+      histo_variables=split(histname.substr(quantity_.length()+1),"_");
+    vector< std::pair<double,double> > bounds;
+    if (variables_.size()!=histo_variables.size()) continue;
+    for (unsigned int i=0;i<variables_.size();i++) {
+      size_t pos=histo_variables[i].find(variables_[i]);
+      if (pos!=0) continue;
+      string tmp=histo_variables[i].substr(variables_[i].length());
+      vector<string> vtmp=split(tmp,"to");
+      if (vtmp.size()!=2) continue;
+      stringstream ss; double min; double max;
+      ss<<vtmp.front()<<" "<<vtmp.back(); ss>>min>>max;
+      if (fixed_values.find(i)!=fixed_values.end()&&
+	  (fixed_values[i]<min||fixed_values[i]>=max)) continue;
+      bounds.push_back(std::make_pair(min,max));
+    }
+    if (bounds.size()!=variables_.size()) continue;
+
+    vector<unsigned int> indices(variables_.size());
+    for (unsigned int ivar=0;ivar<variables_.size();ivar++) {
+      unsigned int iivar=variable_index_[ivar];
+      vector<std::pair<double,double> >varbounds=bounds_[ivar];
+      if (varbounds.size()==0||bounds[ivar].first>=varbounds.back().second) {
+	varbounds.push_back(bounds[ivar]);
+	bounds_[ivar]=varbounds;
+	indices[iivar]=nobjects_[ivar];
+	nobjects_[ivar]++;
+      }
+      else {
+	int i(0);
+	vector< std::pair<double,double> >::iterator it=varbounds.begin();
+	while (it!=varbounds.end()) {
+	  if (*it==bounds[ivar]) {
+	    indices[iivar]=i;
+	    break;
+	  }
+	  else if (it->first > bounds[ivar].second) {
+	    vector< std::pair<double,double> >::iterator last=it;last--;
+	    varbounds.insert(last,bounds[ivar]);
+	    bounds_[ivar]=varbounds;
+	    nobjects_[ivar]++;
+	    indices[iivar]=i;
+	    break;
+	  }
+	  
+	  ++i;++it;
+	}
+      }
+    }
+
+    compute_offset();
+    set_object(indices,(T*)key->ReadObj());
+  }
+  
+  return true;
+}
+
+
+//______________________________________________________________________________
+template <class T>
+T* ObjectLoader<T>::object(unsigned int i) const
+{
+  vector<unsigned int> indices;
+  indices.push_back(i);
+  return object(indices);
+}
+
+
+//______________________________________________________________________________
+template <class T>
+T* ObjectLoader<T>::object(unsigned int i,unsigned int j) const
+{
+  vector<unsigned int> indices(2);
+  indices[0]=i;
+  indices[1]=j;
+  return object(indices);
+}
+
+
+//______________________________________________________________________________
+template <class T>
+T* ObjectLoader<T>::object(unsigned int i,unsigned int j,unsigned int k) const
+{
+  vector<unsigned int> indices(3);
+  indices[0]=i;
+  indices[1]=j;
+  indices[2]=k;
+  return object(indices);
+}
+
+
+//______________________________________________________________________________
+template <class T>
+T* ObjectLoader<T>::object(const std::vector<unsigned int>& indices) const
+{
+  if (indices.size()!=nobjects_.size())
+    throw std::runtime_error("ObjectLoader<T>::object: indices.size()");
+  for (unsigned int i=0;i<nobjects_.size();i++)
+    if (indices[i]>=nobjects(i))
+      throw std::runtime_error("ObjectLoader<T>::object: index out of range");
+
+  unsigned int index(0);
+  for (unsigned i=0;i<indices.size();i++) index += indices[i]*offset_[i];
+  
+  return objects_[index];
+}
+
+
+//______________________________________________________________________________
+template <class T>
+T* ObjectLoader<T>::next_object(unsigned int& i) const
+{
+  vector<unsigned int> indices;
+  T* result=next_object(indices);
+  i=indices.front();
+  return result;
+}
+
+
+//______________________________________________________________________________
+template <class T>
+T* ObjectLoader<T>::next_object(unsigned int& i,unsigned int& j) const
+{
+  vector<unsigned int> indices;
+  T* result=next_object(indices);
+  i=indices.front();
+  j=indices.back();
+  return result;
+}
+
+
+//______________________________________________________________________________
+template <class T>
+T* ObjectLoader<T>::next_object(unsigned int& i,unsigned int& j,
+				unsigned int& k) const
+{
+  vector<unsigned int> indices;
+  T* result=next_object(indices);
+  i=indices[0];
+  j=indices[1];
+  k=indices[2];
+  return result;
+}
+
+
+//______________________________________________________________________________
+template <class T>
+T* ObjectLoader<T>::next_object(vector<unsigned int>& indices) const
+{
+  indices.resize(nobjects_.size());
+  if (iloop_==objects_.size()) return 0;
+  for (unsigned int i=0;i<nobjects_.size();i++) {
+    indices[i]=iloop_;
+    for (unsigned int j=0;j<i;j++) indices[i]-=indices[j]*offset_[j];
+    indices[i]/=offset_[i];
+  }
+  T* result=objects_[iloop_];
+  iloop_++;
+  return result;
+}
+
+
+//______________________________________________________________________________
+template <class T>
+void ObjectLoader<T>::set_object(const vector<unsigned int>& indices,T* obj)
+{
+  unsigned int index(0);
+  for (unsigned int i=0;i<nobjects_.size();i++) {
+    if (indices[i]>=nobjects(i))throw std::runtime_error("index out of range");
+    index+=indices[i]*offset_[i];
+  }
+  typename std::vector<T*>::iterator it=objects_.begin();
+  for (unsigned int i=0;i<index;i++) ++it;
+  objects_.insert(it,obj);
+}
+
+
+//______________________________________________________________________________
+template <class T>
+vector<string> ObjectLoader<T>::split(const string& str,const string& delim)
+{
+  vector<string> result;
+  string tmp=str;
+  while (tmp.length()>0) {
+    size_t pos=tmp.find(delim);
+    if (pos==string::npos) {
+      result.push_back(tmp);
+      tmp="";
+    }
+    else {
+      result.push_back(tmp.substr(0,pos));
+      tmp=tmp.substr(pos+delim.length());
+    }
+  }
+  return result;
+}
+
+
+//______________________________________________________________________________
+template <class T>
+double ObjectLoader<T>::minimum(unsigned int ivar,unsigned int iobject) const
+{
+  return bounds_[variable_index_[ivar]][iobject].first;
+}
+
+
+//______________________________________________________________________________
+template <class T>
+double ObjectLoader<T>::maximum(unsigned int ivar,unsigned int iobject) const
+{
+  return bounds_[variable_index_[ivar]][iobject].second;
+}
+
+
+//______________________________________________________________________________
+template <class T>
+void ObjectLoader<T>::compute_offset()
+{
+  offset_.clear();
+  for (unsigned int i=1;i<nobjects_.size();i++) {
+    unsigned int tmp=nobjects(i);
+    for (unsigned int j=i+1;j<nobjects_.size();j++) tmp*=nobjects(j);
+    offset_.push_back(tmp);
+  }
+  offset_.push_back(1);
+}
