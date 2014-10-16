@@ -1,3 +1,4 @@
+<use   name="JetMETAnalysis/JetAnalyzers"/>
 <use   name="JetMETAnalysis/JetUtilities"/>
 <use   name="CondFormats/JetMETObjects"/>
 <use   name="PhysicsTools/Utilities"/>
@@ -5,6 +6,7 @@
 <use   name="rootphysics"/>
 <use   name="rootgraphics"/>
 <use   name="root"/>
+<lib   name="Delphes"/>
 <bin   name="jet_response_analyzer_x"          file="jet_response_analyzer_x.cc" />
 <bin   name="jet_mass_analyzer_x"              file="jet_mass_analyzer_x.cc" />
 <bin   name="jet_response_fitter_x"            file="jet_response_fitter_x.cc" />
@@ -25,18 +27,22 @@
 <bin   name="jet_draw_closure_eta_x"           file="jet_draw_closure_eta_x.cc" />
 <bin   name="jet_draw_closure_pt_ratio_x"      file="jet_draw_closure_pt_ratio_x.cc" />
 <bin   name="jet_draw_closure_eta_ratio_x"     file="jet_draw_closure_eta_ratio_x.cc" />
+<bin   name="jet_draw_l3rsp_refpt_ratio_x"     file="jet_draw_l3rsp_refpt_ratio_x.cc" />
 <bin   name="jet_draw_l2_correction_x"         file="jet_draw_l2_correction_x.cc" />
+<bin   name="jet_draw_distributions_x"         file="jet_draw_distributions_x.cc" />
 <bin   name="jet_draw_l5_correction_x"         file="jet_draw_l5_correction_x.cc" />
-<bin   name="jet_draw_jer_plots_x"             file="jet_draw_jer_plots_x.cc" />
-<bin   name="jet_draw_jer_plots_minimal_x"     file="jet_draw_jer_plots_minimal_x.cc" />
 <bin   name="jet_combine_closure_pt_x"         file="jet_combine_closure_pt_x.cc" />
 <bin   name="jet_combine_closure_eta_x"        file="jet_combine_closure_eta_x.cc" />
 <bin   name="jet_combine_relrsp_resolution_x"  file="jet_combine_relrsp_resolution_x.cc" />
 <bin   name="jet_combine_pu_distributions_x"   file="jet_combine_pu_distributions_x.cc" />
+<bin   name="jet_create_flavor_weights_x"      file="jet_create_flavor_weights_x.cc" />
 <bin   name="jet_draw_pileup_comparison_x"	   file="jet_draw_pileup_comparison_x.cc" />
 <bin   name="jet_copyFiles_x"                  file="jet_copyFiles_x.cc" />
 <bin   name="jet_synchtest_x"                  file="jet_synchtest_x.cc" />
 <bin   name="jet_synchfit_x"                   file="jet_synchfit_x.cc" />
 <bin   name="jet_synchplot_x"                  file="jet_synchplot_x.cc" />
 <bin   name="DelphesNtupleToJRANtuple_x"       file="DelphesNtupleToJRANtuple_x.cc" />
+<bin   name="JRAtoPUNtuple_x"                  file="JRAtoPUNtuple_x.cc" />
 <bin   name="jet_cone_size_scans_x"            file="jet_cone_size_scans_x.cc" />
+<bin   name="jet_draw_jer_plots_x"             file="jet_draw_jer_plots_x.cc" />
+<bin   name="jet_draw_jer_plots_minimal_x"     file="jet_draw_jer_plots_minimal_x.cc" />
