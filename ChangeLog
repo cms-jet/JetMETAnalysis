@@ -1,0 +1,404 @@
+2011-03-28  Hauke Held  <held@cern.ch>
+
+	* tag V01-01-02
+	* added -presel option to jet_response_analyzer_x
+
+2011-03-22  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V01-01-01
+	* fix MC pileup label, addPileupInfo, *not* addPileUpInfo
+
+2011-03-21  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V01-01-00
+	* change flavor determination of references
+	* used to be based on PdgIdAndStatusCandViewSelector and
+	MatchRecToGen plugins
+	* now based on PartonSelector and JetPartonMatcher plugins
+	* same procedure as by default used in PAT
+	* 'algorithm' definition instead of 'physics' definition, should
+	be more suitable
+
+2011-03-14  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V01-00-01
+	* fix to assure that jtjec is properly filled for JPTJets
+
+	* tag V01-00-00
+	* remove doHisto mode of JRA, and all associated parameters
+	* add doComposition (bool) flag (default: False)
+	* add jecLabel (string) option, and support in addAlgorithm.py
+	* add npu branch (true number of admixed PU events in MC)
+	* add jtjec branch (total jet energy correction factor)
+	* add jet composition variables for CaloJets and PFJets, *if*
+	doComposition is set to True
+
+	* tag V00-13-00
+	* addAlgorithm properly deals with L1 corrections now (L1Fastjet
+	for Calo & PF, L1Offset for JPT; JPT situation not exactly clear)
+	* addAlgorithm does not support SISCone or ItCone anymore
+	* addAlgorithm does not support non-standard algorithms anymore,
+	like ca or kt5
+	* JetCorrection_cff.py updated to work with DefaultJEC_cff.py
+
+2011-03-12  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-12-00
+	transition to CMSSW_3_11_X
+
+2011-02-16  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-11-01
+	* switch to retrieving JEC from the DB
+	* this means that the correct global tag needs to be chosen in
+	run_JRA_cfg.py
+
+	* tag V00-11-00
+	* integrated tau-developments contributed by Matthias Edelhoff
+	* Note that these require (for CMSSW_3_8_6) additional tags:
+	  - V01-00-01 DataFormats/TauReco
+          - V01-00-11 RecoTauTag/Configuration
+          - V01-00-19 RecoTauTag/RecoTau
+          - V01-00-03 RecoTauTag/TauTagTools
+	* cleaned up addAlgorithm.py (e.g. removed SISCone references)
+	
+2011-01-12  Hauke Held  <held@cern.ch>
+
+	* tag V00-10-05
+	* introduced truncated RMS for jet_response_and_resolution
+	* bugfixes and changes to the jet_scale_resolution
+
+2010-12-17  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-10-04
+	* bugfixes regarding find()
+
+2010-11-10  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-10-03
+	* support ak7jpt et al
+
+	* tag V00-10-02
+	* support ak5jptl1 and ak5jptl1l2l3
+
+2010-10-21  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-10-01
+	* transition to 38X, not quite completed yet
+	* on top of CMSSW_3_8_5, the following tags are required:
+	  V00-08-01 JetMETAnalysis/JetUtilities
+	  V03-01-02 CondFormats/JetMETObjects
+	  V02-01-01 JetMETCorrections/Algorithms
+	  V03-01-01 JetMETCorrections/Configuration
+	  V05-00-01 JetMETCorrections/Modules
+	* JetCorrection_cff.py: switch off CondDB until available
+	* jet_apply_jec_x: 'levels' parameter must be explicitely provided
+	* jet_l2_correction_x/jet_l3correction_x: adapt to change in text
+	file format
+	
+
+
+2010-05-28  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-09-02
+	* add config/jra_dr_finebinning.config, provided by Ricardo.
+	* remove config/fine_binning.config
+
+2010-05-03  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-09-01
+	* fix jet_apply_jec_x tool, example:
+	  jet_apply_jec_x -input JRAt.root -era Spring10 -output JRAt_jec.root
+
+2010-04-30  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-09-00
+	* runs with CMSSW_3_6_0 (on 35X files)
+	* eliminate (mostly) references to sisCone
+	* repair JPT reconstruction which has changed significantly
+	(configuration-wise) in 36X
+
+2010-04-26  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-08-09
+	* pick up fix by Andreas (see below)
+
+2010-04-20  Andreas Hinzmann  <hinzmann@cern.ch>
+
+	* fix in jet_l3_correction_x
+
+2010-04-19  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-08-08
+	* improvements to jet_l2_correction_x and jet_l3_correction_x
+	tools
+
+2010-04-12  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-08-07
+	* don't try to read branch refy (it does not exist)
+
+	* tag V00-08-06
+	* jet_response_analyzer: integrate rapidity (y) binning
+
+2010-04-09  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-08-05
+	* improve etarsp and phirsp definitions (Andreas)
+	* fixes to track reconstruction sequence (Andreas)
+	* fix jet_apply_jec_x tool to work (well, compile) with
+	CondFormats/JetMETObjects V02-00-05-03. Still not in default build
+	sequence
+
+2010-04-05  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-08-04
+	* fix JPT reconstruction sequence
+	* set jet_response_analyzer_x option 'nbinsabsrsp' to 0, which
+	means that by default absolute response histograms will not be
+	created
+
+2010-04-01  Andreas Hinzmann  <hinzmann@cern.ch>
+
+	* add trackjet reconstruction sequence
+	* adapt L2 and L3 correctors for trackjets
+
+2010-03-31  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-08-03
+	* fix jet_l2_correction_x tool (finally!), according to Kostas'
+	instructions (thanks to Andreas for pointing out that it was still
+	wrong). 
+
+	* tag V00-08-02
+	* add tree branch 'refrank'
+	* add tree branch 'refy' (reference rapidity)
+	* add tree branch 'jty' (jet rapidity)
+	* yet to be accounted for in e.g. jet_response_analyzer_x tool!
+	
+2010-03-30  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-08-01
+	* add JPT L2L3 corrections
+
+2010-03-24  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-08-00
+	* compatible with CMSSW_3_5_4 (->TFileService)
+	* transition from absolute to relative response for
+	jet_l3_correction_x tool, jet_l2_correction_x toll still pending
+
+2010-02-17  Konstantinos Kousouris  <Konstantinos.Kousouris@cern.ch>
+
+        * tag V00-07-06
+        * compatible with CMSSW_3_5_0
+        * jet_l3_correction_x: response is now calculated from the ratio ptCalo/ptGen
+        * jet_l2_correction_x: response is now calculated from the ratio ptCalo/ptGen
+        * jet_response_fitter_x: implemented the low pt bias modification
+2009-11-24  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-07-03
+	* jma: small fix
+	* bring back JPT
+	* disable TrackJets for the time being
+
+	* tag V00-07-02
+	* add jet_mass_analyzer_x
+
+2009-11-22  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-07-01
+	* cfg: disable PF2PAT temporarily
+	* cfg: disable JPT temporarily
+	* JRA: take out metx & mety
+	* JRA: add reference & jet energy (branches refe & jte)
+	* JRA: identify semileptonic c- and b-decays (refpdgids:
+	+-411,+-413, +-511, +-513)
+	* jra: take semileptonic decays into account (slb_* and slc_*, no
+	distinction between electrons and muons right now!)
+	* jra: set default of 'useweight' in jet_response_analyzer_x to
+	false
+	* jrar: remove parameter 'variables', add parameters (bool)
+	dorelrsp, doabsrsp, doetarsp, dophirsp, (vstring)
+	formats. construct vstring 'variables' from the values of these
+	parameters
+
+2009-11-17  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-07-00
+	* adopted latest JEC software framework changes
+	* requires CMSSW_3_3_X
+	* requires HEAD of most relevant JetMETCorrections/* packages, as
+	well as CondFormats/JetMETObjects
+	* jet_response_analyzer_x: add option 'useweight', default is
+	'true', will attempt to read the weight for each event from the
+	input tree *unless* the parameter xsection is set to something
+	larger than 0.0 (in which case the weight is still computed as the
+	xsection divided by the number of events in the tree).
+
+2009-11-06  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-06-01
+	* completely redesinged the configuration system
+	* single runnable configuration now: test/run_JRA_cfg.py
+	* driven by new python function: python/addAlgorithm.py
+
+2009-10-29  Philipp Schieferdecker  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-05-05
+	* use size_t where appropriate, as suggested by Yetkin
+	* remove jet_apply_jec target from Makefile, as it won't compile
+	standalone just yet
+
+2009-10-22  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-05-04
+	* add variables pthat & weight (from GenEventInfoProduct) to tree
+	* add variables metx & mety to the tree, if parameter 'srcMET'
+	(edm::InputTag) is set
+
+2009-10-22  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-05-03
+	* make get_legend_title() in various executables (bin/*_x.cc) more
+	robust
+
+2009-10-22  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-05-02
+	* adjust JPT configuration for 33X (331)
+	* add sc5jpt and ak5jpt
+	* add jra.config and jra_etaphi.config to config dir: these files
+	can be passed to the jet_response_analyzer_x executable as the
+	first parameter in order to define sensible binnings in pt, eta,
+	and phi
+	* add jra_dr.config and jra_etaphi_dr.config: same as above, but
+	with individual matching requirements for each algorithm found to
+	yield ~ the same matching efficiency. RECOMMENDED!
+
+2009-09-10  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-05-01
+	* re-activate JPT in configuration (schedule)
+
+2009-09-10  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-05-00
+	* CMSSW 33X and above!
+	* furhter reorganize configuration files
+	* no need for configuration files from SchieferD
+	* based on jet reco rewrite intorduced in 33X cycle
+	
+2009-09-02  Philipp SCHIEFERDECKER <philipp.schieferdecker@cern.ch>
+
+	* tag V00-04-00
+	* reorganization of configuration files
+
+
+2009-08-31  Philipp SCHIEFERDECKER <philipp.schieferdecker@cern.ch>
+
+	* tag V00-03-03
+	* split jet reconsruction & jpt reconstruction (in
+	SchieferD/Configuration), adjust *_cfg.py files in test/
+	accordingly
+ 	
+2009-08-31  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-03-02
+	* fix inputtags, ak5->antikt5
+	* by default, (1) don't rerun any jet reconstruction and (2) only
+	analyze those jets found in the (31X) standard RECO files
+	
+2009-08-17 Philipp Schieferdecker <philipp.schieferdecker@cern.ch>
+
+	* tag V00-03-01
+	* add configuration for kt/ca with D=0.5/0.7
+	* add jet_response_and_resolution_x
+	
+2009-07-01  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-03-00
+	* tested with 2213 and 310
+	* restructured configuration files, use new
+	EtaPtMinCandViewRefSelector from JetUtilities
+	
+
+2009-05-08  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-02-01
+	* add EtaRsp* as a function of eta AND pT
+	* add PhiRsp* as a function of eta AND pT
+	* make weighted jet spectrum color schema prettier
+
+2009-05-07  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-02-00
+	* add ability to consider |eta|: if the lowest bound binseta[0]
+	is>=0, eta is interpreted as |eta|
+	* add eta- and phi- response to JetResponseAnalyzer and
+	jet_response_analyzer_x
+	* update histogram mode defaults
+
+2009-04-26  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-01-05
+	* add bin/weighted_spectrum_x and config/weighted_spectrum.config
+
+2009-04-24  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-01-04
+	* fix jet_response_fitter_x to work correctly with ROOT >5.18
+	* allow response comparisons in jet_inspect_jra_histos_x
+	* add parameter xsection to jet_response_analyyzer_x: if set >0.0,
+	histogram entries will be weighted by xsection/tree->GetEntries()
+
+2009-03-12  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-01-03
+	* protect histgram filling against empty vectors binsEta_ and
+	binsPhi_
+
+2009-02-27  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-01-02
+	* remove features not necessary/supported on CMSSW_2_2_4: pflow
+	re-reconstruction, track-jet reconstruction, anti-kt &
+	cambridge/aachen, etc.
+
+2008-12-16  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-01-00
+	* requires JetMETAnalysis/JetUtilities V00-01-00
+	* replace HistogramLoader with ObjectLoader<TH1F> in all relevant
+	binaries in /bin
+
+2008-12-12  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-00-05
+	* add nrefmax parameter to jet_response_analyzer_x: only the
+	nrefmax leading references are considered if set to >0.
+
+2008-12-03  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-00-04
+	* add calo-tower fix to test/JRAt_WithFlavor_cfg.py
+
+2008-11-28  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-00-03
+	* add *_cfg.py files which consider the flavor of genjets
+	* cleanup & move *_cfg.py to test
+	* requires [UserCode/]SchieferD/Configuration V00-00-01
+
+2008-11-26  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-00-02
+	* tested with 30X tags on top of 220
+	* SchieferD/Configuration V00-00-00
+	* includes new algorithms ak5, ak7, ca4, ca6 for all reco types
+
+2008-07-30  Philipp SCHIEFERDECKER  <philipp.schieferdecker@cern.ch>
+
+	* tag V00-00-00
+	* first import into CVS
+

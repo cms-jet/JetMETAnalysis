@@ -1,0 +1,6 @@
+import FWCore.ParameterSet.Config as cms
+
+from PhysicsTools.JetMCAlgos.TauGenJetsDecayModeSelectorAllHadrons_cfi import tauGenJetsSelectorAllHadrons
+
+from RecoTauTag.Configuration.HPSPFTaus_cff import hpsPFTauProducer
+from RecoTauTag.Configuration.HPSTancTaus_cff import hpsTancTaus
