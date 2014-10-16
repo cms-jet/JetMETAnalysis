@@ -1,4 +1,4 @@
-<library   file="MatchRecToGen.cc,MatchRecToGenByCandidate.cc,MatchBackToBack.cc,JetViewCleaner.cc,EtaPtMinCandViewRefSelector.cc" name="JetMETAnalysisJetUtilitiesPlugins">
+<library   file="MatchRecToGen.cc,MatchBackToBack.cc,JetViewCleaner.cc,EtaPtMinCandViewRefSelector.cc" name="JetMETAnalysisJetUtilitiesPlugins">
   <flags   EDM_PLUGIN="1"/>
   <use   name="FWCore/Framework"/>
   <use   name="FWCore/PluginManager"/>
