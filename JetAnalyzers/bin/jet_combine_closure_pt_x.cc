@@ -76,7 +76,7 @@ int main(int argc,char**argv)
   cl.print();
 
   if (tdr) {
-     setStyle();
+     setTDRStyle();
   }
 
   vector<TFile*> infs;

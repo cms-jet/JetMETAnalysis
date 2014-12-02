@@ -127,6 +127,7 @@ int main(int argc,char**argv)
    double          ptrawmin          = cl.getValue<double>       ("ptrawmin",              0);
    double          etamax            = cl.getValue<double>       ("etamax",                0);
    double          dphimin           = cl.getValue<double>       ("dphimin",               0);
+   unsigned int    nrefmax           = cl.getValue<unsigned int> ("nrefmax",               0);
    unsigned int    evtmax            = cl.getValue<unsigned int> ("evtmax",                0);
    bool            printnpu          = cl.getValue<bool>         ("printnpu",          false);
    int             itlow             = cl.getValue<int>          ("itlow",                 0);
@@ -199,9 +200,9 @@ int main(int argc,char**argv)
       TFile *outf = new TFile(outputDir+"Closure_"+algs[a]+".root","RECREATE");
   
       int j,k;
-      unsigned int nrefmax = 2;
       unsigned char nref;
       char name[1024];
+      //char title[1024];
       float refpt[100];
       float refeta[100];
       float refphi[100];
@@ -511,7 +512,8 @@ int main(int argc,char**argv)
          rhoVsRhoHLT->Fill(rho_hlt,rho);
          npvVsRhoHLT->Fill(rho_hlt,npv);
 
-         for (unsigned char iref=0;iref<nrefmax;iref++) 
+         if(nrefmax>0 && nref>nrefmax) nref = nrefmax;
+         for (unsigned char iref=0;iref<nref;iref++) 
          {
             float ptgen  = refpt[iref];
             if (ptgen<ptgenmin) continue;
@@ -899,7 +901,7 @@ string getAlias(TString s)
    else if (s=="ak5pfchsl1")
       return "AK5PFchsl1";
    else if (s=="ak5pfchsl1l2l3")
-      return "AK5PFchsl1";
+      return "AK5PFchsl1l2l3";
    else if (s=="ak5pfchsl1off")
       return "AK5PFchsl1off";
    else if (s=="ak6pfchs")

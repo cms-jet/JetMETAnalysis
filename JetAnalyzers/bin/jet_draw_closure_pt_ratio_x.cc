@@ -77,7 +77,7 @@ int main(int argc,char**argv)
    cl.print();
 
    if (tdr) {
-      setStyle();
+      setTDRStyle();
    }
 
    bool algDiv = false;

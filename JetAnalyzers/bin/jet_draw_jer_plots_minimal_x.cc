@@ -55,14 +55,15 @@ int main(int argc,char**argv) {
   CommandLine cl;
   if (!cl.parse(argc,argv)) return 0;
 
-  TString    path          = cl.getValue<TString> ("path");
-  TString    odir          = cl.getValue<TString> ("odir",           "./");
-  string     seta          = cl.getValue<string>  ("seta",           "BB");
-  bool       chs           = cl.getValue<bool>    ("chs",           false);
-  const bool _noaeff       = cl.getValue<bool>    ("noaeff",         true);
-  bool       pfAndPfchs    = cl.getValue<bool>    ("pfAndPfchs",    false);
-  bool       minimalist    = cl.getValue<bool>    ("minimalist",    false);
-  bool       modifiedError = cl.getValue<bool>    ("modifiedError", false);
+  TString         path          = cl.getValue<TString>  ("path");
+  TString         odir          = cl.getValue<TString>  ("odir",            "./");
+  string          seta          = cl.getValue<string>   ("seta",            "BB");
+  bool            chs           = cl.getValue<bool>     ("chs",            false);
+  const bool      _noaeff       = cl.getValue<bool>     ("noaeff",          true);
+  bool            pfAndPfchs    = cl.getValue<bool>     ("pfAndPfchs",     false);
+  bool            minimalist    = cl.getValue<bool>     ("minimalist",     false);
+  bool            modifiedError = cl.getValue<bool>     ("modifiedError",  false);
+  vector<TString> outputFormats = cl.getVector<TString> ("outputFormats", ".pdf");
 
   if (!cl.check()) return 0;
   cl.print();
@@ -84,21 +85,21 @@ int main(int argc,char**argv) {
 
   TDirectory *curdir = gDirectory;
   
-  //setTDRStyle();
-  setStyle();
+  setTDRStyle();
   
   const int ncone = 9;
   double cones[ncone] = {0.2,0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
   
   //const int npu = 6;
   const int npu = 4;
+  const int npuWithNoPU = 5;
   //const double rhos[npu] = {3.8, 7.8, 12.4, 17.3, 22.2, 28.9};//27.1};
-  const double rhos[npu] = {8.794,15.47,24.12,32.11};
+  const double rhos[npuWithNoPU] = {8.794,15.47,24.12,32.11,0};
   //for minimalist plots
   const double rhoabins[] = {0,3,6,10,15,22,30,40,50,65,80,100};
   int nrhoabins = sizeof(rhoabins)/sizeof(rhoabins[0])-1;
   //const int jpus[npu] = {0, 1, 2, 3, 4, 5};
-  const int jpus[npu] = {0, 1, 2, 3};
+  const int jpus[npuWithNoPU] = {0, 1, 2, 3, 4};
   
   TGraphErrors *gallX = new TGraphErrors(0);
   TF1 *fall = new TF1("fall",jerfit,0,100.0*10000.0*100000.0,5);
@@ -198,6 +199,7 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
     h->Draw("AXIS");
 
     TLegend *leg1 = tdrLeg(0.5,0.6,0.8,0.9);
+    //TLegend *leg1 = tdrLeg(0.46,0.6,0.8,0.9);
     leg1->Draw();
     
     TF1 *f1 = new TF1(Form("f1_%s",a),
@@ -211,12 +213,14 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
 
     TGraphErrors *gall = new TGraphErrors(0);
     TGraphErrors *gallchs = new TGraphErrors(0);
+    //for (int ipu = 0; ipu != npuWithNoPU; ++ipu) {
     for (int ipu = 0; ipu != npu; ++ipu) {
 
       TDirectory *d1 = d;
       int jpu = jpus[ipu];
 
       //TH1D *hjer = (TH1D*)d1->Get(Form("ResolutionRhoRef_%s_%d",ceta,jpu));
+      //TH1D *hjer = (TH1D*)d1->Get(Form("ResolutionTnpuRef_%s_PU_NoPU_%d",ceta,jpu));
       TH1D *hjer = (TH1D*)d1->Get(Form("ResolutionTnpuRef_%s_%d",ceta,jpu));
       assert(hjer);
       curdir->cd();
@@ -265,6 +269,7 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
       else {
         hjerc->SetMarkerColor(kBlack);
         hjerc->SetLineColor(kBlack);
+        hjerc->SetMarkerStyle(kOpenCircle);
         //leg1->AddEntry(hjerc,"No PU (#LT#rho#GT=1 GeV)","PL");
         leg1->AddEntry(hjerc,"No PU (#LT#mu#GT=1 GeV)","PL");
       }
@@ -328,7 +333,10 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
     TLatex *tex = new TLatex();
     tex->SetNDC();
     tex->SetTextSize(0.045);
-    tex->DrawLatex(0.50,0.50,Form("PF, R=%1.1f, %s",cone,seta_expanded.Data()));
+    if(algs[ialg].first.Contains("chs"))
+      tex->DrawLatex(0.41,0.50,Form("PF+CHS, R=%1.1f, %s",cone,seta_expanded.Data()));
+    else
+      tex->DrawLatex(0.50,0.50,Form("PF, R=%1.1f, %s",cone,seta_expanded.Data()));
 
     TCanvas *c2 = new TCanvas(Form("c2_%s",a),Form("c2_%s",a),600,600);
     c2s[ialg] = c2;
@@ -427,7 +435,10 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
     }
 
     tex->SetTextSize(0.045);
-    tex->DrawLatex(0.60,0.85,Form("PF, R=%1.1f, %s",cone,seta_expanded.Data()));
+    if(algs[ialg].first.Contains("chs"))
+      tex->DrawLatex(0.51,0.85,Form("PF+CHS, R=%1.1f, %s",cone,seta_expanded.Data()));
+    else
+      tex->DrawLatex(0.60,0.85,Form("PF, R=%1.1f, %s",cone,seta_expanded.Data()));
 
     
     TCanvas *c3 = new TCanvas(Form("c3_%s",a),Form("c3_%s",a),600,600);
@@ -746,14 +757,16 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
 
     // Save with global fit drawn on top
     const char *a = algs[ialg].first.Data();
-    if (algs[ialg].first.Contains("chs")) {
-      c1->SaveAs(Form("%s/jerplots_%s_vsRho_CHS.pdf",odir.Data(),a));
-      c2->SaveAs(Form("%s/jerplots_%s_ParFits_CHS.pdf",odir.Data(),a));
+    for(unsigned int f=0; f<outputFormats.size(); f++) {
+      if (algs[ialg].first.Contains("chs")) {
+        c1->SaveAs(Form("%s/jerplots_%s_vsRho_CHS%s",odir.Data(),a,outputFormats[f].Data()));
+        c2->SaveAs(Form("%s/jerplots_%s_ParFits_CHS%s",odir.Data(),a,outputFormats[f].Data()));
+      }
+      else {
+        c1->SaveAs(Form("%s/jerplots_%s_vsRho%s",odir.Data(),a,outputFormats[f].Data()));
+        c2->SaveAs(Form("%s/jerplots_%s_ParFits%s",odir.Data(),a,outputFormats[f].Data()));
+      }    
     }
-    else {
-      c1->SaveAs(Form("%s/jerplots_%s_vsRho.pdf",odir.Data(),a));
-      c2->SaveAs(Form("%s/jerplots_%s_ParFits.pdf",odir.Data(),a));
-    }    
   } // for ialg (2nd)
 
   cout << "Etabin " << ceta << (chs ? " PFchs" : " plain PF") << endl;
@@ -767,9 +780,11 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
          fall->GetParameter(2), fall->GetParameter(3),
          fall->GetParameter(4)) << endl;
   
-  if(pfAndPfchs) c2a->SaveAs(odir+"/jerplots_ParFits_Combined.pdf");
-  else if  (chs) c2a->SaveAs(odir+"/jerplots_ParFits_CHS.pdf");
-  else           c2a->SaveAs(odir+"/jerplots_ParFits.pdf");
+  for(unsigned int f=0; f<outputFormats.size(); f++) {
+    if(pfAndPfchs) c2a->SaveAs(odir+"/jerplots_ParFits_Combined"+outputFormats[f]);
+    else if  (chs) c2a->SaveAs(odir+"/jerplots_ParFits_CHS"+outputFormats[f]);
+    else           c2a->SaveAs(odir+"/jerplots_ParFits"+outputFormats[f]);
+  }
 
   TFile* ofile;
   if(pfAndPfchs) ofile = new TFile(odir+"/jerplots_ParFits_Combined.root","RECREATE");

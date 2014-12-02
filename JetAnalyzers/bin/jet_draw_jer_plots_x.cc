@@ -65,8 +65,7 @@ int main(int argc,char**argv) {
 
   TDirectory *curdir = gDirectory;
   
-  //setTDRStyle();
-  setStyle();
+  setTDRStyle();
   
   //const int ncone = 1;
   //double cones[ncone] = {0.4};

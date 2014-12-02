@@ -164,7 +164,7 @@ void analyzeAlgo(TString algo, CommandLine & cl){
   }
 
   if (tdr) {
-     setStyle();
+     setTDRStyle();
   }
 
   if(outputDir.length() > 0 && outputDir[outputDir.length()-1] != '/') outputDir += "/";
@@ -211,7 +211,7 @@ void analyzeAllAlgs(vector<TString>& algs, vector<pair<FactorizedJetCorrector*,T
   TString         normAlg      = cl.getValue<TString>  ("normAlg",                 "");
 
   if (tdr) {
-     setStyle();
+     setTDRStyle();
   }
 
   if(algs.size()!=allJetCorrs.size()) {
@@ -367,7 +367,7 @@ TCanvas * getCorrectionVsEtaCanvasTDR(TString algo, FactorizedJetCorrector * jet
   //Create the canvas with multiple pads
   TString ss("CorrectionVsEta_Overview_TDR");
   ss += suffix;
-  TCanvas *ove = new TCanvas(ss,ss,1200,800);
+  TCanvas *ove = new TCanvas(ss,ss,800,800);
   ove->cd();
 
   // Create a legend for pt values
@@ -1117,7 +1117,7 @@ TString getAlgNameLong(TString algo, int coneSize) {
     else if(algo.Contains("10"))   algNameLong += " R=1.0";
   }
   if(coneSize<2) {
-    if(algo.Contains("pfchs"))     algNameLong += ", PFlow+CHS";
+    if(algo.Contains("pfchs"))     algNameLong += ", PF+CHS";
     //else if(algo.Contains("pf"))   algNameLong += ", PFlow";
     else if(algo.Contains("pf"))   algNameLong += ", Particle-Flow Jets";
     else if(algo.Contains("calo")) algNameLong += ", Calo";

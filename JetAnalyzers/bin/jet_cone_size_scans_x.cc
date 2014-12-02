@@ -120,7 +120,7 @@ int main(int argc,char**argv)
   cl.print();
 
   if (tdr) {
-     setStyle();
+     setTDRStyle();
   }
 
   int colDet[4] = {kGreen+3,kBlue+1,kYellow+2,kRed+1}; //bb,ei,eo,ff

@@ -73,7 +73,7 @@ int main(int argc,char**argv)
   cl.print();
 
   if (tdr) {
-     setStyle();
+     setTDRStyle();
   }
 
   for(unsigned int a=0; a<algs.size(); a++)
