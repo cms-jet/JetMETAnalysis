@@ -3,7 +3,7 @@
 
 const int NETA                        = 82;
 const int NETA_Half                   = 41;
-const int NETA_Coarse                 = 6;
+const int NETA_Coarse                 = 8;
 const int NETA_HLT                    = 78;
 //const int NPtBins                     = 37;
 const int NPtBins                     = 42;
@@ -28,7 +28,7 @@ const int NCorrectionLevels           = 7;
 const int NConeSizes                  = 10;
 const int NDetectorNames              = 4;
 const int NDetectorRegions            = 3;
-const int NPFcat                      = 6;
+const int NPFcat                      = 7;
 const int NPDGIDcat                   = 7;
 const int NHistogramTypes             = 12;
 
@@ -45,7 +45,7 @@ const char eta_boundaries[NETA+1][10] = {"-5.191","-4.889","-4.716","-4.538","-4
 "2.964",  "3.139", "3.314", "3.489", "3.664", "3.839", "4.013" ,"4.191", "4.363", "4.538",
 "4.716","4.889","5.191"};
 
-const char eta_boundaries_coarse[NETA_Coarse+1][10] = {"-5","-3","-1.3","0","1.3","3","5"};
+const char eta_boundaries_coarse[NETA_Coarse+1][10] = {"-5","-3","-2.5","-1.3","0","1.3","2.5","3","5"};
 
 const char eta_boundaries_HLT[NETA_HLT+1][10] = {"-5.191","-4.538","-4.363","-4.191","-4.013","-3.839","-3.664","-3.489",
 "-3.314", "-3.139","-2.964","-2.853","-2.65", "-2.5",  "-2.322","-2.172","-2.043","-1.93",
@@ -136,7 +136,10 @@ const int colDet[NDetectorNames] = {kGreen+3,kBlue+1,kYellow+2,kRed+1};
 
 const int colDetRegions[NDetectorRegions] = {kGreen+3,kBlue+1,kRed+1};
 
-const TString PFstr[NPFcat] = {"chf","nhf","nef","cef","hfhf","hfef"};
+//const TString PFstr[NPFcat] = {"chf","nhf","nef","cef","muf","hfhf","hfef"};
+const TString PFstr[NPFcat] = {"nef","cef","muf","nhf","hfhf","hfef","chf"};
+
+const TString PFstr_long[NPFcat] = {"photons","em deposits","em deposits","neutral hadrons","hadronic deposits","em deposits","charged hadrons"};
 
 const TString pdgidstr[NPDGIDcat] = {"nJ","qJ","cJ","bJ","gJ","aJ","aqJ"};
 
