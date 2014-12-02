@@ -46,6 +46,8 @@ public :
    UChar_t         nref;
    UChar_t         refrank[92];   //[nref]
    Int_t           refpdgid[92];   //[nref]
+   Int_t           refpdgid_algorithmicDef[92];   //[nref]
+   Int_t           refpdgid_physicsDef[92];   //[nref]
    Float_t         refe[92];   //[nref]
    Float_t         refpt[92];   //[nref]
    Float_t         refeta[92];   //[nref]
@@ -90,6 +92,8 @@ public :
    TBranch        *b_nref;   //!
    TBranch        *b_refrank;   //!
    TBranch        *b_refpdgid;   //!
+   TBranch        *b_refpdgid_algorithmicDef;   //!
+   TBranch        *b_refpdgid_physicsDef;   //!
    TBranch        *b_refe;   //!
    TBranch        *b_refpt;   //!
    TBranch        *b_refeta;   //!
@@ -224,6 +228,8 @@ void JRANtuple::MakeTree(TTree *tree)
    fChain->Branch("nref", &nref, "nref/b");
    fChain->Branch("refrank", refrank, "refrank[nref]/b");
    fChain->Branch("refpdgid", refpdgid, "refpdgid[nref]/I");
+   fChain->Branch("refpdgid_algorithmicDef", refpdgid_algorithmicDef, "refpdgid_algorithmicDef[nref]/I");
+   fChain->Branch("refpdgid_physicsDef", refpdgid_physicsDef, "refpdgid_physicsDef[nref]/I");
    fChain->Branch("refe", refe, "refe[nref]/F");
    fChain->Branch("refpt", refpt, "refpt[nref]/F");
    fChain->Branch("refeta", refeta, "refeta[nref]/F");
@@ -301,6 +307,8 @@ void JRANtuple::Init(TTree *tree)
    fChain->SetBranchAddress("nref", &nref, &b_nref);
    fChain->SetBranchAddress("refrank", refrank, &b_refrank);
    fChain->SetBranchAddress("refpdgid", refpdgid, &b_refpdgid);
+   fChain->SetBranchAddress("refpdgid_algorithmicDef", refpdgid_algorithmicDef, &b_refpdgid_algorithmicDef);
+   fChain->SetBranchAddress("refpdgid_physicsDef", refpdgid_physicsDef, &b_refpdgid_physicsDef);
    fChain->SetBranchAddress("refe", refe, &b_refe);
    fChain->SetBranchAddress("refpt", refpt, &b_refpt);
    fChain->SetBranchAddress("refeta", refeta, &b_refeta);

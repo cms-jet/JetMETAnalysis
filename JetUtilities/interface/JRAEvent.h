@@ -11,7 +11,7 @@ struct JRAEvent {
    int nref;
    float rho, rho50, rho_hlt, pthat, weight;
    long long npv, run, lumi, evt;
-   std::vector<int> npus, bxns, ntrks_lowpt, ntrks_highpt, nrefrank, refpdgid;
+   std::vector<int> npus, bxns, ntrks_lowpt, ntrks_highpt, nrefrank, refpdgid, refpdgid_algorithmicDef, refpdgid_physicsDef;
    std::vector<float> tnpus, sumpt_lowpt, sumpt_highpt, refe, refpt, refeta, refphi, refy, refdrjt, refdphijt, refarea, jte, jtpt, jteta, jtphi, jty, jtjec, jtarea, jtemf, jtchf, jtnhf, jtnef, jtcef, jtmuf, jthfhf, jthfef;
 };
 
