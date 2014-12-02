@@ -131,6 +131,8 @@ private:
   UChar_t       nref_;
   UChar_t       refrank_[100];
   Int_t         refpdgid_[100];
+  Int_t         refpdgid_algorithmicDef_[100];
+  Int_t         refpdgid_physicsDef_[100];
   Float_t       refe_[100];
   Float_t       refpt_[100];
   Float_t       refeta_[100];
@@ -265,7 +267,11 @@ void JetResponseAnalyzer::beginJob()
 
   tree_->Branch("nref",  &nref_,   "nref/b");
   tree_->Branch("refrank",refrank_,"refrank[nref]/b");
-  if (doFlavor_) tree_->Branch("refpdgid",refpdgid_,"refpdgid[nref]/I");
+  if (doFlavor_) {
+     tree_->Branch("refpdgid",refpdgid_,"refpdgid[nref]/I");
+     tree_->Branch("refpdgid_algorithmicDef",refpdgid_algorithmicDef_,"refpdgid_algorithmicDef[nref]/I");
+     tree_->Branch("refpdgid_physicsDef",refpdgid_physicsDef_,"refpdgid_physicsDef[nref]/I");
+  }
   tree_->Branch("refe",   refe_,   "refe[nref]/F");
   tree_->Branch("refpt",  refpt_,  "refpt[nref]/F");
   tree_->Branch("refeta", refeta_, "refeta[nref]/F");
@@ -426,6 +432,8 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
          (doBalancing_&&std::abs(refdphijt_[nref_])<deltaPhiMin_)) continue;
      
      refpdgid_[nref_]=0;
+     refpdgid_algorithmicDef_[nref_]=0;
+     refpdgid_physicsDef_[nref_]=0;
      if (getFlavorFromMap_) {
         reco::JetMatchedPartonsCollection::const_iterator itPartonMatch;
         itPartonMatch=refToPartonMap->begin();
@@ -437,29 +445,47 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
         }
         
         if (itPartonMatch!=refToPartonMap->end()&&
-            itPartonMatch->second.algoDefinitionParton().get()!=0) {
+            itPartonMatch->second.algoDefinitionParton().get()!=0&&
+            itPartonMatch->second.physicsDefinitionParton().get()!=0) {
            
-           double refdrparton=
+           double refdrparton_algo=
               reco::deltaR(ref->p4(),
                            itPartonMatch->second.algoDefinitionParton().get()->p4());
+           double refdrparton_physics=
+              reco::deltaR(ref->p4(),
+                           itPartonMatch->second.physicsDefinitionParton().get()->p4());
            
-           if (refdrparton<deltaRPartonMax_) {
-              refpdgid_[nref_]=itPartonMatch->second.algoDefinitionParton().get()->pdgId();
-              int absid = std::abs(refpdgid_[nref_]);
+           if (refdrparton_algo<deltaRPartonMax_) {
+              refpdgid_algorithmicDef_[nref_]=itPartonMatch->second.algoDefinitionParton().get()->pdgId();
+              int absid = std::abs(refpdgid_algorithmicDef_[nref_]);
               if (absid==4||absid==5) {
                  GenJetLeptonFinder finder(*ref);
                  finder.run();
                  if (finder.foundLeptonAndNeutrino()) {
-                    int sign  = (refpdgid_[nref_]>0) ? +1 : -1;
-                    refpdgid_[nref_] = sign*(absid*100+std::abs(finder.leptonPdgId()));
+                    int sign  = (refpdgid_algorithmicDef_[nref_]>0) ? +1 : -1;
+                    refpdgid_algorithmicDef_[nref_] = sign*(absid*100+std::abs(finder.leptonPdgId()));
+                 }
+              }
+           }
+           if (refdrparton_physics<deltaRPartonMax_) {
+              refpdgid_physicsDef_[nref_]=itPartonMatch->second.physicsDefinitionParton().get()->pdgId();
+              int absid = std::abs(refpdgid_physicsDef_[nref_]);
+              if (absid==4||absid==5) {
+                 GenJetLeptonFinder finder(*ref);
+                 finder.run();
+                 if (finder.foundLeptonAndNeutrino()) {
+                    int sign  = (refpdgid_physicsDef_[nref_]>0) ? +1 : -1;
+                    refpdgid_physicsDef_[nref_] = sign*(absid*100+std::abs(finder.leptonPdgId()));
                  }
               }
            }
         }
      }
      else {
-        refpdgid_[nref_]=ref->pdgId();
+        refpdgid_algorithmicDef_[nref_]=0;
+        refpdgid_physicsDef_[nref_]=0;
      }
+     refpdgid_[nref_]=ref->pdgId();
 
      // Beta/Beta Star Calculation
      beta_ = 0.0;

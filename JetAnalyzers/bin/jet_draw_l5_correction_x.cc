@@ -87,7 +87,7 @@ int main(int argc,char**argv)
    // set style to tdr style if necessary
    //
    if (tdr) {
-      setStyle();
+      setTDRStyle();
       gStyle->SetOptFit(0);
    }
 
@@ -122,9 +122,9 @@ int main(int argc,char**argv)
       else if(TString(algs[a]).Contains("5"))    algNameLong += " R=0.5";
       else if(TString(algs[a]).Contains("6"))    algNameLong += " R=0.6";
       else if(TString(algs[a]).Contains("7"))    algNameLong += " R=0.7";
-      if(TString(algs[a]).Contains("pfchs"))     algNameLong += ", PFlow+CHS";
+      if(TString(algs[a]).Contains("pfchs"))     algNameLong += ", PF+CHS";
       //else if(TString(algs[a]).Contains("pf"))   algNameLong += ", PFlow";
-      else if(TString(algs[a]).Contains("pf"))   algNameLong += ", Particle-Flow Jets";
+      else if(TString(algs[a]).Contains("pf"))   algNameLong += ", PF";
       else if(TString(algs[a]).Contains("calo")) algNameLong += ", Calo";
       else if(TString(algs[a]).Contains("jpt"))  algNameLong += ", JPT";
 
@@ -134,14 +134,14 @@ int main(int argc,char**argv)
       for(int i=0; i<NETA_Coarse; i++)
       {
          cout << "\tDoing eta bin " << eta_boundaries_coarse[i] << " to " << eta_boundaries_coarse[i+1] << endl;
-         if(i%6 == 0)
+         if(i%8 == 0)
          {
-            cans.push_back(new TCanvas(concatString("can_",i/6).c_str(),concatString("can_",i/6).c_str(),1200,900));
-            cans.back()->Divide(3,2);
+            cans.push_back(new TCanvas(concatString("can_",i/8).c_str(),concatString("can_",i/8).c_str(),1600,900));
+            cans.back()->Divide(4,2);
          }
-         cans.back()->cd((i%6)+1)->SetLogx();
+         cans.back()->cd((i%8)+1)->SetLogx();
 
-         legs.push_back(new TLegend(0.70,0.7,0.88,0.88));
+         legs.push_back(new TLegend(0.8,0.15,0.97,0.4));
          legs.back()->SetTextSize(0.05);
          legs.back()->SetBorderSize(0);
          legs.back()->SetFillColor(0);
@@ -244,31 +244,32 @@ int main(int argc,char**argv)
                if(j%flavors.size() == 0)
                {
                   if (tdr) {
+                     graphs.back()->Draw("AP");
                      graphs.back()->GetXaxis()->SetTitle("Corrected Jet p_{T} (GeV)");
                      graphs.back()->GetXaxis()->SetTitleOffset(1.1);
                      graphs.back()->GetXaxis()->SetTitleSize(0.055);
                      graphs.back()->GetXaxis()->SetLabelSize(0.045);
                      graphs.back()->GetXaxis()->SetNoExponent();
                      graphs.back()->GetXaxis()->SetMoreLogLabels();
-                     graphs.back()->GetYaxis()->SetRangeUser(20,1800);
+                     //graphs.back()->GetXaxis()->SetRangeUser(20,2500);
+                     graphs.back()->GetXaxis()->SetLimits(20.,2500.);
                      graphs.back()->GetYaxis()->SetTitle("Jet Flavor Correction");
                      graphs.back()->GetYaxis()->SetTitleOffset(1.3);
                      graphs.back()->GetYaxis()->SetTitleSize(0.055);
                      graphs.back()->GetYaxis()->SetLabelSize(0.045);
                      graphs.back()->GetYaxis()->SetRangeUser(0.95,1.05);
                      graphs.back()->SetMarkerStyle(7);
-                     graphs.back()->GetFunction("fit")->SetLineColor(j+1);
-                     graphs.back()->Draw("AP");
+                     graphs.back()->GetFunction("fit")->SetLineColor(j+1);                     
                   }
                   else {
-                     //cans.back()->cd((i%6)+1)->SetLogx();
+                     //cans.back()->cd((i%8)+1)->SetLogx();
                      graphs.back()->GetXaxis()->SetTitle("p_{T}^{Corr l1l2l3} (GeV)");
                      graphs.back()->GetXaxis()->SetTitleOffset(1.1);
                      graphs.back()->GetXaxis()->SetLabelSize(0.035);
                      graphs.back()->GetYaxis()->SetTitle("L5 Correction");
                      graphs.back()->GetYaxis()->SetTitleOffset(1.3);
                      graphs.back()->GetYaxis()->SetLabelSize(0.035);
-                     graphs.back()->GetYaxis()->SetRangeUser(0.94,1.1);
+                     graphs.back()->GetYaxis()->SetRangeUser(0.9,1.1);
                      graphs.back()->SetMarkerStyle(7);
                      graphs.back()->GetFunction("fit")->SetLineColor(j+1);
                      graphs.back()->Draw("AP");
@@ -283,7 +284,7 @@ int main(int argc,char**argv)
                      graphs.back()->SetMarkerColor(kYellow+2);
                   graphs.back()->SetMarkerColor(j+1);
                   graphs.back()->GetFunction("fit")->SetLineColor(j+1);
-                  graphs.back()->Draw("P");
+                  graphs.back()->Draw("P SAME");
                }
                graphs.back()->SetTitle(graphName);
                legs.back()->AddEntry(graphs.back(),flavors[j],"lep");
@@ -293,12 +294,12 @@ int main(int argc,char**argv)
          legs.back()->SetFillColor(0);
          legs.back()->Draw();
          if (tdr) {
-            //paves.push_back(new TPaveText(0.2,0.72,0.65,0.9,"NDC"));
-            paves.push_back(new TPaveText(0.23,0.72,0.68,0.9,"NDC"));
+            paves.push_back(new TPaveText(0.50,0.8,0.95,0.92,"NDC"));
+            //paves.push_back(new TPaveText(0.23,0.72,0.68,0.9,"NDC"));
             paves.back()->AddText("QCD Monte Carlo");
             TString eta = Form("%s < #eta < %s",eta_boundaries_coarse[i],eta_boundaries_coarse[i+1]);
-            paves.back()->AddText("|#eta| < 1.3");
-            //paves.back()->AddText(eta);
+            //paves.back()->AddText("|#eta| < 1.3");
+            paves.back()->AddText(eta);
             paves.back()->AddText(algNameLong);
             paves.back()->SetFillColor(0);
             paves.back()->SetBorderSize(0);
@@ -388,5 +389,5 @@ void cmsPrelim(double intLUMI)
   }
   latex.SetTextAlign(11); // align left
   //latex.DrawLatex(0.16,0.96,"CMS preliminary");// 2012");
-  latex.DrawLatex(0.16,0.96,"CMS Simulation Preliminary");// 2012");
+  latex.DrawLatex(0.16,0.96,"CMS Preliminary");// 2012");
 }

@@ -132,6 +132,7 @@ int main(int argc,char**argv)
   float          etaforwardmax     = cl.getValue<float>  ("etaforwardmax",            +5.0);
   bool           dobalance         = cl.getValue<bool>   ("dobalance",               false);
   bool           doflavor          = cl.getValue<bool>   ("doflavor",                false);
+  TString        flavorDefinition  = cl.getValue<TString>("flavorDefinition",       "algo");
   bool           noabsflavors      = cl.getValue<bool>   ("noabsflavors",            false);
   float          drmax             = cl.getValue<float>  ("drmax",                     0.3);
   float          dphimin           = cl.getValue<float>  ("dphimin",                   2.7);
@@ -285,7 +286,15 @@ int main(int argc,char**argv)
     vector<float>* tnpus = new vector<float>;
     
     tree->SetBranchAddress("nref",   &nref);
-    if (doflavor) tree->SetBranchAddress("refpdgid",refpdgid);
+    if (doflavor) {
+       flavorDefinition.ToUpper();
+       if(flavorDefinition.CompareTo("ALGO")==0)
+          tree->SetBranchAddress("refpdgid_algorithmicDef",refpdgid);
+       else if(flavorDefinition.CompareTo("PHYS")==0)
+          tree->SetBranchAddress("refpdgid_physicsDef",refpdgid);
+       else
+          tree->SetBranchAddress("refpdgid",refpdgid);
+    }
     tree->SetBranchAddress("refpt",   refpt);
     tree->SetBranchAddress("refeta",  refeta);
     tree->SetBranchAddress("refphi",  refphi);
@@ -1507,16 +1516,21 @@ vector<string> get_flavors(bool noabsflavors)
    vector<string> flavor;
    flavor.push_back("");
    if (!noabsflavors) {
-      flavor.push_back("uds_");
+      flavor.push_back("ud_");
+      flavor.push_back("s_");
       flavor.push_back("c_");
       flavor.push_back("b_");
       flavor.push_back("g_");
       flavor.push_back("slc_");
       flavor.push_back("slb_");
+      flavor.push_back("q_");
+      flavor.push_back("uds_");
    }
    else {
-      flavor.push_back("uds_");
-      flavor.push_back("udsbar_");
+      flavor.push_back("ud_");
+      flavor.push_back("udbar_");
+      flavor.push_back("s_");
+      flavor.push_back("sbar_");
       flavor.push_back("c_");
       flavor.push_back("cbar_");
       flavor.push_back("b_");
@@ -1533,10 +1547,14 @@ vector<string> get_flavors(bool noabsflavors)
 //______________________________________________________________________________
 TString pdgid_to_flavor_name(int pdgid)
 {
-   if(pdgid<=3 && pdgid>=1)
-      return "uds_";
-   else if(pdgid>=-3 && pdgid<=-1)
-      return "udsbar_";
+   if(pdgid<=2 && pdgid>=1)
+      return "ud_";
+   else if(pdgid>=-2 && pdgid<=-1)
+      return "udbar_";
+   else if(pdgid==3)
+      return "s_";
+   else if(pdgid==-3)
+      return "sbar_";
    else if(pdgid==4)
       return "c_";
    else if(pdgid==-4)
@@ -1575,40 +1593,45 @@ void fill_histo(int pdgid,float value,float weight,float x,const vector<float>& 
   int iflv(-1);
   if(noabsflavors)
     {
-      if (pdgid>=1&&pdgid<=3)        iflv=1;
-      else if (pdgid<=-1&&pdgid>=-3) iflv=2;
-      else if (pdgid==4)             iflv=3;
-      else if (pdgid==-4)            iflv=4;
-      else if (pdgid==5)             iflv=5;
-      else if (pdgid==-5)            iflv=6;
-      else if (abspdgid==21)         iflv=7;
+      if (pdgid>=1&&pdgid<=2)        iflv=1;
+      else if (pdgid<=-1&&pdgid>=-2) iflv=2;
+      else if (pdgid==3)             iflv=3;
+      else if (pdgid==-3)            iflv=4;
+      else if (pdgid==4)             iflv=5;
+      else if (pdgid==-4)            iflv=6;
+      else if (pdgid==5)             iflv=7;
+      else if (pdgid==-5)            iflv=8;
+      else if (abspdgid==21)         iflv=9;
       else if (abspdgid==411||
-               abspdgid==413)        iflv=8;
+               abspdgid==413)        iflv=10;
       else if (abspdgid==511||
-               abspdgid==513)        iflv=9;
+               abspdgid==513)        iflv=11;
       else return;
       
       int ix=get_index(x,binsx);
       if (ix>=0)
         {
           histos[ix][iflv]->Fill(value,weight);
-          if((abspdgid>=1&&abspdgid<=5)||abspdgid==21)histos[ix][10]->Fill(value,weight);
+          if((abspdgid>=1&&abspdgid<=5)||abspdgid==21)histos[ix][12]->Fill(value,weight);
         }
     }
   else
     {
-      if (abspdgid>=1&&abspdgid<=3) iflv=1;
-      else if (abspdgid== 4)        iflv=2;
-      else if (abspdgid== 5)        iflv=3;
-      else if (abspdgid==21)        iflv=4;
+      if (abspdgid>=1&&abspdgid<=2) iflv=1;
+      else if (abspdgid== 3)        iflv=2;
+      else if (abspdgid== 4)        iflv=3;
+      else if (abspdgid== 5)        iflv=4;
+      else if (abspdgid==21)        iflv=5;
       else if (abspdgid==411||
-               abspdgid==413)       iflv=5;
+               abspdgid==413)       iflv=6;
       else if (abspdgid==511||
-               abspdgid==513)       iflv=6;
+               abspdgid==513)       iflv=7;
       else return;
       
       int ix=get_index(x,binsx);
       if (ix>=0) histos[ix][iflv]->Fill(value,weight);
+      if (ix>=0 && abspdgid>0 && abspdgid<=5) histos[ix][8]->Fill(value,weight);
+      if (ix>=0 && abspdgid>0 && abspdgid<=3) histos[ix][9]->Fill(value,weight);
     }
 }
 
@@ -1635,17 +1658,19 @@ void fill_histo(int pdgid,float value,float weight,float x,float y,
   int iflv(-1);
   if (noabsflavors)
     {
-      if (pdgid>=1&&pdgid<=3)        iflv=1;
-      else if (pdgid<=-1&&pdgid>=-3) iflv=2;
-      else if (pdgid==4)             iflv=3;
-      else if (pdgid==-4)            iflv=4;
-      else if (pdgid==5)             iflv=5;
-      else if (pdgid==-5)            iflv=6;
-      else if (abspdgid==21)         iflv=7;
+      if (pdgid>=1&&pdgid<=2)        iflv=1;
+      else if (pdgid<=-1&&pdgid>=-2) iflv=2;
+      else if (pdgid==3)             iflv=3;
+      else if (pdgid==-3)            iflv=4;
+      else if (pdgid==4)             iflv=5;
+      else if (pdgid==-4)            iflv=6;
+      else if (pdgid==5)             iflv=7;
+      else if (pdgid==-5)            iflv=8;
+      else if (abspdgid==21)         iflv=9;
       else if (abspdgid==411||
-               abspdgid==413)        iflv=8;
+               abspdgid==413)        iflv=10;
       else if (abspdgid==511||
-               abspdgid==513)        iflv=9;
+               abspdgid==513)        iflv=11;
       else return;
       
       int ix=get_index(x,binsx);
@@ -1653,24 +1678,27 @@ void fill_histo(int pdgid,float value,float weight,float x,float y,
       if (ix>=0&&iy>=0) 
         {
           histos[ix][iy][iflv]->Fill(value,weight);
-          if((abspdgid>=1&&abspdgid<=5)||abspdgid==21)histos[ix][iy][10]->Fill(value,weight);
+          if((abspdgid>=1&&abspdgid<=5)||abspdgid==21)histos[ix][iy][12]->Fill(value,weight);
         }
     }
   else
     {
-      if (abspdgid>=1&&abspdgid<=3) iflv=1;
-      else if (abspdgid== 4)        iflv=2;
-      else if (abspdgid== 5)        iflv=3;
-      else if (abspdgid==21)        iflv=4;
+      if (abspdgid>=1&&abspdgid<=2) iflv=1;
+      else if (abspdgid== 3)        iflv=2;
+      else if (abspdgid== 4)        iflv=3;
+      else if (abspdgid== 5)        iflv=4;
+      else if (abspdgid==21)        iflv=5;
       else if (abspdgid==411||
-               abspdgid==413)       iflv=5;
+               abspdgid==413)       iflv=6;
       else if (abspdgid==511||
-               abspdgid==513)       iflv=6;
+               abspdgid==513)       iflv=7;
       else return;
       
       int ix=get_index(x,binsx);
       int iy=get_index(y,binsy);
       if (ix>=0&&iy>=0) histos[ix][iy][iflv]->Fill(value,weight);
+      if (ix>=0&&iy>=0 && abspdgid>0 && abspdgid<=5) histos[ix][iy][8]->Fill(value,weight);
+      if (ix>=0&&iy>=0 && abspdgid>0 && abspdgid<=3) histos[ix][iy][9]->Fill(value,weight);
     }
 }
 

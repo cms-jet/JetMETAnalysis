@@ -481,6 +481,7 @@ string get_algorithm_suffix(const string& alg)
    else if (alg.find("jptl1off")   ==3) result += "JPTl1off";
    else if (alg.find("jptl1")      ==3) result += "JPTl1";
    else if (alg.find("jpt")        ==3) result += "JPT";
+   else if (alg.find("pfchsl1l2l3")==3) result += "PFchsl1l2l3";
    else if (alg.find("pfchsl1off") ==3) result += "PFchsl1off";
    else if (alg.find("pfchsl1")    ==3) result += "PFchsl1";
    else if (alg.find("pfchs")      ==3) result += "PFchs";
@@ -674,10 +675,13 @@ void perform_correction_fits(vector<TGraphErrors*>& vabsrsp_eta, vector<TGraphEr
 TString get_flavor_name(TString flavor)
 {
    TString result;
-   if      (flavor.CompareTo("uds")==0)   result = "qJ";
+   if      (flavor.CompareTo("ud")==0)    result = "udJ";
+   else if (flavor.CompareTo("s")==0)     result = "sJ";
+   else if (flavor.CompareTo("uds")==0)   result = "udsJ";
    else if (flavor.CompareTo("c")==0)     result = "cJ";
    else if (flavor.CompareTo("b")==0)     result = "bJ";
    else if (flavor.CompareTo("g")==0)     result = "gJ";
+   else if (flavor.CompareTo("q")==0)     result = "qJ";
    else if (flavor.CompareTo("slc")==0)   result = "slcJ";
    else if (flavor.CompareTo("slb")==0)   result = "slbJ";
    else if (flavor.CompareTo("all")==0)   result = "aJ";
