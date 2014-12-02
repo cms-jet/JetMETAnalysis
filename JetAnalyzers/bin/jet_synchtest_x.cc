@@ -56,6 +56,7 @@ public:
    void OpenOutputFile(TString outputPath = "./");
    void SetJEC(TString JECPar = "parameters_ak5pf.txt");
    void SetNpvRhoNpuValues(int NBins, int Width) {NBinsNpvRhoNpu=NBins; npvRhoNpuBinWidth=Width;}
+   void SetVptBins(vector<int> vptb) {vptBins = vptb;}
    void DeclareHistograms();
    void LoopOverEvents();
    void FillJetMap();
@@ -98,6 +99,7 @@ private:
    int nevs;
    int NBinsNpvRhoNpu;
    int npvRhoNpuBinWidth;
+   vector<int> vptBins;
 
    //Debug
    bool iftest;
@@ -144,7 +146,7 @@ void MatchEventsAndJets::getMaxDeltaR() {
    cout << "algo1.alias: " << algo1JetInfo.alias << endl;
    cout << "algo1.jettype: " << algo1JetInfo.jetType << endl;
    double minConeSize = min(algo1JetInfo.coneSize,algo2JetInfo.coneSize)/20.0;
-   cout << "minConeSize: " << minConeSize << endl;
+   cout << "0.5 * minConeSize: " << minConeSize << endl;
    maxDeltaR = min(0.25,minConeSize);
    cout << "maxDeltaR: " << maxDeltaR << endl;
 }
@@ -402,6 +404,10 @@ void MatchEventsAndJets::DeclareHistograms() {
    histograms["p_offOverA_etaVsTnpusVsJetPt"] = new TProfile3D("p_offOverA_etaVsTnpusVsJetPt","p_offOverA_etaVsTnpusVsJetPt;#eta_{j};tnpu;p_{T}^{gen};OffsetOverAre",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
    histograms["p_PtAve_etaVsTnpusVsJetPt"]    = new TProfile3D("p_PtAve_etaVsTnpusVsJetPt","p_PtAve_etaVsTnpusVsJetPt;#eta_{j};Tnpus;p_{T}^{gen};PtAve",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
    histograms["p_RhoAve_etaVsTnpusVsJetPt"]   = new TProfile3D("p_RhoAve_etaVsTnpusVsJetPt","p_RhoAve_etaVsTnpusVsJetPt;#eta_{j};Tnpus;p_{T}^{gen};PtAve",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
+   histograms["p_offOverA_etaVsNpusVsJetPt"] = new TProfile3D("p_offOverA_etaVsNpusVsJetPt","p_offOverA_etaVsNpusVsJetPt;#eta_{j};npu;p_{T}^{gen};OffsetOverAre",NETA,veta,NNPU,vnpu,NPtBins,vpt);
+   histograms["p_PtAve_etaVsNpusVsJetPt"]    = new TProfile3D("p_PtAve_etaVsNpusVsJetPt","p_PtAve_etaVsNpusVsJetPt;#eta_{j};Npus;p_{T}^{gen};PtAve",NETA,veta,NNPU,vnpu,NPtBins,vpt);
+   histograms["p_RhoAve_etaVsNpusVsJetPt"]   = new TProfile3D("p_RhoAve_etaVsNpusVsJetPt","p_RhoAve_etaVsNpusVsJetPt;#eta_{j};Npus;p_{T}^{gen};PtAve",NETA,veta,NNPU,vnpu,NPtBins,vpt);
+   histograms["p_RhoAve_etaVsRhoVsJetPt"]   = new TProfile3D("p_RhoAve_etaVsRhoVsJetPt","p_RhoAve_etaVsRhoVsJetPt;#eta_{j};Rho;p_{T}^{gen};RhoAve",NETA,veta,NRHO,vrho,NPtBins,vpt);
    histograms["p_offOverA_etaVsRhoVsJetPt"]   = new TProfile3D("p_offOverA_etaVsRhoVsJetPt","p_offOverA_etaVsRhoVsJetPt;#eta_{j};Rho;p_{T}^{gen};OffsetOverAre",NETA,veta,NRHO,vrho,NPtBins,vpt);
    histograms["p_offOverA_etaVsNPVVsJetPt"]   = new TProfile3D("p_offOverA_etaVsNPVVsJetPt","p_offOverA_etaVsNPVVsJetPt;#eta_{j};NPV;p_{T}^{gen};OffsetOverAre",NETA,veta,NRHO,vrho,NPtBins,vpt);
    histograms["p_offOverA_etaVsN_RVsJetPt"]   = new TProfile3D("p_offOverA_etaVsN_RVsJetPt","p_offOverA_etaVsN_RVsJetPt;#eta_{j};(NPV+Rho)/2;p_{T}^{gen};OffsetOverAre",NETA,veta,NRHO,vrho,NPtBins,vpt);
@@ -501,6 +507,11 @@ void MatchEventsAndJets::DeclareHistograms() {
          hname = Form("p_resVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
          histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}^{pu}-p_{T}^{nopu};",NPtBins,vpt,100,0,5);
     }//npv or rho
+
+    for (int ipt=0;ipt<NPtBins;ipt++) {
+       hname = Form("p_resVsnpu_%s_pt%.1f_%.1f",detectorAbbreviation.Data(),vpt[ipt],vpt[ipt+1]);
+       histograms[hname] = new TH2D(hname,hname+";N_{PU}; p_{T}^{pu}-p_{T}^{nopu};",40,0,200,100,0,5);
+    }//pt
 
     //0, 1-3, 4, 5, 21, all, quarks
     for (int ipdgid=0;ipdgid<NPDGIDcat;ipdgid++) {
@@ -628,6 +639,9 @@ bool MatchEventsAndJets::FillHistograms() {
   int itnpu      = JetInfo::getBinIndex(tpu->tnpus->at(iIT),NBinsNpvRhoNpu,npvRhoNpuBinWidth);
   int itnpu_low  = itnpu*npvRhoNpuBinWidth;
   int itnpu_high = itnpu*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
+  //int inpu       = JetInfo::getBinIndex(tpu->npus->at(iIT),NBinsNpvRhoNpu,npvRhoNpuBinWidth);
+  //int inpu_low   = inpu*npvRhoNpuBinWidth;
+  //int inpu_high  = inpu*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
   TString hname = "";
     
   //
@@ -816,7 +830,11 @@ bool MatchEventsAndJets::FillHistograms() {
     dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsTnpusVsJetPt"])->Fill(tpu->jteta[jpu],tpu->tnpus->at(iIT),tpu->refpt[jpu],offsetOA);
     dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsTnpusVsJetPt"])   ->Fill(tpu->jteta[jpu],tpu->tnpus->at(iIT),tpu->refpt[jpu],tpu->jtpt[jpu]);
     dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsTnpusVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->tnpus->at(iIT),tpu->refpt[jpu],tpu->rho);
+    dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNpusVsJetPt"])->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],offsetOA);
+    dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNpusVsJetPt"])   ->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],tpu->jtpt[jpu]);
+    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNpusVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],tpu->rho);
     dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->rho,tpu->refpt[jpu],offsetOA);
+    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->rho,tpu->refpt[jpu],tpu->rho);
     dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsRhoVsJetPt"])     ->Fill(tpu->jteta[jpu],tpu->rho,tpu->refpt[jpu],tpu->jtpt[jpu]);
     dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNPVVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->npv,tpu->refpt[jpu],offsetOA);
     dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNPVVsJetPt"])     ->Fill(tpu->jteta[jpu],tpu->npv,tpu->refpt[jpu],tpu->jtpt[jpu]);
@@ -867,6 +885,11 @@ bool MatchEventsAndJets::FillHistograms() {
     histograms[hname]->Fill(tpu->refpt[jpu],resp);
     hname = Form("p_resVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),itnpu_low,itnpu_high);
     histograms[hname]->Fill(tpu->refpt[jpu],resp);
+    hname = Form("p_resVsnpu_%s_pt%.1f_%.1f",detectorAbbreviation.Data(),
+                 vpt[JetInfo::getBinIndex(tpu->refpt[jpu],vpt,NPtBins)],vpt[JetInfo::getBinIndex(tpu->refpt[jpu],vpt,NPtBins)+1]);
+    if(tpu->refpt[jpu]>10.0) {
+       histograms[hname]->Fill(tpu->npus->at(iIT),resp);
+    }
     hname = Form("p_offresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
     histograms[hname]->Fill(tpu->refpt[jpu],offset);
     hname = Form("p_offresOrefptVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
@@ -979,7 +1002,8 @@ int main(int argc,char**argv)
    TString treeName          = cl.getValue<TString> ("treeName",                                "t");
    int     npvRhoNpuBinWidth = cl.getValue<int>     ("npvRhoNpuBinWidth",                         5);
    int     NBinsNpvRhoNpu    = cl.getValue<int>     ("NBinsNpvRhoNpu",                            6);
-  
+   vector<int> vptBins           = cl.getVector<int>    ("vptBins",       "14:::18:::20:::24:::28:::30");  
+
    if (!cl.check()) return 0;
    cl.print();
 
@@ -999,6 +1023,7 @@ int main(int argc,char**argv)
       cout << "DONE" << endl;
    }
    mej->SetNpvRhoNpuValues(NBinsNpvRhoNpu,npvRhoNpuBinWidth);
+   mej->SetVptBins(vptBins);
    mej->DeclareHistograms();
    mej->LoopOverEvents();
    mej->WriteOutput();
