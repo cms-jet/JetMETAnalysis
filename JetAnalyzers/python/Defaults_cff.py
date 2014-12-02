@@ -29,7 +29,7 @@ JetResponseParameters = cms.PSet(
     doRefPt         = cms.bool(True),
     doJetPt         = cms.bool(True),
     # MATCHING MODE: deltaR(ref,jet)
-    deltaRMax       = cms.double(99.9),
+    deltaRMax       = cms.double(0.25),
     # deltaR(ref,parton) IF doFlavor is True
     deltaRPartonMax = cms.double(0.25),
     # consider all matched references
