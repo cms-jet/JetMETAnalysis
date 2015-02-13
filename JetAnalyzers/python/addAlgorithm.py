@@ -751,18 +751,18 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         jra.srcRho = ak4CaloL1Fastjet.srcRho #added 10/14/2011
         jra.srcRho50 = cms.InputTag('kt6CaloJets50','rho')
     elif type == 'PFchs':
-        jra.srcRho = ak5PFchsL1Fastjet.srcRho #added 10/14/2011
+        jra.srcRho = ak4PFchsL1Fastjet.srcRho #added 10/14/2011
         jra.srcRho50 = cms.InputTag('kt6PFJets50','rho')
     elif type == 'PFHLT':
-        jra.srcRho = ak5PFL1Fastjet.srcRho #added 02/15/2012
+        jra.srcRho = ak4PFL1Fastjet.srcRho #added 02/15/2012
         jra.srcRho50 = cms.InputTag('kt6PFJets50','rho')
         jra.srcRhoHLT = ak5PFHLTL1Fastjet.srcRho
     elif type == 'PFchsHLT':
-        jra.srcRho = ak5PFchsL1Fastjet.srcRho #added 02/15/2012
+        jra.srcRho = ak4PFchsL1Fastjet.srcRho #added 02/15/2012
         jra.srcRho50 = cms.InputTag('kt6PFJets50','rho')
         jra.srcRhoHLT = ak5PFchsHLTL1Fastjet.srcRho
     elif type == 'PF':
-        jra.srcRho = ak5PFL1Fastjet.srcRho #added 10/14/2011
+        jra.srcRho = ak4PFL1Fastjet.srcRho #added 10/14/2011
         jra.srcRho50 = cms.InputTag('kt6PFJets50','rho')
     elif type == 'JPT':
         jra.srcRho = ak4CaloL1Fastjet.srcRho
