@@ -472,7 +472,7 @@ TCanvas * getCanvasResponseResolution(TString cname, TString algo, TString title
       leg->AddEntry(hh[det],detector_names[det],"lep");
    }
    leg->Draw();
-   cmsPrelim();
+   cmsPrel(13,0);
    gPad->RedrawAxis();
 
    return c;
@@ -488,31 +488,12 @@ TCanvas * getCanvasResponseResolution(TString cname, TString algo, TString title
 //      modeNo == 1: RMS of each x slice
 // Legend depends on cname. If cname contains "rho", output rho legend. If cname contains "npv", output npv legend. Otherwise, output PF legend.
 TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector<TH2*> prof, int modeNo, vector<pair<int,int> > npvRhoNpuBins){
+   setTDRStyle();
 
    cout<<"\t Doing fits for Resolution "<<cname<<endl;
    JetInfo ji(algo);
    algo.ToUpper();
-   TCanvas * c = new TCanvas(cname,cname);
-   c->SetLogx();
-   TLegend * leg;
-   if(cname.Contains("PU_NoPU"))
-      leg = new TLegend(0.65,0.48,0.90,0.75);
-   else
-      leg = new TLegend(0.65,0.48,0.90,0.75);
-   //leg->SetHeader(algo);
-   leg->SetFillColor(0);
-   leg->SetBorderSize(0);
-   leg->SetTextSize(0.045);
-   /*leg->AddEntry((TObject*)0,ji.get_legend_title(string(ji.abbreviation),true).c_str(),"");
-   if(cname.Contains("BB"))
-      leg->AddEntry((TObject*)0,ji.getDetRegion("Barrel"),"");
-   else if(cname.Contains("EI")) 
-      leg->AddEntry((TObject*)0,ji.getDetRegion("Inner Endcap"),"");
-   else if(cname.Contains("EO"))
-      leg->AddEntry((TObject*)0,ji.getDetRegion("Outer Endcap"),"");
-   else if(cname.Contains("FF"))
-      leg->AddEntry((TObject*)0,ji.getDetRegion("Forward"),"");*/
-
+   
    int NPV_Rho;
    if (cname.Contains("npv",TString::kIgnoreCase))
       NPV_Rho = 1;
@@ -520,8 +501,50 @@ TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector
       NPV_Rho = 2;
    else if (cname.Contains("tnpu",TString::kIgnoreCase))
       NPV_Rho = 3;
+   else if (cname.Contains("npu",TString::kIgnoreCase))
+      NPV_Rho = 4;
    else
       NPV_Rho = 0;
+
+   TH1D* hbin = new TH1D(Form("hbin_%s",cname.Data()),Form("hbin_%s",cname.Data()), 10000, 0.,10000.);
+   hbin->GetXaxis()->SetLimits(10.0,1000.0);
+   hbin->GetXaxis()->SetMoreLogLabels();
+   hbin->GetXaxis()->SetNoExponent();
+   hbin->GetXaxis()->SetTitle("p_{T}^{ptcl} [GeV]");
+   hbin->GetYaxis()->SetTitle(title);
+   if (modeNo==0)
+      hbin->GetYaxis()->SetRangeUser(0,0.5);
+   else
+      hbin->GetYaxis()->SetRangeUser(0,20);
+   TCanvas* c = tdrCanvas(cname,hbin,2,0,true);
+   c->GetPad(0)->SetLogx();
+
+   TLegend* leg = tdrLeg(0.38,0.6,0.78,1-gPad->GetTopMargin()-0.045*(1-gPad->GetTopMargin()-gPad->GetBottomMargin())+0.01);
+   leg->AddEntry((TObject*)0,ji.get_legend_title(string(ji.abbreviation),true).c_str(),"");
+   TString eta;
+   if(cname.Contains("BB"))
+      eta = "|#eta|<1.3";
+   else if(cname.Contains("EI"))
+      eta = "1.3<|#eta|<2.5";
+   else if(cname.Contains("EO"))
+      eta = "2.5<|#eta|<3.0";
+   else if(cname.Contains("FF"))
+      eta = "3.0<|#eta|<5.0";
+   leg->AddEntry((TObject*)0,eta,"");
+   leg->SetName(cname+"_leg");
+   //if(cname.Contains("PU_NoPU"))
+   //   leg = new TLegend(0.65,0.48,0.90,0.75);
+   //else
+   //   leg = new TLegend(0.65,0.48,0.90,0.75);
+   /*leg->AddEntry((TObject*)0,ji.get_legend_title(string(ji.abbreviation),true).c_str(),"");
+   if(cname.Contains("BB"))
+      leg->AddEntry((TObject*)0,ji.getDetRegion("Barrel"),"");
+   else if(cname.Contains("EI"))
+      leg->AddEntry((TObject*)0,ji.getDetRegion("Inner Endcap"),"");
+   else if(cname.Contains("EO"))
+      leg->AddEntry((TObject*)0,ji.getDetRegion("Outer Endcap"),"");
+   else if(cname.Contains("FF"))
+   leg->AddEntry((TObject*)0,ji.getDetRegion("Forward"),"");*/
 
    vector<TH1*> hh;
    for (unsigned int j=0;j<prof.size();j++){
@@ -537,6 +560,8 @@ TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector
            << "Returning blank histogram." << endl;
       return c;
    }
+
+/*
    for (unsigned int j=0;j<hh.size();j++){
       setHistoColor(hh[j],colNpv[j%npvRhoNpuBins.size()]);
       if(j>=(prof.size()/2) && cname.Contains("PU_NoPU")) {
@@ -545,22 +570,33 @@ TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector
          hh[j]->SetMarkerColor(kBlack);
       }
    }
-
-   if (modeNo==0)
-      hh[0]->GetYaxis()->SetRangeUser(0,0.5);
-   else
-      hh[0]->GetYaxis()->SetRangeUser(0,20);
-   hh[0]->GetYaxis()->SetLabelSize(0.04);
-   hh[0]->GetXaxis()->SetRangeUser(0,1000);
-   hh[0]->GetXaxis()->SetMoreLogLabels();
-   hh[0]->GetXaxis()->SetNoExponent();
-   hh[0]->GetXaxis()->SetTitle("p_{T}^{GEN} [GeV]");
-   hh[0]->GetXaxis()->SetLabelSize(0.04);
+*/
 
    for (unsigned int j=0;j<hh.size();j++) {
       scanHistoBinError(hh[j],0.05);
-      if(isHistoEmpty(hh[j])) continue;
+      if(isHistoEmpty(hh[j])) {
+         cout << "WARNING::getCanvasResolution histogram hh[j] = " << hh[j]->GetName() << " is empty an will be skipped." << endl;
+         continue;
+      }
 
+      if(NPV_Rho==3 && cname.Contains("PU_NoPU")) {
+         if(j==(prof.size()/2)) {
+            tdrDraw(hh[j],"E",kOpenCircle,kBlack,kSolid,kBlack);
+         }
+         else if(j<(prof.size()/2)) {
+            tdrDraw(hh[j],"E",kFullCircle,colNpv[j%npvRhoNpuBins.size()],kSolid,colNpv[j%npvRhoNpuBins.size()]);
+         }
+      }
+      else {
+         if(j>=(prof.size()/2) && cname.Contains("PU_NoPU")) {
+            tdrDraw(hh[j],"E",kOpenCircle,kBlack,kSolid,kBlack);
+         }
+         else {
+            tdrDraw(hh[j],"E",kFullCircle,colNpv[j%npvRhoNpuBins.size()],kSolid,colNpv[j%npvRhoNpuBins.size()]);
+         }
+      }
+
+/*
       if(j==0)
          hh[0]->Draw("E");
       else if(NPV_Rho==3 && cname.Contains("PU_NoPU")) {
@@ -571,14 +607,17 @@ TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector
       }
       else
          hh[j]->Draw("sameE");
+*/ 
+  
       TString var;
-
       if (NPV_Rho == 1)
          var = "N_{PV}";
       else if (NPV_Rho == 2)
          var = "#rho";
       else if (NPV_Rho == 3)
          var = "#mu";//True NPU->#mu
+      else if (NPV_Rho == 4)
+         var = "N_{PU}";
       else
          var = PFstr[j];
 
@@ -603,9 +642,9 @@ TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector
       else
          leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first),"lep");
    }
-   leg->Draw();
-   cmsPrelim();
+   leg->Draw("SAME");
 
+/*
    //Draw Algo name and detector region eta using TLatex.
    TPaveText* pave = new TPaveText(0.40,0.75,0.92,0.92,"NDC TR");
    pave->SetFillColor(0);
@@ -622,7 +661,7 @@ TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector
    else if(cname.Contains("FF"))
       pave->AddText(ji.getDetRegion("Forward"));
    pave->Draw("same");
-
+*/
    gPad->RedrawAxis();
 
    return c;
@@ -736,6 +775,7 @@ TCanvas * getResolutionNumDenom(TString cname, TString ctitle, TString algo, TH2
 // output mean of each x slice
 // Legend depends on cname. If cname contains "rho", output rho legend. If cname contains "npv", output npv legend. Otherwise, output PF legend.
 TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, vector<TH2*> off, bool fixedRange, vector<pair<int,int> > npvRhoNpuBins){
+   setTDRStyle();
 
    cout<<"\t Doing fits for Mean "<<cname<<endl;
    JetInfo ji(algo);
@@ -750,17 +790,19 @@ TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, vector<
       NPV_Rho = 3;
    else if (cname.Contains("pdgid",TString::kIgnoreCase))
       NPV_Rho = 4;
+   else if (cname.Contains("npu",TString::kIgnoreCase))
+      NPV_Rho = 5;
    else
       NPV_Rho = 0;
 
-   TCanvas * c = new TCanvas(cname,cname);
-   c->SetLogx();
-   TLegend * leg = new TLegend(0.19,0.65,0.45,0.92);
-   //leg->SetHeader(algo);
-   leg->SetFillColor(0);
-   leg->SetBorderSize(0);
-   leg->SetTextSize(0.045);
-   leg->SetName(cname+"_leg");
+   TH1D* hbin = new TH1D(Form("hbin_%s",cname.Data()),Form("hbin_%s",cname.Data()), 10000, 0.,10000.);
+   hbin->GetXaxis()->SetLimits(10.0,1000.0);
+   hbin->GetXaxis()->SetMoreLogLabels();
+   hbin->GetXaxis()->SetNoExponent();
+   hbin->GetXaxis()->SetTitle("p_{T}^{ptcl} [GeV]");
+   hbin->GetYaxis()->SetTitle(ctitle);
+   TCanvas* c = tdrCanvas(cname,hbin,2,11,true);
+   c->GetPad(0)->SetLogx();
 
    vector<TH1*> hh(off.size(),(TH1*)0);
    double maxy = 0;
@@ -776,37 +818,43 @@ TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, vector<
            << "Returning blank histogram." << endl;
       return c;
    }
-   for (unsigned int j=0;j<hh.size();j++){
-      if(NPV_Rho == 4)
-         setHistoColor(hh[j],colPDGID[j]);
-      else
-         setHistoColor(hh[j],colNpv[j]);
-   }
-   hh[0]->GetXaxis()->SetTitle("p_{T}^{GEN} [GeV]");
+
    if(fixedRange) {
-      hh[0]->GetYaxis()->SetRangeUser(-3,3);
+      hbin->GetYaxis()->SetRangeUser(-3.0,3.0);
       if(NPV_Rho == 3)
-         hh[0]->GetYaxis()->SetRangeUser(-0.6,1.4);
+         hbin->GetYaxis()->SetRangeUser(-0.6,1.4);
    }
    else {
-      hh[0]->GetYaxis()->SetRangeUser(((miny >= 0) - (miny < 0))*1.25*fabs(miny),1.4*maxy);
+      hbin->GetYaxis()->SetRangeUser(((miny >= 0) - (miny < 0))*1.25*fabs(miny),1.6*maxy);
       if(NPV_Rho == 0)
-         hh[0]->GetYaxis()->SetRangeUser(((miny >= 0) - (miny < 0))*1.25*fabs(miny),1.6*maxy);
+         hbin->GetYaxis()->SetRangeUser(((miny >= 0) - (miny < 0))*1.25*fabs(miny),1.6*maxy);
    }
-      //hh[0]->GetYaxis()->SetRangeUser(0,45);
-      //hh[0]->GetYaxis()->SetRangeUser(0,1.25*maxy);
-   hh[0]->GetXaxis()->SetRangeUser(0,1000);
-   hh[0]->GetXaxis()->SetMoreLogLabels();
-   hh[0]->GetXaxis()->SetNoExponent();
+
+   TLegend* leg = tdrLeg(0.38,0.6,0.78,1-gPad->GetTopMargin()-0.045*(1-gPad->GetTopMargin()-gPad->GetBottomMargin())+0.01);
+   leg->AddEntry((TObject*)0,ji.get_legend_title(string(ji.abbreviation),true).c_str(),"");
+   TString eta;
+   if(cname.Contains("BB"))
+      eta = "|#eta|<1.3";
+   else if(cname.Contains("EI"))
+      eta = "1.3<|#eta|<2.5";
+   else if(cname.Contains("EO"))
+      eta = "2.5<|#eta|<3.0";
+   else if(cname.Contains("FF"))
+      eta = "3.0<|#eta|<5.0";
+   leg->AddEntry((TObject*)0,eta,"");
+   leg->SetName(cname+"_leg");
 
    for (unsigned int j=0;j<hh.size();j++) {
       scanHistoBinError(hh[j],0.4);
-      if(isHistoEmpty(hh[j])) continue;
+      if(isHistoEmpty(hh[j])) {
+         cout << "WARNING::getGausMeanOffset histogram hh[j] = " << hh[j]->GetName() << " is empty and will be skipped." << endl;
+         continue;
+      }
 
-      if(j==0)
-         hh[0]->Draw("E");
+      if(NPV_Rho == 4)
+         tdrDraw(hh[j],"E",kFullCircle,colPDGID[j],kSolid,colPDGID[j]);
       else
-         hh[j]->Draw("sameE");
+         tdrDraw(hh[j],"E",kFullCircle,colNpv[j],kSolid,colNpv[j]);
 
       TString var;
 
@@ -818,6 +866,8 @@ TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, vector<
          var = "#mu";//True NPU->#mu
       else if (NPV_Rho == 4)
          var = pdgidstrLegend[j];
+      else if (NPV_Rho == 5)
+         var = "N_{PU}";
       else {
          var = PFstr[j];
          var.ToUpper();
@@ -832,9 +882,9 @@ TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, vector<
       else
          leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first),"lep");
    }
-   leg->Draw();
-   cmsPrelim();
+   leg->Draw("SAME");
 
+/*
    //Draw Algo name and detector region eta using TLatex.
    TPaveText* pave = new TPaveText(0.52,0.79,0.954,0.91,"NDC tr");
    pave->SetFillColor(0);
@@ -852,7 +902,7 @@ TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, vector<
    else if(cname.Contains("FF"))
       pave->AddText("3.0<|#eta|<5.0");
    pave->Draw("same");
-
+*/
    gPad->RedrawAxis();
 
    return c;
@@ -875,9 +925,9 @@ TCanvas * getGausMeanOffsetWithSum(TString cname, TString ctitle, TString algo, 
            << "Returning basic canvas." << endl;
       return baseCanvas;
    }
-   setHistoColor(hh,1);
-
-   hh->Draw("sameE");
+   //setHistoColor(hh,1);
+   //hh->Draw("sameE");
+   tdrDraw(hh,"E",kOpenCircle,1,kSolid,1);
    
    TLegend* leg = (TLegend*)baseCanvas->GetPrimitive(cname+"_leg");
    int NPV_Rho;
@@ -887,6 +937,8 @@ TCanvas * getGausMeanOffsetWithSum(TString cname, TString ctitle, TString algo, 
       NPV_Rho = 2;
    else if (cname.Contains("tnpu",TString::kIgnoreCase))
       NPV_Rho = 3;
+   else if (cname.Contains("npu",TString::kIgnoreCase))
+      NPV_Rho = 4;
    else
       NPV_Rho = 0;
 
@@ -896,12 +948,14 @@ TCanvas * getGausMeanOffsetWithSum(TString cname, TString ctitle, TString algo, 
       leg->AddEntry(hh,JetInfo::getBinLegendEntry("#rho",minmaxNpvRhoNpu.first,minmaxNpvRhoNpu.second),"lep");
    else if (NPV_Rho == 3)
       leg->AddEntry(hh,JetInfo::getBinLegendEntry("#mu",minmaxNpvRhoNpu.first,minmaxNpvRhoNpu.second),"lep");//True NPU->#mu
+   else if (NPV_Rho == 4)
+      leg->AddEntry(hh,JetInfo::getBinLegendEntry("N_{PU}",minmaxNpvRhoNpu.first,minmaxNpvRhoNpu.second),"lep");//NPU
    else
       leg->AddEntry(hh,"Total <offset>","lep");
 
    leg->Draw();
    //baseCanvas->Update();
-   cmsPrelim();
+   //cmsPrel(13,0);
 
    return baseCanvas;
 }//getGausMeanOffsetWithSum
@@ -930,6 +984,8 @@ TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo
       NPV_Rho = 2;
    else if (cname.Contains("tnpu",TString::kIgnoreCase))
       NPV_Rho = 3;
+   else if (cname.Contains("npu",TString::kIgnoreCase))
+      NPV_Rho = 4;
    else
       NPV_Rho = 0;
 
@@ -973,6 +1029,8 @@ TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo
          var = "#rho";
       else if (NPV_Rho == 3)
          var = "#mu";//True NPU->#mu
+      else if (NPV_Rho == 4)
+         var = "N_{PU}";
       else
          var = PFstr[j];
 
@@ -982,7 +1040,7 @@ TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo
          leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first),"lep");
    }
    leg->Draw();
-   cmsPrelim();
+   cmsPrel(13,0);
    gPad->RedrawAxis();
 
    return c;
@@ -1014,6 +1072,8 @@ TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, ve
       NPV_Rho = 2;
    else if (cname.Contains("tnpu",TString::kIgnoreCase))
       NPV_Rho = 3;
+   else if (cname.Contains("npu",TString::kIgnoreCase))
+      NPV_Rho = 4;
    else
       NPV_Rho = 0;
 
@@ -1070,6 +1130,8 @@ TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, ve
          var = "#rho";
       else if (NPV_Rho == 3)
          var = "#mu";//True NPU->#mu
+      else if (NPV_Rho == 4)
+         var = "N_{PU}";
       else
          var = PFstr[j];
 
@@ -1079,7 +1141,7 @@ TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, ve
          leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first),"lep");
    }
    leg->Draw();
-   cmsPrelim();
+   cmsPrel(13,0);
    gPad->RedrawAxis();
 
    return c;
@@ -1091,7 +1153,8 @@ TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, ve
 // output mean of each x slice
 // Legend depends on cname. If cname contains "rho", output rho legend. If cname contains "npv", output npv legend. Otherwise, output PF legend.
 TCanvas * getOffsetStack(TString cname, TString ctitle, TString algo, vector<TProfile*> off, bool fixedRange, vector<pair<int,int> > npvRhoNpuBins, double avgMu, double avgMuE){
-   gROOT->LoadMacro("~aperloff/Scripts/tdrstyle_mod14.C"); setTDRStyle();
+   //gROOT->LoadMacro("~aperloff/Scripts/tdrstyle_mod14.C"); setTDRStyle();
+   setTDRStyle();
 
    cout<<"\t Doing fits for Mean "<<cname<<endl;
    JetInfo ji(algo);
@@ -1106,15 +1169,17 @@ TCanvas * getOffsetStack(TString cname, TString ctitle, TString algo, vector<TPr
       NPV_Rho = 3;
    else if (cname.Contains("pdgid",TString::kIgnoreCase))
       NPV_Rho = 4;
+   else if (cname.Contains("npu",TString::kIgnoreCase))
+      NPV_Rho = 5;
    else
       NPV_Rho = 0;
 
    TH1D* hbin = new TH1D("hbin", "hbin", 10000, 0.,10000.);
-   hbin->GetXaxis()->SetLimits(10.0,1000.0);
+   hbin->GetXaxis()->SetLimits(10.0,300.0);
    hbin->GetYaxis()->SetRangeUser(0.0,1.0);
    hbin->GetXaxis()->SetMoreLogLabels();
    hbin->GetXaxis()->SetNoExponent();
-   hbin->GetXaxis()->SetTitle("p_{T}^{GEN} [GeV]");
+   hbin->GetXaxis()->SetTitle("p_{T}^{ptcl} [GeV]");
    hbin->GetYaxis()->SetTitle(ctitle);
    TCanvas* c = tdrCanvas(cname,hbin,2,11,true);
    c->GetPad(0)->SetLogx();
@@ -1176,9 +1241,9 @@ TCanvas * getOffsetStack(TString cname, TString ctitle, TString algo, vector<TPr
          hh[j]->SetMarkerColor(kRed);
       }
       else if(offName.Contains("unassociatedchf")) {
-         hh[j]->SetFillColor(kRed);
-         hh[j]->SetMarkerColor(kRed);
-         hh[j]->SetFillStyle(3013);
+         hh[j]->SetFillColor(kRed-9);
+         hh[j]->SetMarkerColor(kRed-9);
+         //hh[j]->SetFillStyle(3013);
       }
       else if(offName.Contains("chf")) {
          hh[j]->SetFillColor(kRed);
@@ -1219,6 +1284,8 @@ TCanvas * getOffsetStack(TString cname, TString ctitle, TString algo, vector<TPr
       //   off[j]->Draw("sameE");
       if((offName.Contains("hfhf")||offName.Contains("hfef"))&&(cname.Contains("BB")||cname.Contains("EI")||cname.Contains("EO")))
          continue;
+      else if((offName.Contains("cef")||offName.Contains("muf"))&&(cname.Contains("BB")||cname.Contains("EI")||cname.Contains("EO")))
+         continue;
       else if(offName.Contains("muf") && stack->GetHists()->FindObject("MeanOffRefPFStackWithSum_BB_1")!=0) {
          ((TH1D*)stack->GetHists()->FindObject("MeanOffRefPFStackWithSum_BB_1"))->Add(hh[j]);
       }
@@ -1243,14 +1310,16 @@ TCanvas * getOffsetStack(TString cname, TString ctitle, TString algo, vector<TPr
          var = "#mu";//True NPU->#mu
       else if (NPV_Rho == 4)
          var = pdgidstrLegend[j];
+      else if (NPV_Rho == 5)
+         var = "N_{PU}";
       else {
          if(offName.Contains("PFCHF")) {
             var = "CHF";
-            legVar = "charged hadrons";
+            legVar = "Charged hadrons";
          }
          else if(offName.Contains("unassociatedchf")) {
             var = "CHF";
-            legVar = "unassoc. ch. hadrons";
+            legVar = "Unassoc. ch. hadrons";
          }
          else {
             var = PFstr[j];
@@ -1274,7 +1343,7 @@ TCanvas * getOffsetStack(TString cname, TString ctitle, TString algo, vector<TPr
          leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first),"f");
    }
    tdrDraw(background,"HIST",kFullCircle,10,kSolid,kBlack,1001,10);
-   tdrDraw(stack,"",kOpenCircle,kBlue);
+   tdrDraw(stack,"");
    //stack->Draw();
    //stack->GetXaxis()->SetTitle("p_{T}^{GEN} [GeV]");
    //stack->GetXaxis()->SetRangeUser(10.0,300.0);
@@ -1284,7 +1353,7 @@ TCanvas * getOffsetStack(TString cname, TString ctitle, TString algo, vector<TPr
    //stack->GetYaxis()->SetRangeUser(0.0,1.0);
    //stack->Draw();
    leg->Draw("SAME");
-   //cmsPrelim();
+   //cmsPrel(13,0);
 
    //Draw Algo name and detector region eta using TLatex.
    //TPaveText* pave = new TPaveText(0.52,0.79,0.954,0.91,"NDC tr");
@@ -1344,6 +1413,8 @@ TCanvas * getOffsetStackWithSum(TString cname, TString ctitle, TString algo, vec
       NPV_Rho = 2;
    else if (cname.Contains("tnpu",TString::kIgnoreCase))
       NPV_Rho = 3;
+   else if (cname.Contains("npu",TString::kIgnoreCase))
+      NPV_Rho = 4;
    else
       NPV_Rho = 0;
 
@@ -1353,13 +1424,15 @@ TCanvas * getOffsetStackWithSum(TString cname, TString ctitle, TString algo, vec
       leg->AddEntry(hh,JetInfo::getBinLegendEntry("#rho",minmaxNpvRhoNpu.first,minmaxNpvRhoNpu.second),"lep");
    else if (NPV_Rho == 3)
       leg->AddEntry(hh,JetInfo::getBinLegendEntry("#mu",minmaxNpvRhoNpu.first,minmaxNpvRhoNpu.second),"lep");//True NPU->#mu
+   else if (NPV_Rho == 4)
+      leg->AddEntry(hh,JetInfo::getBinLegendEntry("N_{PU}",minmaxNpvRhoNpu.first,minmaxNpvRhoNpu.second),"lep");//NPU
    else
       leg->AddEntry(hh,"Total <offset>","lep");
 
    leg->Draw("SAME");
    gPad->RedrawAxis();
    //baseCanvas->Update();
-   //cmsPrelim();
+   //cmsPrel(13,0);
 
    return baseCanvas;
 }//getGausMeanOffsetStackWithSum
@@ -1389,6 +1462,8 @@ TCanvas * getCanvasResolution_v2(TString cname, TString algo, TString title, vec
       NPV_Rho = 2;
    else if (cname.Contains("tnpu",TString::kIgnoreCase))
       NPV_Rho = 3;
+   else if (cname.Contains("npu",TString::kIgnoreCase))
+      NPV_Rho = 4;
    else
       NPV_Rho = 0;
 
@@ -1405,7 +1480,7 @@ TCanvas * getCanvasResolution_v2(TString cname, TString algo, TString title, vec
          hh[0]->GetYaxis()->SetLabelSize(0.04);
          hh[0]->GetYaxis()->SetRangeUser(0,30);
          hh[0]->GetXaxis()->SetRangeUser(0,1000);
-         hh[0]->GetXaxis()->SetTitle("p_{T}^{GEN} [GeV]");
+         hh[0]->GetXaxis()->SetTitle("p_{T}^{ptcl} [GeV]");
          hh[0]->GetXaxis()->SetLabelSize(0.04);
          hh[0]->GetXaxis()->SetMoreLogLabels();
          hh[0]->GetXaxis()->SetNoExponent();
@@ -1421,6 +1496,8 @@ TCanvas * getCanvasResolution_v2(TString cname, TString algo, TString title, vec
          var = "#rho";
       else if (NPV_Rho == 3)
          var = "#mu";//True NPU->#mu
+      else if (NPV_Rho == 4)
+         var = "N_{PU}";
       else
          var = PFstr[j];
 
@@ -1432,7 +1509,7 @@ TCanvas * getCanvasResolution_v2(TString cname, TString algo, TString title, vec
          leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first),"lep");
    }
    leg->Draw();
-   cmsPrelim();
+   cmsPrel(13,0);
 
    //Draw Algo name and detector region eta using TLatex.
    TPaveText* pave = new TPaveText(0.70,0.70,0.92,0.92,"NDC");
@@ -1492,7 +1569,7 @@ TCanvas * getCanvasIntegral(TString cname, TString algo, TString title, vector<T
          leg->AddEntry(hh[j],JetInfo::getBinLegendEntry("N_{PV}",npvRhoNpuBins[j].first),"lep");
    }
    leg->Draw();
-   cmsPrelim();
+   cmsPrel(13,0);
 
    return c;
 
@@ -1565,7 +1642,7 @@ TCanvas * getCanvasAverage(TString cname, TString algo, TString title, vector<TP
          leg->AddEntry(hh[j],JetInfo::getBinLegendEntry("N_{PV}",npvRhoNpuBins[j].first),"lep");
    }
    leg->Draw();
-   cmsPrelim();
+   cmsPrel(13,0);
 
    return c;
 
@@ -1651,7 +1728,7 @@ void scanHistoBinError(TH1* histo, double maxBinError) {
 bool isHistoEmpty(TH1* histo) {
    bool isEmpty = true;
    for(int ibin=1; ibin<=histo->GetNbinsX(); ibin++) {
-      if(histo->GetBinContent(ibin)>0)
+      if(histo->GetBinContent(ibin)!=0)
          isEmpty = false;
    }
    return isEmpty;

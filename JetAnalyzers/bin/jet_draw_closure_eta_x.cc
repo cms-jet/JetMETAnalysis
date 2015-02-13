@@ -7,6 +7,7 @@
 ///////////////////////////////////////////////////////////////////
 
 #include "JetMETAnalysis/JetAnalyzers/interface/Settings.h"
+#include "JetMETAnalysis/JetAnalyzers/interface/Style.h"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 
 #include "TROOT.h"
@@ -40,8 +41,6 @@ using namespace std;
 int main(int argc,char**argv)
 {
   gROOT->SetStyle("Plain");
-  gStyle->SetOptStat(0);
-
   gSystem->Load("libFWCoreFWLite.so");
 
   //
@@ -56,9 +55,12 @@ int main(int argc,char**argv)
   bool            mpv          = cl.getValue<bool>     ("mpv",           false);
   TString         outputDir    = cl.getValue<TString>  ("outputDir",  "images");
   TString         outputFormat = cl.getValue<TString>  ("outputFormat", ".png");
+  double          CMEnergy     = cl.getValue<double>   ("CMEnergy",      13000);
 
   if (!cl.check()) return 0;
   cl.print();
+
+  setTDRStyle();
 
   for(unsigned int a=0; a<algs.size(); a++)
     {
@@ -145,18 +147,26 @@ int main(int argc,char**argv)
       //
       // Create guides (lines) for the output histograms
       //
-      TF1 *line = new TF1("line","0*x+1",-6,6);
+      TF1 *line = new TF1("line","0*x+1",-7,7);
       line->SetLineColor(1);
       line->SetLineWidth(1);
       line->SetLineStyle(2);
-      TF1 *linePlus = new TF1("linePlus","0*x+1.02",-6,6);
-      linePlus->SetLineColor(1);
-      linePlus->SetLineWidth(1);
-      linePlus->SetLineStyle(2);
-      TF1 *lineMinus = new TF1("lineMinus","0*x+0.98",-6,6);
-      lineMinus->SetLineColor(1);
-      lineMinus->SetLineWidth(1);
-      lineMinus->SetLineStyle(2);
+      TF1 *linePlus1 = new TF1("linePlus1","0*x+1.01",-7,7);
+      linePlus1->SetLineColor(1);
+      linePlus1->SetLineWidth(2);
+      linePlus1->SetLineStyle(3);
+      TF1 *lineMinus1 = new TF1("lineMinus1","0*x+0.99",-7,7);
+      lineMinus1->SetLineColor(1);
+      lineMinus1->SetLineWidth(2);
+      lineMinus1->SetLineStyle(3);
+      TF1 *linePlus2 = new TF1("linePlus2","0*x+1.02",-7,7);
+      linePlus2->SetLineColor(1);
+      linePlus2->SetLineWidth(2);
+      linePlus2->SetLineStyle(4);
+      TF1 *lineMinus2 = new TF1("lineMinus2","0*x+0.98",-7,7);
+      lineMinus2->SetLineColor(1);
+      lineMinus2->SetLineWidth(2);
+      lineMinus2->SetLineStyle(4);
 
       TCanvas *can[NPtBins+1];
       TPaveText *pave[NPtBins+1];
@@ -176,41 +186,60 @@ int main(int argc,char**argv)
       for(int i=0;i<NPtBins+1;i++)
         {
           TString ss;
-          pave[i] = new TPaveText(0.3,0.75,0.8,0.9,"NDC");
-          pave[i]->AddText(algs[a]);
+          pave[i] = tdrText(0.5,0.71,0.93,1-gPad->GetTopMargin()-0.045*(1-gPad->GetTopMargin()-gPad->GetBottomMargin()),31);
+          pave[i]->AddText("QCD Monte Carlo");
+          TString algNameLong;
+          if(TString(algs[a]).Contains("ak"))        algNameLong += "Anti-kT";
+          if(TString(algs[a]).Contains("1")&&
+             !TString(algs[a]).Contains("10")&&
+             !TString(algs[a]).Contains("l1"))       algNameLong += " R=0.1";
+          else if(TString(algs[a]).Contains("2"))    algNameLong += " R=0.2";
+          else if(TString(algs[a]).Contains("3"))    algNameLong += " R=0.3";
+          else if(TString(algs[a]).Contains("4"))    algNameLong += " R=0.4";
+          else if(TString(algs[a]).Contains("5"))    algNameLong += " R=0.5";
+          else if(TString(algs[a]).Contains("6"))    algNameLong += " R=0.6";
+          else if(TString(algs[a]).Contains("7"))    algNameLong += " R=0.7";
+          else if(TString(algs[a]).Contains("8"))    algNameLong += " R=0.8";
+          else if(TString(algs[a]).Contains("9"))    algNameLong += " R=0.9";
+          else if(TString(algs[a]).Contains("10"))   algNameLong += " R=1.0";
+          if(TString(algs[a]).Contains("pfchs"))     algNameLong += ", PF+CHS";
+          else if(TString(algs[a]).Contains("pf"))   algNameLong += ", PF";
+          else if(TString(algs[a]).Contains("calo")) algNameLong += ", Calo";
+          else if(TString(algs[a]).Contains("jpt"))  algNameLong += ", JPT";
+          pave[i]->AddText(algNameLong);
+
           if(i!=NPtBins)
             {
-              pave[i]->AddText(TString(Pt[i])+" < p_{T}^{gen} < "+TString(Pt[i+1])+" GeV");
+              pave[i]->AddText(TString(Pt[i])+" GeV < p_{T}^{GEN} < "+TString(Pt[i+1])+" GeV");
               ss = "ClosureVsEta_RefPt"+TString(Pt[i])+"to"+TString(Pt[i+1])+"_"+algs[a];
             }
           else
             { 
-              pave[i]->AddText(TString(Pt[0])+" < p_{T}^{gen} < "+TString(Pt[NPtBins])+" GeV");
+              pave[i]->AddText(TString(Pt[0])+" GeV < p_{T}^{GEN} < "+TString(Pt[NPtBins])+" GeV");
               ss = "ClosureVsEta_RefPt"+TString(Pt[0])+"to"+TString(Pt[NPtBins])+"_"+algs[a];
             }
           if(!flavor.IsNull()) ss+="_"+flavor;
-          can[i] = new TCanvas(ss,ss,800,800);   
-          hClosure[i]->GetXaxis()->SetTitle("#eta"); 
-          hClosure[i]->GetYaxis()->SetTitle("Response"); 
-          float etaMax = TMath::ACosH(3500./vpt[i]);
+
+          TH1D* frame = new TH1D();
+          frame->GetXaxis()->SetMoreLogLabels();
+          frame->GetXaxis()->SetNoExponent();
+          float etaMax = TMath::ACosH(CMEnergy/2.0/vpt[i]);
           if(i!=NPtBins)            
-            hClosure[i]->GetXaxis()->SetRangeUser(-etaMax,etaMax);
+            frame->GetXaxis()->SetLimits(-etaMax,etaMax);
           else
-            hClosure[i]->GetXaxis()->SetRangeUser(veta[0],veta[NETA]);
-          hClosure[i]->SetMaximum(1.1);
-          hClosure[i]->SetMinimum(0.9);
-          hClosure[i]->SetMarkerColor(kBlue);
-          hClosure[i]->SetMarkerSize(1.5);
-          hClosure[i]->SetLineColor(kBlue);
-          hClosure[i]->Draw();
+            frame->GetXaxis()->SetLimits(veta[0],veta[NETA]);
+          frame->GetXaxis()->SetTitle("#eta");
+          frame->GetYaxis()->SetRangeUser(0.9,1.1);
+          frame->GetYaxis()->SetTitle("Corrected Response");
+          can[i] = tdrCanvas(ss,frame,4,11,true);
+
+          tdrDraw(hClosure[i],"EP",kFullCircle,kBlue,kSolid,kBlue);
           line->Draw("same");
-          linePlus->Draw("same");
-          lineMinus->Draw("same");
-          pave[i]->SetFillColor(0);
-          pave[i]->SetBorderSize(0);
-          pave[i]->SetTextFont(42);
-          pave[i]->SetTextSize(0.05);
-          pave[i]->Draw();
+          linePlus1->Draw("same");
+          lineMinus1->Draw("same");
+          //linePlus2->Draw("same");
+          //lineMinus2->Draw("same");
+          pave[i]->Draw("same");
           can[i]->Print(outputDir+"/"+ss+outputFormat);
           hClosure[i]->Write();
         }//for(int i=0;i<NPtBins+1;i++)
@@ -228,11 +257,14 @@ int main(int argc,char**argv)
           continue;
         }
         ove->cd(c+1);
-        hClosure[ca[c]]->Draw();
+        tdrDraw(hClosure[ca[c]],"EP",kFullCircle,kBlue,kSolid,kBlue);
         line->Draw("same");
-        linePlus->Draw("same");
-        lineMinus->Draw("same");
+        linePlus1->Draw("same");
+        lineMinus1->Draw("same");
+        //linePlus2->Draw("same");
+        //lineMinus2->Draw("same");
         pave[ca[c]]->Draw();
+        cmsPrel(13,0);
       }
       ove->SaveAs(outputDir+ss+outputFormat);
       ove->Write();

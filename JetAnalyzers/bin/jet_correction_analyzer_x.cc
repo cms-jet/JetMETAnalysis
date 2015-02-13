@@ -506,7 +506,10 @@ int main(int argc,char**argv)
          if (npu<min_npu) min_npu = npu;
 
          if (!pileup_cut(itlow,ithigh,earlyootlow,earlyoothigh,lateootlow,lateoothigh,
-                         totalootlow,totaloothigh,totallow,totalhigh,npus,bxns)) continue;
+                         totalootlow,totaloothigh,totallow,totalhigh,npus,bxns)) {
+            cout << "WARNING::Failed the pileup cut." << endl << "Skipping this event." << endl;
+            continue;
+         }
          if (dphimin>0 && abs(jtphi[0]-jtphi[1])<dphimin) continue;
 
          rhoVsRhoHLT->Fill(rho_hlt,rho);
@@ -531,7 +534,10 @@ int main(int argc,char**argv)
             if (drmax > 0 && dr > drmax) continue;
             JetCorrector->setJetPt(pt);
             JetCorrector->setJetEta(eta);
+            int origIgnoreLevel = gErrorIgnoreLevel;
+            gErrorIgnoreLevel = kBreak;
             float scale  = JetCorrector->getCorrection();
+            gErrorIgnoreLevel = origIgnoreLevel;
 
             //
             // we have to fill this histogram before we kill the event
@@ -542,10 +548,9 @@ int main(int argc,char**argv)
             if ((pt*scale)<ptmin) continue;
             float relrsp = scale*jtpt[iref]/refpt[iref];
             float theta  = 2.0*atan(exp(-eta));
-            double weight;
+            double weight = 1.0;
 
             if(weightHist!=0) weight = weightHist->GetBinContent(weightHist->FindBin(log10(ptgen)));
-            else weight = 1;
             if(!MCPUReWeighting.IsNull() && !DataPUReWeighting.IsNull()) {
                double LumiWeight = LumiWeights_.weight((*tnpus)[iIT]);
                weight *= LumiWeight;
@@ -736,7 +741,7 @@ int main(int argc,char**argv)
       // make histograms that rely on other, completely filled, histograms
       //
       for (int i=1; i<=NPtBins; i++) {
-         makeResolutionHistogram(RespVsEtaVsPt,ResolutionVsEta[i],"y",mpv,i,i);
+         makeResolutionHistogram(RespVsEtaVsPt,ResolutionVsEta[i-1],"y",mpv,i,i);
       }
       makeResolutionHistogram(RespVsEtaVsPt,ResolutionVsPt,"x",mpv);
 

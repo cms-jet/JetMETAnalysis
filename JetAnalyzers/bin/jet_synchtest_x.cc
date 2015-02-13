@@ -390,6 +390,7 @@ void MatchEventsAndJets::DeclareHistograms() {
    histograms["p_rhoVsRho"]       = new TProfile ("p_rhoVsRho","p_rhoVsRho;",80,0,80);
    histograms["p_npvVsNpv"]       = new TProfile ("p_npvVsNpv","p_npvVsNpv;",80,0,80);
    histograms["p_tnpuVsTnpu"]     = new TProfile ("p_tnpuVsTnpu","p_tnpuVsTnpu;",80,0,80);
+   histograms["p_npuVsNpu"]     = new TProfile ("p_npuVsNpu","p_npuVsNpu;",80,0,80);
    histograms["p_matchedjet_off"] = new TProfile("p_matchedjet_off","p_matchedjet_off;<p_{T} Offset>_{jets} (GeV);# of matched jets",80,0,80);
    histograms["p_drVsrefpt"]      = new TProfile("p_drVsrefpt","p_drVsrefpt;p_{T}^{GEN};d_{R}",NPtBins, vpt);        //ZQ
 
@@ -404,9 +405,12 @@ void MatchEventsAndJets::DeclareHistograms() {
    histograms["p_offOverA_etaVsTnpusVsJetPt"] = new TProfile3D("p_offOverA_etaVsTnpusVsJetPt","p_offOverA_etaVsTnpusVsJetPt;#eta_{j};tnpu;p_{T}^{gen};OffsetOverAre",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
    histograms["p_PtAve_etaVsTnpusVsJetPt"]    = new TProfile3D("p_PtAve_etaVsTnpusVsJetPt","p_PtAve_etaVsTnpusVsJetPt;#eta_{j};Tnpus;p_{T}^{gen};PtAve",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
    histograms["p_RhoAve_etaVsTnpusVsJetPt"]   = new TProfile3D("p_RhoAve_etaVsTnpusVsJetPt","p_RhoAve_etaVsTnpusVsJetPt;#eta_{j};Tnpus;p_{T}^{gen};PtAve",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
-   histograms["p_offOverA_etaVsNpusVsJetPt"] = new TProfile3D("p_offOverA_etaVsNpusVsJetPt","p_offOverA_etaVsNpusVsJetPt;#eta_{j};npu;p_{T}^{gen};OffsetOverAre",NETA,veta,NNPU,vnpu,NPtBins,vpt);
-   histograms["p_PtAve_etaVsNpusVsJetPt"]    = new TProfile3D("p_PtAve_etaVsNpusVsJetPt","p_PtAve_etaVsNpusVsJetPt;#eta_{j};Npus;p_{T}^{gen};PtAve",NETA,veta,NNPU,vnpu,NPtBins,vpt);
-   histograms["p_RhoAve_etaVsNpusVsJetPt"]   = new TProfile3D("p_RhoAve_etaVsNpusVsJetPt","p_RhoAve_etaVsNpusVsJetPt;#eta_{j};Npus;p_{T}^{gen};PtAve",NETA,veta,NNPU,vnpu,NPtBins,vpt);
+   histograms["p_offOverA_etaVsNpusVsJetPt"] = new TProfile3D("p_offOverA_etaVsNpusVsJetPt","p_offOverA_etaVsNpusVsJetPt;#eta_{j};npu;p_{T}^{gen};OffsetOverAre",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
+   histograms["p_PtAve_etaVsNpusVsJetPt"]    = new TProfile3D("p_PtAve_etaVsNpusVsJetPt","p_PtAve_etaVsNpusVsJetPt;#eta_{j};Npus;p_{T}^{gen};PtAve",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
+   histograms["p_RhoAve_etaVsNpusVsJetPt"]   = new TProfile3D("p_RhoAve_etaVsNpusVsJetPt","p_RhoAve_etaVsNpusVsJetPt;#eta_{j};Npus;p_{T}^{gen};PtAve",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
+   //histograms["p_offOverA_etaVsNpusVsJetPt"] = new TProfile3D("p_offOverA_etaVsNpusVsJetPt","p_offOverA_etaVsNpusVsJetPt;#eta_{j};npu;p_{T}^{gen};OffsetOverAre",NETA,veta,NNPU,vnpu,NPtBins,vpt);
+   //histograms["p_PtAve_etaVsNpusVsJetPt"]    = new TProfile3D("p_PtAve_etaVsNpusVsJetPt","p_PtAve_etaVsNpusVsJetPt;#eta_{j};Npus;p_{T}^{gen};PtAve",NETA,veta,NNPU,vnpu,NPtBins,vpt);
+   //histograms["p_RhoAve_etaVsNpusVsJetPt"]   = new TProfile3D("p_RhoAve_etaVsNpusVsJetPt","p_RhoAve_etaVsNpusVsJetPt;#eta_{j};Npus;p_{T}^{gen};PtAve",NETA,veta,NNPU,vnpu,NPtBins,vpt);
    histograms["p_RhoAve_etaVsRhoVsJetPt"]   = new TProfile3D("p_RhoAve_etaVsRhoVsJetPt","p_RhoAve_etaVsRhoVsJetPt;#eta_{j};Rho;p_{T}^{gen};RhoAve",NETA,veta,NRHO,vrho,NPtBins,vpt);
    histograms["p_offOverA_etaVsRhoVsJetPt"]   = new TProfile3D("p_offOverA_etaVsRhoVsJetPt","p_offOverA_etaVsRhoVsJetPt;#eta_{j};Rho;p_{T}^{gen};OffsetOverAre",NETA,veta,NRHO,vrho,NPtBins,vpt);
    histograms["p_offOverA_etaVsNPVVsJetPt"]   = new TProfile3D("p_offOverA_etaVsNPVVsJetPt","p_offOverA_etaVsNPVVsJetPt;#eta_{j};NPV;p_{T}^{gen};OffsetOverAre",NETA,veta,NRHO,vrho,NPtBins,vpt);
@@ -465,6 +469,8 @@ void MatchEventsAndJets::DeclareHistograms() {
       histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
       hname = Form("p_offresVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
       histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
+      hname = Form("p_offresVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
+      histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
 
       // Generate 4 histograms for eta 4 detector regions, and 6 for the npv regions
       // 6 old NPV bins 0-4, 5-9, 10-14, 15-19, 20-24, 25-29
@@ -506,6 +512,13 @@ void MatchEventsAndJets::DeclareHistograms() {
          histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}^{nopu}/p_{T}^{GEN};",NPtBins,vpt,100,0,5);
          hname = Form("p_resVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
          histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}^{pu}-p_{T}^{nopu};",NPtBins,vpt,100,0,5);
+         hname = Form("p_offresVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
+         histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}/p_{T}^{nopu};",NPtBins, vpt,1000,-300,300);
+         hname = Form("p_nopuresVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
+         histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}^{nopu}/p_{T}^{GEN};",NPtBins,vpt,100,0,5);
+         hname = Form("p_resVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),npv*npvRhoNpuBinWidth,npv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
+         histograms[hname] = new TH2D(hname,hname+";p^{GEN}_{T}; p_{T}^{pu}-p_{T}^{nopu};",NPtBins,vpt,100,0,5);
+
     }//npv or rho
 
     for (int ipt=0;ipt<NPtBins;ipt++) {
@@ -639,9 +652,9 @@ bool MatchEventsAndJets::FillHistograms() {
   int itnpu      = JetInfo::getBinIndex(tpu->tnpus->at(iIT),NBinsNpvRhoNpu,npvRhoNpuBinWidth);
   int itnpu_low  = itnpu*npvRhoNpuBinWidth;
   int itnpu_high = itnpu*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
-  //int inpu       = JetInfo::getBinIndex(tpu->npus->at(iIT),NBinsNpvRhoNpu,npvRhoNpuBinWidth);
-  //int inpu_low   = inpu*npvRhoNpuBinWidth;
-  //int inpu_high  = inpu*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
+  int inpu       = JetInfo::getBinIndex(tpu->npus->at(iIT),NBinsNpvRhoNpu,npvRhoNpuBinWidth);
+  int inpu_low   = inpu*npvRhoNpuBinWidth;
+  int inpu_high  = inpu*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
   TString hname = "";
     
   //
@@ -830,9 +843,12 @@ bool MatchEventsAndJets::FillHistograms() {
     dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsTnpusVsJetPt"])->Fill(tpu->jteta[jpu],tpu->tnpus->at(iIT),tpu->refpt[jpu],offsetOA);
     dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsTnpusVsJetPt"])   ->Fill(tpu->jteta[jpu],tpu->tnpus->at(iIT),tpu->refpt[jpu],tpu->jtpt[jpu]);
     dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsTnpusVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->tnpus->at(iIT),tpu->refpt[jpu],tpu->rho);
-    dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNpusVsJetPt"])->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],offsetOA);
-    dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNpusVsJetPt"])   ->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],tpu->jtpt[jpu]);
-    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNpusVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],tpu->rho);
+    dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNpusVsJetPt"])->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],offsetOA,1.0/TMath::Gaus(tpu->npus->at(iIT),20,sqrt(20)));
+    dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNpusVsJetPt"])   ->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],tpu->jtpt[jpu],1.0/TMath::Gaus(tpu->npus->at(iIT),20,sqrt(20)));
+    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNpusVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],tpu->rho,1.0/TMath::Gaus(tpu->npus->at(iIT),20,sqrt(20)));
+    //dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNpusVsJetPt"])->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],offsetOA);
+    //dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNpusVsJetPt"])   ->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],tpu->jtpt[jpu]);
+    //dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNpusVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],tpu->rho);
     dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->rho,tpu->refpt[jpu],offsetOA);
     dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->rho,tpu->refpt[jpu],tpu->rho);
     dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsRhoVsJetPt"])     ->Fill(tpu->jteta[jpu],tpu->rho,tpu->refpt[jpu],tpu->jtpt[jpu]);
@@ -885,6 +901,8 @@ bool MatchEventsAndJets::FillHistograms() {
     histograms[hname]->Fill(tpu->refpt[jpu],resp);
     hname = Form("p_resVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),itnpu_low,itnpu_high);
     histograms[hname]->Fill(tpu->refpt[jpu],resp);
+    hname = Form("p_resVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),inpu_low,inpu_high);
+    histograms[hname]->Fill(tpu->refpt[jpu],resp);
     hname = Form("p_resVsnpu_%s_pt%.1f_%.1f",detectorAbbreviation.Data(),
                  vpt[JetInfo::getBinIndex(tpu->refpt[jpu],vpt,NPtBins)],vpt[JetInfo::getBinIndex(tpu->refpt[jpu],vpt,NPtBins)+1]);
     if(tpu->refpt[jpu]>10.0) {
@@ -896,12 +914,17 @@ bool MatchEventsAndJets::FillHistograms() {
     histograms[hname]->Fill(tpu->refpt[jpu],offsetOrefpt);
     hname = Form("p_offresVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),itnpu_low,itnpu_high);
     histograms[hname]->Fill(tpu->refpt[jpu],offset);
+    hname = Form("p_offresVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),inpu_low,inpu_high);
+    histograms[hname]->Fill(tpu->refpt[jpu],offset);
     hname = Form("p_offresVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
     histograms[hname]->Fill(tpu->refpt[jpu],offset);
     hname = Form("p_offresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
     histograms[hname]->Fill(tpu->refpt[jpu],offset);
     hname = Form("p_offresVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
     histograms[hname]->Fill(tpu->refpt[jpu],offset);
+    hname = Form("p_offresVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
+    histograms[hname]->Fill(tpu->refpt[jpu],offset);
+
 
     for (unsigned int ipdgid=0; ipdgid<pdgid_indecies.size(); ipdgid++) {
       hname = Form("p_offresVsrefpt_%s_pdgid_%s",detectorAbbreviation.Data(),pdgidstr[ipdgid].Data());
@@ -917,6 +940,8 @@ bool MatchEventsAndJets::FillHistograms() {
     hname = Form("p_nopuresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
     histograms[hname]->Fill(tpu->refpt[jpu],respNopu);
     hname = Form("p_nopuresVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),itnpu_low,itnpu_high);
+    histograms[hname]->Fill(tpu->refpt[jpu],respNopu);
+    hname = Form("p_nopuresVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),inpu_low,inpu_high);
     histograms[hname]->Fill(tpu->refpt[jpu],respNopu);
     hname = Form("p_offAfterOoffBeforeVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
     histograms[hname]->Fill(tpu->refpt[jpu],offset/offset_raw);
@@ -952,6 +977,7 @@ bool MatchEventsAndJets::FillHistograms() {
   histograms["p_rhoVsRho"]      ->Fill(tpu->rho,tpu->rho);
   histograms["p_npvVsNpv"]      ->Fill(tpu->npv,tpu->npv);
   histograms["p_tnpuVsTnpu"]    ->Fill(tpu->tnpus->at(iIT),tpu->tnpus->at(iIT));
+  histograms["p_npuVsNpu"]    ->Fill(tpu->npus->at(iIT),tpu->npus->at(iIT));
   histograms["p_matchedjet_off"]->Fill(avg_offset,jetMap.size());
 
   //=========================================================

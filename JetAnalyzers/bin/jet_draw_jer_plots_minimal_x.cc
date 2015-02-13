@@ -86,6 +86,7 @@ int main(int argc,char**argv) {
   TDirectory *curdir = gDirectory;
   
   setTDRStyle();
+  gStyle->SetErrorX(0.);
   
   const int ncone = 9;
   double cones[ncone] = {0.2,0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
@@ -147,10 +148,17 @@ int main(int argc,char**argv) {
   vector<TCanvas*> c2s(2*ncone);
   double rhoas[2*ncone][npu];
   
-  TCanvas *c2a = new TCanvas("c2a","c2a");
   TLegend *legcs = tdrLeg(0.30,0.15,0.60,0.38);
   legcs->SetNColumns(2);
   legcs->SetTextSize(0.026);
+
+  TH1D* frame = new TH1D();
+  frame->GetXaxis()->SetLimits(0.0,100.0);
+  frame->GetYaxis()->SetRangeUser(0.0,14.0);
+  frame->GetXaxis()->SetTitle("#mu#timesA");
+  frame->GetYaxis()->SetTitle("Resolution Fit Parameter");
+  TCanvas *c2a = tdrCanvas("c2a",frame,2,0,true);
+  //TCanvas *c2a = new TCanvas("c2a","c2a");
 
   vector<pair<TString,double> > algs;
   for(int icone = 0; icone != ncone; ++icone) {
@@ -470,7 +478,7 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
       h2a->SetMinimum(-2+0.001);//0);
       if(minimalist)
         h2a->SetMinimum(0+0.001);
-      h2a->Draw("AXIS");
+      //h2a->Draw("AXIS");
     }
     double size = 0.5 + (cone-0.3)/0.7;
     TGraphErrors *gna = (TGraphErrors*)gn->Clone(Form("gna_%d",ialg));
@@ -556,8 +564,9 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
       legcs->AddEntry((TObject*)0,"PFchs","");
     }
     legcs->AddEntry(gna,Form("R=%.1f",cone),"P");
-    if(ialg == algs.size()-1 && !minimalist)
-       legcs->Draw();
+    if(ialg == algs.size()-1 && !minimalist) {
+      legcs->Draw();
+    }
 
   } // for ialg
   if(minimalist) {
@@ -581,21 +590,33 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
         //cout << "bin = "<< ibin << "\tmin = " << minPGCAchs[ibin] << "\tmax = " << maxPGCAchs[ibin] 
         //     << "\terror(set) = " << (maxPGCAchs[ibin]-minPGCAchs[ibin])/2.0 << "\terror(found) = " << agcachs->GetErrorY(ibin-1) << endl;
 
-        agna->Draw("SAMEPz");
-        agsa->Draw("SAMEPz");
-        agca->Draw("SAMEPz");
-        agnachs->Draw("SAMEPz");
-        agsachs->Draw("SAMEPz");
-        agcachs->Draw("SAMEPz");
+        //agna->Draw("SAMEPz");
+        //agsa->Draw("SAMEPz");
+        //agca->Draw("SAMEPz");
+        //agnachs->Draw("SAMEPz");
+        //agsachs->Draw("SAMEPz");
+        //agcachs->Draw("SAMEPz");
+        tdrDraw(agna,"Pz",kFullCircle,kBlack);
+        tdrDraw(agsa,"Pz",kFullCircle,kRed);
+        tdrDraw(agca,"Pz",kFullCircle,kBlue);
+        tdrDraw(agnachs,"Pz",kOpenCircle,kBlack);
+        tdrDraw(agsachs,"Pz",kOpenCircle,kRed);
+        tdrDraw(agcachs,"Pz",kOpenCircle,kBlue);
       }
     }
     else {
-      pgna->Draw("SAMEPz");
-      pgsa->Draw("SAMEPz");
-      pgca->Draw("SAMEPz");
-      pgnachs->Draw("SAMEPz");
-      pgsachs->Draw("SAMEPz");
-      pgcachs->Draw("SAMEPz");
+      tdrDraw(pgna,"PEX0",kFullCircle,kBlack);
+      tdrDraw(pgsa,"PEX0",kFullCircle,kRed);
+      tdrDraw(pgca,"PEX0",kFullCircle,kBlue);
+      tdrDraw(pgnachs,"PEX0",kOpenCircle,kBlack);
+      tdrDraw(pgsachs,"PEX0",kOpenCircle,kRed);
+      tdrDraw(pgcachs,"PEX0",kOpenCircle,kBlue);
+      //pgna->Draw("SAMEPz");
+      //pgsa->Draw("SAMEPz");
+      //pgca->Draw("SAMEPz");
+      //pgnachs->Draw("SAMEPz");
+      //pgsachs->Draw("SAMEPz");
+      //pgcachs->Draw("SAMEPz");
     }
   }
 
@@ -698,11 +719,11 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
       
       TLegend *leg;
       if(minimalist)
-        leg = tdrLeg(0.28,0.74,0.48,0.92);
+        leg = tdrLeg(0.28,0.73,0.48,0.91);
       else
         leg = tdrLeg(0.20,0.75,0.40,0.90);
       if(minimalist) {
-        leg->SetHeader("PFchs");
+        leg->SetHeader("PF+CHS");
         f2->SetMarkerStyle(kOpenCircle); f2->SetMarkerColor(kBlack);
         fs->SetMarkerStyle(kOpenCircle); fs->SetMarkerColor(kRed);
         fc->SetMarkerStyle(kOpenCircle); fc->SetMarkerColor(kBlue);
@@ -715,11 +736,11 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
       leg->AddEntry(f2,"N (GeV)","LP");
       leg->AddEntry(fs,"S (#sqrt{GeV}) #times 10","LP");
       leg->AddEntry(fc,"C (1) #times 100","LP");
-      leg->Draw();
+      leg->Draw("SAME");
 
       TLegend* leg2;
       if(minimalist) {
-        leg2 = tdrLeg(0.20,0.74,0.40,0.92);
+        leg2 = tdrLeg(0.20,0.73,0.40,0.91);
         TF1* f2clone = (TF1*)f2->Clone(); f2clone->SetMarkerStyle(kFullCircle);
         leg2->AddEntry(f2clone," ","LP");
         TF1* fsclone = (TF1*)fs->Clone(); fsclone->SetMarkerStyle(kFullCircle);
@@ -727,7 +748,7 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
         TF1* fcclone = (TF1*)fc->Clone(); fcclone->SetMarkerStyle(kFullCircle);
         leg2->AddEntry(fcclone," ","LP");
         leg2->SetHeader("PF");
-        leg2->Draw();
+        leg2->Draw("SAME");
       }
 
       TLatex *tex = new TLatex();
@@ -752,7 +773,7 @@ for (unsigned int ialg = 0; ialg<algs.size(); ++ialg) {
       }
       if(!pfAndPfchs) tex->DrawLatex(0.70, 0.82, chs ? "PFchs" : "PF");
 
-      cmsPrel(0);
+      //cmsPrel(0);
     }
 
     // Save with global fit drawn on top

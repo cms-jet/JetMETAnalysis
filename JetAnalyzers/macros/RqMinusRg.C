@@ -6,15 +6,19 @@ void RqMinusRg() {
    dummy->GetXaxis()->SetLimits(20.0,1000.0);
    dummy->GetXaxis()->SetMoreLogLabels();
    dummy->GetXaxis()->SetNoExponent();
-   dummy->GetYaxis()->SetRangeUser(0.0,0.13);
-   dummy->GetXaxis()->SetTitle("p_{T}^{truth} [GeV]");
-   dummy->GetYaxis()->SetTitle("#Rgothic_{q}-#Rgothic_{g}");
+   //dummy->GetYaxis()->SetRangeUser(0.0,0.13);
+   dummy->GetYaxis()->SetRangeUser(0.0,0.08);
+   dummy->GetXaxis()->SetTitle("p_{T}^{ptcl} [GeV]");
+   //dummy->GetYaxis()->SetTitle("#Rgothic_{q}-#Rgothic_{g}");
+   //dummy->GetYaxis()->SetTitle("R_{q}-R_{g}");
+   dummy->GetYaxis()->SetTitle("R_{ud}-R_{g}");
    TCanvas* c = tdrCanvas("gqResp",dummy,2,11,true);
    c->GetPad(0)->SetLogx();
 
    TFile* fPythia = new TFile("l5_physDef_pythia.root");
    ak5pfchsl1l2l3->cd();
-   TGraphErrors* quark = (TGraphErrors*)gDirectory->Get("qAbsRspVsRefPt_JetEta0to1.3");
+   //TGraphErrors* quark = (TGraphErrors*)gDirectory->Get("qAbsRspVsRefPt_JetEta0to1.3");
+   TGraphErrors* quark = (TGraphErrors*)gDirectory->Get("udAbsRspVsRefPt_JetEta0to1.3");
    TGraphErrors* gluon = (TGraphErrors*)gDirectory->Get("gAbsRspVsRefPt_JetEta0to1.3");
    int N_ = quark->GetN();
    vector<double> x(N_,0.0), y(N_,0.0), exl(N_,0.0), exh(N_,0.0), ey(N_,0.0);
@@ -28,7 +32,8 @@ void RqMinusRg() {
 
    TFile* fHerwig = new TFile("l5_physDef_herwig.root");
    ak5pfchsl1l2l3->cd();
-   TGraphErrors* hquark = (TGraphErrors*)gDirectory->Get("qAbsRspVsRefPt_JetEta0to1.3");
+   //TGraphErrors* hquark = (TGraphErrors*)gDirectory->Get("qAbsRspVsRefPt_JetEta0to1.3");
+   TGraphErrors* hquark = (TGraphErrors*)gDirectory->Get("udAbsRspVsRefPt_JetEta0to1.3");
    TGraphErrors* hgluon = (TGraphErrors*)gDirectory->Get("gAbsRspVsRefPt_JetEta0to1.3");
    int hN_ = hquark->GetN();
    vector<double> hx(hN_,0.0), hy(hN_,0.0), hexl(hN_,0.0), hexh(hN_,0.0), hey(hN_,0.0);

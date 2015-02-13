@@ -57,8 +57,8 @@ TCanvas * getCorrectionVsEtaCanvas(TString algo, FactorizedJetCorrector * jetCor
 
 TCanvas * getCorrectionVsEtaCanvasTDR(TString algo, FactorizedJetCorrector * jetCorr, TString suffix);
 
-TCanvas * getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, vector<pair<FactorizedJetCorrector*,TString> > allJetCorrs,
-                                                TString suffix, TString normAlg = "");
+vector<TCanvas*> getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, vector<pair<FactorizedJetCorrector*,TString> > allJetCorrs,
+                                                       TString suffix, TString normAlg = "");
 
 TCanvas * getCorrectionVsPtCanvas(TString algo, FactorizedJetCorrector * jetCorr, TString suffix);
 
@@ -243,11 +243,13 @@ void analyzeAllAlgs(vector<TString>& algs, vector<pair<FactorizedJetCorrector*,T
 
   // get the canvas of correction vs eta in tdr format, write and save to file
   if(tdr) {
-     TCanvas * ovetdr = getCorrectionVsEtaComparisonCanvasTDR(algs, allJetCorrs, suffix, normAlg);
-     for(unsigned int of=0; of<outputFormat.size(); of++) {
-        ovetdr->SaveAs(outputDir+string(ovetdr->GetName())+outputFormat[of]);
+     vector<TCanvas*> ovetdr = getCorrectionVsEtaComparisonCanvasTDR(algs, allJetCorrs, suffix, normAlg);
+     for(unsigned int c=0; c<ovetdr.size(); c++) {
+       for(unsigned int of=0; of<outputFormat.size(); of++) {
+          ovetdr[c]->SaveAs(outputDir+string(ovetdr[c]->GetName())+outputFormat[of]);
+       }
+       ovetdr[c]->Write();
      }
-     ovetdr->Write();
 
      TCanvas * ovptdr = getCorrectionVsPtComparisonCanvasTDR(algs, allJetCorrs, suffix);
      for(unsigned int of=0; of<outputFormat.size(); of++) {
@@ -473,8 +475,9 @@ TCanvas * getCorrectionVsEtaCanvasTDR(TString algo, FactorizedJetCorrector * jet
 }//getCorrectionVsEtaCanvasTDR()
 
 //---------------------------------------------------------------------
-TCanvas * getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, vector<pair<FactorizedJetCorrector*,TString> > allJetCorrs,
-                                                TString suffix, TString normAlg) {
+vector<TCanvas*> getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, vector<pair<FactorizedJetCorrector*,TString> > allJetCorrs,
+                                                       TString suffix, TString normAlg) {
+  setTDRStyle();
 
   vector<TString> normHSTR;
   int normAlgIndex = -1;
@@ -494,23 +497,42 @@ TCanvas * getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, vector<pa
   //PtVals.push_back(1500);
 
   //Create the canvas with multiple pads
-  TString ss("CorrectionVsEta_Comparison_TDR");
-  ss += suffix;
-  TCanvas *ove = new TCanvas(ss,ss,1200,400); //800->400
-  ove->Divide(3,1); //2->1
+  //TString ss("CorrectionVsEta_Comparison_TDR");
+  //ss += suffix;
+  //TCanvas *ove = new TCanvas(ss,ss,1200,400); //800->400
+  //ove->Divide(3,1); //2->1
+  TH1D* frame = new TH1D();
+  frame->GetXaxis()->SetLimits(-5.0,5.0);
+  frame->GetYaxis()->SetRangeUser(0.90,1.80);
+  frame->GetXaxis()->SetTitle("#eta");
+  frame->GetYaxis()->SetTitle("Corr. Factor");
+  TH1D* frameRatio = new TH1D();
+  frameRatio->GetXaxis()->SetLimits(-5.0,5.0);
+  frameRatio->GetYaxis()->SetRangeUser(0.9,1.2);
+  frameRatio->GetXaxis()->SetTitle("#eta");
+  frameRatio->GetYaxis()->SetTitle("Ratio to R=0.5");
 
   vector<Int_t> colors = getColors();
   vector<Int_t> markers = getMarkerNumbers();
 
-  // Create a legend for pt values
+  // Create a vector of objects for each of the pt values
+  vector<TCanvas*> cans;
   vector<TLegend*> legs;
   vector<TPaveText*> pave;
 
   // loop over all pt values.
   map<TString,TH1F*> cc;
+  map<TString,TH1F*> cc_norm;
   for (unsigned int c = 0; c < PtVals.size(); c++) {
 
-    ove->cd(c+1);
+    //ove->cd(c+1);
+    TString ss("CorrectionVsEta_Comparison_TDR");
+    ss = Form("%s_%i%s",ss.Data(),c,suffix.Data());
+    //cans.push_back(tdrCanvas(ss,frame,2,11,true));
+    setTDRStyle();
+    cans.push_back(tdrDiCanvas(ss,frame,frameRatio,2,11));
+    continue;
+    cans.back()->cd(1);
 
     bool allAlgsSame = true;
     for(unsigned int ialg=0; ialg<algs.size(); ialg++) {
@@ -520,10 +542,8 @@ TCanvas * getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, vector<pa
       }
     }
     if(allAlgsSame) {
-      //legs.push_back(new TLegend(0.195,0.75,0.885,0.92));
-      //legs.back()->SetNColumns(3);
-      //legs.back()->SetBorderSize(1);
-      legs.push_back(new TLegend(0.25,0.55,0.9,0.75));
+      //legs.push_back(new TLegend(0.25,0.55,0.9,0.75));
+      legs.push_back(tdrLeg(0.25,0.53,0.9,0.73));
       legs.back()->SetNColumns(2);
       legs.back()->SetBorderSize(0);
     }
@@ -531,28 +551,24 @@ TCanvas * getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, vector<pa
       legs.push_back(new TLegend(0.20,0.5,0.83,0.9));
       legs.back()->SetBorderSize(0);
       legs.back()->SetFillStyle(0);
+      legs.back()->SetTextSize(0.045);
+      legs.back()->SetFillColor(0);
     }
-    //legs.back()->SetTextSize(0.029);
-    legs.back()->SetTextSize(0.045);
-    legs.back()->SetFillColor(0);
 
     TString ptstr;
     if (PtVals[c]<0.1)
        ptstr.Form("p_{T} = %f GeV",PtVals[c]);
     else 
        ptstr.Form("p_{T} = %.0f GeV",PtVals[c]);
-    //legs.back()->AddEntry((TObject*)0,"P_{T} = "+ptstr+" GeV","");
-    //if(allAlgsSame)
-    //  legs.back()->AddEntry((TObject*)0,getAlgNameLong(algs[0],1),"");
-    //legs.back()->AddEntry((TObject*)0,"","");
 
-    pave.push_back(new TPaveText(0.3,0.75,0.8,0.9,"NDC"));
-    pave.back()->SetTextSize(0.045);
-    pave.back()->SetFillColor(0);
-    pave.back()->SetBorderSize(0);
+    //pave.push_back(new TPaveText(0.3,0.75,0.8,0.9,"NDC"));
+    //pave.back()->SetTextSize(0.045);
+    //pave.back()->SetFillColor(0);
+    //pave.back()->SetBorderSize(0);
+    pave.push_back(tdrText(0.5,0.75,0.93,1-gPad->GetTopMargin()-0.045*(1-gPad->GetTopMargin()-gPad->GetBottomMargin())-0.01,31));
     pave.back()->AddText("QCD Monte Carlo");
     pave.back()->AddText(JetInfo::get_legend_title(string(algs[0]),false).c_str());
-    pave.back()->AddText(ptstr);      
+    pave.back()->AddText(ptstr);
 
     for (unsigned int ialg=0; ialg<algs.size(); ialg++) {
       //Create and fill the histo
@@ -599,45 +615,52 @@ TCanvas * getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, vector<pa
          cc[hstr]->SetBinContent(b,cor);
       }//for eta bins
 
-      cc[hstr]->GetXaxis()->SetTitle("#eta");
-      cc[hstr]->GetYaxis()->SetTitle("Corr. Factor");
-      if(!normAlg.IsNull())
-        cc[hstr]->GetYaxis()->SetTitle(Form("Corr. Factor / Corr. Factor (%s)",getAlias(normAlg).c_str()));
-      if(algs[ialg].Contains("calo"))
-         cc[hstr]->GetYaxis()->SetRangeUser(0.90,2.5);
-      else
-         cc[hstr]->GetYaxis()->SetRangeUser(0.90,1.8);
-      if(!normAlg.IsNull())
-         cc[hstr]->GetYaxis()->SetRangeUser(0.90,1.1);
-      cc[hstr]->SetFillColor(30);
-      cc[hstr]->SetFillStyle(3001);
+      //cc[hstr]->GetXaxis()->SetTitle("#eta");
+      //cc[hstr]->GetYaxis()->SetTitle("Corr. Factor");
+      if(!normAlg.IsNull()) {
+        cc_norm[Form("%s_norm",hstr.Data())] = (TH1F*)cc[hstr]->Clone(Form("%s_norm",hstr.Data()));
+        cc_norm[Form("%s_norm",hstr.Data())]->GetYaxis()->SetTitle(Form("Corr. Factor / Corr. Factor (%s)",getAlias(normAlg).c_str()));
+        //cc_norm[Form("%s_norm",hstr.Data())]->GetYaxis()->SetRangeUser(0.85,1.15);
+      }
+      //if(algs[ialg].Contains("calo"))
+      //   cc[hstr]->GetYaxis()->SetRangeUser(0.90,2.5);
+      //else
+      //   cc[hstr]->GetYaxis()->SetRangeUser(0.90,1.8);
+      //cc[hstr]->SetFillColor(30);
+      //cc[hstr]->SetFillStyle(3001);
 
       //Set marker colors and styles
-      cc[hstr]->SetMarkerSize(0.7);
-      if(!normAlg.IsNull() && ialg>0) {
-        cc[hstr]->SetMarkerStyle(markers[ialg-1]);
-        cc[hstr]->SetMarkerColor(colors[ialg-1]);
-        cc[hstr]->SetLineColor(colors[ialg-1]);
-      }
-      else {
-        cc[hstr]->SetMarkerStyle(markers[ialg]);
-        cc[hstr]->SetMarkerColor(colors[ialg]);
-        cc[hstr]->SetLineColor(colors[ialg]);
-      }
+      //cc[hstr]->SetMarkerSize(0.7);
+      //if(!normAlg.IsNull() && ialg>0) {
+      //  cc_norm[Form("%s_norm",hstr.Data())]->SetMarkerStyle(markers[ialg-1]);
+      //  cc_norm[Form("%s_norm",hstr.Data())]->SetMarkerColor(colors[ialg-1]);
+      //  cc_norm[Form("%s_norm",hstr.Data())]->SetLineColor(colors[ialg-1]);
+      //}
+      //else {
+      //  cc[hstr]->SetMarkerStyle(markers[ialg]);
+      //  cc[hstr]->SetMarkerColor(colors[ialg]);
+      //  cc[hstr]->SetLineColor(colors[ialg]);
+      //}
 
       if(!normAlg.IsNull() && ialg!=0) {
         //cout << hstr << " is being divided by " << normHSTR.back() << endl;
-        cc[hstr]->Divide(cc[normHSTR.back()]);
+        cc_norm[Form("%s_norm",hstr.Data())]->Divide(cc[normHSTR.back()]);
+        cans.back()->cd(2);
+        tdrDraw(cc_norm[Form("%s_norm",hstr.Data())],"P",markers[ialg],colors[ialg],kSolid,colors[ialg],kNone,0);
       }
 
       if( (ialg == 0 && normAlg.IsNull()) || (ialg==1 && !normAlg.IsNull()) ) {
-         cc[hstr]->Draw("P");
+         //cc[hstr]->Draw("P");
+        cans.back()->cd(1);
+        tdrDraw(cc[hstr],"P",markers[ialg],colors[ialg],kSolid,colors[ialg],kNone,0);
       }
       else if (ialg == 0 && !normAlg.IsNull()) {
          continue;
       }
       else {
-         cc[hstr]->Draw("Psame");
+        //cc[hstr]->Draw("Psame");
+        cans.back()->cd(1);
+        tdrDraw(cc[hstr],"P",markers[ialg],colors[ialg],kSolid,colors[ialg],kNone,0);
       }
 
       //Create a pave indicating the algorithm name
@@ -650,17 +673,18 @@ TCanvas * getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, vector<pa
     }//for alg
 
     //pave->Draw("same");
+    cans.back()->cd(1);
     legs.back()->Draw("same");
     pave.back()->Draw("same");
-    cmsPrelim();
+    //cmsPrelim();
 
-    gPad->RedrawAxis();
+    //gPad->RedrawAxis();
   }//for pt bins
 
   algs.erase(algs.begin());
 
   // return the canvas
-  return ove;
+  return cans;
 
 }//getCorrectionVsEtaComparisonCanvasTDR
 
@@ -1135,7 +1159,7 @@ vector<Int_t> getColors() {
   ret.push_back(kBlack);
   ret.push_back(kRed);
   ret.push_back(kOrange+1);
-  ret.push_back(kYellow);
+  ret.push_back(kYellow+2);
   ret.push_back(kGreen);
   ret.push_back(kCyan);
   ret.push_back(kAzure+1);

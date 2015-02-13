@@ -535,8 +535,8 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
    leg->Draw();
   
    // Profiles of npv, rho, tnpu vs themselves
-   c = new TCanvas("XVsX","XVsX {x=N_{PV},#rho,TNPU}",1200,400);
-   c->Divide(3,1);
+   c = new TCanvas("XVsX","XVsX {x=N_{PV},#rho,TNPU}",1600,400);
+   c->Divide(4,1);
    c->cd(1);
    dynamic_cast<TProfile*>(histograms["p_npvVsNpv"])->SetErrorOption("s");
    setHistoColor(histograms["p_npvVsNpv"],colPU);
@@ -569,6 +569,17 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
    leg->SetFillColor(0);
    leg->SetBorderSize(0);
    leg->AddEntry(histograms["p_tnpuVsTnpu"]," TNPU","lep");
+   leg->Draw();
+   c->cd(4);
+   dynamic_cast<TProfile*>(histograms["p_npuVsNpu"])->SetErrorOption("s");
+   setHistoColor(histograms["p_npuVsNpu"],colPU);
+   histograms["p_npuVsNpu"]->Draw("E1");
+   histograms["p_npuVsNpu"]->GetYaxis()->SetRangeUser(0,45);
+   //p_tnpuVsTnpu->GetYaxis()->SetTitle("<X> #pm #sigma(X)");
+   leg = new TLegend(0.2,0.72,0.4,0.92);
+   leg->SetFillColor(0);
+   leg->SetBorderSize(0);
+   leg->AddEntry(histograms["p_npuVsNpu"]," NPU","lep");
    leg->Draw();
 
    //
@@ -994,11 +1005,11 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       unassociatedCHFFile->Close();
       cdir->cd();
    }
-   c = getOffsetStack("MeanOffRefPFStack_BB","<p_{T,offset}>/<#mu>",algo,pOffPF,fixedRange,npvRhoNpuBins);
+   c = getOffsetStack("MeanOffRefPFStack_BB","#LTp_{T,offset}#GT/#LT#mu#GT",algo,pOffPF,fixedRange,npvRhoNpuBins);
    c->Draw();
    pOffPF.pop_back();
    //c = getGausMeanOffsetStackWithSum("MeanOffRefPFStackWithSum_BB","<p_{T}^{PU}-p_{T}^{noPU}>/<#mu>",algo,hResRho,dynamic_cast<TH2D*>(histograms["p_offResVsrefpt_bb_all"]),fixedRange,npvRhoNpuBins,make_pair(minNpvRhoNpu,maxNpvRhoNpu));
-   c = getOffsetStackWithSum("MeanOffRefPFStackWithSum_BB","<p_{T,offset}>/<#mu>",algo,pOffPF,dynamic_cast<TProfile*>(histograms["prof_offResVsrefpt_bb_all"]),fixedRange,npvRhoNpuBins,make_pair(minNpvRhoNpu,maxNpvRhoNpu),19.41,0.00179);
+   c = getOffsetStackWithSum("MeanOffRefPFStackWithSum_BB","#LTp_{T,offset}#GT/#LT#mu#GT",algo,pOffPF,dynamic_cast<TProfile*>(histograms["prof_offResVsrefpt_bb_all"]),fixedRange,npvRhoNpuBins,make_pair(minNpvRhoNpu,maxNpvRhoNpu),19.41,0.00179);
    c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,pOffPF,npvRhoNpuBins.size());
 
@@ -1025,7 +1036,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
    }
    c = getGausMeanOffset("OffMeantnpuRef_BB","<offset> [GeV]",algo,hOffRho,fixedRange,npvRhoNpuBins);
    c->Draw();
-   c = getGausMeanOffsetWithSum("OffMeantnpuRefWithSum_BB","<offset> [GeV]",algo,hOffRho,dynamic_cast<TH2D*>(histograms["p_offresVsrefpt_bb_tnpu0_49"]),fixedRange,npvRhoNpuBins,make_pair(minNpvRhoNpu,maxNpvRhoNpu));
+   c = getGausMeanOffsetWithSum("OffMeantnpuRefWithSum_BB","#LTp_{T,offset}#GT [GeV]",algo,hOffRho,dynamic_cast<TH2D*>(histograms["p_offresVsrefpt_bb_tnpu0_49"]),fixedRange,npvRhoNpuBins,make_pair(minNpvRhoNpu,maxNpvRhoNpu));
    c->Draw();
    c = getGausMeanOffsetOverPtref("OffMeanOverPttnpuRef_BB","<offset>/p_{T}^{GEN}",algo,hOffRho,fixedRange,npvRhoNpuBins);
    c->Draw();
@@ -1036,13 +1047,42 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       hname = Form("p_resVsrefpt_bb_tnpu%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-   c = getCanvasResolution("ResolutionTnpuRef_BB",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution("ResolutionTnpuRef_BB",algo,"#sigma(p_{T}/p_{T}^{ptcl})/#LTp_{T}/p_{T}^{ptcl}#GT",hResRho,0,npvRhoNpuBins);
    c->Draw();
    for(unsigned int ibin=0; ibin<npvRhoNpuBins.size(); ibin++) {
       hname = Form("p_nopuresVsrefpt_bb_tnpu%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho.push_back(dynamic_cast<TH2D*>(histograms[hname]));
    }
-   c = getCanvasResolution("ResolutionTnpuRef_BB_PU_NoPU",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   //c = getCanvasResolution("ResolutionTnpuRef_BB_PU_NoPU",algo,"#sigma(p_{T}/p_{T}^{ptcl})/#LTp_{T}/p_{T}^{ptcl}#GT",hResRho,0,npvRhoNpuBins);
+   c = getCanvasResolution("ResolutionTnpuRef_BB_PU_NoPU",algo,"JER",hResRho,0,npvRhoNpuBins);
+   c->Draw();
+   clearHistograms(hResRho,hOffRho,hOffPdgid,pOffPF,npvRhoNpuBins.size());
+
+
+   for(unsigned int ibin=0; ibin<npvRhoNpuBins.size(); ibin++) {
+      hname = Form("p_offresVsrefpt_bb_npu%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
+      hOffRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
+   }
+   c = getGausMeanOffset("OffMeannpuRef_BB","<offset> [GeV]",algo,hOffRho,fixedRange,npvRhoNpuBins);
+   c->Draw();
+   c = getGausMeanOffsetWithSum("OffMeannpuRefWithSum_BB","<offset> [GeV]",algo,hOffRho,dynamic_cast<TH2D*>(histograms["p_offresVsrefpt_bb_npu0_49"]),fixedRange,npvRhoNpuBins,make_pair(minNpvRhoNpu,maxNpvRhoNpu));
+   c->Draw();
+   c = getGausMeanOffsetOverPtref("OffMeanOverPtnpuRef_BB","<offset>/p_{T}^{GEN}",algo,hOffRho,fixedRange,npvRhoNpuBins);
+   c->Draw();
+	clearHistograms(hResRho,hOffRho,hOffPdgid,pOffPF,npvRhoNpuBins.size());
+
+   // get the canvas from the resolution for bb (npu)
+   for(unsigned int ibin=0; ibin<npvRhoNpuBins.size(); ibin++) {
+      hname = Form("p_resVsrefpt_bb_npu%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
+      hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
+   }
+   c = getCanvasResolution("ResolutionNpuRef_BB",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
+   c->Draw();
+   for(unsigned int ibin=0; ibin<npvRhoNpuBins.size(); ibin++) {
+      hname = Form("p_nopuresVsrefpt_bb_npu%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
+      hResRho.push_back(dynamic_cast<TH2D*>(histograms[hname]));
+   }
+   c = getCanvasResolution("ResolutionNpuRef_BB_PU_NoPU",algo,"#sigma(p_{T}/p_{T}^{GEN})/<p_{T}/p_{T}^{GEN}>",hResRho,0,npvRhoNpuBins);
    c->Draw();
    clearHistograms(hResRho,hOffRho,hOffPdgid,pOffPF,npvRhoNpuBins.size());
 

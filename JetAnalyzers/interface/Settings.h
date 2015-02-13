@@ -11,9 +11,9 @@ const int NPtBinsHLT                  = 40;
 const int NPhi                        = 11;
 const int NPileup                     = 12;
 const int NAlgs                       = 130;
-const int NRespBins                   = 200;
+const int NRespBins                   = 600;
 const int RespLow                     = 0;
-const int RespHigh                    = 2;
+const int RespHigh                    = 6;
 const int CorrLow                     = 0;
 const int CorrHigh                    = 10;
 const int NRhoBins                    = 1000;
@@ -139,7 +139,7 @@ const int colDetRegions[NDetectorRegions] = {kGreen+3,kBlue+1,kRed+1};
 //const TString PFstr[NPFcat] = {"chf","nhf","nef","cef","muf","hfhf","hfef"};
 const TString PFstr[NPFcat] = {"nef","cef","muf","nhf","hfhf","hfef","chf"};
 
-const TString PFstr_long[NPFcat] = {"photons","em deposits","em deposits","neutral hadrons","hadronic deposits","em deposits","charged hadrons"};
+const TString PFstr_long[NPFcat] = {"Photons","Em deposits","Em deposits","Neutral hadrons","Hadronic deposits","Em deposits","Charged hadrons"};
 
 const TString pdgidstr[NPDGIDcat] = {"nJ","qJ","cJ","bJ","gJ","aJ","aqJ"};
 

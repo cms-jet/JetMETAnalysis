@@ -150,42 +150,25 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, bool logPol, int iEta,
    TF2* f4 = 0;
    TString function;
    if(logPol)
+      //Non-Taylor expanded version
       function = "[0] + ([1] * x ) *(1 + [2] * log(y))";
    else
+      //Taylor expanded version
       function = "[0] + ([1] * (x-11)) *(1 + [2] * (log(y) -1.47))";
 
    cout << "\t(par01,par1i,par2i):  (" << par0i << "," << par1i << "," << par2i << ")" << endl;
    if(highPU)
-      f4 = new TF2("f4",function, 5,200,10,3000);
-   //Alexx
-   //TF2 * f4 = new TF2("f4","[0] + ([1] * x ) *(1 + [2] * log(y))",0,50,0,1800);
-   //ANDREA
+      f4 = new TF2("f4",function, 0,200,1,3000);
+      //f4 = new TF2("f4",function, 5,200,10,3000);
    else
-      //Taylor expanded version
-      f4 = new TF2("f4",function, 5,50,10,3000);
+      f4 = new TF2("f4",function, 0,50,1,3000);
+      //f4 = new TF2("f4",function, 5,50,10,3000);
 
-      //Non-Taylor expanded version
-      //f4 = new TF2("f4","[0] + ([1] * x ) *(1 + [2] * log(y))", 5,50,10,3000);
-
-//  VR1GPT1:
-   //TF2 * f4 = new TF2("f4","[0] + ([1] * x ) *(1 + [2] * log(y))", 1,50,1,3000);
-  
-   // VR5GPT1:
-//  TF2 * f4 = new TF2("f4","[0] + ([1] * x ) *(1 + [2] * log(y))", 5,50,1,3000);
-   
-   // VR5GPT10:
-//  TF2 * f4 = new TF2("f4","[0] + ([1] * x ) *(1 + [2] * log(y))", 5,50,10,3000);
-   
-//  VR5GPT30:
-//  TF2 * f4 = new TF2("f4","[0] + ([1] * x ) *(1 + [2] * log(y))", 5,50,30,3000);
-   
-   // VR10GPT30:
-   //TF2 * f4 = new TF2("f4","[0] + ([1] * x ) *(1 + [2] * log(y))", 10,50,30,3000);  
    f4->SetParameter(0,par0i);
    f4->SetParameter(1,par1i);
    f4->SetParameter(2,par2i);
    f4->SetParLimits(0,0,20);
-   f4->SetParLimits(1,0,2);
+   f4->SetParLimits(1,0,10);
    f4->SetParLimits(2,-2,5);
    //if (graph->GetN()<500)
    //f4->FixParameter(2,0.05);

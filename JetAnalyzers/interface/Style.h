@@ -10,8 +10,10 @@
 #include "TLegend.h"
 #include "TCanvas.h"
 #include "TH1.h"
+#include "TH1D.h"
 #include "TGraph.h"
 #include "THStack.h"
+#include "TPaveText.h"
 
 #include <iostream>
 #include <string>
@@ -24,6 +26,9 @@ using std::string;
 // colors to use
 EColor tdrColors[13] = {kBlack, kBlue, kRed, kGreen, kYellow, kMagenta, kCyan,
                         kOrange, kSpring, kTeal, kAzure, kViolet, kPink};
+
+const bool kSquare = true;
+const bool kRectangular = false;
 
 ////////////////////////////////////
 // Useful small macros (by Mikko) //
@@ -42,16 +47,7 @@ void tdrDraw(TH1* h, string opt,
   h->Draw((opt+"SAME").c_str());
 }
 
-void tdrDraw(THStack* s, string opt,
-       int marker=kFullCircle, int mcolor = kBlack,
-       int lstyle=kSolid, int lcolor=-1,
-       int fstyle=1001, int fcolor=kYellow+1) {
-  //s->SetMarkerStyle(marker);
-  //s->SetMarkerColor(mcolor);
-  //s->SetLineStyle(lstyle);
-  //s->SetLineColor(lcolor==-1 ? mcolor : lcolor);
-  //s->SetFillStyle(fstyle);
-  //s->SetFillColor(fcolor);
+void tdrDraw(THStack* s, string opt) {
   s->Draw((opt+"SAME").c_str());
 }
 
@@ -75,6 +71,16 @@ TLegend *tdrLeg(double x1, double y1, double x2, double y2) {
   leg->SetTextSize(0.045);
   leg->Draw();
   return leg;
+}
+
+TPaveText *tdrText(double x1, double y1, double x2, double y2, int alignment = 21) {
+  TPaveText *text = new TPaveText(x1, y1, x2, y2, "brNDC");
+  text->SetFillStyle(kNone);
+  text->SetBorderSize(0);
+  text->SetTextSize(0.045);
+  text->SetTextAlign(alignment);
+  text->Draw();
+  return text;
 }
 
 //////////////////////////////////////////
@@ -260,8 +266,8 @@ TString cmsText     = "CMS";
 float cmsTextFont   = 61;  // default is helvetic-bold
 
 bool writeExtraText = true;//false;
-bool isSimulation = true;//false;
-TString extraText   = "Preliminary";
+TString extraText   = "Simulation";
+TString extraText2   = "Preliminary"; // For Simulation Preliminary on two lines
 float extraTextFont = 52;  // default is helvetica-italics
 
 // text sizes and text offsets with respect to the top frame
@@ -429,19 +435,13 @@ CMS_lumi( TPad* pad, int iPeriod, int iPosX )
         latex.DrawLatex(posX_, posY_, cmsText);
         if( writeExtraText ) 
         {
-           if(isSimulation){
-              latex.SetTextFont(extraTextFont);
-              latex.SetTextAlign(align_);
-              latex.SetTextSize(extraTextSize*t);
-              latex.DrawLatex(posX_, posY_- relExtraDY*cmsTextSize*t, "Simulation");
-              latex.DrawLatex(posX_, posY_- 2*relExtraDY*cmsTextSize*t, extraText);
-           }
-           else{
-              latex.SetTextFont(extraTextFont);
-              latex.SetTextAlign(align_);
-              latex.SetTextSize(extraTextSize*t);
-              latex.DrawLatex(posX_, posY_- relExtraDY*cmsTextSize*t, extraText);
-           }
+          latex.SetTextFont(extraTextFont);
+          latex.SetTextAlign(align_);
+          latex.SetTextSize(extraTextSize*t);
+          latex.DrawLatex(posX_, posY_- relExtraDY*cmsTextSize*t, extraText);
+          if (extraText2!="") // For Simulation Preliminary
+            latex.DrawLatex(posX_, posY_-relExtraDY*cmsTextSize*t
+                            - relExtraDY*extraTextSize*t, extraText2);
         }
      }
   }
@@ -455,7 +455,12 @@ CMS_lumi( TPad* pad, int iPeriod, int iPosX )
      latex.SetTextFont(extraTextFont);
      latex.SetTextSize(extraTextSize*t);
      latex.SetTextAlign(align_);
-     latex.DrawLatex(posX_, posY_, extraText);      
+     if(extraText2!="") {
+       latex.DrawLatex(posX_, posY_, extraText+" "+extraText2);
+     }
+     else {
+       latex.DrawLatex(posX_, posY_, extraText);
+     }
   }
   return;
 }
@@ -468,7 +473,7 @@ CMS_lumi( TPad* pad, int iPeriod, int iPosX )
 // Create h after calling setTDRStyle to get all the settings right
 TCanvas* tdrCanvas(const char* canvName, TH1D *h,
        int iPeriod = 2, int iPos = 11,
-       bool square = false) {
+       bool square = kRectangular) {
 
   setTDRStyle();
 
@@ -525,8 +530,8 @@ TCanvas* tdrCanvas(const char* canvName, TH1D *h,
   //canv->SetTicky(0);
 
   assert(h);
-  h->GetYaxis()->SetTitleOffset(square ? 1.25 : 1);
-  h->GetXaxis()->SetTitleOffset(square ? 1.0 : 0.9);
+  h->GetYaxis()->SetTitleOffset(square ? 1.25 : 1); //original values were 1.25 and 1 respectively
+  h->GetXaxis()->SetTitleOffset(square ? 0.9 : 0.9); //original values were 1.0 and 0.9 respectively
   h->Draw("AXIS");
 
   // writing the lumi information and the CMS "logo"
@@ -539,14 +544,124 @@ TCanvas* tdrCanvas(const char* canvName, TH1D *h,
   return canv;
 }
 
-void cmsPrel(double intLumi=-1, bool wide = false) {
+// Give the macro empty histograms for h->Draw("AXIS");
+// Create h after calling setTDRStyle to get all the settings right
+// Created by: Mikko Voutilainen (HIP)
+TCanvas* tdrDiCanvas(const char* canvName, TH1D *hup, TH1D *hdw,
+       int iPeriod = 2, int iPos = 11) {
+
+  setTDRStyle();
+
+  // Reference canvas size
+  // We'll add a subpad that is a fraction (1/3) of the top canvas size,
+  // while keeping margins and text sizes as they were for a single pad
+  int W_ref = 600;
+  int H_ref = 600;
+
+  // Set bottom pad relative height and relative margin
+  float F_ref = 1./3.;
+  float M_ref = 0.03;
+
+  // Set reference margins
+  float T_ref = 0.07;
+  float B_ref = 0.13;
+  float L = 0.15;
+  float R = 0.05;
+
+  // Calculate total canvas size and pad heights
+  int W = W_ref;
+  int H = H_ref * (1 + (1-T_ref-B_ref)*F_ref+M_ref);
+  float Hup = H_ref * (1-B_ref);
+  float Hdw = H - Hup;
+
+  // references for T, B, L, R
+  float Tup = T_ref * H_ref / Hup;
+  float Tdw = M_ref * H_ref / Hdw;
+  float Bup = 0.01;
+  float Bdw = B_ref * H_ref / Hdw;
+
+  TCanvas *canv = new TCanvas(canvName,canvName,50,50,W,H);
+  canv->SetFillColor(0);
+  canv->SetBorderMode(0);
+  canv->SetFrameFillStyle(0);
+  canv->SetFrameBorderMode(0);
+  canv->SetFrameLineColor(0); // fix from Anne-Laure Pequegnot
+  canv->SetFrameLineWidth(0); // fix from Anne-Laure Pequegnot
+  // FOR JEC plots, prefer to keep ticks on both sides
+  //canv->SetTickx(0);
+  //canv->SetTicky(0);
+
+  canv->Divide(1,2);
+
+  canv->cd(1);
+  gPad->SetPad(0, Hdw / H, 1, 1);
+  gPad->SetLeftMargin( L );
+  gPad->SetRightMargin( R );
+  gPad->SetTopMargin( Tup );
+  gPad->SetBottomMargin( Bup );
+
+  assert(hup);
+  
+  // Scale text sizes and margins to match normal size
+  hup->GetYaxis()->SetTitleOffset(1.15 * Hup / H_ref); //original value was 1.25
+  hup->GetXaxis()->SetTitleOffset(1.0);
+  hup->SetTitleSize(hup->GetTitleSize("Y") * H_ref / Hup, "Y");
+  hup->SetLabelSize(hup->GetLabelSize("Y") * H_ref / Hup, "Y");
+
+  // Set tick lengths to match original
+  hup->SetTickLength(hup->GetTickLength("Y") * Hup / H_ref, "Y");
+  hup->SetTickLength(hup->GetTickLength("X") * H_ref / Hup, "X");
+
+  hup->Draw("AXIS");
+
+  // writing the lumi information and the CMS "logo"
+  CMS_lumi( (TCanvas*)gPad, iPeriod, iPos );
+
+  canv->cd(2);
+  gPad->SetPad(0, 0, 1, Hdw / H);
+  gPad->SetLeftMargin( L );
+  gPad->SetRightMargin( R );
+  gPad->SetTopMargin( Tdw );
+  gPad->SetBottomMargin( Bdw );
+
+  assert(hdw);
+  hdw->GetYaxis()->SetTitleOffset(1.25);
+  hdw->GetXaxis()->SetTitleOffset(1.0);
+
+  // Scale text sizes and margins to match normal size
+  hdw->SetLabelSize(hdw->GetLabelSize("X") * H_ref / Hdw, "X");
+  hdw->SetTitleSize(hdw->GetTitleSize("X") * H_ref / Hdw, "X");
+  hdw->SetLabelSize(hdw->GetLabelSize("Y") * H_ref / Hdw, "Y");
+  hdw->SetTitleSize(hdw->GetTitleSize("Y") * H_ref / Hdw, "Y");
+  hdw->GetXaxis()->SetTitleOffset(1.0);
+  hdw->GetYaxis()->SetTitleOffset(1.15 * Hdw / H_ref); //original value was 1.25
+
+  // Set tick lengths to match original (these are fractions of axis length)
+  hdw->SetTickLength(hdw->GetTickLength("Y") * H_ref / Hup, "Y"); //?? ok if 1/3
+  hdw->SetTickLength(hdw->GetTickLength("X") * H_ref / Hdw, "X");
+
+  // Reduce divisions to match smaller height (default n=510, optim=kTRUE)
+  hdw->GetYaxis()->SetNdivisions(504);
+
+  hdw->Draw("AXIS");
+
+  canv->cd(0);
+
+  canv->Update();
+  canv->RedrawAxis();
+  canv->GetFrame()->Draw();
+  
+  return canv;
+}
+
+void cmsPrel(int energy = 8, double intLumi=-1, bool wide = false) {
 
   TLatex *latex = new TLatex();
   latex->SetNDC();
   latex->SetTextSize(0.045);
   
   latex->SetTextAlign(31); // align right
-  latex->DrawLatex(wide ? 0.98 : 0.95, 0.96, "#sqrt{s} = 8 TeV");
+  latex->DrawLatex(wide ? 0.98 : 0.95, 0.96, Form("#sqrt{s} = %i TeV",energy));
   if (intLumi > 0.) {
     latex->SetTextAlign(11); // align left
     latex->DrawLatex(wide ? 0.06 : 0.15, 0.96,
@@ -559,7 +674,7 @@ void cmsPrel(double intLumi=-1, bool wide = false) {
   }
   else {
     latex->SetTextAlign(11); // align left
-    latex->DrawLatex(0.15,0.96,"CMS preliminary 2012");
+    latex->DrawLatex(0.15,0.96,"CMS preliminary 2014");
   }
 } // cmsPrel
 

@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////
 //
-// jet_draw_closure_pt_ratio_x
-// ---------------------------
+// jet_draw_correction_TDR_ratio_x
+// -------------------------------
 //
 //            09/01/2011 Alexx Perloff  <aperloff@physics.tamu.edu>
 ///////////////////////////////////////////////////////////////////
@@ -25,6 +25,7 @@
 #include "TPaveText.h"
 #include "TLatex.h"
 #include "TLegend.h"
+#include "TMath.h"
 
 #include <vector>
 #include <string>
@@ -41,6 +42,10 @@ void cmsPrelim(double intLUMI = 0);
 
 /// get the uppercase version of the algorithm name
 TString getAlias(TString s);
+
+/// scans the histogram for a given pt and sets the bin content to -1 if the eta
+/// bin is outside the physical region for that pt
+void scanBins(double CMEnergy, double pt, TH1* histo);
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -67,6 +72,7 @@ int main(int argc,char**argv)
    TString         outputDir    = cl.getValue<TString>  ("outputDir",         "images");
    vector<TString> outputFormat = cl.getVector<TString> ("outputFormat", ".png:::.eps");
    bool            tdr          = cl.getValue<bool>     ("tdr",                  false);
+   double          CMEnergy     = cl.getValue<double>   ("CMEnergy",             13000);
 
    if (!cl.check()) return 0;
    cl.print();
@@ -76,7 +82,7 @@ int main(int argc,char**argv)
    }
 
    //
-   // Open the files containing the original closure plots and retrieve the histograms
+   // Open the files containing the original correction plots and retrieve the histograms
    //
    TFile* file1 = new TFile(filepath1.c_str(),"READ");
    TH1F* f1_pt0 = (TH1F*)gDirectory->Get("EtaSF_TDR_0");
@@ -136,7 +142,7 @@ int main(int argc,char**argv)
    //Create a pave indicating the algorithm name
    TString algNameLong;
    if(TString(algo).Contains("ak"))        algNameLong += "Anti-kT";
-   if(TString(algo).Contains("1")&&!TString(algo).Contains("10")) algNameLong += " R=0.1";
+   if(TString(algo).Contains("1")&&!TString(algo).Contains("10")&&!TString(algo).Contains("l1")) algNameLong += " R=0.1";
    else if(TString(algo).Contains("2"))    algNameLong += " R=0.2";
    else if(TString(algo).Contains("3"))    algNameLong += " R=0.3";
    else if(TString(algo).Contains("4"))    algNameLong += " R=0.4";
@@ -146,8 +152,8 @@ int main(int argc,char**argv)
    else if(TString(algo).Contains("8"))    algNameLong += " R=0.8";
    else if(TString(algo).Contains("9"))    algNameLong += " R=0.9";
    else if(TString(algo).Contains("10"))   algNameLong += " R=1.0";
-   if(TString(algo).Contains("pfchs"))     algNameLong += ", PFlow+CHS";
-   else if(TString(algo).Contains("pf"))   algNameLong += ", PFlow";
+   if(TString(algo).Contains("pfchs"))     algNameLong += ", PF+CHS";
+   else if(TString(algo).Contains("pf"))   algNameLong += ", PF";
    else if(TString(algo).Contains("calo")) algNameLong += ", Calo";
    else if(TString(algo).Contains("jpt"))  algNameLong += ", JPT";
  
@@ -155,8 +161,8 @@ int main(int argc,char**argv)
    // Open/create the output directory and file
    //
    if(!gSystem->OpenDirectory(outputDir)) gSystem->mkdir(outputDir);
-   TString ofname = outputDir+"/ClosureVsPtRatio_"+algo+".root";
-   if(doflavor) ofname = outputDir+"/ClosureVsPtRatio_"+algo+"_"+flavor1+"over"+flavor2+".root";
+   TString ofname = outputDir+"/CorrectionTDRRatio_"+algo+".root";
+   if(doflavor) ofname = outputDir+"/CorrectionTDRRatio_"+algo+"_"+flavor1+"over"+flavor2+".root";
    TFile* outf = new TFile(ofname,"RECREATE");
 
    //
@@ -183,10 +189,9 @@ int main(int argc,char**argv)
       ss+="_"+algo;
       if (doflavor) ss += "_"+flavor1+"over"+flavor2;
       can[i] = new TCanvas(ss,ss,1200,800);
-      //can[i]->SetLeftMargin(0.15);
       ratioHist[i]->SetTitle(ss);
       ratioHist[i]->GetXaxis()->SetTitle("#eta");
-      //ratioHist[i]->GetYaxis()->SetTitle("Particle Over Anti-Particle Closure");
+      scanBins(CMEnergy, PtVals[i], ratioHist[i]);
       ratioHist[i]->GetYaxis()->SetTitle("Corr. Factor");
       if(TString(algo).Contains("calo"))
          ratioHist[i]->GetYaxis()->SetRangeUser(0.90,2.5);
@@ -214,7 +219,7 @@ int main(int argc,char**argv)
       ratioHist[i]->Draw("P");
       leg[i]->AddEntry(ratioHist[i],"Ratio = #frac{PU}{No PU}","p");
 
-      if (tdr) cmsPrelim();
+      if (tdr) cmsPrel(13,0);
       for(unsigned int f=0; f<outputFormat.size(); f++) {
          can[i]->SaveAs(outputDir+"/"+ss+outputFormat[f]);
       }
@@ -276,7 +281,7 @@ int main(int argc,char**argv)
          leg[c]->AddEntry(f2_pt2,"No PU","p");
       }
       leg[c]->Draw("same");
-      cmsPrelim();
+      cmsPrel(13,0);
    }
    for(unsigned int f=0; f<outputFormat.size(); f++) {
       ove->SaveAs(outputDir+"/"+ss+outputFormat[f]);
@@ -300,10 +305,11 @@ int main(int argc,char**argv)
    for (int c=0;c<3;c++) {
       //Set marker colors and styles
       if(!TString(algo).Contains("jpt"))
-         ratioHist[c]->GetYaxis()->SetRangeUser(0.96,1.06);
+         //ratioHist[c]->GetYaxis()->SetRangeUser(0.96,1.06);
+         ratioHist[c]->GetYaxis()->SetRangeUser(0.90,3.0);
       else
          ratioHist[c]->GetYaxis()->SetRangeUser(0.90,1.06);
-      ratioHist[c]->GetYaxis()->SetTitle("Corr. Ratio");
+      ratioHist[c]->GetYaxis()->SetTitle("Correction Ratio");
     
       if(c == 0) {
          ratioHist[c]->SetMarkerColor(1);
@@ -332,10 +338,11 @@ int main(int argc,char**argv)
       else
          ptstr.Form("%.1f",PtVals[c]);
 
-      leg2->AddEntry(ratioHist[c],"Ratio=PU/No PU (P_{T}="+ptstr+")","p");      
+      //leg2->AddEntry(ratioHist[c],"Ratio=PU/No PU (P_{T}="+ptstr+")","p");      
+      leg2->AddEntry(ratioHist[c],"Ratio=PHYS14/CSA14 (P_{T}="+ptstr+")","p");
    }
    leg2->Draw("same");
-   cmsPrelim();
+   cmsPrel(13,0);
    for(unsigned int f=0; f<outputFormat.size(); f++) {
       ove2->SaveAs(outputDir+"/"+ss2+outputFormat[f]);
    }
@@ -350,6 +357,15 @@ int main(int argc,char**argv)
 ////////////////////////////////////////////////////////////////////////////////
 // implement local functions
 ////////////////////////////////////////////////////////////////////////////////
+
+//______________________________________________________________________________
+void scanBins(double CMEnergy, double pt, TH1* histo) {
+      float etaMax = TMath::ACosH(CMEnergy/2.0/pt);
+      for(int ibin=1; ibin<=histo->GetNbinsX(); ibin++) {
+         if(TMath::Abs(histo->GetBinCenter(ibin))>etaMax)
+            histo->SetBinContent(ibin,-1.0);
+      }
+}
 
 //______________________________________________________________________________
 void cmsPrelim(double intLUMI)

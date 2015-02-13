@@ -37,9 +37,6 @@ using namespace std;
 // define local functions
 ////////////////////////////////////////////////////////////////////////////////
 
-///CMS Preliminary label;
-void cmsPrelim(double intLUMI = 0);
-
 /// get the uppercase version of the algorithm name
 TString getAlias(TString s);
 
@@ -113,47 +110,53 @@ int main(int argc,char**argv)
       // Find the mean peak of the gaussian fit or the mean of the histogram and 
       // fill the final histograms
       //
-      for(int i=0;i<NPtBins;i++)
-        { 
-          for(int j=0;j<4;j++)
-            {
-              sprintf(name,"CorResponse_%d_RefPt%sto%s",j,Pt[i],Pt[i+1]);
-              h[j][i] = RespVsPt[j]->ProjectionY(name,i+1,i+1);
-              sprintf(name,"FitResponse_%d_RefPt%sto%s",j,Pt[i],Pt[i+1]);
-              func[j][i] = new TF1(name,"gaus",h[j][i]->GetMean()-1.5*h[j][i]->GetRMS(),
-                                   h[j][i]->GetMean()+1.5*h[j][i]->GetRMS());
-              func[j][i]->SetLineColor(4);
-              func[j][i]->SetLineWidth(2);
-              func[j][i]->SetParNames("N","#mu","#sigma");
+      for(int i=0;i<NPtBins;i++) { 
+        for(int j=0;j<4;j++) {
+          sprintf(name,"CorResponse_%d_RefPt%sto%s",j,Pt[i],Pt[i+1]);
+          h[j][i] = RespVsPt[j]->ProjectionY(name,i+1,i+1);
+          sprintf(name,"FitResponse_%d_RefPt%sto%s",j,Pt[i],Pt[i+1]);
+          func[j][i] = new TF1(name,"gaus",h[j][i]->GetMean()-1.5*h[j][i]->GetRMS(),
+                               h[j][i]->GetMean()+1.5*h[j][i]->GetRMS());
+          func[j][i]->SetLineColor(4);
+          func[j][i]->SetLineWidth(2);
+          func[j][i]->SetParNames("N","#mu","#sigma");
 
-              if (h[j][i]->GetEntries()>5)
-                {
-                  h[j][i]->Fit(func[j][i],"RQ");
-                  if(mpv)
-                    {
-                      hClosure[j]->SetBinContent(i+1,func[j][i]->GetParameter(1));
-                      hClosure[j]->SetBinError(i+1,func[j][i]->GetParError(1));
-                    }
-                  else
-                    {
-                      hClosure[j]->SetBinContent(i+1,h[j][i]->GetMean());
-                      hClosure[j]->SetBinError(i+1,h[j][i]->GetMeanError());
-                    }
-                }
-              else
-                {
-                  hClosure[j]->SetBinContent(i+1,h[j][i]->GetMean());
-                  hClosure[j]->SetBinError(i+1,h[j][i]->GetMeanError());
-                }  
-              sprintf(name,"can_%d_RefPt%sto%s",j,Pt[i],Pt[i+1]);
-              TString ss(name);
-              ss+="_"+algs[a];
-              if (tdr && j==0 && i>=NPtBins-6) {
-                 hClosure[j]->SetBinContent(i+1,0.0);
-                 hClosure[j]->SetBinError(i+1,0.0);
-              }
+          if (h[j][i]->GetEntries()>5)
+          {
+            h[j][i]->Fit(func[j][i],"RQ");
+            if(mpv)
+            {
+              hClosure[j]->SetBinContent(i+1,func[j][i]->GetParameter(1));
+              hClosure[j]->SetBinError(i+1,func[j][i]->GetParError(1));
             }
-        }
+            else
+            {
+              hClosure[j]->SetBinContent(i+1,h[j][i]->GetMean());
+              hClosure[j]->SetBinError(i+1,h[j][i]->GetMeanError());
+            }
+          }
+          else
+          {
+            hClosure[j]->SetBinContent(i+1,h[j][i]->GetMean());
+            hClosure[j]->SetBinError(i+1,h[j][i]->GetMeanError());
+          }  
+          sprintf(name,"can_%d_RefPt%sto%s",j,Pt[i],Pt[i+1]);
+          TString ss(name);
+          ss+="_"+algs[a];
+          if (tdr && j==0 && i>=NPtBins-6) {
+           hClosure[j]->SetBinContent(i+1,0.0);
+           hClosure[j]->SetBinError(i+1,0.0);
+         }
+         else if(tdr && hClosure[j]->GetBinError(i+1)>0.035) {
+           hClosure[j]->SetBinContent(i+1,0.0);
+           hClosure[j]->SetBinError(i+1,0.0);
+         }
+         else if(tdr && j==2 && i>=NPtBins-11) {
+           hClosure[j]->SetBinContent(i+1,0.0);
+           hClosure[j]->SetBinError(i+1,0.0);
+         }
+       }
+     }
 
       //
       // Create guides (lines) for the output histograms
@@ -162,22 +165,22 @@ int main(int argc,char**argv)
       line->SetLineColor(1);
       line->SetLineWidth(1);
       line->SetLineStyle(2);
-      TF1 *linePlus;
-      if (tdr)
-         linePlus = new TF1("linePlus","0*x+1.01",0,5000);
-      else
-         linePlus = new TF1("linePlus","0*x+1.02",0,5000);
-      linePlus->SetLineColor(1);
-      linePlus->SetLineWidth(1);
-      linePlus->SetLineStyle(2);
-      TF1 *lineMinus;
-      if (tdr)
-         lineMinus = new TF1("lineMinus","0*x+0.99",0,5000);
-      else
-         lineMinus = new TF1("lineMinus","0*x+0.98",0,5000);
-      lineMinus->SetLineColor(1);
-      lineMinus->SetLineWidth(1);
-      lineMinus->SetLineStyle(2);
+      TF1 *linePlus1 = new TF1("linePlus","0*x+1.01",0,5000);
+      linePlus1->SetLineColor(1);
+      linePlus1->SetLineWidth(1);
+      linePlus1->SetLineStyle(3);
+      TF1 *lineMinus1 = new TF1("lineMinus","0*x+0.99",0,5000);
+      lineMinus1->SetLineColor(1);
+      lineMinus1->SetLineWidth(1);
+      lineMinus1->SetLineStyle(3);
+      TF1 *linePlus2 = new TF1("linePlus","0*x+1.02",0,5000);
+      linePlus2->SetLineColor(1);
+      linePlus2->SetLineWidth(1);
+      linePlus2->SetLineStyle(4);
+      TF1 *lineMinus2 = new TF1("lineMinus","0*x+0.98",0,5000);
+      lineMinus2->SetLineColor(1);
+      lineMinus2->SetLineWidth(1);
+      lineMinus2->SetLineStyle(4);
 
       TCanvas *can[4];
       //TString Text[4] = {"|#eta| < 1.3","1.3 < |#eta| < 3","3 < |#eta| < 5"};
@@ -238,18 +241,18 @@ int main(int argc,char**argv)
             hClosure[j]->GetXaxis()->SetRangeUser(XminPF[j],Xmax[j]);
           else
             hClosure[j]->GetXaxis()->SetRangeUser(XminCalo[j],Xmax[j]);
-          hClosure[j]->GetXaxis()->SetTitle("GenJet p_{T} (GeV)"); 
+          hClosure[j]->GetXaxis()->SetTitle("p_{T}^{GEN} [GeV]"); 
           hClosure[j]->GetYaxis()->SetTitle("Corrected Response");
           if (tdr) {
              hClosure[j]->GetXaxis()->SetTitleSize(0.058);
              hClosure[j]->GetXaxis()->SetTitleOffset(0.95);
              hClosure[j]->SetMarkerStyle(20);
-             hClosure[j]->SetMarkerSize(0.5);
+             //hClosure[j]->SetMarkerSize(0.5);
           }
           else {
              hClosure[j]->GetXaxis()->SetLabelSize(0.04);
              hClosure[j]->GetYaxis()->SetLabelSize(0.04);             
-             hClosure[j]->SetMarkerSize(2.0);
+             //hClosure[j]->SetMarkerSize(2.0);
              hClosure[j]->GetXaxis()->SetNoExponent();
              hClosure[j]->GetXaxis()->SetMoreLogLabels();
           }
@@ -259,14 +262,16 @@ int main(int argc,char**argv)
           hClosure[j]->SetMinimum(0.9);
           hClosure[j]->Draw();
           line->Draw("same");
-          linePlus->Draw("same");
-          lineMinus->Draw("same");
+          linePlus1->Draw("same");
+          lineMinus1->Draw("same");
+          linePlus2->Draw("same");
+          lineMinus2->Draw("same");
           pave[j]->SetFillColor(0);
           pave[j]->SetBorderSize(0);
           pave[j]->SetTextFont(42);
           pave[j]->SetTextSize(0.05);
           pave[j]->Draw("EP");
-          if (tdr) cmsPrelim();
+          if (tdr) cmsPrel(13,0);
           for(unsigned int iformat=0; iformat<outputFormat.size(); iformat++) {
             can[j]->SaveAs(outputDir+ss+outputFormat[iformat]);
           }
@@ -293,10 +298,12 @@ int main(int argc,char**argv)
         }
         hClosure[c]->Draw("EP");
         line->Draw("same");
-        linePlus->Draw("same");
-        lineMinus->Draw("same");
+        linePlus1->Draw("same");
+        lineMinus1->Draw("same");
+        linePlus2->Draw("same");
+        lineMinus2->Draw("same");
         pave[c]->Draw();
-        if (tdr) cmsPrelim();
+        if (tdr) cmsPrel(13,0);
       }
       for(unsigned int iformat=0; iformat<outputFormat.size(); iformat++) {
         ove->SaveAs(outputDir+ss+outputFormat[iformat]);
@@ -309,84 +316,73 @@ int main(int argc,char**argv)
       ss = "ClosureVsPt_Overview2";
       if(!flavor.IsNull()) ss+="_"+algs[a]+"_"+flavor;
       else ss+="_"+algs[a];
-      //TLegend* leg = new TLegend(0.70,0.65,0.90,0.90);
-      TLegend* leg = new TLegend(0.40,0.20,0.80,0.40);
-      leg->SetTextSize(0.04);//0.03);
-      leg->SetBorderSize(0);
-      leg->SetFillColor(0);
-      TCanvas *ove2 = new TCanvas(ss,ss,800,800);//600);
-      ove2->cd();
-      gPad->SetLogx();
+
+      TString algNameLong;
+      if(TString(algs[a]).Contains("ak"))        algNameLong += "Anti-k_{T}";
+      if(TString(algs[a]).Contains("3"))         algNameLong += " R=0.3";
+      else if(TString(algs[a]).Contains("4"))    algNameLong += " R=0.4";
+      else if(TString(algs[a]).Contains("5"))    algNameLong += " R=0.5";
+      else if(TString(algs[a]).Contains("6"))    algNameLong += " R=0.6";
+      else if(TString(algs[a]).Contains("7"))    algNameLong += " R=0.7";
+      else if(TString(algs[a]).Contains("8"))    algNameLong += " R=0.8";
+      else if(TString(algs[a]).Contains("9"))    algNameLong += " R=0.9";
+      else if(TString(algs[a]).Contains("10"))   algNameLong += " R=1.0";
+      if(TString(algs[a]).Contains("pfchs"))     algNameLong += ", PF+CHS";
+      else if(TString(algs[a]).Contains("pf"))   algNameLong += ", PF";
+      else if(TString(algs[a]).Contains("calo")) algNameLong += ", Calo";
+      else if(TString(algs[a]).Contains("jpt"))  algNameLong += ", JPT";
+
+      TLegend* leg = tdrLeg(0.58,0.16,0.9,0.4);
+
+      TH1D* frame = new TH1D();
+      frame->GetXaxis()->SetLimits(10.0,2000.0);
+      frame->GetXaxis()->SetMoreLogLabels();
+      frame->GetXaxis()->SetNoExponent();
+      frame->GetYaxis()->SetRangeUser(0.95,1.05);
+      //frame->GetXaxis()->SetTitle("p_{T}^{GEN} [GeV]");
+      frame->GetXaxis()->SetTitle("p_{T}^{ptcl} [GeV]");
+      frame->GetYaxis()->SetTitle("Corrected Response");
+      TCanvas* ove2 = tdrCanvas(ss,frame,2,11,true);
+      ove2->GetPad(0)->SetLogx();
+
       for (int c=0;c<4;c++) {
-         hClosure[c]->SetMaximum(1.05);
-         hClosure[c]->SetMinimum(0.95);
-         //hClosure[c]->SetMaximum(1.60);
-         //hClosure[c]->SetMinimum(0.40);
-         //if (!tdr) {
-            hClosure[c]->GetXaxis()->SetMoreLogLabels();
-            hClosure[c]->GetXaxis()->SetNoExponent();
-            hClosure[c]->GetXaxis()->SetLabelSize(0.045);
-            hClosure[c]->GetYaxis()->SetLabelSize(0.045);
-            hClosure[c]->SetMarkerSize(0.8);
-            //}
+         hClosure[c]->GetXaxis()->SetRangeUser(10.0,2000.0);
+         hClosure[c]->SetStats(kFALSE);
          if (c==0) {
-            hClosure[c]->SetMarkerColor(kBlack);
-            hClosure[c]->SetLineColor(kBlack);
+            tdrDraw(hClosure[c],"EP",kFullCircle,kBlack,kSolid,kBlack);
          }
          else if (c==1) {
-            hClosure[c]->SetMarkerColor(kBlue);
-            hClosure[c]->SetLineColor(kBlue);
+            tdrDraw(hClosure[c],"EP",kOpenCircle,kBlue,kSolid,kBlue);
          }
          else if (c==2) {
-            hClosure[c]->SetMarkerColor(kRed);
-            hClosure[c]->SetLineColor(kRed);
+            tdrDraw(hClosure[c],"EP",kFullTriangleUp,kRed,kSolid,kRed);
          }
          else {
-            hClosure[c]->SetMarkerColor(kMagenta);
-            hClosure[c]->SetLineColor(kMagenta);
+            tdrDraw(hClosure[c],"EP",kOpenTriangleUp,kMagenta,kSolid,kMagenta);
          }
-         if (c==0)
-            hClosure[c]->Draw("EP");
-         else
-            hClosure[c]->Draw("EPsame");
          leg->AddEntry(hClosure[c],Text[c],"lep");
          line->SetLineWidth(2);
          line->Draw("same");
-         linePlus->SetLineWidth(2);
-         linePlus->Draw("same");
-         lineMinus->SetLineWidth(2);
-         lineMinus->Draw("same");
+         linePlus1->SetLineWidth(2);
+         linePlus1->Draw("same");
+         lineMinus1->SetLineWidth(2);
+         lineMinus1->Draw("same");
+         //linePlus2->SetLineWidth(2);
+         //linePlus2->Draw("same");
+         //lineMinus2->SetLineWidth(2);
+         //lineMinus2->Draw("same");
          delete pave[c];
-         pave[c] = new TPaveText(0.35,0.8,0.75,0.9,"NDC");
+         pave[c] = tdrText(0.5,0.75,0.93,1-gPad->GetTopMargin()-0.045*(1-gPad->GetTopMargin()-gPad->GetBottomMargin()),31);
          if (tdr) {
             pave[c]->AddText("QCD Monte Carlo");
-            TString algNameLong;
-            if(TString(algs[a]).Contains("ak"))        algNameLong += "Anti-kT";
-            if(TString(algs[a]).Contains("3"))         algNameLong += " R=0.3";
-            else if(TString(algs[a]).Contains("4"))    algNameLong += " R=0.4";
-            else if(TString(algs[a]).Contains("5"))    algNameLong += " R=0.5";
-            else if(TString(algs[a]).Contains("6"))    algNameLong += " R=0.6";
-            else if(TString(algs[a]).Contains("7"))    algNameLong += " R=0.7";
-            else if(TString(algs[a]).Contains("8"))    algNameLong += " R=0.8";
-            else if(TString(algs[a]).Contains("9"))    algNameLong += " R=0.9";
-            else if(TString(algs[a]).Contains("10"))   algNameLong += " R=1.0";
-            if(TString(algs[a]).Contains("pfchs"))     algNameLong += ", PFlow+CHS";
-            else if(TString(algs[a]).Contains("pf"))   algNameLong += ", PFlow";
-            else if(TString(algs[a]).Contains("calo")) algNameLong += ", Calo";
-            else if(TString(algs[a]).Contains("jpt"))  algNameLong += ", JPT";
             pave[c]->AddText(algNameLong);
          }
          else {
             pave[c]->AddText(algs[a]);
          }
-         pave[c]->SetFillColor(0);
-         pave[c]->SetBorderSize(0);
-         pave[c]->SetTextFont(42);
-         pave[c]->SetTextSize(0.035);//0.05);
-         pave[c]->Draw();
+         pave[c]->Draw("same");
          leg->Draw("same");
       }
-      if (tdr) cmsPrelim();
       for(unsigned int iformat=0; iformat<outputFormat.size(); iformat++) {
         ove2->SaveAs(outputDir+ss+outputFormat[iformat]);
       }
@@ -399,25 +395,6 @@ int main(int argc,char**argv)
 ////////////////////////////////////////////////////////////////////////////////
 // implement local functions
 ////////////////////////////////////////////////////////////////////////////////
-
-//______________________________________________________________________________
-void cmsPrelim(double intLUMI)
-{
-   const float LUMINOSITY = intLUMI;
-  TLatex latex;
-  latex.SetNDC();
-  latex.SetTextSize(0.045);
-
-  latex.SetTextAlign(31); // align right
-  latex.DrawLatex(0.93,0.96,"#sqrt{s} = 8 TeV");
-  if (LUMINOSITY > 0.) {
-    latex.SetTextAlign(31); // align right
-    //latex.DrawLatex(0.82,0.7,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //Original
-    latex.DrawLatex(0.65,0.85,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //29/07/2011
-  }
-  latex.SetTextAlign(11); // align left
-  latex.DrawLatex(0.16,0.96,"CMS Simulation");// 2012");
-}
 
 //______________________________________________________________________________
 TString getAlias(TString s)

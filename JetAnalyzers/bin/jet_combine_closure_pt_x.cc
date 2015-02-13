@@ -157,10 +157,11 @@ int main(int argc,char**argv)
 
   double XminCalo[4] = {15,15,15,15};
   double XminPF[4] = {5,5,5,5};
-  if(tdr) {XminPF[0] = 30; XminPF[1] = 30; XminPF[2] = 30; XminPF[3] = 30;}
+  if(tdr) {XminPF[0] = 10; XminPF[1] = 10; XminPF[2] = 10; XminPF[3] = 10;}
   double Xmax[4] = {3000,3000,3000,190};
   if(tdr) {Xmax[0] = 1000; Xmax[1] = 1000; Xmax[2] = 390; Xmax[3] = 190;}
   vector<Int_t> colors = getColors();
+  vector<Int_t> markers = getMarkerNumbers();
   
   char name[1024];
   TH1F *h=0;
@@ -182,20 +183,31 @@ int main(int argc,char**argv)
   //
   // Format and save the output
   //
+  TH1D* frame = new TH1D();
+  frame->GetXaxis()->SetLimits(10.0,2000.0);
+  frame->GetXaxis()->SetMoreLogLabels();
+  frame->GetXaxis()->SetNoExponent();
+  frame->GetYaxis()->SetRangeUser(0.94,1.06);
+  frame->GetXaxis()->SetTitle("p_{T}^{ptcl} [GeV]");
+  frame->GetYaxis()->SetTitle("Corrected Response");
   for(int j=0;j<4;j++)
     {
       if(tdr) {
-         leg.push_back(new TLegend(0.25,0.2,0.9,0.35));
+         //leg.push_back(new TLegend(0.25,0.2,0.9,0.35));
+         leg.push_back(tdrLeg(0.25,0.2,0.9,0.35));
          leg.back()->SetNColumns(3);
-         leg.back()->SetTextSize(0.04);
+         //leg.back()->SetTextSize(0.04);
        }
       else
          leg.push_back(new TLegend(0.7,0.8,1.0,1.0));
-      if(tdr)
-         pave[j] = new TPaveText(0.3,0.75,0.8,0.9,"NDC");
-      else
+      if(tdr) {
+         pave[j] = tdrText(0.5,0.75,0.93,1-gPad->GetTopMargin()-0.045*(1-gPad->GetTopMargin()-gPad->GetBottomMargin())-0.02,31);
+         //pave[j] = new TPaveText(0.3,0.75,0.8,0.9,"NDC");
+       }
+      else {
          pave[j] = new TPaveText(0.3,0.9,0.8,1.0,"NDC");
-      pave[j]->SetTextSize(0.04);
+         pave[j]->SetTextSize(0.04);
+       }
       pave[j]->AddText("QCD Monte Carlo");
       pave[j]->AddText(JetInfo::get_legend_title(string(algs[0]),false).c_str());
       pave[j]->AddText(Text[j]);      
@@ -205,9 +217,9 @@ int main(int argc,char**argv)
       if(combinePU) ss+="_"+puLabels+"_"+algNames;
       else ss+="_"+algNames;
       if(!flavor.IsNull()) ss+="_"+flavor;
-      can[j] = new TCanvas(ss,ss,800,800);
+      can[j] = tdrCanvas(ss,frame,2,11,true);//new TCanvas(ss,ss,800,800);
       if (j<2)
-        gPad->SetLogx();
+        gPad->SetLogx();//can[j]->GetPad(0)->SetLogx();
   
       for(unsigned int a=0; a<infs.size(); a++)
         {
@@ -254,16 +266,16 @@ int main(int argc,char**argv)
             hClosure[j][a]->GetXaxis()->SetRangeUser(XminPF[j],Xmax[j]);
           else
             hClosure[j][a]->GetXaxis()->SetRangeUser(XminCalo[j],Xmax[j]);	    
-          hClosure[j][a]->GetXaxis()->SetTitle("p_{T}^{GEN} [GeV]"); 
-          hClosure[j][a]->GetYaxis()->SetTitle("Corrected Response");
-          hClosure[j][a]->GetYaxis()->SetTitleOffset(1.25);
-          hClosure[j][a]->GetXaxis()->SetLabelSize(0.035);
-          hClosure[j][a]->GetXaxis()->SetMoreLogLabels();
-          hClosure[j][a]->GetXaxis()->SetNoExponent();
-          hClosure[j][a]->GetYaxis()->SetLabelSize(0.035); 
+          //hClosure[j][a]->GetXaxis()->SetTitle("p_{T}^{GEN} [GeV]"); 
+          //hClosure[j][a]->GetYaxis()->SetTitle("Corrected Response");
+          //hClosure[j][a]->GetYaxis()->SetTitleOffset(1.25);
+          //hClosure[j][a]->GetXaxis()->SetLabelSize(0.035);
+          //hClosure[j][a]->GetXaxis()->SetMoreLogLabels();
+          //hClosure[j][a]->GetXaxis()->SetNoExponent();
+          //hClosure[j][a]->GetYaxis()->SetLabelSize(0.035); 
           if (tdr) {
-             hClosure[j][a]->SetMarkerStyle(20);
-             hClosure[j][a]->SetMarkerSize(1.2);
+             //hClosure[j][a]->SetMarkerStyle(20);
+             //hClosure[j][a]->SetMarkerSize(1.2);
           }
           else {
              hClosure[j][a]->SetMarkerSize(2.0);
@@ -271,8 +283,8 @@ int main(int argc,char**argv)
           hClosure[j][a]->SetMarkerColor(colors[a]); //a+1
           hClosure[j][a]->SetLineColor(colors[a]); //a+1
           if(tdr) {
-            hClosure[j][a]->SetMaximum(1.05);
-            hClosure[j][a]->SetMinimum(0.95);
+            hClosure[j][a]->SetMaximum(1.06);
+            hClosure[j][a]->SetMinimum(0.94);
           }
           else {
             hClosure[j][a]->SetMaximum(1.1);
@@ -289,10 +301,12 @@ int main(int argc,char**argv)
               //gPad->SetLogx(0);
             }
 
-          if(a==0)
-              hClosure[j][a]->Draw();
-          else
-            hClosure[j][a]->Draw("same");
+          //if(a==0)
+          //    hClosure[j][a]->Draw();
+          //else
+          //  hClosure[j][a]->Draw("same");
+          //tdrDraw(hClosure[j][a],"",kFullCircle,colors[a],kSolid,colors[a],kNone,0);
+            tdrDraw(hClosure[j][a],"",markers[a],colors[a],kSolid,colors[a],kNone,0);
 
           //cout << "a = " << a << "    hClosure[" << j << "][" << a <<"] = " << hClosure[j][a] << endl;
           //if (a>=4) hClosure[j][4]->Draw("same");
@@ -307,15 +321,21 @@ int main(int argc,char**argv)
       line->Draw("same");
       linePlus->Draw("same");
       lineMinus->Draw("same");
-      pave[j]->SetFillColor(0);
-      pave[j]->SetBorderSize(0);
-      pave[j]->SetTextFont(42);
-      pave[j]->SetTextSize(0.05);
-      pave[j]->Draw();
-      leg[j]->SetFillColor(0);
-      leg[j]->SetLineColor(0);
-      leg[j]->Draw("same");
-      if (tdr) cmsPrelim();
+      if(tdr) {
+        pave[j]->Draw("same");
+        leg[j]->Draw("same");
+      }
+      else {
+        pave[j]->SetFillColor(0);
+        pave[j]->SetBorderSize(0);
+        pave[j]->SetTextFont(42);
+        pave[j]->SetTextSize(0.05);
+        pave[j]->Draw();
+        leg[j]->SetFillColor(0);
+        leg[j]->SetLineColor(0);
+        leg[j]->Draw("same");
+      }
+      //if (tdr) cmsPrelim();
       can[j]->Write();
       for(unsigned int iformat=0; iformat<outputFormat.size(); iformat++) {
          can[j]->SaveAs(outputDir+ss+outputFormat[iformat]);
@@ -354,7 +374,7 @@ vector<Int_t> getColors() {
   ret.push_back(kBlack);
   ret.push_back(kRed);
   ret.push_back(kOrange+1);
-  ret.push_back(kYellow);
+  ret.push_back(kYellow+2);
   ret.push_back(kGreen);
   ret.push_back(kCyan);
   ret.push_back(kAzure+1);
