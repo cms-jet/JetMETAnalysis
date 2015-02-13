@@ -27,6 +27,7 @@ public :
    // Declaration of leaf types
    vector<int>*    npus;
    vector<float>*  tnpus;
+   vector<float>*  zpositions;
    vector<int>*    bxns;
    vector<float>*  sumpt_lowpt;
    vector<float>*  sumpt_highpt;
@@ -69,10 +70,12 @@ public :
    Float_t         jtmuf[92];   //[nref]
    Float_t         jthfhf[92];   //[nref]
    Float_t         jthfef[92];   //[nref]
+   Float_t         refdzvtx[92];   //[nref]
 
    // List of branches
    TBranch        *b_npus;   //!
    TBranch        *b_tnpus;   //!
+   TBranch        *b_zpositions;   //!
    TBranch        *b_bxns;   //!
    TBranch        *b_sumpt_lowpt;   //!
    TBranch        *b_sumpt_highpt;   //!
@@ -115,6 +118,7 @@ public :
    TBranch        *b_jtmuf;   //!
    TBranch        *b_jthfhf;   //!
    TBranch        *b_jthfef;   //!
+   TBranch        *b_refdzvtx;   //!
 
    JRANtuple(TTree *tree=0, bool newTree = false);
    virtual ~JRANtuple();
@@ -188,6 +192,7 @@ void JRANtuple::MakeTree(TTree *tree)
    // Set object pointer
    npus         = new vector<int>;
    tnpus        = new vector<float>;
+   zpositions   = new vector<float>;
    bxns         = new vector<int>;
    sumpt_lowpt  = new vector<float>;
    sumpt_highpt = new vector<float>;
@@ -209,6 +214,7 @@ void JRANtuple::MakeTree(TTree *tree)
 
    fChain->Branch("npus", "vector<Int_t>", &npus);
    fChain->Branch("tnpus", "vector<Float_t>", &tnpus);
+   fChain->Branch("zpositions", "vector<Float_t>", &zpositions);
    fChain->Branch("bxns", "vector<Int_t>", &bxns);
    fChain->Branch("sumpt_lowpt", "vector<Float_t>", &sumpt_lowpt);
    fChain->Branch("sumpt_highpt", "vector<Float_t>", &sumpt_highpt);
@@ -251,6 +257,7 @@ void JRANtuple::MakeTree(TTree *tree)
    fChain->Branch("jtmuf", jtmuf, "jtmuf[nref]/F");
    fChain->Branch("jthfhf", jthfhf, "jthfhf[nref]/F");
    fChain->Branch("jthfef", jthfef, "jthfef[nref]/F");
+   fChain->Branch("refdzvtx", refdzvtx, "refdzvtx[nref]/F");
    Notify();
 }
 
@@ -267,6 +274,7 @@ void JRANtuple::Init(TTree *tree)
    // Set object pointer
    npus         = new vector<int>;
    tnpus        = new vector<float>;
+   zpositions   = new vector<float>;
    bxns         = new vector<int>;
    sumpt_lowpt  = new vector<float>;
    sumpt_highpt = new vector<float>;
@@ -288,6 +296,7 @@ void JRANtuple::Init(TTree *tree)
 
    fChain->SetBranchAddress("npus", &npus, &b_npus);
    fChain->SetBranchAddress("tnpus", &tnpus, &b_tnpus);
+   fChain->SetBranchAddress("zpositions", &zpositions, &b_zpositions);
    fChain->SetBranchAddress("bxns", &bxns, &b_bxns);
    fChain->SetBranchAddress("sumpt_lowpt", &sumpt_lowpt, &b_sumpt_lowpt);
    fChain->SetBranchAddress("sumpt_highpt", &sumpt_highpt, &b_sumpt_highpt);
@@ -330,6 +339,7 @@ void JRANtuple::Init(TTree *tree)
    fChain->SetBranchAddress("jtmuf", jtmuf, &b_jtmuf);
    fChain->SetBranchAddress("jthfhf", jthfhf, &b_jthfhf);
    fChain->SetBranchAddress("jthfef", jthfef, &b_jthfef);
+   fChain->SetBranchAddress("refdzvtx", refdzvtx, &b_refdzvtx);
    Notify();
 }
 

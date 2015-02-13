@@ -111,6 +111,7 @@ private:
 
   vector<Int_t> npus_;
   vector<Float_t> tnpus_;
+  vector<Float_t> zpositions_;
   vector<Int_t> bxns_;
   vector<Float_t> sumpt_lowpt_;
   vector<Float_t> sumpt_highpt_;
@@ -159,6 +160,8 @@ private:
   Float_t       jtmuf_[100];
   Float_t       jthfhf_[100];
   Float_t       jthfef_[100];
+
+  Float_t       refdzvtx_[100];
   
 };
 
@@ -248,6 +251,7 @@ void JetResponseAnalyzer::beginJob()
 
   tree_->Branch("npus", "vector<Int_t>",  &npus_);
   tree_->Branch("tnpus", "vector<Float_t>",  &tnpus_);
+  tree_->Branch("zpositions", "vector<Float_t>",  &zpositions_);
   tree_->Branch("bxns", "vector<Int_t>", &bxns_);
   tree_->Branch("sumpt_lowpt", "vector<Float_t>", &sumpt_lowpt_);
   tree_->Branch("sumpt_highpt", "vector<Float_t>", &sumpt_highpt_);
@@ -306,6 +310,8 @@ void JetResponseAnalyzer::beginJob()
     }
   }
 
+  tree_->Branch("refdzvtx",  refdzvtx_,  "refdzvtx[nref]/F");
+
 }
 
 
@@ -356,14 +362,19 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
        rho_hlt_ = *rho_hlt;
      }
   }
- 
+
+  //refdrjt_[nref_]  =reco::deltaR(jet->eta(),jet->phi(),ref->eta(),ref->phi());
+  //if (abs(muIter->innerTrack()->dz(vtxHandle->at(0).position()))<muPrim_dzMax && muIter->dB()<muPrim_dBMax) 
   //NPV INFORMATION
   npv_ = 0;
+
   if (iEvent.getByLabel(srcVtx_,vtx)) {
      const reco::VertexCollection::const_iterator vtxEnd = vtx->end();
      for (reco::VertexCollection::const_iterator vtxIter = vtx->begin(); vtxEnd != vtxIter; ++vtxIter) {
-        if (!vtxIter->isFake() && vtxIter->ndof()>=4 && fabs(vtxIter->z())<=24)
+        if (!vtxIter->isFake() && vtxIter->ndof()>=4 && fabs(vtxIter->z())<=24) {
            ++npv_;
+           refdzvtx_[nref_] = 0;//fabs(vtxIter->z()-);
+        }
      }
      //npv_ = vtx->size();
   }
@@ -376,6 +387,7 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
   // MC PILEUP INFORMATION
   npus_.clear();
   tnpus_.clear();
+  zpositions_.clear();
   bxns_.clear();
   sumpt_lowpt_.clear();
   sumpt_highpt_.clear();
@@ -385,6 +397,7 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
      for(unsigned int i=0; i<puInfos->size(); i++) {
         npus_.push_back((*puInfos)[i].getPU_NumInteractions());
         tnpus_.push_back((*puInfos)[i].getTrueNumInteractions());
+        //zpositions_.push_back((*puInfos)[i].getPU_zpositions());
         bxns_.push_back((*puInfos)[i].getBunchCrossing());
         int sumptlowpttemp = 0;
         int sumpthighpttemp = 0;
