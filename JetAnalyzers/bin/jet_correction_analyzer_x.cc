@@ -115,7 +115,7 @@ int main(int argc,char**argv)
    string          era               = cl.getValue<string>       ("era");
    TString         outputDir         = cl.getValue<TString>      ("outputDir",            "");
    bool            useL1Cor          = cl.getValue<bool>         ("useL1Cor",          false);
-   bool            useL2Cor          = cl.getValue<bool>         ("useL2Cor",           true);
+   bool            useL2Cor          = cl.getValue<bool>         ("useL2Cor",          false);
    bool            useL3Cor          = cl.getValue<bool>         ("useL3Cor",          false);
    bool            useL2L3ResCor     = cl.getValue<bool>         ("useL2L3ResCor",     false);
    bool            useL5Cor          = cl.getValue<bool>         ("useL5Cor",          false);
@@ -131,15 +131,15 @@ int main(int argc,char**argv)
    unsigned int    evtmax            = cl.getValue<unsigned int> ("evtmax",                0);
    bool            printnpu          = cl.getValue<bool>         ("printnpu",          false);
    int             itlow             = cl.getValue<int>          ("itlow",                 0);
-   int             ithigh            = cl.getValue<int>          ("ithigh",             1000);
+   int             ithigh            = cl.getValue<int>          ("ithigh",           100000);
    int             earlyootlow       = cl.getValue<int>          ("earlyootlow",           0);
-   int             earlyoothigh      = cl.getValue<int>          ("earlyoothigh",       1000);
+   int             earlyoothigh      = cl.getValue<int>          ("earlyoothigh",     100000);
    int             lateootlow        = cl.getValue<int>          ("lateootlow",            0);
-   int             lateoothigh       = cl.getValue<int>          ("lateoothigh",        1000);
+   int             lateoothigh       = cl.getValue<int>          ("lateoothigh",      100000);
    int             totalootlow       = cl.getValue<int>          ("totalootlow",           0);
-   int             totaloothigh      = cl.getValue<int>          ("totaloothigh",       1000);
+   int             totaloothigh      = cl.getValue<int>          ("totaloothigh",     100000);
    int             totallow          = cl.getValue<int>          ("totallow",              0);
-   int             totalhigh         = cl.getValue<int>          ("totalhigh",          1000);
+   int             totalhigh         = cl.getValue<int>          ("totalhigh",        100000);
    TString         weightfilename    = cl.getValue<TString>      ("weightfilename",       "");
    TString         MCPUReWeighting   = cl.getValue<TString>      ("MCPUReWeighting",      "");
    TString         DataPUReWeighting = cl.getValue<TString>      ("DataPUReWeighting",    "");
@@ -536,7 +536,11 @@ int main(int argc,char**argv)
             JetCorrector->setJetEta(eta);
             int origIgnoreLevel = gErrorIgnoreLevel;
             gErrorIgnoreLevel = kBreak;
-            float scale  = JetCorrector->getCorrection();
+            float scale;
+            if(useL1Cor || useL2Cor || useL3Cor || useL2L3ResCor || useL5Cor)
+               scale = JetCorrector->getCorrection();
+            else
+               scale = 1.0;
             gErrorIgnoreLevel = origIgnoreLevel;
 
             //
