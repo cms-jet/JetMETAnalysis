@@ -342,7 +342,7 @@ int main(int argc,char**argv)
       //frame->GetXaxis()->SetTitle("p_{T}^{GEN} [GeV]");
       frame->GetXaxis()->SetTitle("p_{T}^{ptcl} [GeV]");
       frame->GetYaxis()->SetTitle("Corrected Response");
-      TCanvas* ove2 = tdrCanvas(ss,frame,2,11,true);
+      TCanvas* ove2 = tdrCanvas(ss,frame,4,11,true);
       ove2->GetPad(0)->SetLogx();
 
       for (int c=0;c<4;c++) {
