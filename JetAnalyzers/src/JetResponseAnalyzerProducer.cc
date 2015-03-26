@@ -18,7 +18,6 @@ JetResponseAnalyzerProducer::JetResponseAnalyzerProducer(const edm::ParameterSet
   , srcRef_        (iConfig.getParameter<edm::InputTag>                 ("srcRef"))
   , srcRefToJetMap_(iConfig.getParameter<edm::InputTag>         ("srcRefToJetMap"))
   , srcRho_        (iConfig.getParameter<edm::InputTag>                 ("srcRho"))
-  , srcRho50_      (iConfig.getParameter<edm::InputTag>               ("srcRho50"))
   , srcRhoHLT_     (iConfig.getParameter<edm::InputTag>              ("srcRhoHLT"))
   , srcVtx_        (iConfig.getParameter<edm::InputTag>                 ("srcVtx"))
   , jecLabel_      (iConfig.getParameter<std::string>                 ("jecLabel"))
@@ -114,7 +113,6 @@ void JetResponseAnalyzerProducer::produce(edm::Event& iEvent,
   edm::Handle<reco::CandViewMatchMap>            refToJetMap;
   edm::Handle<reco::JetMatchedPartonsCollection> refToPartonMap;
   edm::Handle<double>                            rho;
-  edm::Handle<double>                            rho50;
   edm::Handle<double>                            rho_hlt;
   edm::Handle<reco::VertexCollection>            vtx;
 
@@ -134,11 +132,7 @@ void JetResponseAnalyzerProducer::produce(edm::Event& iEvent,
   if (iEvent.getByLabel(srcRho_,rho)) {
     JRAEvt_->rho = *rho;
   }
-  //RHO50 INFORMATION
-  JRAEvt_->rho50 = 0.0;
-    if (iEvent.getByLabel(srcRho50_,rho50)) {
-    JRAEvt_->rho50 = *rho50;
-  }
+
   //HLT RHO INFORMATION
   JRAEvt_->rho_hlt = 0.0;
   if (doHLT_) {

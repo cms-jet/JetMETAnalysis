@@ -78,8 +78,8 @@ private:
   edm::InputTag srcJetToUncorJetMap_;
   edm::InputTag srcRefToJetMap_;
   edm::InputTag srcRefToPartonMap_;
+  edm::InputTag srcRhos_;
   edm::InputTag srcRho_;
-  edm::InputTag srcRho50_;
   edm::InputTag srcRhoHLT_;
   edm::InputTag srcVtx_;
 
@@ -117,8 +117,8 @@ private:
   vector<Float_t> sumpt_highpt_;
   vector<Int_t> ntrks_lowpt_;
   vector<Int_t> ntrks_highpt_;
+  vector<Float_t> rhos_;
   Float_t       rho_;
-  Float_t       rho50_;
   Float_t       rho_hlt_;
   Float_t       pthat_;
   Float_t       beta_;
@@ -176,8 +176,8 @@ JetResponseAnalyzer::JetResponseAnalyzer(const edm::ParameterSet& iConfig)
   , srcRef_        (iConfig.getParameter<edm::InputTag>                 ("srcRef"))
   , srcJetToUncorJetMap_  (iConfig.getParameter<edm::InputTag>    ("srcJetToUncorJetMap"))
   , srcRefToJetMap_(iConfig.getParameter<edm::InputTag>         ("srcRefToJetMap"))
+  , srcRhos_       (iConfig.getParameter<edm::InputTag>                ("srcRhos"))
   , srcRho_        (iConfig.getParameter<edm::InputTag>                 ("srcRho"))
-  , srcRho50_      (iConfig.getParameter<edm::InputTag>               ("srcRho50"))
   , srcRhoHLT_     (iConfig.getParameter<edm::InputTag>              ("srcRhoHLT"))
   , srcVtx_        (iConfig.getParameter<edm::InputTag>                 ("srcVtx"))
   , jecLabel_      (iConfig.getParameter<std::string>                 ("jecLabel"))
@@ -257,8 +257,8 @@ void JetResponseAnalyzer::beginJob()
   tree_->Branch("sumpt_highpt", "vector<Float_t>", &sumpt_highpt_);
   tree_->Branch("ntrks_lowpt", "vector<Int_t>", &ntrks_lowpt_);
   tree_->Branch("ntrks_highpt", "vector<Int_t>", &ntrks_highpt_);
+  tree_->Branch("rhos", "vector<Float_t>", &rhos_);
   tree_->Branch("rho", &rho_, "rho/F");
-  tree_->Branch("rho50", &rho_, "rho50/F");
   if (doHLT_) tree_->Branch("rho_hlt",&rho_hlt_, "rho_hlt/F");
   tree_->Branch("pthat", &pthat_,  "pthat/F");
   tree_->Branch("beta", &beta_,  "beta/F");
@@ -327,8 +327,8 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
   edm::Handle<reco::CandViewMatchMap>            jetToUncorJetMap;
   edm::Handle<reco::CandViewMatchMap>            refToJetMap;
   edm::Handle<reco::JetMatchedPartonsCollection> refToPartonMap;
+  edm::Handle<vector<double> >                   rhos;
   edm::Handle<double>                            rho;
-  edm::Handle<double>                            rho50;
   edm::Handle<double>                            rho_hlt;
   edm::Handle<reco::VertexCollection>            vtx;
 
@@ -350,16 +350,20 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
   if (iEvent.getByLabel(srcRho_,rho)) {
     rho_ = *rho;
   }
-  //RHO50 INFORMATION
-  rho50_ = 0.0;
-    if (iEvent.getByLabel(srcRho50_,rho50)) {
-    rho50_ = *rho50;
-  }
+
   //HLT RHO INFORMATION
   rho_hlt_ = 0.0;
   if (doHLT_) {
      if (iEvent.getByLabel(srcRhoHLT_,rho_hlt)) {
        rho_hlt_ = *rho_hlt;
+     }
+  }
+
+  //ETA DEPENDENT RHO INFORMATION
+  rhos_.clear();
+  if(iEvent.getByLabel(srcRhos_,rhos)) {
+     for(unsigned int i=0; i<rhos->size(); i++) {
+        rhos_.push_back((*rhos)[i]);
      }
   }
 
