@@ -295,7 +295,6 @@ int main(int argc,char**argv) {
                avgRho+=rho->HT;
             }
 			ialg->second.second->rho     = avgRho/nRho;
-			ialg->second.second->rho50   = 0;
 			ialg->second.second->rho_hlt = 0;
 
 			//Set values for the NPU Collection
