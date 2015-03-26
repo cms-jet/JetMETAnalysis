@@ -33,8 +33,8 @@ public :
    vector<float>*  sumpt_highpt;
    vector<int>*    ntrks_lowpt;
    vector<int>*    ntrks_highpt;
+   vector<float>*  rhos;
    Float_t         rho;
-   Float_t         rho50;
    Float_t         rho_hlt;
    Float_t         pthat;
    Float_t         beta;
@@ -81,8 +81,8 @@ public :
    TBranch        *b_sumpt_highpt;   //!
    TBranch        *b_ntrks_lowpt;   //!
    TBranch        *b_ntrks_highpt;   //!
+   TBranch        *b_rhos;   //!
    TBranch        *b_rho;   //!
-   TBranch        *b_rho50;   //!
    TBranch        *b_rho_hlt;   //!
    TBranch        *b_pthat;   //!
    TBranch        *b_beta;   //!
@@ -220,8 +220,8 @@ void JRANtuple::MakeTree(TTree *tree)
    fChain->Branch("sumpt_highpt", "vector<Float_t>", &sumpt_highpt);
    fChain->Branch("ntrks_lowpt", "vector<Int_t>", &ntrks_lowpt);
    fChain->Branch("ntrks_highpt", "vector<Int_t>", &ntrks_highpt);
+   fChain->Branch("rhos", "vector<Float_t>", &rhos);
    fChain->Branch("rho", &rho, "rho/F");
-   fChain->Branch("rho50", &rho50, "rho50/F");
    fChain->Branch("rho_hlt", &rho_hlt, "rho_hlt/F");
    fChain->Branch("pthat", &pthat, "pthat/F");
    fChain->Branch("beta", &beta, "beta/F");
@@ -302,8 +302,8 @@ void JRANtuple::Init(TTree *tree)
    fChain->SetBranchAddress("sumpt_highpt", &sumpt_highpt, &b_sumpt_highpt);
    fChain->SetBranchAddress("ntrks_lowpt", &ntrks_lowpt, &b_ntrks_lowpt);
    fChain->SetBranchAddress("ntrks_highpt", &ntrks_highpt, &b_ntrks_highpt);
+   fChain->SetBranchAddress("rhos", &rhos, &b_rhos);
    fChain->SetBranchAddress("rho", &rho, &b_rho);
-   fChain->SetBranchAddress("rho50", &rho50, &b_rho50);
    fChain->SetBranchAddress("rho_hlt", &rho_hlt, &b_rho_hlt);
    fChain->SetBranchAddress("pthat", &pthat, &b_pthat);
    fChain->SetBranchAddress("beta", &beta, &b_beta);
