@@ -18,6 +18,7 @@ from JetMETAnalysis.JetAnalyzers.JetReconstruction_cff import *
 #from JetMETAnalysis.JetAnalyzers.JPTReconstruction_cff import *
 from JetMETAnalysis.JetAnalyzers.JetCorrection_cff     import *
 #from RecoTauTag.TauTagTools.tauDecayModes_cfi          import *
+from Dummy.Puppi.Puppi_cff import *
 
 #tauDiscriminatorDict = {
 #    "ak5tauHPSloose"            : "hpsPFTauDiscriminationByLooseIsolation",
@@ -90,6 +91,16 @@ stdGenJetsDict = {
     'ak7trk'        : 'ak7GenJets',
     'kt4trk'        : 'kt4GenJets',
     'kt6trk'        : 'kt6GenJets',
+    'ak1puppi'      : 'ak1GenJets',
+    'ak2puppi'      : 'ak2GenJets',
+    'ak3puppi'      : 'ak3GenJets',
+    'ak4puppi'      : 'ak4GenJets',
+    'ak5puppi'      : 'ak5GenJets',
+    'ak6puppi'      : 'ak6GenJets',
+    'ak7puppi'      : 'ak7GenJets',
+    'ak8puppi'      : 'ak8GenJets',
+    'ak9puppi'      : 'ak9GenJets',
+    'ak10puppi'     : 'ak10GenJets',
 #    'ak5jpt'        : 'ak5GenJets',
 #    'ak7jpt'        : 'ak7GenJets',
 #    'ak5tauHPSall'  : 'tauGenJetsSelectorAllHadrons',
@@ -141,6 +152,16 @@ genJetsDict = {
     'ak7trk'        : ('ak7GenJetsNoNu',               ak7GenJetsNoNu),
     'kt4trk'        : ('kt4GenJetsNoNu',               kt4GenJetsNoNu),
     'kt6trk'        : ('kt6GenJetsNoNu',               kt6GenJetsNoNu),
+    'ak1puppi'      : ('ak1GenJetsNoNu',               ak1GenJetsNoNu),
+    'ak2puppi'      : ('ak2GenJetsNoNu',               ak2GenJetsNoNu),
+    'ak3puppi'      : ('ak3GenJetsNoNu',               ak3GenJetsNoNu),
+    'ak4puppi'      : ('ak4GenJetsNoNu',               ak4GenJetsNoNu),
+    'ak5puppi'      : ('ak5GenJetsNoNu',               ak5GenJetsNoNu),
+    'ak6puppi'      : ('ak6GenJetsNoNu',               ak6GenJetsNoNu),
+    'ak7puppi'      : ('ak7GenJetsNoNu',               ak7GenJetsNoNu),
+    'ak8puppi'      : ('ak8GenJetsNoNu',               ak8GenJetsNoNu),
+    'ak9puppi'      : ('ak9GenJetsNoNu',               ak9GenJetsNoNu),
+    'ak10puppi'     : ('ak10GenJetsNoNu',              ak10GenJetsNoNu),
 #    'ak5jpt'        : ('ak5GenJetsNoNu',               ak5GenJetsNoNu),
 #    'ak7jpt'        : ('ak7GenJetsNoNu',               ak7GenJetsNoNu),
 #    'ak5tauHPSall'  : ('tauGenJetsSelectorAllHadrons', tauGenJetsSelectorAllHadrons),
@@ -191,6 +212,16 @@ stdRecJetsDict = {
     'ak5pfchsHLT'   : 'hltAntiKT5PFJetsNoPUPixelVert',
     'ak5trk'        : 'ak5TrackJets',
     'kt4trk'        : 'kt4TrackJets',
+    'ak1puppi'      : 'ak1PUPPIJets',
+    'ak2puppi'      : 'ak2PUPPIJets',
+    'ak3puppi'      : 'ak3PUPPIJets',
+    'ak4puppi'      : 'ak4PUPPIJets',
+    'ak5puppi'      : 'ak5PUPPIJets',
+    'ak6puppi'      : 'ak6PUPPIJets',
+    'ak7puppi'      : 'ak7PUPPIJets',
+    'ak8puppi'      : 'ak8PUPPIJets',
+    'ak9puppi'      : 'ak9PUPPIJets',
+    'ak10puppi'     : 'ak10PUPPIJets',
 #    'ak5jpt'        : 'ak5JPTJets',
 #    'ak7jpt'        : 'ak7JPTJets',
 #    'ak5tauHPSall'  : 'hpsPFTauProducer',
@@ -240,6 +271,16 @@ recJetsDict = {
     'ak5pfchsHLT'   : ('ak5PFchsHLTJets',    ak5PFchsHLTJets),
     'ak5trk'        : ('ak5TrackJets',       ak5TrackJets),
     'kt4trk'        : ('kt4TrackJets',       kt4TrackJets),
+    'ak1puppi'      : ('ak1PUPPIJets',       ak1PUPPIJets),
+    'ak2puppi'      : ('ak2PUPPIJets',       ak2PUPPIJets),
+    'ak3puppi'      : ('ak3PUPPIJets',       ak3PUPPIJets),
+    'ak4puppi'      : ('ak4PUPPIJets',       ak4PUPPIJets),
+    'ak5puppi'      : ('ak5PUPPIJets',       ak5PUPPIJets),
+    'ak6puppi'      : ('ak6PUPPIJets',       ak6PUPPIJets),
+    'ak7puppi'      : ('ak7PUPPIJets',       ak7PUPPIJets),
+    'ak8puppi'      : ('ak8PUPPIJets',       ak8PUPPIJets),
+    'ak9puppi'      : ('ak9PUPPIJets',       ak9PUPPIJets),
+    'ak10puppi'     : ('ak10PUPPIJets',      ak10PUPPIJets),
 #    'ak5jpt'        : ('ak5JPTJets',         ak5JPTJets),
 #    'ak7jpt'        : ('ak7JPTJets',         ak7JPTJets),
 #    'ak5tauHPSall'  : ('hpsPFTauProducer',   hpsPFTauProducer),
@@ -295,6 +336,16 @@ corrJetsDict = {
     'ak5pfHLTl1off'        : ('ak5PFHLTJetsL1Off',         ak5PFHLTJetsL1Off),
     'ak5pfchsHLTl1'        : ('ak5PFchsHLTJetsL1Fast',     ak5PFchsHLTJetsL1Fast),
     'ak5pfchsHLTl1off'     : ('ak5PFchsHLTJetsL1Off',      ak5PFchsHLTJetsL1Off),
+    'ak1puppil1'           : ('ak1PUPPIJetsL1Fast',       ak1PUPPIJetsL1Fast),
+    'ak2puppil1'           : ('ak2PUPPIJetsL1Fast',       ak2PUPPIJetsL1Fast),
+    'ak3puppil1'           : ('ak3PUPPIJetsL1Fast',       ak3PUPPIJetsL1Fast),
+    'ak4puppil1'           : ('ak4PUPPIJetsL1Fast',       ak4PUPPIJetsL1Fast),
+    'ak5puppil1'           : ('ak5PUPPIJetsL1Fast',       ak5PUPPIJetsL1Fast),
+    'ak6puppil1'           : ('ak6PUPPIJetsL1Fast',       ak6PUPPIJetsL1Fast),
+    'ak7puppil1'           : ('ak7PUPPIJetsL1Fast',       ak7PUPPIJetsL1Fast),
+    'ak8puppil1'           : ('ak8PUPPIJetsL1Fast',       ak8PUPPIJetsL1Fast),
+    'ak9puppil1'           : ('ak9PUPPIJetsL1Fast',       ak9PUPPIJetsL1Fast),
+    'ak10puppil1'          : ('ak10PUPPIJetsL1Fast',      ak10PUPPIJetsL1Fast),
     'ak4calol2l3'          : ('ak4CaloJetsL2L3',           ak4CaloJetsL2L3),
     'ak7calol2l3'          : ('ak7CaloJetsL2L3',           ak7CaloJetsL2L3),
     'kt4calol2l3'          : ('kt4CaloJetsL2L3',           kt4CaloJetsL2L3),
@@ -310,6 +361,16 @@ corrJetsDict = {
     'ak7pfchsl2l3'         : ('ak7PFchsJetsL2L3',          ak7PFchsJetsL2L3),
     'ak5pfHLTl2l3'         : ('ak5PFHLTJetsL2L3',          ak5PFHLTJetsL2L3),
     'ak5pfchsHLTl2l3'      : ('ak5PFchsHLTJetsL2L3',       ak5PFchsHLTJetsL2L3),
+    'ak1puppil2l3'         : ('ak1PUPPIJetsL2L3',       ak1PUPPIJetsL2L3),
+    'ak2puppil2l3'         : ('ak2PUPPIJetsL2L3',       ak2PUPPIJetsL2L3),
+    'ak3puppil2l3'         : ('ak3PUPPIJetsL2L3',       ak3PUPPIJetsL2L3),
+    'ak4puppil2l3'         : ('ak4PUPPIJetsL2L3',       ak4PUPPIJetsL2L3),
+    'ak5puppil2l3'         : ('ak5PUPPIJetsL2L3',       ak5PUPPIJetsL2L3),
+    'ak6puppil2l3'         : ('ak6PUPPIJetsL2L3',       ak6PUPPIJetsL2L3),
+    'ak7puppil2l3'         : ('ak7PUPPIJetsL2L3',       ak7PUPPIJetsL2L3),
+    'ak8puppil2l3'         : ('ak8PUPPIJetsL2L3',       ak8PUPPIJetsL2L3),
+    'ak9puppil2l3'         : ('ak9PUPPIJetsL2L3',       ak9PUPPIJetsL2L3),
+    'ak10puppil2l3'        : ('ak10PUPPIJetsL2L3',      ak10PUPPIJetsL2L3),
     'ak4calol1l2l3'        : ('ak4CaloJetsL1FastL2L3',     ak4CaloJetsL1FastL2L3),
     'ak4calol1offl2l3'     : ('ak4CaloJetsL1L2L3',         ak4CaloJetsL1L2L3),
     'ak7calol1l2l3'        : ('ak7CaloJetsL1FastL2L3',     ak7CaloJetsL1FastL2L3),
@@ -335,7 +396,17 @@ corrJetsDict = {
     'ak5pfHLTl1l2l3'       : ('ak5PFHLTJetsL1FastL2L3',    ak5PFHLTJetsL1FastL2L3),
     'ak5pfHLTl1offl2l3'    : ('ak5PFHLTJetsL1L2L3',        ak5PFHLTJetsL1L2L3),
     'ak5pfchsHLTl1l2l3'    : ('ak5PFchsHLTJetsL1FastL2L3', ak5PFchsHLTJetsL1FastL2L3),
-    'ak5pfchsHLTl1offl2l3' : ('ak5PFchsHLTJetsL1L2L3',     ak5PFchsHLTJetsL1L2L3)
+    'ak5pfchsHLTl1offl2l3' : ('ak5PFchsHLTJetsL1L2L3',     ak5PFchsHLTJetsL1L2L3),
+    'ak1puppil1l2l3'       : ('ak1PUPPIJetsL1FastL2L3',    ak1PUPPIJetsL1FastL2L3),
+    'ak2puppil1l2l3'       : ('ak2PUPPIJetsL1FastL2L3',    ak2PUPPIJetsL1FastL2L3),
+    'ak3puppil1l2l3'       : ('ak3PUPPIJetsL1FastL2L3',    ak3PUPPIJetsL1FastL2L3),
+    'ak4puppil1l2l3'       : ('ak4PUPPIJetsL1FastL2L3',    ak4PUPPIJetsL1FastL2L3),
+    'ak5puppil1l2l3'       : ('ak5PUPPIJetsL1FastL2L3',    ak5PUPPIJetsL1FastL2L3),
+    'ak6puppil1l2l3'       : ('ak6PUPPIJetsL1FastL2L3',    ak6PUPPIJetsL1FastL2L3),
+    'ak7puppil1l2l3'       : ('ak7PUPPIJetsL1FastL2L3',    ak7PUPPIJetsL1FastL2L3),
+    'ak8puppil1l2l3'       : ('ak8PUPPIJetsL1FastL2L3',    ak8PUPPIJetsL1FastL2L3),
+    'ak9puppil1l2l3'       : ('ak9PUPPIJetsL1FastL2L3',    ak9PUPPIJetsL1FastL2L3),
+    'ak10puppil1l2l3'      : ('ak10PUPPIJetsL1FastL2L3',   ak10PUPPIJetsL1FastL2L3),
 }
 
 
@@ -389,6 +460,10 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('pf')]
         type          = 'PF'
         alg_size_type = alg_size + 'pf'
+    elif (alg_size_type_corr.find('puppi') > 0) :
+        alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('puppi')]
+        type          = 'PUPPI'
+        alg_size_type = alg_size + 'puppi'
 #    elif (alg_size_type_corr.find('tau') > 0) :
 #        alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('tau')]
 #        type          = 'TAU'
@@ -414,7 +489,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         type          = 'Track'
         alg_size_type = alg_size + 'trk'
     else:
-        raise ValueError("Can't identify valid jet type: calo|caloHLT|pf|pfchs|pfHLT|jpt|trk|tau")
+        raise ValueError("Can't identify valid jet type: calo|caloHLT|pf|pfchs|pfHLT|jpt|trk|tau|puppi")
         
     if (alg_size_type_corr.find('l1') > 0):
         correctl1 = True
@@ -483,11 +558,6 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
     ## add pu density calculation
     if not correctl1 and not correctl1off:
         if type == 'CaloHLT': #added 02/15/2012
-            process.kt6CaloJets50 = kt6CaloJets50
-            process.kt6CaloJets50.doRhoFastjet = True
-            process.kt6CaloJets50.Ghost_EtaMax = 6.0
-            process.kt6CaloJets50.Rho_EtaMax   = 0.5
-            sequence = cms.Sequence(process.kt6CaloJets50 * sequence)
             process.kt6CaloJets = kt6CaloJets 
             process.kt6CaloJets.doRhoFastjet = True
             process.kt6CaloJets.Ghost_EtaMax = Defaults.kt6CaloJetParameters.Ghost_EtaMax.value()
@@ -499,22 +569,12 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
             process.kt6PFJets.Ghost_EtaMax = Defaults.kt6PFJetParameters.Ghost_EtaMax.value()
             process.kt6PFJets.Rho_EtaMax   = Defaults.kt6PFJetParameters.Rho_EtaMax
             sequence = cms.Sequence(process.kt6PFJets * sequence)
-            process.kt6PFJets50 = kt6PFJets50
-            process.kt6PFJets50.doRhoFastjet = True
-            process.kt6PFJets50.Ghost_EtaMax = 6.0
-            process.kt6PFJets50.Rho_EtaMax   = 0.5
-            sequence = cms.Sequence(process.kt6PFJets50 * sequence) 
         elif type == 'PFHLT':
             process.kt6PFJets = kt6PFJets
             process.kt6PFJets.doRhoFastjet = True
             process.kt6PFJets.Ghost_EtaMax = Defaults.kt6PFJetParameters.Ghost_EtaMax.value()
             process.kt6PFJets.Rho_EtaMax   = Defaults.kt6PFJetParameters.Rho_EtaMax
             sequence = cms.Sequence(process.kt6PFJets * sequence)
-            process.kt6PFJets50 = kt6PFJets50
-            process.kt6PFJets50.doRhoFastjet = True
-            process.kt6PFJets50.Ghost_EtaMax = 6.0
-            process.kt6PFJets50.Rho_EtaMax   = 0.5
-            sequence = cms.Sequence(process.kt6PFJets50 * sequence)  
     elif correctl1 and not correctl1off:  #modified 10/10/2011
         if type == 'CaloHLT': #added 02/15/2012
             process.kt6CaloJets = kt6CaloJets 
@@ -522,65 +582,36 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
             process.kt6CaloJets.Ghost_EtaMax = Defaults.kt6PFJetParameters.Ghost_EtaMax.value()
             process.kt6CaloJets.Rho_EtaMax   = Defaults.kt6PFJetParameters.Rho_EtaMax
             sequence = cms.Sequence(process.kt6CaloJets * sequence)
-            process.kt6CaloJets50 = kt6CaloJets50
-            process.kt6CaloJets50.doRhoFastjet = True
-            process.kt6CaloJets50.Ghost_EtaMax = 6.0
-            process.kt6CaloJets50.Rho_EtaMax   = 0.5
-            sequence = cms.Sequence(process.kt6CaloJets50 * sequence)
         elif type == 'Calo':
             process.kt6CaloJets = kt6CaloJets
             process.kt6CaloJets.doRhoFastjet = True
             process.kt6CaloJets.Ghost_EtaMax = Defaults.kt6CaloJetParameters.Ghost_EtaMax.value()
             process.kt6CaloJets.Rho_EtaMax   = Defaults.kt6CaloJetParameters.Rho_EtaMax
             sequence = cms.Sequence(process.kt6CaloJets * sequence)
-            process.kt6CaloJets50 = kt6CaloJets50
-            process.kt6CaloJets50.doRhoFastjet = True
-            process.kt6CaloJets50.Ghost_EtaMax = 6.0
-            process.kt6CaloJets50.Rho_EtaMax   = 0.5
-            sequence = cms.Sequence(process.kt6CaloJets50 * sequence)
-            process.kt6PFJets50 = kt6PFJets50
-            process.kt6PFJets50.doRhoFastjet = True
-            process.kt6PFJets50.Ghost_EtaMax = 6.0
-            process.kt6PFJets50.Rho_EtaMax   = 0.5
-            sequence = cms.Sequence(process.kt6PFJets50 * sequence) 
         elif type == 'PFchs':
             process.kt6PFJets = kt6PFJets
             process.kt6PFJets.doRhoFastjet = True
             process.kt6PFJets.Ghost_EtaMax = Defaults.kt6PFJetParameters.Ghost_EtaMax.value()
             process.kt6PFJets.Rho_EtaMax   = Defaults.kt6PFJetParameters.Rho_EtaMax
+            sequence = cms.Sequence(process.kt6PFJets * sequence)
         elif type == 'PFHLT':
             process.kt6PFJets = kt6PFJets
             process.kt6PFJets.doRhoFastjet = True
             process.kt6PFJets.Ghost_EtaMax = Defaults.kt6PFJetParameters.Ghost_EtaMax.value()
             process.kt6PFJets.Rho_EtaMax   = Defaults.kt6PFJetParameters.Rho_EtaMax
             sequence = cms.Sequence(process.kt6PFJets * sequence)
-            process.kt6PFJets50 = kt6PFJets50
-            process.kt6PFJets50.doRhoFastjet = True
-            process.kt6PFJets50.Ghost_EtaMax = 6.0
-            process.kt6PFJets50.Rho_EtaMax   = 0.5
-            sequence = cms.Sequence(process.kt6PFJets50 * sequence)
         elif type == 'PFchsHLT':
             process.kt6PFJets = kt6PFJets
             process.kt6PFJets.doRhoFastjet = True
             process.kt6PFJets.Ghost_EtaMax = Defaults.kt6PFJetParameters.Ghost_EtaMax.value()
             process.kt6PFJets.Rho_EtaMax   = Defaults.kt6PFJetParameters.Rho_EtaMax
             sequence = cms.Sequence(process.kt6PFJets * sequence)
-            process.kt6PFJets50 = kt6PFJets50
-            process.kt6PFJets50.doRhoFastjet = True
-            process.kt6PFJets50.Ghost_EtaMax = 6.0
-            process.kt6PFJets50.Rho_EtaMax   = 0.5
-            sequence = cms.Sequence(process.kt6PFJets50 * sequence)
         elif type == 'PF':
             process.kt6PFJets = kt6PFJets
             process.kt6PFJets.doRhoFastjet = True
             process.kt6PFJets.Ghost_EtaMax = Defaults.kt6PFJetParameters.Ghost_EtaMax.value()
             process.kt6PFJets.Rho_EtaMax   = Defaults.kt6PFJetParameters.Rho_EtaMax
             sequence = cms.Sequence(process.kt6PFJets * sequence)
-            process.kt6PFJets50 = kt6PFJets50
-            process.kt6PFJets50.doRhoFastjet = True
-            process.kt6PFJets50.Ghost_EtaMax = 6.0
-            process.kt6PFJets50.Rho_EtaMax   = 0.5
-            sequence = cms.Sequence(process.kt6PFJets50 * sequence) 
     
     ## reconstruct jets
     if type == 'JPT':
@@ -609,6 +640,9 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
             recJets.Rho_EtaMax    = cms.double(4.4) # FIX LATER
         setattr(process, recLabel, recJets)
         sequence = cms.Sequence(recJets * sequence)
+        if type == 'PUPPI':
+            process.load('Dummy.Puppi.Puppi_cff')
+            sequence = cms.Sequence(puppi * sequence)
         if type == 'Track':
             process.load('JetMETAnalysis.JetAnalyzers.TrackJetReconstruction_cff')
             sequence = cms.Sequence(trackJetSequence * sequence)
@@ -723,8 +757,8 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
                          srcRefToJetMap    = cms.InputTag(jetToRef.label(), 'gen2rec'),
                          srcRef            = cms.InputTag(refPtEta.label()),
                          jecLabel          = cms.string(''),
+                         srcRhos           = cms.InputTag(''),
                          srcRho            = cms.InputTag(''),
-                         srcRho50          = cms.InputTag(''),
                          srcRhoHLT         = cms.InputTag(''),
                          srcVtx            = cms.InputTag('offlinePrimaryVertices'),
 						 srcJetToUncorJetMap = cms.InputTag(jetToUncorJet.label(), 'rec2gen')
@@ -737,7 +771,6 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
                      srcRef            = cms.InputTag(refPtEta.label()),
                      jecLabel          = cms.string(''),
                      srcRho            = cms.InputTag(''),
-                     srcRho50          = cms.InputTag(''),
                      srcRhoHLT         = cms.InputTag(''),
                      srcVtx            = cms.InputTag('offlinePrimaryVertices'),
                      srcJetToUncorJetMap = cms.InputTag(jetToUncorJet.label(), 'rec2gen')
@@ -745,28 +778,41 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
 
     if type == 'CaloHLT':
         jra.srcRho = ak4CaloL1Fastjet.srcRho #added 02/15/2012
-        jra.srcRho50 = cms.InputTag('kt6CaloJets50','rho')
         jra.srcRhoHLT = ak5CaloHLTL1Fastjet.srcRho
     elif type == 'Calo':
         jra.srcRho = ak4CaloL1Fastjet.srcRho #added 10/14/2011
-        jra.srcRho50 = cms.InputTag('kt6CaloJets50','rho')
     elif type == 'PFchs':
+        process.kt6PFchsJetsRhos = kt6PFJets.clone(src = 'pfNoPileUpJME',
+                                                   doFastJetNonUniform = cms.bool(True),
+                                                   puCenters = cms.vdouble(5,-4,-3,-2,-1,0,1,2,3,4,5), 
+                                                   puWidth = cms.double(.8),
+                                                   nExclude = cms.uint32(2))
+        sequence = cms.Sequence(process.kt6PFchsJetsRhos * sequence)
+        jra.srcRhos = cms.InputTag("kt6PFchsJetsRhos", "rhos")
         jra.srcRho = ak4PFchsL1Fastjet.srcRho #added 10/14/2011
-        jra.srcRho50 = cms.InputTag('kt6PFJets50','rho')
     elif type == 'PFHLT':
         jra.srcRho = ak4PFL1Fastjet.srcRho #added 02/15/2012
-        jra.srcRho50 = cms.InputTag('kt6PFJets50','rho')
         jra.srcRhoHLT = ak5PFHLTL1Fastjet.srcRho
     elif type == 'PFchsHLT':
         jra.srcRho = ak4PFchsL1Fastjet.srcRho #added 02/15/2012
-        jra.srcRho50 = cms.InputTag('kt6PFJets50','rho')
         jra.srcRhoHLT = ak5PFchsHLTL1Fastjet.srcRho
     elif type == 'PF':
+        process.kt6PFJetsRhos = kt6PFJets.clone(doFastJetNonUniform = cms.bool(True),
+                                                puCenters = cms.vdouble(5,-4,-3,-2,-1,0,1,2,3,4,5),
+                                                puWidth = cms.double(.8), 
+                                                nExclude = cms.uint32(2))
+        sequence = cms.Sequence(process.kt6PFJetsRhos * sequence)
+        jra.srcRhos = cms.InputTag("kt6PFJetsRhos", "rhos")
         jra.srcRho = ak4PFL1Fastjet.srcRho #added 10/14/2011
-        jra.srcRho50 = cms.InputTag('kt6PFJets50','rho')
+    elif type == 'PUPPI':
+        process.kt6PFJetsRhos = kt6PFJets.clone(doFastJetNonUniform = cms.bool(True),
+                                                puCenters = cms.vdouble(5,-4,-3,-2,-1,0,1,2,3,4,5),
+                                                puWidth = cms.double(.8), nExclude = cms.uint32(2))
+        sequence = cms.Sequence(process.kt6PFJetsRhos * sequence)
+        jra.srcRhos = cms.InputTag("kt6PFJetsRhos", "rhos")
+        jra.srcRho = ak5PFchsL1Fastjet.srcRho
     elif type == 'JPT':
         jra.srcRho = ak4CaloL1Fastjet.srcRho
-        jra.srcRho50 = cms.InputTag('kt6CaloJets50','rho')
 
     if correctl1 or correctl2l3:
         jra.jecLabel = corrJets.correctors[0]
