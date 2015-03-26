@@ -332,3 +332,123 @@ ak5PFchsHLTJetsL2L3   = cms.EDProducer('PFJetCorrectionProducer',
     )
 ak5PFchsHLTJetsL1FastL2L3 = ak5PFchsHLTJetsL2L3.clone(src = 'hltAntiKT5PFJetsNoPUPixelVert', correctors = ['ak5PFchsHLTL1FastL2L3'])
 ak5PFchsHLTJetsL1L2L3 = ak5PFchsHLTJetsL2L3.clone(src = 'hltAntiKT5PFJetsNoPUPixelVert', correctors = ['ak5PFchsHLTL1L2L3'])
+
+
+#
+# PUPPI JEC PRODUCERS NOT DEFINED IN DEFAULTJEC_CFF
+#
+ak1PUPPIL1Fastjet = cms.ESProducer(
+    'L1FastjetCorrectionESProducer',
+    era         = cms.string('Summer11'),
+    level       = cms.string('L1FastJet'),
+    algorithm   = cms.string('AK1PUPPI'),
+    section     = cms.string(''),
+    srcRho      = cms.InputTag('kt6PFJets','rho'),
+    useCondDB = cms.untracked.bool(True)
+    )
+ak2PUPPIL1Fastjet  = ak1PUPPIL1Fastjet.clone( algorithm = 'AK2PUPPI' )
+ak3PUPPIL1Fastjet  = ak1PUPPIL1Fastjet.clone( algorithm = 'AK3PUPPI' )
+ak4PUPPIL1Fastjet  = ak1PUPPIL1Fastjet.clone( algorithm = 'AK4PUPPI' )
+ak5PUPPIL1Fastjet  = ak1PUPPIL1Fastjet.clone( algorithm = 'AK5PUPPI' )
+ak6PUPPIL1Fastjet  = ak1PUPPIL1Fastjet.clone( algorithm = 'AK6PUPPI' )
+ak7PUPPIL1Fastjet  = ak1PUPPIL1Fastjet.clone( algorithm = 'AK7PUPPI' )
+ak8PUPPIL1Fastjet  = ak1PUPPIL1Fastjet.clone( algorithm = 'AK8PUPPI' )
+ak9PUPPIL1Fastjet  = ak1PUPPIL1Fastjet.clone( algorithm = 'AK9PUPPI' )
+ak10PUPPIL1Fastjet = ak1PUPPIL1Fastjet.clone( algorithm = 'AK10PUPPI' )
+
+ak1PUPPIL2Relative  = ak4PFL2Relative.clone( algorithm = 'AK1PUPPI' )
+ak2PUPPIL2Relative  = ak4PFL2Relative.clone( algorithm = 'AK2PUPPI' )
+ak3PUPPIL2Relative  = ak4PFL2Relative.clone( algorithm = 'AK3PUPPI' )
+ak4PUPPIL2Relative  = ak4PFL2Relative.clone( algorithm = 'AK4PUPPI' )
+ak5PUPPIL2Relative  = ak4PFL2Relative.clone( algorithm = 'AK5PUPPI' )
+ak6PUPPIL2Relative  = ak4PFL2Relative.clone( algorithm = 'AK6PUPPI' )
+ak7PUPPIL2Relative  = ak4PFL2Relative.clone( algorithm = 'AK7PUPPI' )
+ak8PUPPIL2Relative  = ak4PFL2Relative.clone( algorithm = 'AK8PUPPI' )
+ak9PUPPIL2Relative  = ak4PFL2Relative.clone( algorithm = 'AK9PUPPI' )
+ak10PUPPIL2Relative = ak4PFL2Relative.clone( algorithm = 'AK10PUPPI' )
+
+ak1PUPPIL3Absolute  = ak4PFL3Absolute.clone( algorithm = 'AK1PUPPI' )
+ak2PUPPIL3Absolute  = ak4PFL3Absolute.clone( algorithm = 'AK2PUPPI' )
+ak3PUPPIL3Absolute  = ak4PFL3Absolute.clone( algorithm = 'AK3PUPPI' )
+ak4PUPPIL3Absolute  = ak4PFL3Absolute.clone( algorithm = 'AK4PUPPI' )
+ak5PUPPIL3Absolute  = ak4PFL3Absolute.clone( algorithm = 'AK5PUPPI' )
+ak6PUPPIL3Absolute  = ak4PFL3Absolute.clone( algorithm = 'AK6PUPPI' )
+ak7PUPPIL3Absolute  = ak4PFL3Absolute.clone( algorithm = 'AK7PUPPI' )
+ak8PUPPIL3Absolute  = ak4PFL3Absolute.clone( algorithm = 'AK8PUPPI' )
+ak9PUPPIL3Absolute  = ak4PFL3Absolute.clone( algorithm = 'AK9PUPPI' )
+ak10PUPPIL3Absolute = ak4PFL3Absolute.clone( algorithm = 'AK10PUPPI' )
+
+ak1PUPPIL2L3 = cms.ESProducer(
+    'JetCorrectionESChain',
+    correctors = cms.vstring('ak1PUPPIL2Relative','ak1PUPPIL3Absolute')
+    )
+ak2PUPPIL2L3  = ak1PUPPIL2L3.clone( correctors=['ak2PUPPIL2Relative','ak2PUPPIL3Absolute'] )
+ak3PUPPIL2L3  = ak1PUPPIL2L3.clone( correctors=['ak3PUPPIL2Relative','ak3PUPPIL3Absolute'] )
+ak4PUPPIL2L3  = ak1PUPPIL2L3.clone( correctors=['ak4PUPPIL2Relative','ak4PUPPIL3Absolute'] )
+ak5PUPPIL2L3  = ak1PUPPIL2L3.clone( correctors=['ak5PUPPIL2Relative','ak5PUPPIL3Absolute'] )
+ak6PUPPIL2L3  = ak1PUPPIL2L3.clone( correctors=['ak6PUPPIL2Relative','ak6PUPPIL3Absolute'] )
+ak7PUPPIL2L3  = ak1PUPPIL2L3.clone( correctors=['ak7PUPPIL2Relative','ak7PUPPIL3Absolute'] )
+ak8PUPPIL2L3  = ak1PUPPIL2L3.clone( correctors=['ak8PUPPIL2Relative','ak8PUPPIL3Absolute'] )
+ak9PUPPIL2L3  = ak1PUPPIL2L3.clone( correctors=['ak9PUPPIL2Relative','ak9PUPPIL3Absolute'] )
+ak10PUPPIL2L3 = ak1PUPPIL2L3.clone( correctors=['ak10PUPPIL2Relative','ak10PUPPIL3Absolute'] )
+
+ak1PUPPIL1FastL2L3 = ak1PUPPIL2L3.clone()
+ak1PUPPIL1FastL2L3.correctors.insert(0,'ak1PUPPIL1Fastjet')
+ak2PUPPIL1FastL2L3 = ak2PUPPIL2L3.clone()
+ak2PUPPIL1FastL2L3.correctors.insert(0,'ak2PUPPIL1Fastjet')
+ak3PUPPIL1FastL2L3 = ak3PUPPIL2L3.clone()
+ak3PUPPIL1FastL2L3.correctors.insert(0,'ak3PUPPIL1Fastjet')
+ak4PUPPIL1FastL2L3 = ak4PUPPIL2L3.clone()
+ak4PUPPIL1FastL2L3.correctors.insert(0,'ak4PUPPIL1Fastjet')
+ak5PUPPIL1FastL2L3 = ak5PUPPIL2L3.clone()
+ak5PUPPIL1FastL2L3.correctors.insert(0,'ak5PUPPIL1Fastjet')
+ak6PUPPIL1FastL2L3 = ak6PUPPIL2L3.clone()
+ak6PUPPIL1FastL2L3.correctors.insert(0,'ak6PUPPIL1Fastjet')
+ak7PUPPIL1FastL2L3 = ak7PUPPIL2L3.clone()
+ak7PUPPIL1FastL2L3.correctors.insert(0,'ak7PUPPIL1Fastjet')
+ak8PUPPIL1FastL2L3 = ak8PUPPIL2L3.clone()
+ak8PUPPIL1FastL2L3.correctors.insert(0,'ak8PUPPIL1Fastjet')
+ak9PUPPIL1FastL2L3 = ak9PUPPIL2L3.clone()
+ak9PUPPIL1FastL2L3.correctors.insert(0,'ak9PUPPIL1Fastjet')
+ak10PUPPIL1FastL2L3 = ak10PUPPIL2L3.clone()
+ak10PUPPIL1FastL2L3.correctors.insert(0,'ak10PUPPIL1Fastjet')
+
+ak1PUPPIJetsL1Fast = cms.EDProducer(
+    'PFJetCorrectionProducer',
+    src         = cms.InputTag('ak1PUPPIJets'),
+    correctors  = cms.vstring('ak1PUPPIL1Fastjet')
+    )
+ak2PUPPIJetsL1Fast  = ak1PUPPIJetsL1Fast.clone(src='ak2PUPPIJets', correctors=['ak2PUPPIL1Fastjet'])
+ak3PUPPIJetsL1Fast  = ak1PUPPIJetsL1Fast.clone(src='ak3PUPPIJets', correctors=['ak3PUPPIL1Fastjet'])
+ak4PUPPIJetsL1Fast  = ak1PUPPIJetsL1Fast.clone(src='ak4PUPPIJets', correctors=['ak4PUPPIL1Fastjet'])
+ak5PUPPIJetsL1Fast  = ak1PUPPIJetsL1Fast.clone(src='ak4PUPPIJets', correctors=['ak4PUPPIL1Fastjet'])
+ak6PUPPIJetsL1Fast  = ak1PUPPIJetsL1Fast.clone(src='ak6PUPPIJets', correctors=['ak6PUPPIL1Fastjet'])
+ak7PUPPIJetsL1Fast  = ak1PUPPIJetsL1Fast.clone(src='ak8PUPPIJets', correctors=['ak8PUPPIL1Fastjet'])
+ak8PUPPIJetsL1Fast  = ak1PUPPIJetsL1Fast.clone(src='ak8PUPPIJets', correctors=['ak8PUPPIL1Fastjet'])
+ak9PUPPIJetsL1Fast  = ak1PUPPIJetsL1Fast.clone(src='ak9PUPPIJets', correctors=['ak9PUPPIL1Fastjet'])
+ak10PUPPIJetsL1Fast = ak1PUPPIJetsL1Fast.clone(src='ak10PUPPIJets', correctors=['ak10PUPPIL1Fastjet'])
+
+ak1PUPPIJetsL2L3 = cms.EDProducer('PFJetCorrectionProducer',
+    src         = cms.InputTag('ak1PUPPIJets'),
+    correctors  = cms.vstring('ak1PUPPIL2L3')
+    )
+ak2PUPPIJetsL2L3  = ak1PUPPIJetsL2L3.clone(src = 'ak2PUPPIJets', correctors = ['ak2PUPPIL2L3'])
+ak3PUPPIJetsL2L3  = ak1PUPPIJetsL2L3.clone(src = 'ak3PUPPIJets', correctors = ['ak3PUPPIL2L3'])
+ak4PUPPIJetsL2L3  = ak1PUPPIJetsL2L3.clone(src = 'ak4PUPPIJets', correctors = ['ak4PUPPIL2L3'])
+ak5PUPPIJetsL2L3  = ak1PUPPIJetsL2L3.clone(src = 'ak5PUPPIJets', correctors = ['ak5PUPPIL2L3'])
+ak6PUPPIJetsL2L3  = ak1PUPPIJetsL2L3.clone(src = 'ak6PUPPIJets', correctors = ['ak6PUPPIL2L3'])
+ak7PUPPIJetsL2L3  = ak1PUPPIJetsL2L3.clone(src = 'ak7PUPPIJets', correctors = ['ak7PUPPIL2L3'])
+ak8PUPPIJetsL2L3  = ak1PUPPIJetsL2L3.clone(src = 'ak8PUPPIJets', correctors = ['ak8PUPPIL2L3'])
+ak9PUPPIJetsL2L3  = ak1PUPPIJetsL2L3.clone(src = 'ak9PUPPIJets', correctors = ['ak9PUPPIL2L3'])
+ak10PUPPIJetsL2L3 = ak1PUPPIJetsL2L3.clone(src = 'ak10PUPPIJets', correctors = ['ak10PUPPIL2L3'])
+
+ak1PUPPIJetsL1FastL2L3  = ak1PUPPIJetsL2L3.clone(src = 'ak1PUPPIJets', correctors = ['ak1PUPPIL1FastL2L3'])
+ak2PUPPIJetsL1FastL2L3  = ak1PUPPIJetsL2L3.clone(src = 'ak2PUPPIJets', correctors = ['ak2PUPPIL1FastL2L3'])
+ak3PUPPIJetsL1FastL2L3  = ak1PUPPIJetsL2L3.clone(src = 'ak3PUPPIJets', correctors = ['ak3PUPPIL1FastL2L3'])
+ak4PUPPIJetsL1FastL2L3  = ak1PUPPIJetsL2L3.clone(src = 'ak4PUPPIJets', correctors = ['ak4PUPPIL1FastL2L3'])
+ak5PUPPIJetsL1FastL2L3  = ak1PUPPIJetsL2L3.clone(src = 'ak5PUPPIJets', correctors = ['ak5PUPPIL1FastL2L3'])
+ak6PUPPIJetsL1FastL2L3  = ak1PUPPIJetsL2L3.clone(src = 'ak6PUPPIJets', correctors = ['ak6PUPPIL1FastL2L3'])
+ak7PUPPIJetsL1FastL2L3  = ak1PUPPIJetsL2L3.clone(src = 'ak7PUPPIJets', correctors = ['ak7PUPPIL1FastL2L3'])
+ak8PUPPIJetsL1FastL2L3  = ak1PUPPIJetsL2L3.clone(src = 'ak8PUPPIJets', correctors = ['ak8PUPPIL1FastL2L3'])
+ak9PUPPIJetsL1FastL2L3  = ak1PUPPIJetsL2L3.clone(src = 'ak9PUPPIJets', correctors = ['ak9PUPPIL1FastL2L3'])
+ak10PUPPIJetsL1FastL2L3 = ak1PUPPIJetsL2L3.clone(src = 'ak10PUPPIJets', correctors = ['ak10PUPPIL1FastL2L3'])
