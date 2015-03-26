@@ -516,7 +516,7 @@ TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector
       hbin->GetYaxis()->SetRangeUser(0,0.5);
    else
       hbin->GetYaxis()->SetRangeUser(0,20);
-   TCanvas* c = tdrCanvas(cname,hbin,2,0,true);
+   TCanvas* c = tdrCanvas(cname,hbin,4,0,true);
    c->GetPad(0)->SetLogx();
 
    TLegend* leg = tdrLeg(0.38,0.6,0.78,1-gPad->GetTopMargin()-0.045*(1-gPad->GetTopMargin()-gPad->GetBottomMargin())+0.01);
@@ -554,6 +554,7 @@ TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector
          hh.push_back(getResolutionHistoFromHisto(hname, title, prof[j]));
       else
          hh.push_back(getResolutionHistoFromHisto_v3(hname, title, prof[j]));
+      hh.back()->GetXaxis()->SetRangeUser(10.0,1000.0);
    }
    if(!hh[0]) {
       cout << "WARNING::getCanvasResolution histogram hh[0] was not set by getResolutionHistoFromHisto." << endl
@@ -561,17 +562,8 @@ TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector
       return c;
    }
 
-/*
-   for (unsigned int j=0;j<hh.size();j++){
-      setHistoColor(hh[j],colNpv[j%npvRhoNpuBins.size()]);
-      if(j>=(prof.size()/2) && cname.Contains("PU_NoPU")) {
-         hh[j]->SetMarkerStyle(kOpenCircle);
-         hh[j]->SetLineColor(kBlack);
-         hh[j]->SetMarkerColor(kBlack);
-      }
-   }
-*/
-
+   bool drawNoPU = false;
+   bool drawNoPULeg = false;
    for (unsigned int j=0;j<hh.size();j++) {
       scanHistoBinError(hh[j],0.05);
       if(isHistoEmpty(hh[j])) {
@@ -579,36 +571,6 @@ TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector
          continue;
       }
 
-      if(NPV_Rho==3 && cname.Contains("PU_NoPU")) {
-         if(j==(prof.size()/2)) {
-            tdrDraw(hh[j],"E",kOpenCircle,kBlack,kSolid,kBlack);
-         }
-         else if(j<(prof.size()/2)) {
-            tdrDraw(hh[j],"E",kFullCircle,colNpv[j%npvRhoNpuBins.size()],kSolid,colNpv[j%npvRhoNpuBins.size()]);
-         }
-      }
-      else {
-         if(j>=(prof.size()/2) && cname.Contains("PU_NoPU")) {
-            tdrDraw(hh[j],"E",kOpenCircle,kBlack,kSolid,kBlack);
-         }
-         else {
-            tdrDraw(hh[j],"E",kFullCircle,colNpv[j%npvRhoNpuBins.size()],kSolid,colNpv[j%npvRhoNpuBins.size()]);
-         }
-      }
-
-/*
-      if(j==0)
-         hh[0]->Draw("E");
-      else if(NPV_Rho==3 && cname.Contains("PU_NoPU")) {
-         if(j==(prof.size()/2))
-            hh[j]->SetMarkerColor(kBlack);
-         if(j<=(prof.size()/2))
-            hh[j]->Draw("sameE");
-      }
-      else
-         hh[j]->Draw("sameE");
-*/ 
-  
       TString var;
       if (NPV_Rho == 1)
          var = "N_{PV}";
@@ -621,26 +583,38 @@ TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector
       else
          var = PFstr[j];
 
-      if(NPV_Rho == 3) {
-         if(cname.Contains("PU_NoPU")) {
-            if(j==0) {
-               TH1D* obj = new TH1D();
-               obj->SetMarkerStyle(kOpenCircle);
+      if((NPV_Rho==3 || NPV_Rho==4) && cname.Contains("PU_NoPU")) {
+         if(drawNoPULeg == false) {
+            TH1D* obj = new TH1D();
+            obj->SetMarkerStyle(kOpenCircle);
+            obj->SetLineStyle(kSolid);
+            if(NPV_Rho == 3)
                leg->AddEntry(obj,"#mu=0","lep");
-              //leg->AddEntry((TObject*)0,"PU Sample","");
-            }
-            //else if(j==(prof.size()/2))
-               //leg->AddEntry((TObject*)0,"NoPU Sample","");
-            if(j<(prof.size()/2))
-               leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j%(prof.size()/2)].first,npvRhoNpuBins[j%(prof.size()/2)].second+1),"lep");
+            else if(NPV_Rho == 4)
+               leg->AddEntry(obj,"N_{PU}=0","lep");
+            drawNoPULeg = true;
          }
-         else
-            leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first,npvRhoNpuBins[j].second+1),"lep"); 
+         if(j>=(prof.size()/2) && drawNoPU == false) {
+            tdrDraw(hh[j],"E",kOpenCircle,kBlack,kSolid,kBlack);
+            drawNoPU = true;
+         }
+         else if(j<(prof.size()/2)) {
+            tdrDraw(hh[j],"E",kFullCircle,colNpv[j%npvRhoNpuBins.size()],kSolid,colNpv[j%npvRhoNpuBins.size()]);
+            leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j%(prof.size()/2)].first,npvRhoNpuBins[j%(prof.size()/2)].second+1),"lep");
+         }
       }
-      else if(j<hh.size()-1)
-         leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first,npvRhoNpuBins[j].second+1),"lep"); 
-      else
-         leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first),"lep");
+      else {
+         if(j>=(prof.size()/2) && cname.Contains("PU_NoPU")) {
+            tdrDraw(hh[j],"E",kOpenCircle,kBlack,kSolid,kBlack);
+         }
+         else {
+            tdrDraw(hh[j],"E",kFullCircle,colNpv[j%npvRhoNpuBins.size()],kSolid,colNpv[j%npvRhoNpuBins.size()]);
+         }
+         if(j<hh.size()-1)
+            leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first,npvRhoNpuBins[j].second+1),"lep");
+         else
+            leg->AddEntry(hh[j],JetInfo::getBinLegendEntry(var,npvRhoNpuBins[j].first),"lep");
+      }
    }
    leg->Draw("SAME");
 
@@ -796,12 +770,12 @@ TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, vector<
       NPV_Rho = 0;
 
    TH1D* hbin = new TH1D(Form("hbin_%s",cname.Data()),Form("hbin_%s",cname.Data()), 10000, 0.,10000.);
-   hbin->GetXaxis()->SetLimits(10.0,1000.0);
+   hbin->GetXaxis()->SetLimits(3.0,1000.0);//10.0->3.0
    hbin->GetXaxis()->SetMoreLogLabels();
    hbin->GetXaxis()->SetNoExponent();
    hbin->GetXaxis()->SetTitle("p_{T}^{ptcl} [GeV]");
    hbin->GetYaxis()->SetTitle(ctitle);
-   TCanvas* c = tdrCanvas(cname,hbin,2,11,true);
+   TCanvas* c = tdrCanvas(cname,hbin,4,11,true);
    c->GetPad(0)->SetLogx();
 
    vector<TH1*> hh(off.size(),(TH1*)0);
