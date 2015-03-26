@@ -67,6 +67,8 @@ int main(int argc,char**argv)
   
    string          filepath1    = cl.getValue<string>   ("filepath1");
    string          filepath2    = cl.getValue<string>   ("filepath2");
+   string          labelNum     = cl.getValue<string>   ("labelNum");
+   string          labelDen     = cl.getValue<string>   ("labelDen");
    string          algo         = cl.getValue<string>   ("algo");
    bool            doflavor     = cl.getValue<bool>     ("doflavor",             false);
    TString         outputDir    = cl.getValue<TString>  ("outputDir",         "images");
@@ -338,8 +340,7 @@ int main(int argc,char**argv)
       else
          ptstr.Form("%.1f",PtVals[c]);
 
-      //leg2->AddEntry(ratioHist[c],"Ratio=PU/No PU (P_{T}="+ptstr+")","p");      
-      leg2->AddEntry(ratioHist[c],"Ratio=PHYS14/CSA14 (P_{T}="+ptstr+")","p");
+      leg2->AddEntry(ratioHist[c],"Ratio="+labelNum+"/"+labelDen+" (P_{T}="+ptstr+")","p");
    }
    leg2->Draw("same");
    cmsPrel(13,0);
