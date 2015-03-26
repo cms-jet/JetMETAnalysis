@@ -55,12 +55,11 @@ TGraph2DErrors * getGraph2D(int iEta, const TProfile3D * prof,
          int Gbin = prof->GetBin(iEta, irho, irefpt);
          nEvt += prof->GetBinEntries(Gbin);
          // avoid points with empty content or too small error
-         if (prof   ->GetBinContent(iEta,irho,irefpt)  > 0 &&
-             prof   ->GetBinError  (iEta,irho,irefpt)  > 0.1 &&
-             profPt ->GetBinContent(iEta,irho,irefpt) != 0 &&
-             profPt ->GetBinError  (iEta,irho,irefpt)  > 0.1 &&
+         if (prof   ->GetBinError  (iEta,irho,irefpt)  > 0.000001 &&
+             profPt ->GetBinContent(iEta,irho,irefpt)  > 0 &&
+             profPt ->GetBinError  (iEta,irho,irefpt)  > 0.5 &&
              profRho->GetBinContent(iEta,irho,irefpt)  > 0 &&
-             profRho->GetBinError  (iEta,irho,irefpt)  > 0.1 ) {
+             profRho->GetBinError  (iEta,irho,irefpt)  > 0.5 ) {
             
             // get the relevant values
             double rho  = profRho->GetBinContent(iEta, irho, irefpt); 
@@ -157,6 +156,7 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, bool logPol, int iEta,
       function = "[0] + ([1] * (x-11)) *(1 + [2] * (log(y) -1.47))";
 
    cout << "\t(par01,par1i,par2i):  (" << par0i << "," << par1i << "," << par2i << ")" << endl;
+
    if(highPU)
       f4 = new TF2("f4",function, 0,200,1,3000);
       //f4 = new TF2("f4",function, 5,200,10,3000);
@@ -167,9 +167,10 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, bool logPol, int iEta,
    f4->SetParameter(0,par0i);
    f4->SetParameter(1,par1i);
    f4->SetParameter(2,par2i);
-   f4->SetParLimits(0,0,20);
+   f4->SetParLimits(0,-5,25);
    f4->SetParLimits(1,0,10);
    f4->SetParLimits(2,-2,5);
+
    //if (graph->GetN()<500)
    //f4->FixParameter(2,0.05);
    
@@ -177,8 +178,15 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, bool logPol, int iEta,
       f4->FixParameter(2,0);
       }*/
 
-   graph->Fit(f4,"0QMR");
-   double rchi2 = f4->GetChisquare()/ f4->GetNDF();
+   int counter=0;
+   double rchi2;
+   do{
+      graph->Fit(f4,"0QMR");
+      rchi2 = f4->GetChisquare()/ f4->GetNDF();
+      counter++;
+      if (rchi2>9 && counter <10) f4->SetParameters(18,-1.5,-0.35);
+   } while (rchi2>9 && counter < 10);
+   cout <<"N. of fits: " << counter << endl;
    
    cout << "\t(par0,par1,par2):  (" << f4->GetParameter(0) << "," << f4->GetParameter(1) << "," << f4->GetParameter(2) << ")" << endl;
    cout << "\tchi2/NDF=" << rchi2 << endl;
@@ -200,8 +208,10 @@ void createTxtFile(TString txtFilename, const vector<FitRes> & fitResults){
    ofstream outF(txtFilename.Data());
    
    // Produce the first line
-   outF <<"{1 JetEta 3 JetPt JetA Rho max(0.0001,1-y*([0]+([1]*z)*(1+[2]*log(x)))/x)"
-        <<" Correction L1FastJet}"<<endl;
+   //TString fname = Form("{1 JetEta 3 JetPt JetA Rho max(0.0001,1-y*(%s)/x)",fitResults[0].fit->GetTitle());
+   TString fname = Form("{1 JetEta 3 Rho JetPt JetA max(0.0001,1-z*(%s)/y)",fitResults[0].fit->GetTitle());
+   //outF <<"{1 JetEta 3 JetPt JetA Rho max(0.0001,1-y*([0]+([1]*z)*(1+[2]*log(x)))/x)"
+   outF << fname <<" Correction L1FastJet}"<<endl;
    
    // loop over the vector producing the eta lines
    for (unsigned int l=0; l<fitResults.size() ; l++){
@@ -210,11 +220,12 @@ void createTxtFile(TString txtFilename, const vector<FitRes> & fitResults){
       outF<<std::setw(11)<<fitResults[l].etalowedge
           <<std::setw(11)<<fitResults[l].etaupedge
           <<std::setw(11)<<9
-         //<<std::setw(12)<<1<<std::setw(12)<<3500
+         //<<std::setw(12)<<fitResults[l].fit->GetYmin()<<std::setw(12)<<fitResults[l].fit->GetYmax()
+         //<<std::setw(12)<<0<<std::setw(12)<<10
+         //<<std::setw(12)<<fitResults[l].fit->GetXmin()<<std::setw(12)<<fitResults[l].fit->GetXmax();
+          <<std::setw(12)<<fitResults[l].fit->GetXmin()<<std::setw(12)<<fitResults[l].fit->GetXmax()
           <<std::setw(12)<<fitResults[l].fit->GetYmin()<<std::setw(12)<<fitResults[l].fit->GetYmax()
-          <<std::setw(12)<<0<<std::setw(12)<<10
-         //<<std::setw(12)<<0<<std::setw(12)<<200;
-          <<std::setw(12)<<fitResults[l].fit->GetXmin()<<std::setw(12)<<fitResults[l].fit->GetXmax();
+          <<std::setw(12)<<0<<std::setw(12)<<10;
       
       
       // ... followed by the parameters
@@ -298,7 +309,7 @@ int main(int argc,char**argv){
    string         aalgo1     = cl.getValue<string>  ("algo1",   "ak5pf");
    string         aalgo2     = cl.getValue<string>  ("algo2",   "ak5pf");
    bool           highPU     = cl.getValue<bool>    ("highPU",    false);
-   bool           logPol     = cl.getValue<bool>    ("logPol",    false);
+   bool           logPol     = cl.getValue<bool>    ("logPol",     true);
    bool           useNPU     = cl.getValue<bool>    ("useNPU",    false);
 
    if (!cl.check()) return 0;
@@ -340,6 +351,12 @@ int main(int argc,char**argv){
       // Create the graph 
       TGraph2DErrors *graph  = getGraph2D(iEta, prof, profPt, profRho);
       cout << "Graph for pT, Eta, Rho created successfully" << endl;
+
+      // Needs to be at least 4 entries
+      if(graph->GetN()<4){
+         cout<<"\t WARNING: Graph has only " << graph->GetN() << " entries. Skipping eta" << endl;
+         continue;
+      }
       
       // Do the fitting
       TF2 * fitfunc = doGraphFitting(graph, highPU, logPol, iEta, prof);
