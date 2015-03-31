@@ -391,6 +391,10 @@ TCanvas * getCorrectionVsEtaCanvasTDR(TString algo, FactorizedJetCorrector * jet
   //pave->SetTextFont(42);
   //pave->SetTextSize(0.05);
 
+  //variables for min and max range
+  double minY = 1.0;
+  double maxY = 1.0;
+
   // loop over all pads
   for (unsigned int c = 0; c < PtVals.size(); c++) {
 
@@ -411,6 +415,8 @@ TCanvas * getCorrectionVsEtaCanvasTDR(TString algo, FactorizedJetCorrector * jet
         if ( cor < 0.8  || cor > 3 ){
            cout<<" WARNING  *** getCorrectionVsEtaCanvas(). Correction of "<<cor<<" is out of the (0.8,3) range"<<endl;
            }
+        if(cor > maxY) maxY = cor;
+        if(cor < minY) minY = cor;
         
         cc->SetBinContent(b,cor);
      }//for eta bins
@@ -420,7 +426,8 @@ TCanvas * getCorrectionVsEtaCanvasTDR(TString algo, FactorizedJetCorrector * jet
      if(algo.Contains("calo"))
         cc->GetYaxis()->SetRangeUser(0.90,2.5);
      else
-        cc->GetYaxis()->SetRangeUser(0.90,1.8);
+        cc->GetYaxis()->SetRangeUser(0.90,3.0);
+        //cc->GetYaxis()->SetRangeUser(0.90,1.8);
      cc->SetFillColor(30);
      cc->SetFillStyle(3001);
 
@@ -681,7 +688,7 @@ vector<TCanvas*> getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, ve
     //gPad->RedrawAxis();
   }//for pt bins
 
-  algs.erase(algs.begin());
+  //algs.erase(algs.begin());
 
   // return the canvas
   return cans;
@@ -839,7 +846,10 @@ TCanvas * getCorrectionVsPtComparisonCanvasTDR(vector<TString>& algs, vector<pai
 
       cc->GetXaxis()->SetTitle("p_{T}");
       cc->GetYaxis()->SetTitle("Corr. Factor");
-      cc->GetYaxis()->SetRangeUser(0.7,3.0);
+      if(abs(EtaVals[c])>2.0)
+         cc->GetYaxis()->SetRangeUser(0.7,6.0);
+      else
+         cc->GetYaxis()->SetRangeUser(0.7,3.0);
       cc->SetFillColor(30);
       cc->SetFillStyle(3001);
 
@@ -1194,7 +1204,7 @@ void cmsPrelim(double intLUMI)
    latex.SetTextSize(0.045);
 
    latex.SetTextAlign(31); // align right
-   latex.DrawLatex(0.93,0.96,"#sqrt{s} = 8 TeV");
+   latex.DrawLatex(0.93,0.96,"#sqrt{s} = 13 TeV");
    if (LUMINOSITY > 0.) {
       latex.SetTextAlign(31); // align right
       //latex.DrawLatex(0.82,0.7,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //Original
