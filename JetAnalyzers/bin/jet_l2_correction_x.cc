@@ -326,10 +326,12 @@ int main(int argc,char**argv)
                    fgaus->SetParLimits(4,0,100);
                    gabscor->Fit("fgaus","RQS");
                    //gErrorIgnoreLevel = origIgnoreLevel;
-
-                   //TString fcn = "[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))";
+//Original function
+                   if (xmin<10) xmin=10;
+                   TString fcn = "[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))";
                    //TString fcn = "([0]+TMath::LogNormal(TMath::Log10(x),[1],[2],[3]))+([4]+[5]/(pow(log10(x),2)+[6])+[7]*exp(-[8]*(log10(x)-[9])*(log10(x)-[9])))";
-                   TString fcn = "(x<=[10])*([0]+TMath::LogNormal(TMath::Log10(x), [1], [2], [3]))+(x>[10])*([4]+[5]/(pow(log10(x),2)+[6])+[7]*exp(-[8]*(log10(x)-[9])*(log10(x)-[9])))";
+//Updated Function
+//                   TString fcn = "(x<=[10])*([0]+TMath::LogNormal(TMath::Log10(x), [1], [2], [3]))+(x>[10])*([4]+[5]/(pow(log10(x),2)+[6])+[7]*exp(-[8]*(log10(x)-[9])*(log10(x)-[9])))";
                    //TString fcn = "(x<=[10])*([0]+((1.0/(TMath::Log10(x)*TMath::Sqrt(2.0*TMath::Pi()*TMath::Power([2],2))))*TMath::Exp(-TMath::Power(TMath::Log(TMath::Log10(x))-[1],2)/(2.0*TMath::Power([2],2)))))+(x>[10])*([4]+[5]/(pow(log10(x),2)+[6])+[7]*exp(-[8]*(log10(x)-[9])*(log10(x)-[9])))";
                    if(delphes) {
                       //fcn = "[0]+[1]*log10(x)+[2]*pow(log10(x),2)+[3]*pow(log10(x),3)+[4]*pow(log10(x),4)+[5]*pow(log10(x),5)+[6]*pow(log10(x),6)+[7]*pow(log10(x),7)+[8]*pow(log10(x),8)+[9]*pow(log10(x),9)";
@@ -337,16 +339,17 @@ int main(int argc,char**argv)
                    }
                    fabscor=new TF1("fit",fcn.Data(),xmin,xmax);
                 }
-                
-                //fabscor->SetParameter(0,0.5);
-                //fabscor->SetParameter(1,9.0);
-                //fabscor->SetParameter(2,8.0);
-                //fabscor->SetParameter(3,-0.3);
-                //fabscor->SetParameter(4,0.6);
-                //fabscor->SetParameter(5,1.0);
-                //fabscor->SetParLimits(2,0.1,100);
-                //fabscor->SetParLimits(3,-100,0);
-                //fabscor->SetParLimits(4,0,100);
+
+//These go to the original function                
+                fabscor->SetParameter(0,0.5);
+                fabscor->SetParameter(1,9.0);
+                fabscor->SetParameter(2,8.0);
+                fabscor->SetParameter(3,-0.3);
+                fabscor->SetParameter(4,0.6);
+                fabscor->SetParameter(5,1.0);
+                fabscor->SetParLimits(2,0.1,100);
+                fabscor->SetParLimits(3,-100,0);
+                fabscor->SetParLimits(4,0,100);
 
                 //fabscor->SetRange(3,2000);
                 //fabscor->SetParameter(0,flog->GetParameter(3));
@@ -366,25 +369,26 @@ int main(int argc,char**argv)
                 //fabscor->SetParLimits(7,-100,0);
                 //fabscor->SetParLimits(8,0,100);
 
-                fabscor->SetRange(xmin,2000);
-                fabscor->SetParameter(0,flog->GetParameter(3));
-                fabscor->SetParameter(1,flog->GetParameter(0));
-                fabscor->SetParameter(2,flog->GetParameter(1));
-                fabscor->SetParameter(3,flog->GetParameter(2));
-                fabscor->SetParLimits(1,0,1000);
-                fabscor->SetParLimits(2,0,1000);
-                fabscor->SetParLimits(3,0,1000);
-                fabscor->FixParameter(2,0.0);
-                fabscor->SetParameter(4,fgaus->GetParameter(0));
-                fabscor->SetParameter(5,fgaus->GetParameter(1));
-                fabscor->SetParameter(6,fgaus->GetParameter(2));
-                fabscor->SetParameter(7,fgaus->GetParameter(3));
-                fabscor->SetParameter(8,fgaus->GetParameter(4));
-                fabscor->SetParameter(9,fgaus->GetParameter(5));
-                fabscor->SetParLimits(6,0.1,100);
-                fabscor->SetParLimits(7,-100,0);
-                fabscor->SetParLimits(8,0,100);
-                fabscor->SetParameter(10,30);
+//These go to the updated function
+//                fabscor->SetRange(xmin,2000);
+//                fabscor->SetParameter(0,flog->GetParameter(3));
+//                fabscor->SetParameter(1,flog->GetParameter(0));
+//                fabscor->SetParameter(2,flog->GetParameter(1));
+//                fabscor->SetParameter(3,flog->GetParameter(2));
+//                fabscor->SetParLimits(1,0,1000);
+//                fabscor->SetParLimits(2,0,1000);
+//                fabscor->SetParLimits(3,0,1000);
+//                fabscor->FixParameter(2,0.0);
+//                fabscor->SetParameter(4,fgaus->GetParameter(0));
+//                fabscor->SetParameter(5,fgaus->GetParameter(1));
+//                fabscor->SetParameter(6,fgaus->GetParameter(2));
+//                fabscor->SetParameter(7,fgaus->GetParameter(3));
+//                fabscor->SetParameter(8,fgaus->GetParameter(4));
+//                fabscor->SetParameter(9,fgaus->GetParameter(5));
+//                fabscor->SetParLimits(6,0.1,100);
+//                fabscor->SetParLimits(7,-100,0);
+//                fabscor->SetParLimits(8,0,100);
+//                fabscor->SetParameter(10,30);
 
                 /*
                if (xmax < 15) {
