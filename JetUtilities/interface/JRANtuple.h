@@ -198,6 +198,7 @@ void JRANtuple::MakeTree(TTree *tree)
    sumpt_highpt = new vector<float>;
    ntrks_lowpt  = new vector<int>;
    ntrks_highpt = new vector<int>;
+   rhos         = new vector<float>;
 
    //npus = 0;
    //tnpus = 0;
@@ -280,6 +281,7 @@ void JRANtuple::Init(TTree *tree)
    sumpt_highpt = new vector<float>;
    ntrks_lowpt  = new vector<int>;
    ntrks_highpt = new vector<int>;
+   rhos         = new vector<float>;
 
    //npus = 0;
    //tnpus = 0;
