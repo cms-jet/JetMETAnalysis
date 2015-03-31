@@ -21,7 +21,7 @@ Defaults.JetResponseParameters.doHLT = True
 #!
 #! PROCESS
 #!
-applyDBFile = True
+applyDBFile = False
 era = "PHYS14_V4_MC"
 doProducer = False
 process = cms.Process("JRA")
@@ -35,8 +35,8 @@ if doProducer:
 
 algsizetype = {'ak':[4]}
 #algsizetype = {'ak':[1,2,3,4,5,6,7,8,9,10]}
-jettype = ['pfchs','puppi']
-#jettype = ['calo','pf','pfchs']
+jettype = ['pf','pfchs']
+#jettype = ['calo','pf','pfchs','puppi']
 corrs = ['']
 #corrs = ['','l1','l2l3','l1l2l3']
 
@@ -84,7 +84,7 @@ qcdFiles = cms.untracked.vstring(
 ###########
 # with PU #
 ###########
-	'/store/mc/Summer12_DR53X/QCD_Pt-15to3000_TuneZ2star_Flat_8TeV_pythia6/AODSIM/PU_RD1_START53_V7N-v1/00000/0432447C-346D-E311-A777-0025904B130A.root'
+#	'/store/mc/Summer12_DR53X/QCD_Pt-15to3000_TuneZ2star_Flat_8TeV_pythia6/AODSIM/PU_RD1_START53_V7N-v1/00000/0432447C-346D-E311-A777-0025904B130A.root'
 ##############
 # without PU #
 ##############
@@ -98,9 +98,26 @@ qcdFiles = cms.untracked.vstring(
 ######################
 # Upgrade without PU #
 ######################
-	
+
+###########################
+# RelVal CMSSW_7_4_0_pre9 #
+###########################
+       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/045199CD-10D4-E411-885D-00248C55CC9D.root',
+       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/20F1E0F6-10D4-E411-AE27-0025905A6070.root',
+       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/3AFFF0E6-10D4-E411-9329-0025905A48BC.root',
+       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/46D6A9E1-10D4-E411-A66A-0025905A6066.root',
+       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/4C87EC83-10D4-E411-9853-002590593878.root',
+       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/4EAC16E7-10D4-E411-AECC-0025905A6066.root',
+       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/74D6FCF6-10D4-E411-8D9C-003048FF9AC6.root',
+       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/A0F354EC-10D4-E411-9962-0025905A60EE.root',
+       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/A27D8273-11D4-E411-BD2C-0025905A48E4.root',
+       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/B018B169-11D4-E411-B9D5-0025905964CC.root',
+       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/DE397BF6-10D4-E411-A3F8-0025905A60BC.root',
+       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/E8F084EA-10D4-E411-98DE-0025905A611C.root',
+       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/EC01266C-10D4-E411-A360-0026189438B8.root',
+       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/EEC9F0EF-10D4-E411-A6E7-0025905A48D0.root' 
     )
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(100))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
 process.source = cms.Source("PoolSource", fileNames = qcdFiles )
 
 
