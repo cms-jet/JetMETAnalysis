@@ -96,11 +96,11 @@ int main(int argc,char**argv)
     else cout<<"jecpath set to "<<jecpath<<endl;
   }
   
-  TFile* ifile = new TFile(input.c_str(),"READ");
-  if (!ifile->IsOpen()) { cout<<"Can't open file "<<input<<endl; return 0; }
+  TFile* ifile = TFile::Open(input.c_str(),"READ");
+  if (!ifile) { cout<<"Can't open file "<<input<<endl; return 0; }
 
-  TFile* ofile = new TFile(output.c_str(),"RECREATE");
-  if (!ofile->IsOpen()) { cout<<"Can't open file "<<output<<endl; return 0; }
+  TFile* ofile = TFile::Open(output.c_str(),"RECREATE");
+  if (!ofile) { cout<<"Can't open file "<<output<<endl; return 0; }
   
   if (algs.size()==0) {
     TIter nextDir(ifile->GetListOfKeys());
