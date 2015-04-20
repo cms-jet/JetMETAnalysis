@@ -287,7 +287,7 @@ int main(int argc,char**argv)
              fabscor->SetParameter(2,0.0);
            }
            else {
-             if (alg.find("pf")!=string::npos) {
+              if (alg.find("pf")!=string::npos || alg.find("puppi")!=string::npos) {
                 //
                 // online
                 //
@@ -310,7 +310,7 @@ int main(int argc,char**argv)
                    flog->SetParLimits(1,0,1000);
                    flog->SetParLimits(2,0,1000);
                    flog->FixParameter(1,0.0);
-                   gabscor->Fit("flog","RBQS");
+                   //gabscor->Fit("flog","RBQS");
 
                    fgaus = new TF1("fgaus","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",30,2000);
                    fgaus->SetLineColor(kOrange);
@@ -324,7 +324,7 @@ int main(int argc,char**argv)
                    fgaus->SetParLimits(2,0.1,100);
                    fgaus->SetParLimits(3,-100,0);
                    fgaus->SetParLimits(4,0,100);
-                   gabscor->Fit("fgaus","RQS");
+                   //gabscor->Fit("fgaus","RQS");
                    //gErrorIgnoreLevel = origIgnoreLevel;
 //Original function
                    if (xmin<10) xmin=10;
@@ -681,6 +681,8 @@ string get_algorithm_suffix(const string& alg)
   else if (alg.find("pfl1")!=string::npos) result += "PFl1";
   //else if (alg.find("pf")         ==3) result += "PF";
   else if (alg.find("pf")!=string::npos) result += "PF";
+  else if (alg.find("puppi")!=string::npos) result += "PUPPI";
+  else if (alg.find("puppil1")!=string::npos) result += "PUPPIl1";
   else if (alg.find("trk")        ==3) result += "TRK";
   else if (alg.find("tau")        ==3) result += std::string(alg, 3);
   cout<<"get_algorithm_suffix: result = "<<result<<" from algo = "<<alg<<endl;
