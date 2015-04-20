@@ -6,9 +6,9 @@
 //            09/01/2011 Alexx Perloff  <aperloff@physics.tamu.edu>
 ///////////////////////////////////////////////////////////////////
 
-#include "JetMETAnalysis/JetAnalyzers/interface/Settings.h"
 #include "JetMETAnalysis/JetAnalyzers/interface/Style.h"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
+#include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
 
 #include "TROOT.h"
 #include "TSystem.h"
@@ -188,25 +188,7 @@ int main(int argc,char**argv)
           TString ss;
           pave[i] = tdrText(0.5,0.71,0.93,1-gPad->GetTopMargin()-0.045*(1-gPad->GetTopMargin()-gPad->GetBottomMargin()),31);
           pave[i]->AddText("QCD Monte Carlo");
-          TString algNameLong;
-          if(TString(algs[a]).Contains("ak"))        algNameLong += "Anti-kT";
-          if(TString(algs[a]).Contains("1")&&
-             !TString(algs[a]).Contains("10")&&
-             !TString(algs[a]).Contains("l1"))       algNameLong += " R=0.1";
-          else if(TString(algs[a]).Contains("2"))    algNameLong += " R=0.2";
-          else if(TString(algs[a]).Contains("3"))    algNameLong += " R=0.3";
-          else if(TString(algs[a]).Contains("4"))    algNameLong += " R=0.4";
-          else if(TString(algs[a]).Contains("5"))    algNameLong += " R=0.5";
-          else if(TString(algs[a]).Contains("6"))    algNameLong += " R=0.6";
-          else if(TString(algs[a]).Contains("7"))    algNameLong += " R=0.7";
-          else if(TString(algs[a]).Contains("8"))    algNameLong += " R=0.8";
-          else if(TString(algs[a]).Contains("9"))    algNameLong += " R=0.9";
-          else if(TString(algs[a]).Contains("10"))   algNameLong += " R=1.0";
-          if(TString(algs[a]).Contains("pfchs"))     algNameLong += ", PF+CHS";
-          else if(TString(algs[a]).Contains("pf"))   algNameLong += ", PF";
-          else if(TString(algs[a]).Contains("calo")) algNameLong += ", Calo";
-          else if(TString(algs[a]).Contains("jpt"))  algNameLong += ", JPT";
-          pave[i]->AddText(algNameLong);
+          pave[i]->AddText(JetInfo::get_legend_title(string(algs[a])).c_str());
 
           if(i!=NPtBins)
             {

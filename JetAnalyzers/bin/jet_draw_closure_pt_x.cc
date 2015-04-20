@@ -6,9 +6,9 @@
 //            12/09/2011 Alexx Perloff  <aperloff@physics.tamu.edu>
 ///////////////////////////////////////////////////////////////////
 
-#include "JetMETAnalysis/JetAnalyzers/interface/Settings.h"
 #include "JetMETAnalysis/JetAnalyzers/interface/Style.h"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
+#include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
 
 #include "TROOT.h"
 #include "TSystem.h"
@@ -37,8 +37,6 @@ using namespace std;
 // define local functions
 ////////////////////////////////////////////////////////////////////////////////
 
-/// get the uppercase version of the algorithm name
-TString getAlias(TString s);
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -204,27 +202,7 @@ int main(int argc,char**argv)
           pave[j] = new TPaveText(0.3,0.75,0.8,0.9,"NDC");
           if (tdr) {
              pave[j]->AddText("QCD Monte Carlo");
-
-             TString algNameLong;
-             if(TString(algs[a]).Contains("ak"))        algNameLong += "Anti-kT";
-             if(TString(algs[a]).Contains("1")&&
-                !TString(algs[a]).Contains("10")&&
-                !TString(algs[a]).Contains("l1"))       algNameLong += " R=0.1";
-             else if(TString(algs[a]).Contains("2"))    algNameLong += " R=0.2";
-             else if(TString(algs[a]).Contains("3"))    algNameLong += " R=0.3";
-             else if(TString(algs[a]).Contains("4"))    algNameLong += " R=0.4";
-             else if(TString(algs[a]).Contains("5"))    algNameLong += " R=0.5";
-             else if(TString(algs[a]).Contains("6"))    algNameLong += " R=0.6";
-             else if(TString(algs[a]).Contains("7"))    algNameLong += " R=0.7";
-             else if(TString(algs[a]).Contains("8"))    algNameLong += " R=0.8";
-             else if(TString(algs[a]).Contains("9"))    algNameLong += " R=0.9";
-             else if(TString(algs[a]).Contains("10"))   algNameLong += " R=1.0";
-             if(TString(algs[a]).Contains("pfchs"))     algNameLong += ", PFlow+CHS";
-             else if(TString(algs[a]).Contains("pf"))   algNameLong += ", PFlow";
-             else if(TString(algs[a]).Contains("calo")) algNameLong += ", Calo";
-             else if(TString(algs[a]).Contains("jpt"))  algNameLong += ", JPT";
-
-             pave[j]->AddText(algNameLong);
+             pave[j]->AddText(JetInfo::get_legend_title(string(algs[a])).c_str());
           }
           else {
              pave[j]->AddText(algs[a]);
@@ -317,21 +295,6 @@ int main(int argc,char**argv)
       if(!flavor.IsNull()) ss+="_"+algs[a]+"_"+flavor;
       else ss+="_"+algs[a];
 
-      TString algNameLong;
-      if(TString(algs[a]).Contains("ak"))        algNameLong += "Anti-k_{T}";
-      if(TString(algs[a]).Contains("3"))         algNameLong += " R=0.3";
-      else if(TString(algs[a]).Contains("4"))    algNameLong += " R=0.4";
-      else if(TString(algs[a]).Contains("5"))    algNameLong += " R=0.5";
-      else if(TString(algs[a]).Contains("6"))    algNameLong += " R=0.6";
-      else if(TString(algs[a]).Contains("7"))    algNameLong += " R=0.7";
-      else if(TString(algs[a]).Contains("8"))    algNameLong += " R=0.8";
-      else if(TString(algs[a]).Contains("9"))    algNameLong += " R=0.9";
-      else if(TString(algs[a]).Contains("10"))   algNameLong += " R=1.0";
-      if(TString(algs[a]).Contains("pfchs"))     algNameLong += ", PF+CHS";
-      else if(TString(algs[a]).Contains("pf"))   algNameLong += ", PF";
-      else if(TString(algs[a]).Contains("calo")) algNameLong += ", Calo";
-      else if(TString(algs[a]).Contains("jpt"))  algNameLong += ", JPT";
-
       TLegend* leg = tdrLeg(0.58,0.16,0.9,0.4);
 
       TH1D* frame = new TH1D();
@@ -375,7 +338,7 @@ int main(int argc,char**argv)
          pave[c] = tdrText(0.5,0.75,0.93,1-gPad->GetTopMargin()-0.045*(1-gPad->GetTopMargin()-gPad->GetBottomMargin()),31);
          if (tdr) {
             pave[c]->AddText("QCD Monte Carlo");
-            pave[c]->AddText(algNameLong);
+            pave[c]->AddText(JetInfo::get_legend_title(string(algs[a])).c_str());
          }
          else {
             pave[c]->AddText(algs[a]);
@@ -397,156 +360,4 @@ int main(int argc,char**argv)
 ////////////////////////////////////////////////////////////////////////////////
 
 //______________________________________________________________________________
-TString getAlias(TString s)
-{
-   if (s=="ic5calo")
-      return "IC5Calo";
-   else if (s=="ic5pf")
-      return "IC5PF";
-   else if (s=="ak5calo")
-      return "AK5Calo";  
-   else if (s=="ak5calol1")
-      return "AK5Calol1";
-   else if (s=="ak5calol1off")
-      return "AK5Calol1off";
-   else if (s=="ak5calol1offl2l3")
-      return "AK5Calol1off";
-   else if (s=="ak7calo")
-      return "AK7Calo";
-   else if (s=="ak7calol1")
-      return "AK7Calol1";
-   else if (s=="ak7calol1off")
-      return "AK7Calol1off";
-   else if (s=="ak5caloHLT")
-      return "AK5CaloHLT";
-   else if (s=="ak5caloHLTl1")
-      return "AK5CaloHLTl1";
-   else if (s=="ak1pf")
-      return "AK1PF";
-   else if (s=="ak1pfl1")
-      return "AK1PFl1";
-   else if (s=="ak2pf")
-      return "AK2PF";
-   else if (s=="ak2pfl1")
-      return "AK2PFl1";
-   else if (s=="ak3pf")
-      return "AK3PF";
-   else if (s=="ak3pfl1")
-      return "AK3PFl1";
-   else if (s=="ak4pf")
-      return "AK4PF";
-   else if (s=="ak4pfl1")
-      return "AK4PFl1";
-   else if (s=="ak5pf")
-      return "AK5PF";
-   else if (s=="ak5pfl1")
-      return "AK5PFl1";
-   else if (s=="ak5pfl1l2l3")
-      return "AK5PFl1";
-   else if (s=="ak5pfl1off")
-      return "AK5PFl1off";
-   else if (s=="ak6pf")
-      return "AK6PF";
-   else if (s=="ak6pfl1")
-      return "AK6PFl1";
-   else if (s=="ak7pf")
-      return "AK7PF";
-   else if (s=="ak7pfl1")
-      return "AK7PFl1";
-   else if (s=="ak7pfl1off")
-      return "AK7PFl1off";
-   else if (s=="ak8pf")
-      return "AK8PF";
-   else if (s=="ak8pfl1")
-      return "AK8PFl1";
-   else if (s=="ak9pf")
-      return "AK9PF";
-   else if (s=="ak9pfl1")
-      return "AK9PFl1";
-   else if (s=="ak10pf")
-      return "AK10PF";
-   else if (s=="ak10pfl1")
-      return "AK10PFl1";
-   else if (s=="ak1pfchs")
-      return "AK1PFchs";
-   else if (s=="ak1pfchsl1")
-      return "AK1PFchsl1";
-   else if (s=="ak2pfchs")
-      return "AK2PFchs";
-   else if (s=="ak2pfchsl1")
-      return "AK2PFchsl1";
-   else if (s=="ak3pfchs")
-      return "AK3PFchs";
-   else if (s=="ak3pfchsl1")
-      return "AK3PFchsl1";
-   else if (s=="ak4pfchs")
-      return "AK4PFchs";
-   else if (s=="ak4pfchsl1")
-      return "AK4PFchsl1";
-   else if (s=="ak5pfchs")
-      return "AK5PFchs";
-   else if (s=="ak5pfchsl1")
-      return "AK5PFchsl1";
-   else if (s=="ak5pfchsl1l2l3")
-      return "AK5PFchsl1";
-   else if (s=="ak5pfchsl1off")
-      return "AK5PFchsl1off";
-   else if (s=="ak6pfchs")
-      return "AK6PFchs";
-   else if (s=="ak6pfchsl1")
-      return "AK6PFchsl1";
-   else if (s=="ak7pfchs")
-      return "AK7PFchs";
-   else if (s=="ak7pfchsl1")
-      return "AK7PFchsl1";
-   else if (s=="ak7pfchsl1off")
-      return "AK7PFchsl1off";
-   else if (s=="ak8pfchs")
-      return "AK8PFchs";
-   else if (s=="ak8pfchsl1")
-      return "AK8PFchsl1";
-   else if (s=="ak9pfchs")
-      return "AK9PFchs";
-   else if (s=="ak9pfchsl1")
-      return "AK9PFchsl1";
-   else if (s=="ak10pfchs")
-      return "AK10PFchs";
-   else if (s=="ak10pfchsl1")
-      return "AK10PFchsl1";
-   else if (s=="ak5pfHLT")
-      return "AK5PFHLT";
-  else if (s=="ak5pfHLTl1")
-      return "AK5PFHLTl1";
-   else if (s=="ak5pfchsHLT")
-      return "AK5PFchsHLT";
-   else if (s=="ak5pfchsHLTl1")
-      return "AK5PFchsHLTl1";
-   else if (s=="ak5jpt")
-      return "AK5JPT";
-   else if (s=="ak5jptl1")
-      return "AK5JPTl1";
-   else if (s=="ak5jptl1l2l3")
-      return "AK5JPTl1";
-   else if (s=="ak7jpt")
-      return "AK7JPT";
-   else if (s=="ak7jptl1")
-      return "AK7JPTl1";
-   else if (s=="sc5calo")
-      return "SC5Calo";
-   else if (s=="sc5pf")
-      return "SC5PF";
-   else if (s=="sc7calo")
-      return "SC5Calo";
-   else if (s=="sc7pf")
-      return "SC5PF";
-   else if (s=="kt4calo")
-      return "KT4Calo";
-   else if (s=="kt4pf")
-      return "KT4PF";
-   else if (s=="kt6calo")
-      return "KT6Calo";
-   else if (s=="kt6pf")
-      return "KT6PF";
-   else
-      return "unknown";
-}
+
