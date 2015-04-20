@@ -149,6 +149,8 @@ int main(int argc,char** argv)
 
   float          xmin      = cl.getValue<float>  ("xmin",                -1.0);
   float          xmax      = cl.getValue<float>  ("xmax",                -1.0);
+  string         mgname    = cl.getValue<string> ("mgname",                "");
+  bool           verbose   = cl.getValue<bool>   ("verbose",            false);
 
 
 
@@ -260,9 +262,13 @@ int main(int argc,char** argv)
       for (unsigned int ivar=0;ivar<variables.size();ivar++) {
 	
 	string variable=variables[ivar];
+  if (verbose)
+    cout << "Doing variable " << variable << " ... " << endl;
 
 	ObjectLoader<TGraphErrors> gl;
 	gl.load_objects(dir,variable);
+  if (verbose)
+    cout << "\tNumber of TGraphErrors loaded = " << gl.nobjects() << endl;
 	
 	gl.begin_loop();
 	vector<unsigned int> indices;
@@ -284,17 +290,20 @@ int main(int argc,char** argv)
 	    }
 	    if (!suffix.empty()) sscname<<"_"<<suffix;
 	    int nleglabels=(leglabels.size()>0)?leglabels.size():variables.size();
-	    mg=new TMultiGraph(sscname.str().c_str(),"");
+      if (mgname.empty()) mgname = sscname.str();
+	    //mg=new TMultiGraph(sscname.str().c_str(),"");
+      mg=new TMultiGraph(mgname.c_str(),"");
 
 	    //double ymax=(quantity.find("Rsp")==string::npos)?0.85:0.4;
 
 	    double legxmin = (leginplot) ? legx : 0.825;
-	    double legymin = legy;
+	    double legymin = (residual>=0) ? legy-0.045 : legy;
 	    double legxmax = (leginplot) ? legx+legw : 1.03;
 	    double legymax = legymin - (nleglabels)*0.055;
 
 	    leg = new TLegend(legxmin,legymin,legxmax,legymax);
-	    leg->SetFillColor(10); leg->SetLineColor(10); leg->SetBorderSize(0);
+	    //leg->SetFillColor(10); leg->SetLineColor(10); leg->SetBorderSize(0);
+      leg->SetFillColor(0); leg->SetLineColor(0); leg->SetBorderSize(0);
 
 	    //leg=new TLegend(0.5,ymax,0.9,ymax-nleglabels*0.06);
 	    //range=get_range(gl,indices,variables.size()==1);
@@ -432,8 +441,10 @@ int main(int argc,char** argv)
 			resmcdata,defmcdata,yresmax,restitle,restitlesize,
 			xmin,xmax,ymin,ymax,fullfit);
 
-    leg->SetLineColor(10);
-    leg->SetFillColor(10);
+    //leg->SetLineColor(10);
+    leg->SetLineColor(0);
+    //leg->SetFillColor(10);
+    leg->SetFillColor(0);
     leg->SetBorderSize(0);
     if (drawlegend) leg->Draw();
     if (drawrange) draw_range(ranges.front(),residual);
@@ -680,7 +691,7 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
 			 int fullfit)
 {
   if (errMode<0) return;
-  else if (errMode>3){
+  else if (errMode>4){
     cout<<"ERROR: draw_graph_residual() invalid error mode"<<endl;return;
   }
   if (0==pad) return;
@@ -805,6 +816,10 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
       else if (errMode==0) {
 	resy  = (y-fy)/sqrt(y)*100.;
       }
+      else if (errMode==4) { 
+        resy  = (y-fy)/fy*100.;
+        resey = 1.0/fy*ey*100.;
+      }
 
       int n = rGraph->GetN();
 
@@ -813,8 +828,8 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
     }
 
     rGraph->SetTitle("");
-    if (errMode==3) rGraph->SetMarkerStyle(20); else rGraph->SetMarkerStyle(2);
-    if (errMode==3) rGraph->SetMarkerSize(.75); else rGraph->SetMarkerSize(1.);
+    if (errMode==3 || errMode==4) rGraph->SetMarkerStyle(20); else rGraph->SetMarkerStyle(2);
+    if (errMode==3 || errMode==4) rGraph->SetMarkerSize(.75); else rGraph->SetMarkerSize(1.);
     if (0!=vf[i]) rGraph->SetMarkerColor(vf[i]->GetLineColor());
     if (0!=vf[i]) rGraph->SetLineColor(vf[i]->GetLineColor());
     if (resmcdata)  rGraph->SetMarkerColor(vg[defmcdata[1]]->GetLineColor());
@@ -886,6 +901,8 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
 	rmg->GetHistogram()->SetYTitle( "#frac{(point - fit)}{#sqrt{fit}} [%]" );
       else if (errMode == 2)
 	rmg->GetHistogram()->SetYTitle( "#frac{(point - fit)}{binerror} [%]" );
+      else if (errMode == 4)
+  rmg->GetHistogram()->SetYTitle( "#frac{(point-fit)}{fit} [%]" );
       else 
 	rmg->GetHistogram()->SetYTitle( "#frac{(point-fit)}{point} [%]" );
     }
@@ -896,6 +913,8 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
 	rmg->GetHistogram()->SetYTitle( "#frac{(data - MC)}{#sqrt{MC}} [%]" );
       else if (errMode == 2)
 	rmg->GetHistogram()->SetYTitle( "#frac{(data - MC)}{binerror} [%]" );
+      else if (errMode == 4)
+  rmg->GetHistogram()->SetYTitle( "#frac{(data-MC)}{MC} [%]" );
       else 
 	rmg->GetHistogram()->SetYTitle( "#frac{(data-MC)}{data} [%]" );
     }
@@ -996,11 +1015,11 @@ string get_legend_label_from_alg(const string& alg)
   else if (alg.find("gk")==0) { label = "Gen k_{T}, R=";  tmp = tmp.substr(2); }
   else return alg;
   
-  string reco[5] = { "gen",  "calo",   "pf",      "trk",      "jpt" };
-  string RECO[5] = { "(Gen)","(Calo)", "(PFlow)", "(Tracks)", "(JPT)" };
+  string reco[6] = { "gen",  "calo",   "pfchs",    "pf",    "trk",      "jpt" };
+  string RECO[6] = { "(Gen)","(Calo)", "(PF+CHS)", "(PF)", "(Tracks)", "(JPT)" };
 
   size_t pos=string::npos; int ireco=-1;
-  while (pos==string::npos&&ireco<4) { pos = tmp.find(reco[++ireco]); }
+  while (pos==string::npos&&ireco<6) { pos = tmp.find(reco[++ireco]); }
   if (pos==string::npos) return alg;
 
   double jet_size; stringstream ss1; ss1<<tmp.substr(0,pos); ss1>>jet_size;
@@ -1080,12 +1099,15 @@ void set_graph_style(TGraphErrors* g, unsigned int ngraph,bool nocolor,
   
   TF1* f(0);
   if (g->GetListOfFunctions()->GetEntries()>0) {
-    f=(TF1*)(g->GetListOfFunctions()->At(0));
-    f->SetLineColor(color);
-    f->SetLineStyle(line);
-    if (ngraph<vlstyles.size()) f->SetLineStyle(vlstyles[ngraph]);
-    f->SetLineWidth(1);
-    if (ngraph<vlsizes.size()) f->SetLineWidth((Width_t)vlsizes[ngraph]);
+    for(int i=0; i<g->GetListOfFunctions()->GetEntries(); i++) {
+      //f=(TF1*)(g->GetListOfFunctions()->At(0));
+      f=(TF1*)(g->GetListOfFunctions()->At(i));
+      f->SetLineColor(color);
+      f->SetLineStyle(line);
+      if (ngraph<vlstyles.size()) f->SetLineStyle(vlstyles[ngraph]);
+      f->SetLineWidth(1);
+      if (ngraph<vlsizes.size()) f->SetLineWidth((Width_t)vlsizes[ngraph]);
+    }
   }
   
   return;
