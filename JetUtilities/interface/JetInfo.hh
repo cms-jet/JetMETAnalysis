@@ -13,6 +13,7 @@
 #include <vector>
 #include <sstream>
 #include <assert.h>
+#include <stdexcept>
 #include <cmath>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -45,7 +46,6 @@ public:
   static int vfind(const TString a[], const int size, TString b);
   static int vfind(std::vector<TString> a, TString b);
 
-
   /// get the jet algorithm
   TString getAlgorithm(TString s);
   TString getAlgorithm() {return getAlgorithm(abbreviation);}
@@ -54,9 +54,12 @@ public:
   TString getConeSize(TString s);
   TString getConeSize() {return getConeSize(abbreviation);}
   
-  /// get the jet type i.e. Calo, PF, PFchs, JPT
+  /// get the jet type i.e. Calo, PF, PFchs, JPT, PUPPI
   TString getJetType(TString s);
   TString getJetType() {return getJetType(abbreviation);}
+
+  /// return true if the jet type if an HLT jet
+  bool isHLT();
   
   /// get the correction string i.e. l1l2l3
   TString getCorrString(TString s);
@@ -66,8 +69,18 @@ public:
   TString getAlias(TString s);
   TString getAlias() {return getAlias(abbreviation);}
 
+  /// returns a string containing all of the correction levels to be applied
+  static std::string get_correction_levels(const std::vector<int>& levels, bool L1FastJet);
+
+  /// returns the full path of each correction level concatinated into a single string
+  static std::string get_correction_tags(const std::string& tag, const std::string& alg,
+                                         const std::vector<int>& levels, const std::string& jecpath, bool L1FastJet);
+
+  /// return the full name of the correction level
+  static std::string get_level_tag(int level, bool L1FastJet);
+
   /// transform the alg label into a title, e.g.: kt4calo -> k_{T}, D=0.4 (Calo)
-  static std::string get_legend_title(const std::string& alg, bool withSize = true);
+  static std::string get_legend_title(const std::string& alg, bool withSize = true, bool parentheses = false);
 
   /// Get the abbreviation for each detector section
   static TString get_detector_abbreviation(TString dn);

@@ -4,20 +4,20 @@
 using namespace std;
 
 //______________________________________________________________________________
-string JetInfo::get_legend_title(const string& alg, bool withSize)
+string JetInfo::get_legend_title(const string& alg, bool withSize, bool parentheses)
 {
   string title;
   string tmp(alg);
-  if      (alg.find("kt")==0) { title = "k_{T}, R=";      tmp = tmp.substr(2); }
-  else if (alg.find("sc")==0) { title = "SISCone, R=";    tmp = tmp.substr(2); }
-  else if (alg.find("ic")==0) { title = "ItCone, R=";     tmp = tmp.substr(2); }
-  else if (alg.find("mc")==0) { title = "MidCone. R=";    tmp = tmp.substr(2); }
-  else if (alg.find("ca")==0) { title = "Cam/Aachen, R="; tmp = tmp.substr(2); }
-  else if (alg.find("ak")==0) { title = "Anti-k_{T}, R="; tmp = tmp.substr(2); }
+  if      (alg.find("kt")==0) { title = "k_{T} R=";      tmp = tmp.substr(2); }
+  else if (alg.find("sc")==0) { title = "SISCone R=";    tmp = tmp.substr(2); }
+  else if (alg.find("ic")==0) { title = "ItCone R=";     tmp = tmp.substr(2); }
+  else if (alg.find("mc")==0) { title = "MidCone R=";    tmp = tmp.substr(2); }
+  else if (alg.find("ca")==0) { title = "Cam/Aachen R="; tmp = tmp.substr(2); }
+  else if (alg.find("ak")==0) { title = "Anti-k_{T} R="; tmp = tmp.substr(2); }
   else return alg;
   
-  string reco[9] = { "gen", "caloHLT", "calo", "pfHLT", "pfchsHLT", "pfchs", "pf", "trk", "jpt" };
-  string RECO[9] = { "(Gen)", "(Calo@HLT)", "(Calo)", "(PFlow@HLT)", "(PFlow+CHS@HLT)", "(PF+CHS)", "(PF)", "(Tracks)", "(JPT)" };
+  string reco[10] = { "gen", "caloHLT", "calo", "pfHLT", "pfchsHLT", "pfchs", "pf", "trk", "jpt", "puppi" };
+  string RECO[10] = { "Gen", "Calo@HLT", "Calo", "PF@HLT", "PF+CHS@HLT", "PF+CHS", "PF", "Tracks", "JPT", "PF+PUPPI" };
 
   string::size_type pos=string::npos; int ireco=-1;
   while (pos==string::npos&&ireco<8) { pos = tmp.find(reco[++ireco]); }
@@ -27,10 +27,16 @@ string JetInfo::get_legend_title(const string& alg, bool withSize)
   jet_size/=10.0;  stringstream ss2; ss2<<jet_size;
 
   if (withSize)
-    title += ss2.str() + " " + RECO[ireco];
+    if (parentheses)
+      title += ss2.str() + ", (" + RECO[ireco] + ")";
+    else
+      title += ss2.str() + ", " + RECO[ireco];
   else {
     title = title.substr(0,title.size()-4);
-    title += " " + RECO[ireco];
+    if(parentheses)
+      title += " (" + RECO[ireco] + ")";
+    else
+      title += " " + RECO[ireco];
   }
 
   return title;
@@ -84,7 +90,7 @@ TString JetInfo::getConeSize(TString s) {
     return sizeString;
   }
   else {
-    cout << "ERROR::getAlias Could not find the cone size that corresponds to " << sizeString << "." << endl;
+    cout << "ERROR::getConeSize Could not find the cone size that corresponds to " << sizeString << "." << endl;
     assert(isize>-1);
   }
 
@@ -111,11 +117,18 @@ TString JetInfo::getJetType(TString s) {
     return jet_types[itype];
   }
   else {
-    cout << "ERROR::getAlias Could not find the jet type that corresponds to " << jtype << "." << endl;
+    cout << "ERROR::getJetType Could not find the jet type that corresponds to " << jtype << "." << endl;
     assert(itype>-1);
   }
 
   return "";
+}
+
+//______________________________________________________________________________
+bool JetInfo::isHLT() {
+  if(getJetType(abbreviation).Contains("hlt",TString::kIgnoreCase))
+    return true;
+  return false;
 }
 
 //______________________________________________________________________________
@@ -149,6 +162,89 @@ TString JetInfo::getAlias(TString s)
   res += getJetType(s);
   res += getCorrString(s);
   return res;
+}
+
+//______________________________________________________________________________
+string JetInfo::get_correction_levels(const vector<int>& levels, bool L1FastJet)
+{
+  stringstream ssresult;
+  for (unsigned int ilevel=0;ilevel<levels.size();++ilevel) {
+    if (ilevel!=0) ssresult<<":";
+    int level(levels[ilevel]);
+    switch (level) {
+    case 1 : 
+       if (L1FastJet) {
+          ssresult<<"L1FastJet"; break;
+       }
+       else {
+          ssresult<<"L1Offset"; break;
+       }
+    case 2 : ssresult<<"L2Relative"; break;
+    case 3 : ssresult<<"L3Absolute"; break;
+    case 4 : ssresult<<"L4EMF"; break;
+    case 5 : ssresult<<"L5Flavor"; break;
+    case 6 : ssresult<<"L6SLB"; break;
+    case 7 : ssresult<<"L7Parton"; break;
+    default: throw std::runtime_error(((string)"get_correction_levels ERROR: "+
+               (string)"invalid correction level").c_str());
+    }
+  }
+    return ssresult.str();
+}
+
+//______________________________________________________________________________
+string JetInfo::get_correction_tags(const string& era,const string& alg,
+                                    const vector<int>& levels,
+                                    const string& jecpath, bool L1FastJet)
+{
+  stringstream ssresult;
+  for (unsigned int ilevel=0;ilevel<levels.size();ilevel++) {
+    
+    if (ilevel!=0) ssresult<<":";
+    
+    int level=levels[ilevel];
+    stringstream ssera;
+    
+    if(jecpath[jecpath.length()-1] != '/') ssera<<jecpath<<"/"<<era<<"_";
+    else ssera<<jecpath<<era<<"_";
+
+    if      (level==1 && !L1FastJet) ssera<<"L1Offset_";
+    else if (level==1 && L1FastJet) ssera<<"L1FastJet_";
+    else if (level==2) ssera<<"L2Relative_";
+    else if (level==3) ssera<<"L3Absolute_";
+    else if (level==4) ssera<<"L4EMF_";
+    else if (level==5) ssera<<"L5Flavor_";
+    else if (level==6) ssera<<"L6SLB_";
+    else if (level==7) ssera<<"L7Parton_";
+    else throw std::runtime_error("unknown correction level");
+    
+    if (level==6) {
+      ssresult<<ssera.str()<<".txt";
+      continue;
+    }
+
+    JetInfo tmp(alg);
+    ssera<<tmp.getAlias();
+
+    ssresult<<ssera.str()<<".txt";
+  }
+  
+  return ssresult.str();
+}
+
+//______________________________________________________________________________
+string JetInfo::get_level_tag(int level, bool L1FastJet)
+{
+    if      (level==1 && !L1FastJet) return "_L1Offset_";
+    else if (level==1 && L1FastJet)  return "_L1FastJet_";
+    else if (level==2)               return "_L2Relative_";
+    else if (level==3)               return "_L3Absolute_";
+    else if (level==4)               return "_L4EMF_";
+    else if (level==5)               return "_L5Flavor_";
+    else if (level==6)               return "_L6SLB_";
+    else if (level==7)               return "_L7Parton_";
+    else if (level==23)              return "_L2L3Residual_";
+    else throw std::runtime_error("unknown correction level");
 }
 
 //______________________________________________________________________________
