@@ -126,8 +126,10 @@ int main(int argc,char**argv)
   int            nbinsy            = cl.getValue<int>    ("nbinsy",                     25);
   float          etabarrelmin      = cl.getValue<float>  ("etabarrelmin",             -1.3);
   float          etabarrelmax      = cl.getValue<float>  ("etabarrelmax",             +1.3);
-  float          etaendcapmin      = cl.getValue<float>  ("etaendcapmin",             -3.0);
-  float          etaendcapmax      = cl.getValue<float>  ("etaendcapmax",             +3.0);
+  float          etaiendcapmin     = cl.getValue<float>  ("etaiendcapmin",            -2.5);
+  float          etaiendcapmax     = cl.getValue<float>  ("etaiendcapmax",            +2.5);
+  float          etaoendcapmin     = cl.getValue<float>  ("etaoendcapmin",            -3.0);
+  float          etaoendcapmax     = cl.getValue<float>  ("etaoendcapmax",            +3.0);
   float          etaforwardmin     = cl.getValue<float>  ("etaforwardmin",            -5.0);
   float          etaforwardmax     = cl.getValue<float>  ("etaforwardmax",            +5.0);
   bool           dobalance         = cl.getValue<bool>   ("dobalance",               false);
@@ -343,8 +345,10 @@ int main(int argc,char**argv)
     vector<TH1F**>  jetPtVsRefPt;
     vector<TH1F**>  refPtVsRefPtBarrel;
     vector<TH1F**>  jetPtVsRefPtBarrel;
-    vector<TH1F**>  refPtVsRefPtEndcap;
-    vector<TH1F**>  jetPtVsRefPtEndcap;
+    vector<TH1F**>  refPtVsRefPtInnerEndcap;
+    vector<TH1F**>  jetPtVsRefPtInnerEndcap;
+    vector<TH1F**>  refPtVsRefPtOuterEndcap;
+    vector<TH1F**>  jetPtVsRefPtOuterEndcap;
     vector<TH1F**>  refPtVsRefPtForward;
     vector<TH1F**>  jetPtVsRefPtForward;
     vector<TH1F**>  jetEtaVsJetEta;
@@ -360,7 +364,8 @@ int main(int argc,char**argv)
     vector<TH1F**>  relRspVsJetPt;
     vector<TH1F**>  relRspVsRefPt;
     vector<TH1F**>  relRspVsRefPtBarrel;
-    vector<TH1F**>  relRspVsRefPtEndcap;
+    vector<TH1F**>  relRspVsRefPtInnerEndcap;
+    vector<TH1F**>  relRspVsRefPtOuterEndcap;
     vector<TH1F**>  relRspVsRefPtForward;
     vector<TH1F**>  relRspVsJetEta;
     vector<TH1F**>  relRspVsJetPhi;
@@ -432,15 +437,20 @@ int main(int argc,char**argv)
 	
         if (dorefpt) {
           refPtVsRefPtBarrel.push_back(new TH1F*[flavor.size()]);
-          refPtVsRefPtEndcap.push_back(new TH1F*[flavor.size()]);
+          refPtVsRefPtInnerEndcap.push_back(new TH1F*[flavor.size()]);
+          refPtVsRefPtOuterEndcap.push_back(new TH1F*[flavor.size()]);
           refPtVsRefPtForward.push_back(new TH1F*[flavor.size()]);
           for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
             hname=flavor[iflv]+"RefPt_Barrel_"+get_suffix("RefPt",ipt,binspt);
             refPtVsRefPtBarrel.back()[iflv]=new TH1F(hname.c_str(),
                                                      ";p_{T}^{ref} [GeV]",
                                                      nbinspt,ptmin,ptmax);
-            hname=flavor[iflv]+"RefPt_Endcap_"+get_suffix("RefPt",ipt,binspt);
-            refPtVsRefPtEndcap.back()[iflv]=new TH1F(hname.c_str(),
+            hname=flavor[iflv]+"RefPt_InnerEndcap_"+get_suffix("RefPt",ipt,binspt);
+            refPtVsRefPtInnerEndcap.back()[iflv]=new TH1F(hname.c_str(),
+                                                     ";p_{T}^{ref} [GeV]",
+                                                     nbinspt,ptmin,ptmax);
+            hname=flavor[iflv]+"RefPt_OuterEndcap_"+get_suffix("RefPt",ipt,binspt);
+            refPtVsRefPtOuterEndcap.back()[iflv]=new TH1F(hname.c_str(),
                                                      ";p_{T}^{ref} [GeV]",
                                                      nbinspt,ptmin,ptmax);
             hname=flavor[iflv]+"RefPt_Forward_"+get_suffix("RefPt",ipt,binspt);
@@ -452,7 +462,8 @@ int main(int argc,char**argv)
 	
         if (dorefpt) {
           jetPtVsRefPtBarrel.push_back(new TH1F*[flavor.size()]);
-          jetPtVsRefPtEndcap.push_back(new TH1F*[flavor.size()]);
+          jetPtVsRefPtInnerEndcap.push_back(new TH1F*[flavor.size()]);
+          jetPtVsRefPtOuterEndcap.push_back(new TH1F*[flavor.size()]);
           jetPtVsRefPtForward.push_back(new TH1F*[flavor.size()]);
           for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
             hname=flavor[iflv]+"JetPt_Barrel_"+get_suffix("RefPt",ipt,binspt);
@@ -461,8 +472,14 @@ int main(int argc,char**argv)
                                                      3*nbinspt,
                                                      0,
                                                      3.0*ptmax);
-            hname=flavor[iflv]+"JetPt_Endcap_"+get_suffix("RefPt",ipt,binspt);
-            jetPtVsRefPtEndcap.back()[iflv]=new TH1F(hname.c_str(),
+            hname=flavor[iflv]+"JetPt_InnerEndcap_"+get_suffix("RefPt",ipt,binspt);
+            jetPtVsRefPtInnerEndcap.back()[iflv]=new TH1F(hname.c_str(),
+                                                     ";p_{T} [GeV]",
+                                                     3*nbinspt,
+                                                     0,
+                                                     3.0*ptmax);
+            hname=flavor[iflv]+"JetPt_OuterEndcap_"+get_suffix("RefPt",ipt,binspt);
+            jetPtVsRefPtOuterEndcap.back()[iflv]=new TH1F(hname.c_str(),
                                                      ";p_{T} [GeV]",
                                                      3*nbinspt,
                                                      0,
@@ -496,7 +513,8 @@ int main(int argc,char**argv)
 
         if (dorelrsp&&dorefpt) {
           relRspVsRefPtBarrel.push_back(new TH1F*[flavor.size()]);
-          relRspVsRefPtEndcap.push_back(new TH1F*[flavor.size()]);
+          relRspVsRefPtInnerEndcap.push_back(new TH1F*[flavor.size()]);
+          relRspVsRefPtOuterEndcap.push_back(new TH1F*[flavor.size()]);
           relRspVsRefPtForward.push_back(new TH1F*[flavor.size()]);
           for (unsigned int iflv=0;iflv<flavor.size();iflv++) {
             hname=flavor[iflv]+"RelRsp_Barrel_"+get_suffix("RefPt",ipt,binspt);
@@ -504,8 +522,13 @@ int main(int argc,char**argv)
                                                       ";p_{T}/p_{T}^{ref}",
                                                       nbinsrelrsp,
                                                       relrspmin,relrspmax);
-            hname=flavor[iflv]+"RelRsp_Endcap_"+get_suffix("RefPt",ipt,binspt);
-            relRspVsRefPtEndcap.back()[iflv]=new TH1F(hname.c_str(),
+            hname=flavor[iflv]+"RelRsp_InnerEndcap_"+get_suffix("RefPt",ipt,binspt);
+            relRspVsRefPtInnerEndcap.back()[iflv]=new TH1F(hname.c_str(),
+                                                      ";p_{T}/p_{T}^{ref}",
+                                                      nbinsrelrsp,
+                                                      relrspmin,relrspmax);
+            hname=flavor[iflv]+"RelRsp_OuterEndcap_"+get_suffix("RefPt",ipt,binspt);
+            relRspVsRefPtOuterEndcap.back()[iflv]=new TH1F(hname.c_str(),
                                                       ";p_{T}/p_{T}^{ref}",
                                                       nbinsrelrsp,
                                                       relrspmin,relrspmax);
@@ -1162,25 +1185,44 @@ int main(int argc,char**argv)
                                        noabsflavors);
             }
           }
-          if ((eta>=etaendcapmin&&etabarrelmin)||(eta>etabarrelmax&&eta<=etaendcapmax)) {
+          if ((eta>=etaiendcapmin&&eta<etabarrelmin)||(eta>etabarrelmax&&eta<=etaiendcapmax)) {
             if (dorefpt) {
-               fill_histo(refpt[iref],weight,refpt[iref],binspt,refPtVsRefPtEndcap);
-               fill_histo(jtpt [iref],weight,refpt[iref],binspt,jetPtVsRefPtEndcap);
+               fill_histo(refpt[iref],weight,refpt[iref],binspt,refPtVsRefPtInnerEndcap);
+               fill_histo(jtpt [iref],weight,refpt[iref],binspt,jetPtVsRefPtInnerEndcap);
               if (doflavor) {
                 fill_histo(refpdgid[iref],refpt[iref],flavorWeight,
-                           refpt[iref],binspt,refPtVsRefPtEndcap,noabsflavors);
+                           refpt[iref],binspt,refPtVsRefPtInnerEndcap,noabsflavors);
                 fill_histo(refpdgid[iref],jtpt [iref],flavorWeight,
-                           refpt[iref],binspt,jetPtVsRefPtEndcap,noabsflavors);
+                           refpt[iref],binspt,jetPtVsRefPtInnerEndcap,noabsflavors);
               }
             }
             if (dorelrsp&&dorefpt) {
-               fill_histo(relrsp,weight,refpt[iref],binspt,relRspVsRefPtEndcap);
+               fill_histo(relrsp,weight,refpt[iref],binspt,relRspVsRefPtInnerEndcap);
               if (doflavor) fill_histo(refpdgid[iref],relrsp,flavorWeight,
-                                       refpt[iref],binspt,relRspVsRefPtEndcap,
+                                       refpt[iref],binspt,relRspVsRefPtInnerEndcap,
                                        noabsflavors);
             }
           }
-          if ((eta>=etaforwardmin&&eta<etaendcapmin)||(eta>etaendcapmax&&eta<=etaforwardmax)) {
+
+          if ((eta>=etaoendcapmin&&eta<etaiendcapmin)||(eta>etaiendcapmax&&eta<=etaoendcapmax)) {
+            if (dorefpt) {
+               fill_histo(refpt[iref],weight,refpt[iref],binspt,refPtVsRefPtOuterEndcap);
+               fill_histo(jtpt [iref],weight,refpt[iref],binspt,jetPtVsRefPtOuterEndcap);
+              if (doflavor) {
+                fill_histo(refpdgid[iref],refpt[iref],flavorWeight,
+                           refpt[iref],binspt,refPtVsRefPtOuterEndcap,noabsflavors);
+                fill_histo(refpdgid[iref],jtpt [iref],flavorWeight,
+                           refpt[iref],binspt,jetPtVsRefPtOuterEndcap,noabsflavors);
+              }
+            }
+            if (dorelrsp&&dorefpt) {
+               fill_histo(relrsp,weight,refpt[iref],binspt,relRspVsRefPtOuterEndcap);
+              if (doflavor) fill_histo(refpdgid[iref],relrsp,flavorWeight,
+                                       refpt[iref],binspt,relRspVsRefPtOuterEndcap,
+                                       noabsflavors);
+            }
+          }
+          if ((eta>=etaforwardmin&&eta<etaoendcapmin)||(eta>etaoendcapmax&&eta<=etaforwardmax)) {
             if (dorefpt) {
                fill_histo(refpt[iref],weight,refpt[iref],binspt,refPtVsRefPtForward);
                fill_histo(jtpt [iref],weight,refpt[iref],binspt,jetPtVsRefPtForward);
