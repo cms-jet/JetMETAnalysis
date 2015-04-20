@@ -112,7 +112,8 @@ int main(int argc,char**argv)
     variables.push_back("RelRsp:JetY:RefPt");
     variables.push_back("RelRsp:JetY#1:RefPt");
     variables.push_back("RelRsp_Barrel:RefPt");
-    variables.push_back("RelRsp_Endcap:RefPt");
+    variables.push_back("RelRsp_InnerEndcap:RefPt");
+    variables.push_back("RelRsp_OuterEndcap:RefPt");
     variables.push_back("RelRsp_Forward:RefPt");
   }
   if (doabsrsp) {
