@@ -1125,6 +1125,26 @@ string getAlias(TString s)
       return "AK7PFRDl1";
    else if (s=="ak7pfchsrdl1")
       return "AK7PFchsRDl1";
+   else if (s=="ak1puppi")
+      return "AK1PUPPI";
+   else if (s=="ak2puppi")
+      return "AK2PUPPI";
+   else if (s=="ak3puppi")
+      return "AK3PUPPI";
+   else if (s=="ak4puppi")
+      return "AK4PUPPI";
+   else if (s=="ak5puppi")
+      return "AK5PUPPI";
+   else if (s=="ak6puppi")
+      return "AK6PUPPI";
+   else if (s=="ak7puppi")
+      return "AK7PUPPI";
+   else if (s=="ak8puppi")
+      return "AK8PUPPI";
+   else if (s=="ak9puppi")
+      return "AK9PUPPI";
+   else if (s=="ak10puppi")
+      return "AK10PUPPI";
    else
       return "unknown";
 }
@@ -1156,6 +1176,7 @@ TString getAlgNameLong(TString algo, int coneSize) {
     else if(algo.Contains("pf"))   algNameLong += ", Particle-Flow Jets";
     else if(algo.Contains("calo")) algNameLong += ", Calo";
     else if(algo.Contains("jpt"))  algNameLong += ", JPT";
+    else if(algo.Contains("puppi"))  algNameLong += ", PUPPI";
 
     if(algo.Contains("rd")) algNameLong += ", (RD)";
   }
