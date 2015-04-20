@@ -6,11 +6,11 @@
 //            12/08/2011 Alexx Perloff  <aperloff@physics.tamu.edu>
 ///////////////////////////////////////////////////////////////////
 
-#include "JetMETAnalysis/JetAnalyzers/interface/Settings.h"
 #include "JetMETAnalysis/JetAnalyzers/interface/VectorWrapper.h"
 #include "JetMETAnalysis/JetAnalyzers/interface/VectorWrapper2D.h"
 #include "JetMETAnalysis/JetUtilities/interface/TProfileMDF.h"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
+#include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
 
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
@@ -51,9 +51,6 @@ using namespace std;
 
 /// get the bin number for a specific ptgen according to the vector of bin edges 
 int getBin(double x, const double boundaries[], int length);
-
-/// get the uppercase version of the algorithm name
-string getAlias(TString s);
 
 /// get the flavor name used in initializing the JetCorrectorParameters
 string get_flavor_name(int pdgid);
@@ -193,7 +190,7 @@ int main(int argc,char**argv)
    //
    for(unsigned int a=0; a<algs.size(); a++)
    {
-      string alias = getAlias(algs[a]);
+      JetInfo jetInfo(algs[a]);
 
       TFile *inf = new TFile(inputFilename);
       if(!outputDir.IsNull() && !outputDir.EndsWith("/")) outputDir += "/";
@@ -278,33 +275,33 @@ int main(int argc,char**argv)
 
       if(useL1Cor)
       {
-         L1JetPar = new JetCorrectorParameters(path + era + "_L1FastJet_"    + alias + ".txt");
+         L1JetPar = new JetCorrectorParameters(path + era + "_L1FastJet_"    + string(jetInfo.alias) + ".txt");
          vPar.push_back(*L1JetPar);
-         cout << "Using " << path << era << "_L1FastJet_" << alias << ".txt" << endl;
+         cout << "Using " << path << era << "_L1FastJet_" << string(jetInfo.alias) << ".txt" << endl;
       }
       if(useL2Cor)
       {
-         L2JetPar = new JetCorrectorParameters(path + era + "_L2Relative_"   + alias + ".txt");
+         L2JetPar = new JetCorrectorParameters(path + era + "_L2Relative_"   + string(jetInfo.alias) + ".txt");
          vPar.push_back(*L2JetPar);
-         cout << "Using " << path << era << "_L2Relative_" << alias << ".txt" << endl;
+         cout << "Using " << path << era << "_L2Relative_" << string(jetInfo.alias) << ".txt" << endl;
       }
       if(useL3Cor)
       {
-         L3JetPar = new JetCorrectorParameters(path + era + "_L3Absolute_"   + alias + ".txt");
+         L3JetPar = new JetCorrectorParameters(path + era + "_L3Absolute_"   + string(jetInfo.alias) + ".txt");
          vPar.push_back(*L3JetPar);
-         cout << "Using " << path << era << "_L3Absolute_" << alias << ".txt" << endl;
+         cout << "Using " << path << era << "_L3Absolute_" << string(jetInfo.alias) << ".txt" << endl;
       }
       if(useL2L3ResCor)
       {
-         ResJetPar = new JetCorrectorParameters(path + era + "_L2L3Residual_" + alias + ".txt"); 
+         ResJetPar = new JetCorrectorParameters(path + era + "_L2L3Residual_" + string(jetInfo.alias) + ".txt"); 
          vPar.push_back(*ResJetPar);
-         cout << "Using " << path << era << "_L2L3Residual_" << alias << ".txt" << endl;
+         cout << "Using " << path << era << "_L2L3Residual_" << string(jetInfo.alias) << ".txt" << endl;
       }
       if(useL5Cor)
       {
-         L5JetPar = new JetCorrectorParameters(path + era + "_L5Flavor_" + alias + ".txt",get_flavor_name(pdgid)); 
+         L5JetPar = new JetCorrectorParameters(path + era + "_L5Flavor_" + string(jetInfo.alias) + ".txt",get_flavor_name(pdgid)); 
          vPar.push_back(*L5JetPar);
-         cout << "Using " << path << era << "_L5Flavor_" << alias << ".txt," << get_flavor_name(pdgid) << endl;
+         cout << "Using " << path << era << "_L5Flavor_" << string(jetInfo.alias) << ".txt," << get_flavor_name(pdgid) << endl;
       }
       FactorizedJetCorrector *JetCorrector = new FactorizedJetCorrector(vPar);
 
@@ -611,7 +608,7 @@ int main(int argc,char**argv)
                   coord[4] = sumLOOT(npus,iIT);
                   RespVsPileup->Fill(coord,relrsp);
                   
-                  if(!algs[a].Contains("HLT"))
+                  if(!jetInfo.isHLT())
                      RespVsRho->Fill(ptgen,eta,rho,relrsp);
                   else
                      RespVsRho->Fill(ptgen,eta,rho_hlt,relrsp);
@@ -620,7 +617,7 @@ int main(int argc,char**argv)
                   coord2[1] = sumEOOT(npus,iIT);
                   coord2[2] = (*npus)[iIT];
                   coord2[3] = sumLOOT(npus,iIT);
-                  if(!algs[a].Contains("HLT"))
+                  if(!jetInfo.isHLT())
                      RhoVsPileupVsEta->Fill(coord2,rho);
                   else
                      RhoVsPileupVsEta->Fill(coord2,rho_hlt);
@@ -776,12 +773,12 @@ int main(int argc,char**argv)
       cout << "Write " << "RespVsPileup_" << algs[a] << ".root" << " ... ";
       if(readRespVsPileup.IsNull())
       {
-         RespVsPileup->WriteToFile(outputDir+"RespVsPileup_"+alias+".root");
-         TFile tempout(outputDir+"RespVsPileup_"+alias+".root","UPDATE");
+         RespVsPileup->WriteToFile(outputDir+"RespVsPileup_"+jetInfo.alias+".root");
+         TFile tempout(outputDir+"RespVsPileup_"+jetInfo.alias+".root","UPDATE");
          tempout.cd();
          RespVsRho->Write();
          tempout.Close();
-         RhoVsPileupVsEta->WriteToFile(outputDir+"RhoVsPileupVsEta_"+alias+".root");
+         RhoVsPileupVsEta->WriteToFile(outputDir+"RhoVsPileupVsEta_"+jetInfo.alias+".root");
       }
       cout << "DONE" << endl << "Write " << "Closure_" << algs[a] << ".root" << " ... ";
       outf->cd();
@@ -816,171 +813,6 @@ int getBin(double x, const double boundaries[], int length)
          return i;
    }
    return 0; 
-}
-
-//______________________________________________________________________________
-string getAlias(TString s)
-{
-   if (s=="ic5calo")
-      return "IC5Calo";
-   else if (s=="ic5pf")
-      return "IC5PF";
-   else if (s=="ak5calo")
-      return "AK5Calo";  
-   else if (s=="ak5calol1")
-      return "AK5Calol1";
-   else if (s=="ak5calol1off")
-      return "AK5Calol1off";
-   else if (s=="ak5calol1offl2l3")
-      return "AK5Calol1off";
-   else if (s=="ak7calo")
-      return "AK7Calo";
-   else if (s=="ak7calol1")
-      return "AK7Calol1";
-   else if (s=="ak7calol1off")
-      return "AK7Calol1off";
-   else if (s=="ak5caloHLT")
-      return "AK5CaloHLT";
-   else if (s=="ak5caloHLTl1")
-      return "AK5CaloHLTl1";
-   else if (s=="ak1pf")
-      return "AK1PF";
-   else if (s=="ak1pfl1")
-      return "AK1PFl1";
-   else if (s=="ak2pf")
-      return "AK2PF";
-   else if (s=="ak2pfl1")
-      return "AK2PFl1";
-   else if (s=="ak3pf")
-      return "AK3PF";
-   else if (s=="ak3pfl1")
-      return "AK3PFl1";
-   else if (s=="ak4pf")
-      return "AK4PF";
-   else if (s=="ak4pfl1")
-      return "AK4PFl1";
-   else if (s=="ak5pf")
-      return "AK5PF";
-   else if (s=="ak5pfl1")
-      return "AK5PFl1";
-   else if (s=="ak5pfl1l2l3")
-      return "AK5PFl1";
-   else if (s=="ak5pfl1off")
-      return "AK5PFl1off";
-   else if (s=="ak6pf")
-      return "AK6PF";
-   else if (s=="ak6pfl1")
-      return "AK6PFl1";
-   else if (s=="ak7pf")
-      return "AK7PF";
-   else if (s=="ak7pfl1")
-      return "AK7PFl1";
-   else if (s=="ak7pfl1off")
-      return "AK7PFl1off";
-   else if (s=="ak8pf")
-      return "AK8PF";
-   else if (s=="ak8pfl1")
-      return "AK8PFl1";
-   else if (s=="ak9pf")
-      return "AK9PF";
-   else if (s=="ak9pfl1")
-      return "AK9PFl1";
-   else if (s=="ak10pf")
-      return "AK10PF";
-   else if (s=="ak10pfl1")
-      return "AK10PFl1";
-   else if (s=="ak1pfchs")
-      return "AK1PFchs";
-   else if (s=="ak1pfchsl1")
-      return "AK1PFchsl1";
-   else if (s=="ak2pfchs")
-      return "AK2PFchs";
-   else if (s=="ak2pfchsl1")
-      return "AK2PFchsl1";
-   else if (s=="ak3pfchs")
-      return "AK3PFchs";
-   else if (s=="ak3pfchsl1")
-      return "AK3PFchsl1";
-   else if (s=="ak4pfchs")
-      return "AK4PFchs";
-   else if (s=="ak4pfchsl1")
-      return "AK4PFchsl1";
-   else if (s=="ak5pfchs")
-      return "AK5PFchs";
-   else if (s=="ak5pfchsl1")
-      return "AK5PFchsl1";
-   else if (s=="ak5pfchsl1l2l3")
-      return "AK5PFchsl1l2l3";
-   else if (s=="ak5pfchsl1off")
-      return "AK5PFchsl1off";
-   else if (s=="ak6pfchs")
-      return "AK6PFchs";
-   else if (s=="ak6pfchsl1")
-      return "AK6PFchsl1";
-   else if (s=="ak7pfchs")
-      return "AK7PFchs";
-   else if (s=="ak7pfchsl1")
-      return "AK7PFchsl1";
-   else if (s=="ak7pfchsl1off")
-      return "AK7PFchsl1off";
-   else if (s=="ak8pfchs")
-      return "AK8PFchs";
-   else if (s=="ak8pfchsl1")
-      return "AK8PFchsl1";
-   else if (s=="ak9pfchs")
-      return "AK9PFchs";
-   else if (s=="ak9pfchsl1")
-      return "AK9PFchsl1";
-   else if (s=="ak10pfchs")
-      return "AK10PFchs";
-   else if (s=="ak10pfchsl1")
-      return "AK10PFchsl1";
-   else if (s=="ak5pfHLT")
-      return "AK5PFHLT";
-  else if (s=="ak5pfHLTl1")
-      return "AK5PFHLTl1";
-   else if (s=="ak5pfchsHLT")
-      return "AK5PFchsHLT";
-   else if (s=="ak5pfchsHLTl1")
-      return "AK5PFchsHLTl1";
-   else if (s=="ak5jpt")
-      return "AK5JPT";
-   else if (s=="ak5jptl1")
-      return "AK5JPTl1";
-   else if (s=="ak5jptl1off")
-      return "AK5JPTl1off";
-   else if (s=="ak5jptl1l2l3")
-      return "AK5JPTl1";
-   else if (s=="ak5jptl1offl2l3")
-      return "AK5JPTl1off";
-   else if (s=="ak7jpt")
-      return "AK7JPT";
-   else if (s=="ak7jptl1")
-      return "AK7JPTl1";
-   else if (s=="ak7jptl1off")
-      return "AK7JPTl1off";
-   else if (s=="ak7jptl1l2l3")
-      return "AK7JPTl1";
-   else if (s=="ak7jptl1offl2l3")
-      return "AK7JPTl1off";
-   else if (s=="sc5calo")
-      return "SC5Calo";
-   else if (s=="sc5pf")
-      return "SC5PF";
-   else if (s=="sc7calo")
-      return "SC5Calo";
-   else if (s=="sc7pf")
-      return "SC5PF";
-   else if (s=="kt4calo")
-      return "KT4Calo";
-   else if (s=="kt4pf")
-      return "KT4PF";
-   else if (s=="kt6calo")
-      return "KT6Calo";
-   else if (s=="kt6pf")
-      return "KT6PF";
-   else
-      return "unknown";
 }
 
 //______________________________________________________________________________
