@@ -18,7 +18,7 @@ from JetMETAnalysis.JetAnalyzers.JetReconstruction_cff import *
 #from JetMETAnalysis.JetAnalyzers.JPTReconstruction_cff import *
 from JetMETAnalysis.JetAnalyzers.JetCorrection_cff     import *
 #from RecoTauTag.TauTagTools.tauDecayModes_cfi          import *
-from Dummy.Puppi.Puppi_cff import *
+from CommonTools.PileupAlgos.Puppi_cff import *
 
 #tauDiscriminatorDict = {
 #    "ak5tauHPSloose"            : "hpsPFTauDiscriminationByLooseIsolation",
@@ -641,7 +641,8 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         setattr(process, recLabel, recJets)
         sequence = cms.Sequence(recJets * sequence)
         if type == 'PUPPI':
-            process.load('Dummy.Puppi.Puppi_cff')
+            process.load('CommonTools.PileupAlgos.Puppi_cff')
+            #puppi.candName = cms.InputTag("particleFlow")
             sequence = cms.Sequence(puppi * sequence)
         if type == 'Track':
             process.load('JetMETAnalysis.JetAnalyzers.TrackJetReconstruction_cff')
