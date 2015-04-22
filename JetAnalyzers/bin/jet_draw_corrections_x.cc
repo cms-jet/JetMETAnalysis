@@ -626,7 +626,7 @@ vector<TCanvas*> getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, ve
       //cc[hstr]->GetYaxis()->SetTitle("Corr. Factor");
       if(!normAlg.IsNull()) {
         cc_norm[Form("%s_norm",hstr.Data())] = (TH1F*)cc[hstr]->Clone(Form("%s_norm",hstr.Data()));
-        cc_norm[Form("%s_norm",hstr.Data())]->GetYaxis()->SetTitle(Form("Corr. Factor / Corr. Factor (%s)",getAlias(normAlg).c_str()));
+        cc_norm[Form("%s_norm",hstr.Data())]->GetYaxis()->SetTitle(Form("Corr. Factor / Corr. Factor (%s)",JetInfo(normAlg).getAlias().Data()));
         //cc_norm[Form("%s_norm",hstr.Data())]->GetYaxis()->SetRangeUser(0.85,1.15);
       }
       //if(algs[ialg].Contains("calo"))
@@ -897,7 +897,7 @@ FactorizedJetCorrector * getFactorizedCorrector(TString algo, CommandLine & cl, 
   }
     
 
-  string alias = getAlias(algo);
+  string alias = JetInfo(algo).getAlias().Data();
 
   // Create the corrections from the text files
   vector<JetCorrectorParameters> vPar;

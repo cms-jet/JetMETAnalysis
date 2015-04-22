@@ -672,8 +672,10 @@ string get_algorithm_suffix(const string& alg)
   else if (alg.find("pfchsHLTl1") ==3) result += "PFchsHLTl1";
   else if (alg.find("pfchsHLT")   ==3) result += "PFchsHLT";
   else if (alg.find("pfchsl1off") ==3) result += "PFchsl1off";
-  else if (alg.find("pfchsl1")    ==3) result += "PFchsl1";
-  else if (alg.find("pfchs")      ==3) result += "PFchs";
+  //else if (alg.find("pfchsl1")    ==3) result += "PFchsl1";
+  else if (alg.find("pfchsl1")!=string::npos) result += "PFchsl1";
+  //else if (alg.find("pfchs")      ==3) result += "PFchs";
+  else if (alg.find("pfchs")!=string::npos) result += "PFchs";
   else if (alg.find("pfHLTl1")    ==3) result += "PFHLTl1";
   else if (alg.find("pfHLT")      ==3) result += "PFHLT";
   else if (alg.find("pfl1off")    ==3) result += "PFl1off";
