@@ -20,7 +20,7 @@ string JetInfo::get_legend_title(const string& alg, bool withSize, bool parenthe
   string RECO[10] = { "Gen", "Calo@HLT", "Calo", "PF@HLT", "PF+CHS@HLT", "PF+CHS", "PF", "Tracks", "JPT", "PF+PUPPI" };
 
   string::size_type pos=string::npos; int ireco=-1;
-  while (pos==string::npos&&ireco<8) { pos = tmp.find(reco[++ireco]); }
+  while (pos==string::npos&&ireco<10) { pos = tmp.find(reco[++ireco]); }
   if (pos==string::npos) return alg;
   
   double jet_size; stringstream ss1; ss1<<tmp.substr(0,pos); ss1>>jet_size;
