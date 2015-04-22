@@ -999,11 +999,13 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
       pOffPF.back()->SetNameTitle("prof_offResVsrefpt_bb_unassociatedchf","prof_offResVsrefpt_bb_unassociatedchf");
       TDirectory* cdir = gDirectory;
       TFile* unassociatedCHFFile = TFile::Open(unassociatedCHF);
-      pOffPF.push_back((TProfile*)(unassociatedCHFFile->Get("prof_offResVsrefpt_bb_all"))->Clone("prof_offResVsrefpt_bb_all_PFCHF"));
-      pOffPF.back()->SetDirectory(0);
-      pOffPF.back()->SetNameTitle("prof_offResVsrefpt_bb_all_PFCHF","prof_offResVsrefpt_bb_all_PFCHF");
-      unassociatedCHFFile->Close();
-      cdir->cd();
+      if(unassociatedCHFFile) {
+         pOffPF.push_back((TProfile*)(unassociatedCHFFile->Get("prof_offResVsrefpt_bb_all"))->Clone("prof_offResVsrefpt_bb_all_PFCHF"));
+         pOffPF.back()->SetDirectory(0);
+         pOffPF.back()->SetNameTitle("prof_offResVsrefpt_bb_all_PFCHF","prof_offResVsrefpt_bb_all_PFCHF");
+         unassociatedCHFFile->Close();
+         cdir->cd();
+      }
    }
    c = getOffsetStack("MeanOffRefPFStack_BB","#LTp_{T,offset}#GT/#LT#mu#GT",algo,pOffPF,fixedRange,npvRhoNpuBins);
    c->Draw();
