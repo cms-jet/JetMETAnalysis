@@ -553,6 +553,7 @@ TCanvas* tdrDiCanvas(const char* canvName, TH1D *hup, TH1D *hdw,
        int iPeriod = 2, int iPos = 11) {
 
   setTDRStyle();
+  reset_globals();
 
   // Reference canvas size
   // We'll add a subpad that is a fraction (1/3) of the top canvas size,
