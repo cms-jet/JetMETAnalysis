@@ -790,7 +790,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
                                                    nExclude = cms.uint32(2))
         sequence = cms.Sequence(process.kt6PFchsJetsRhos * sequence)
         jra.srcRhos = cms.InputTag("kt6PFchsJetsRhos", "rhos")
-        jra.srcRho = ak4PFchsL1Fastjet.srcRho #added 10/14/2011
+        jra.srcRho = cms.InputTag("fixedGridRhoFastjetAll")#ak4PFchsL1Fastjet.srcRho #added 10/14/2011
     elif type == 'PFHLT':
         jra.srcRho = ak4PFL1Fastjet.srcRho #added 02/15/2012
         jra.srcRhoHLT = ak5PFHLTL1Fastjet.srcRho
@@ -811,7 +811,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
                                                 puWidth = cms.double(.8), nExclude = cms.uint32(2))
         sequence = cms.Sequence(process.kt6PFJetsRhos * sequence)
         jra.srcRhos = cms.InputTag("kt6PFJetsRhos", "rhos")
-        jra.srcRho = ak5PFchsL1Fastjet.srcRho
+        jra.srcRho = cms.InputTag("fixedGridRhoFastjetAll")#ak4PFchsL1Fastjet.srcRho
     elif type == 'JPT':
         jra.srcRho = ak4CaloL1Fastjet.srcRho
 
