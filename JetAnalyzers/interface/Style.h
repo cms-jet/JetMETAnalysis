@@ -251,7 +251,7 @@ void setTDRStyle() {
   tdrStyle->SetHatchesSpacing(0.05);
 
   tdrStyle->cd();
-
+  gROOT->SetStyle("tdrStyle");
 }
 
 ////////////////
@@ -433,6 +433,7 @@ CMS_lumi( TPad* pad, int iPeriod, int iPosX )
         latex.SetTextSize(cmsTextSize*t);
         latex.SetTextAlign(align_);
         latex.DrawLatex(posX_, posY_, cmsText);
+        cout << "posX_=" << posX_ << "\tposT_="<< posY_ << endl;
         if( writeExtraText ) 
         {
           latex.SetTextFont(extraTextFont);
