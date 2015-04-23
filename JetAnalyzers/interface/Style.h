@@ -251,7 +251,7 @@ void setTDRStyle() {
   tdrStyle->SetHatchesSpacing(0.05);
 
   tdrStyle->cd();
-  gROOT->SetStyle("tdrStyle");
+
 }
 
 ////////////////
@@ -291,6 +291,7 @@ TString lumi_7TeV  = "5.1 fb^{-1}";
 bool drawLogo      = false;
 
 void CMS_lumi( TPad* pad, int iPeriod=3, int iPosX=10 );
+void reset_globals();
 
 
 ////////////////
@@ -433,7 +434,6 @@ CMS_lumi( TPad* pad, int iPeriod, int iPosX )
         latex.SetTextSize(cmsTextSize*t);
         latex.SetTextAlign(align_);
         latex.DrawLatex(posX_, posY_, cmsText);
-        cout << "posX_=" << posX_ << "\tposT_="<< posY_ << endl;
         if( writeExtraText ) 
         {
           latex.SetTextFont(extraTextFont);
@@ -477,6 +477,7 @@ TCanvas* tdrCanvas(const char* canvName, TH1D *h,
        bool square = kRectangular) {
 
   setTDRStyle();
+  reset_globals();
 
   //writeExtraText = true;       // if extra text
   //extraText  = "Preliminary";  // default extra text is "Preliminary"
@@ -704,5 +705,36 @@ void cmsFinal(double intLumi=-1, bool wide = false) {
 
 //cmsPrel(); // to print just CMS and \sqrt{s}
 //cmsPrel(400);  // to print also the integrated luminosity.
+
+void reset_globals() {
+  cmsText     = "CMS";
+  cmsTextFont   = 61;  // default is helvetic-bold
+
+  writeExtraText = true;//false;
+  extraText   = "Simulation";
+  extraText2   = "Preliminary"; // For Simulation Preliminary on two lines
+  extraTextFont = 52;  // default is helvetica-italics
+
+  // text sizes and text offsets with respect to the top frame
+  // in unit of the top margin size
+  lumiTextSize     = 0.6;
+  lumiTextOffset   = 0.2;
+  cmsTextSize      = 0.75;
+  cmsTextOffset    = 0.1;  // only used in outOfFrame version
+
+  relPosX    = 0.045;
+  relPosY    = 0.035;
+  relExtraDY = 1.2;
+
+  // ratio of "CMS" and extra text size
+  extraOverCmsTextSize  = 0.76;
+
+  lumi_13TeV = "20.1 fb^{-1}";
+  lumi_8TeV  = "19.7 fb^{-1}";
+  lumi_7TeV  = "5.1 fb^{-1}";
+
+  drawLogo      = false;
+}
+
 
 #endif
