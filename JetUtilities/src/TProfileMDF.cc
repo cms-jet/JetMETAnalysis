@@ -21,6 +21,8 @@ using std::cout;
 using std::endl;
 using std::vector;
 using std::stringstream;
+using std::pair;
+using std::make_pair;
 
 Bool_t TProfileMDF::fgApproximate = kFALSE;
 
