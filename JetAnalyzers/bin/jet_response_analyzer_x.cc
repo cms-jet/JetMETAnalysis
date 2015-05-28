@@ -209,7 +209,7 @@ int main(int argc,char**argv)
   //
   // open input/output files and loop over input directories/trees (=algorithms!)
   //
-  TFile* ifile = new TFile(input.c_str(),"READ");
+  TFile* ifile = TFile::Open(input.c_str(),"READ");
   if (!ifile->IsOpen()) {  cout<<"Can't open "<<input<<endl; return 0; }
   
   TFile* ofile = new TFile(output.c_str(),"RECREATE");
