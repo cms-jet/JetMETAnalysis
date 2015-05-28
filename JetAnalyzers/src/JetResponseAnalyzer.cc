@@ -214,7 +214,7 @@ JetResponseAnalyzer::JetResponseAnalyzer(const edm::ParameterSet& iConfig)
   
   isCaloJet_  = (moduleLabel_.find("calo")!=string::npos);
   isJPTJet_   = (moduleLabel_.find("jpt") !=string::npos);
-  isPFJet_    = (moduleLabel_.find("pf")  !=string::npos);
+  isPFJet_    = (moduleLabel_.find("pf")  !=string::npos || moduleLabel_.find("puppi")  !=string::npos);
   isTrackJet_ = (moduleLabel_.find("trk") !=string::npos);
   isTauJet_   = (moduleLabel_.find("tau") !=string::npos);
 
@@ -507,45 +507,45 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
      // Beta/Beta Star Calculation
      beta_ = 0.0;
      betaStar_ = 0.0;
-     if (isPFJet_) {
-        //---- vertex association -----------
-        //---- get the vector of tracks -----
-        reco::PFJetRef pfJetRef = jet.castTo<reco::PFJetRef>();
-        reco::TrackRefVector vTrks(pfJetRef->getTrackRefs());
-        float sumTrkPt(0.0),sumTrkPtBeta(0.0),sumTrkPtBetaStar(0.0);
-        //---- loop over the tracks of the jet ----
-        for(reco::TrackRefVector::const_iterator i_trk = vTrks.begin(); i_trk != vTrks.end(); i_trk++) {
-           //if (npv_ == 0) break;
-           if ((*vtx).size() == 0) break;
-           sumTrkPt += (*i_trk)->pt();
-           //---- loop over all vertices ----------------------------
-           for(unsigned ivtx = 0;ivtx < (*vtx).size();ivtx++) {
-              //---- loop over the tracks associated with the vertex ---
-              if (!((*vtx)[ivtx].isFake()) && (*vtx)[ivtx].ndof() >= 4 && fabs((*vtx)[ivtx].z()) <= 24) {
-                 for(reco::Vertex::trackRef_iterator i_vtxTrk = (*vtx)[ivtx].tracks_begin(); i_vtxTrk != (*vtx)[ivtx].tracks_end(); ++i_vtxTrk) {
-                    //---- match the jet track to the track from the vertex ----
-                    reco::TrackRef trkRef(i_vtxTrk->castTo<reco::TrackRef>());
-                    //---- check if the tracks match -------------------------
-                    if (trkRef == (*i_trk)) {
-                       if (ivtx == 0) {
-                          sumTrkPtBeta += (*i_trk)->pt();
-                       }
-                       else {
-                          sumTrkPtBetaStar += (*i_trk)->pt();
-                       }   
-                       break;
-                    }
-                 }
-              } 
-           }
-        }
-        if (sumTrkPt > 0) {
-           beta_     = sumTrkPtBeta/sumTrkPt;
-           betaStar_ = sumTrkPtBetaStar/sumTrkPt;
-        }
-        //qcdpfjet.setBeta(beta);
-        //qcdpfjet.setBetaStar(betaStar);
-     }
+//     if (isPFJet_) {
+//        //---- vertex association -----------
+//        //---- get the vector of tracks -----
+//        reco::PFJetRef pfJetRef = jet.castTo<reco::PFJetRef>();
+//        reco::TrackRefVector vTrks(pfJetRef->getTrackRefs());
+//        float sumTrkPt(0.0),sumTrkPtBeta(0.0),sumTrkPtBetaStar(0.0);
+//        //---- loop over the tracks of the jet ----
+//        for(reco::TrackRefVector::const_iterator i_trk = vTrks.begin(); i_trk != vTrks.end(); i_trk++) {
+//           //if (npv_ == 0) break;
+//           if ((*vtx).size() == 0) break;
+//           sumTrkPt += (*i_trk)->pt();
+//           //---- loop over all vertices ----------------------------
+//           for(unsigned ivtx = 0;ivtx < (*vtx).size();ivtx++) {
+//              //---- loop over the tracks associated with the vertex ---
+//              if (!((*vtx)[ivtx].isFake()) && (*vtx)[ivtx].ndof() >= 4 && fabs((*vtx)[ivtx].z()) <= 24) {
+//                 for(reco::Vertex::trackRef_iterator i_vtxTrk = (*vtx)[ivtx].tracks_begin(); i_vtxTrk != (*vtx)[ivtx].tracks_end(); ++i_vtxTrk) {
+//                    //---- match the jet track to the track from the vertex ----
+//                    reco::TrackRef trkRef(i_vtxTrk->castTo<reco::TrackRef>());
+//                    //---- check if the tracks match -------------------------
+//                    if (trkRef == (*i_trk)) {
+//                       if (ivtx == 0) {
+//                          sumTrkPtBeta += (*i_trk)->pt();
+//                       }
+//                       else {
+//                          sumTrkPtBetaStar += (*i_trk)->pt();
+//                       }   
+//                       break;
+//                    }
+//                 }
+//              } 
+//           }
+//        }
+//        if (sumTrkPt > 0) {
+//           beta_     = sumTrkPtBeta/sumTrkPt;
+//           betaStar_ = sumTrkPtBetaStar/sumTrkPt;
+//        }
+//        //qcdpfjet.setBeta(beta);
+//        //qcdpfjet.setBetaStar(betaStar);
+//     }
 
      refrank_[nref_]=nref_;
      refe_[nref_]   =ref->energy();
