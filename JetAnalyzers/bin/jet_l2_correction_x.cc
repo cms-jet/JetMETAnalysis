@@ -556,7 +556,7 @@ int main(int argc,char**argv)
        else grelcor = vrelcor_eta[ieta]; //For L2 & L3 Corrections Separate
        TF1* frelcor = (TF1*)grelcor->GetListOfFunctions()->Last();
        if(frelcor!=0) {
-         if(ieta==0 || (ieta==1 && delphes)) fout<<"{1 JetEta 1 JetPt "<<frelcor->GetExpFormula()<<" Correction L2Relative}"<<endl;
+         if(ieta==0 || (ieta==1 && delphes)) fout<<"{1 JetEta 1 JetPt max(0.0001,"<<frelcor->GetExpFormula()<<") Correction L2Relative}"<<endl;
          double  etamin  = hl_jetpt.minimum(0,ieta);
          double  etamax  = hl_jetpt.maximum(0,ieta);
          double  ptmin = grelcor->GetX()[0];
