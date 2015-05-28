@@ -33,9 +33,9 @@ if doProducer:
 #! CHOOSE ALGORITHMS
 #!
 
-algsizetype = {'ak':[4]}
+algsizetype = {'ak':[4,8]}
 #algsizetype = {'ak':[1,2,3,4,5,6,7,8,9,10]}
-jettype = ['pf','pfchs']
+jettype = ['puppi']
 #jettype = ['calo','pf','pfchs','puppi']
 corrs = ['']
 #corrs = ['','l1','l2l3','l1l2l3']
@@ -80,44 +80,24 @@ if applyDBFile:
 #!
 #! INPUT
 #!
-qcdFiles = cms.untracked.vstring(
-###########
-# with PU #
-###########
-#	'/store/mc/Summer12_DR53X/QCD_Pt-15to3000_TuneZ2star_Flat_8TeV_pythia6/AODSIM/PU_RD1_START53_V7N-v1/00000/0432447C-346D-E311-A777-0025904B130A.root'
-##############
-# without PU #
-##############
-#   '/store/mc/Summer12_DR53X/QCD_Pt-15to3000_TuneZ2star_Flat_8TeV_pythia6/AODSIM/NoPileup_START53_V7A-v1/0000/001252D8-A0E4-E111-A131-0030487D5D8D.root',
-#   '/store/mc/Summer12_DR53X/QCD_Pt-15to3000_TuneZ2star_Flat_8TeV_pythia6/AODSIM/NoPileup_START53_V7A-v1/0000/00684351-86E4-E111-AAE9-002481E10B86.root',
-#   '/store/mc/Summer12_DR53X/QCD_Pt-15to3000_TuneZ2star_Flat_8TeV_pythia6/AODSIM/NoPileup_START53_V7A-v1/0000/02764AB0-ABE4-E111-9407-003048C69296.root',
-###################
-# Upgrade with PU #
-###################
-#	'/store/mc/GEM2019Upg14DR/QCD_Pt-15to3000_Tune4C_Flat_14TeV_pythia8/AODSIM/final_phase1_age1k_PU140bx25_PH1_1K_FB_V2-v1/00000/00100795-421C-E411-88E9-00261894384A.root'
-######################
-# Upgrade without PU #
-######################
-
-###########################
-# RelVal CMSSW_7_4_0_pre9 #
-###########################
-       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/045199CD-10D4-E411-885D-00248C55CC9D.root',
-       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/20F1E0F6-10D4-E411-AE27-0025905A6070.root',
-       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/3AFFF0E6-10D4-E411-9329-0025905A48BC.root',
-       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/46D6A9E1-10D4-E411-A66A-0025905A6066.root',
-       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/4C87EC83-10D4-E411-9853-002590593878.root',
-       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/4EAC16E7-10D4-E411-AECC-0025905A6066.root',
-       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/74D6FCF6-10D4-E411-8D9C-003048FF9AC6.root',
-       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/A0F354EC-10D4-E411-9962-0025905A60EE.root',
-       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/A27D8273-11D4-E411-BD2C-0025905A48E4.root',
-       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/B018B169-11D4-E411-B9D5-0025905964CC.root',
-       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/DE397BF6-10D4-E411-A3F8-0025905A60BC.root',
-       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/E8F084EA-10D4-E411-98DE-0025905A611C.root',
-       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/EC01266C-10D4-E411-A360-0026189438B8.root',
-       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/EEC9F0EF-10D4-E411-A6E7-0025905A48D0.root' 
-    )
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
+
+###################################
+# Matthieu Marionneau Re-Reco 731 #
+###################################
+#process.load("JetMETAnalysis.JetAnalyzers.mmarionn_QCDFlatWin15_731_cff")
+###################################
+# Matthieu Marionneau Re-Reco 732 #
+###################################
+#process.load("JetMETAnalysis.JetAnalyzers.mmarionn_QCDFlatWin15_732_cff")
+###################################
+# Matthieu Marionneau Re-Reco 733 #
+###################################
+#process.load("JetMETAnalysis.JetAnalyzers.mmarionn_QCDFlatWin15_733_cff")
+
+qcdFiles = cms.untracked.vstring(
+	'root://cmsxrootd.fnal.gov//store/mc/Fall14DR73/QCD_Pt-15to7000_TuneCUETP8M1_Flat_13TeV_pythia8/GEN-SIM-RECO/PFr1_Flat_20_50_50ns_GSFromFall14_MCRUN2_73_V11-v1/00000/000998AB-A8E7-E411-A76F-00261894394F.root',
+    )
 process.source = cms.Source("PoolSource", fileNames = qcdFiles )
 
 
