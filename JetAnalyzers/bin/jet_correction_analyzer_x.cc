@@ -18,6 +18,7 @@
 
 #include "TROOT.h"
 #include "TSystem.h"
+#include "TEnv.h"
 #include <TObjectTable.h>
 #include "TFile.h"
 #include "TTree.h"
@@ -99,7 +100,8 @@ int main(int argc,char**argv)
 {
    gROOT->ProcessLine("#include<vector>");
    gSystem->Load("libFWCoreFWLite.so");
-  
+   gEnv->SetValue("TFile.AsyncPrefetching", 1);
+
    //
    // evaluate command-line / configuration file options
    // 

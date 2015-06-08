@@ -1,6 +1,7 @@
 // ROOT Libraries
 #include "TROOT.h"
 #include "TSystem.h"
+#include "TEnv.h"
 #include "TChain.h"
 #include "TFile.h"
 #include "TChain.h"
@@ -58,7 +59,7 @@ public:
    void SetNpvRhoNpuValues(int NBins, int Width) {NBinsNpvRhoNpu=NBins; npvRhoNpuBinWidth=Width;}
    void SetVptBins(vector<int> vptb) {vptBins = vptb;}
    void DeclareHistograms();
-   void LoopOverEvents();
+   void LoopOverEvents(bool verbose);
    void FillJetMap();
    bool FillHistograms();
    void WriteOutput();
@@ -546,7 +547,7 @@ void MatchEventsAndJets::DeclareHistograms() {
 }
 
 //______________________________________________________________________________
-void MatchEventsAndJets::LoopOverEvents() {
+void MatchEventsAndJets::LoopOverEvents(bool verbose) {
    for (IT::const_iterator it = mapTreePU.begin(); it != mapTreePU.end(); ++it) {
 
       if (iftest && nevs >= maxEvts) return;
@@ -555,11 +556,13 @@ void MatchEventsAndJets::LoopOverEvents() {
 
       // if this entry does not exist on the second ntuple just skip this event
       if (mapTreeNoPU.find(it->first) == mapTreeNoPU.end()) {
-         cout << "\tWARNING::mapTreeNoPU.find(it->first) == mapTreeNoPU.end() failed" << endl
-              << "\tit->first.run_ == " << it->first.run_ << endl
-              << "\tit->first.ls_ == " << it->first.ls_ << endl
-              << "\tit->first.evt_ == " << it->first.evt_ << endl
-              << "\tit->first.refpt0_ == " << it->first.refpt0_ << endl;
+         if(verbose) {
+            cout << "\tWARNING::mapTreeNoPU.find(it->first) == mapTreeNoPU.end() failed" << endl
+                 << "\tit->first.run_ == " << it->first.run_ << endl
+                 << "\tit->first.ls_ == " << it->first.ls_ << endl
+                 << "\tit->first.evt_ == " << it->first.evt_ << endl
+                 << "\tit->first.refpt0_ == " << it->first.refpt0_ << endl;
+         }
          continue;
       }
 
@@ -1029,9 +1032,12 @@ int main(int argc,char**argv)
    int     npvRhoNpuBinWidth = cl.getValue<int>     ("npvRhoNpuBinWidth",                         5);
    int     NBinsNpvRhoNpu    = cl.getValue<int>     ("NBinsNpvRhoNpu",                            6);
    vector<int> vptBins           = cl.getVector<int>    ("vptBins",       "14:::18:::20:::24:::28:::30");  
+   bool    verbose           = cl.getValue<bool>    ("verbose",                               false);
 
    if (!cl.check()) return 0;
    cl.print();
+
+   gEnv->SetValue("TFile.AsyncPrefetching", 1);
 
    if(outputPath.IsNull()) outputPath = string (gSystem->pwd())+"/";
    if(!outputPath.EndsWith("/")) outputPath+="/";
@@ -1051,7 +1057,7 @@ int main(int argc,char**argv)
    mej->SetNpvRhoNpuValues(NBinsNpvRhoNpu,npvRhoNpuBinWidth);
    mej->SetVptBins(vptBins);
    mej->DeclareHistograms();
-   mej->LoopOverEvents();
+   mej->LoopOverEvents(verbose);
    mej->WriteOutput();
    mej->Report();
 }

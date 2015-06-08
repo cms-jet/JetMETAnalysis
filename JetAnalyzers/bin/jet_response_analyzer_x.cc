@@ -22,6 +22,8 @@
 #include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
 
 #include <TROOT.h>
+#include <TSystem.h>
+#include <TEnv.h>
 #include <TFile.h>
 #include <TTree.h>
 #include <TH1F.h>
@@ -172,6 +174,8 @@ int main(int argc,char**argv)
 
   if (!cl.check()) return 0;
   cl.print();
+
+  gEnv->SetValue("TFile.AsyncPrefetching", 1);
 
   bool dorelrsp=(nbinsrelrsp>0);
   bool doabsrsp=(nbinsabsrsp>0);
