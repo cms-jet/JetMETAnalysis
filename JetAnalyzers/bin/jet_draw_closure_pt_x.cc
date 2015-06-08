@@ -141,6 +141,7 @@ int main(int argc,char**argv)
           sprintf(name,"can_%d_RefPt%sto%s",j,Pt[i],Pt[i+1]);
           TString ss(name);
           ss+="_"+algs[a];
+          /*
           if (tdr && j==0 && i>=NPtBins-6) {
            hClosure[j]->SetBinContent(i+1,0.0);
            hClosure[j]->SetBinError(i+1,0.0);
@@ -153,6 +154,7 @@ int main(int argc,char**argv)
            hClosure[j]->SetBinContent(i+1,0.0);
            hClosure[j]->SetBinError(i+1,0.0);
          }
+          */
        }
      }
 
@@ -298,7 +300,7 @@ int main(int argc,char**argv)
       TLegend* leg = tdrLeg(0.58,0.16,0.9,0.4);
 
       TH1D* frame = new TH1D();
-      frame->GetXaxis()->SetLimits(10.0,2000.0);
+      frame->GetXaxis()->SetLimits(6.0,4000.0);
       frame->GetXaxis()->SetMoreLogLabels();
       frame->GetXaxis()->SetNoExponent();
       frame->GetYaxis()->SetRangeUser(0.95,1.05);
@@ -309,7 +311,7 @@ int main(int argc,char**argv)
       ove2->GetPad(0)->SetLogx();
 
       for (int c=0;c<4;c++) {
-         hClosure[c]->GetXaxis()->SetRangeUser(10.0,2000.0);
+         hClosure[c]->GetXaxis()->SetRangeUser(6.0,4000.0);
          hClosure[c]->SetStats(kFALSE);
          if (c==0) {
             tdrDraw(hClosure[c],"EP",kFullCircle,kBlack,kSolid,kBlack);

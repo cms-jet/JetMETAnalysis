@@ -770,7 +770,7 @@ TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, vector<
       NPV_Rho = 0;
 
    TH1D* hbin = new TH1D(Form("hbin_%s",cname.Data()),Form("hbin_%s",cname.Data()), 10000, 0.,10000.);
-   hbin->GetXaxis()->SetLimits(10.0,1000.0);//10.0->3.0
+   hbin->GetXaxis()->SetLimits(6.0,4000.0);//10.0->3.0
    hbin->GetXaxis()->SetMoreLogLabels();
    hbin->GetXaxis()->SetNoExponent();
    hbin->GetXaxis()->SetTitle("p_{T}^{ptcl} [GeV]");
@@ -824,7 +824,7 @@ TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, vector<
          cout << "WARNING::getGausMeanOffset histogram hh[j] = " << hh[j]->GetName() << " is empty and will be skipped." << endl;
          continue;
       }
-      hh[j]->GetXaxis()->SetRangeUser(10.0,1000.0);
+      hh[j]->GetXaxis()->SetRangeUser(6.0,4000.0);
 
       if(NPV_Rho == 4)
          tdrDraw(hh[j],"E",kFullCircle,colPDGID[j],kSolid,colPDGID[j]);
