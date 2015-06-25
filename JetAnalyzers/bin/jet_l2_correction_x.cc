@@ -263,7 +263,8 @@ int main(int argc,char**argv)
            if (npoints > 0)
            {
               //xmin = gabscor->GetX()[0];
-              xmin = max(gabscor->GetX()[0],3.0);
+              //xmin = max(gabscor->GetX()[0],3.0);
+              xmin = max(gabscor->GetX()[0],6.0);
               xmax = gabscor->GetX()[gabscor->GetN()-1];
            }
 
@@ -327,7 +328,7 @@ int main(int argc,char**argv)
                    //gabscor->Fit("fgaus","RQS");
                    //gErrorIgnoreLevel = origIgnoreLevel;
 //Original function
-                   if (xmin<10) xmin=10;
+                   //if (xmin<10) xmin=10;
                    TString fcn = "[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))";
                    //TString fcn = "([0]+TMath::LogNormal(TMath::Log10(x),[1],[2],[3]))+([4]+[5]/(pow(log10(x),2)+[6])+[7]*exp(-[8]*(log10(x)-[9])*(log10(x)-[9])))";
 //Updated Function
