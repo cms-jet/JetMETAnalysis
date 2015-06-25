@@ -35,7 +35,8 @@ if doProducer:
 
 algsizetype = {'ak':[4,8]}
 #algsizetype = {'ak':[1,2,3,4,5,6,7,8,9,10]}
-jettype = ['puppi']
+#jettype = ['puppi']
+jettype = ['pf','pfchs','puppi']
 #jettype = ['calo','pf','pfchs','puppi']
 corrs = ['']
 #corrs = ['','l1','l2l3','l1l2l3']
@@ -80,25 +81,21 @@ if applyDBFile:
 #!
 #! INPUT
 #!
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(-1))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(10))
 
-###################################
-# Matthieu Marionneau Re-Reco 731 #
-###################################
-#process.load("JetMETAnalysis.JetAnalyzers.mmarionn_QCDFlatWin15_731_cff")
-###################################
-# Matthieu Marionneau Re-Reco 732 #
-###################################
-#process.load("JetMETAnalysis.JetAnalyzers.mmarionn_QCDFlatWin15_732_cff")
-###################################
-# Matthieu Marionneau Re-Reco 733 #
-###################################
-#process.load("JetMETAnalysis.JetAnalyzers.mmarionn_QCDFlatWin15_733_cff")
+########################################
+# QCD_PY6_RunIISpring15DR74_Asympt50ns #
+########################################
+process.load("JetMETAnalysis.JetAnalyzers.QCD_PY6_RunIISpring15DR74_Asympt50ns_cff")
+#############################################
+# QCD_PY6_RunIISpring15DR74_AsymptNoPU_50ns #
+#############################################
+#process.load("JetMETAnalysis.JetAnalyzers.QCD_PY6_RunIISpring15DR74_AsymptNoPU_50ns_cff")
 
 qcdFiles = cms.untracked.vstring(
 	'root://cmsxrootd.fnal.gov//store/mc/Fall14DR73/QCD_Pt-15to7000_TuneCUETP8M1_Flat_13TeV_pythia8/GEN-SIM-RECO/PFr1_Flat_20_50_50ns_GSFromFall14_MCRUN2_73_V11-v1/00000/000998AB-A8E7-E411-A76F-00261894394F.root',
     )
-process.source = cms.Source("PoolSource", fileNames = qcdFiles )
+#process.source = cms.Source("PoolSource", fileNames = qcdFiles )
 
 
 #!
