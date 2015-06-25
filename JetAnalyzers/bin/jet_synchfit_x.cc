@@ -56,10 +56,12 @@ TGraph2DErrors * getGraph2D(int iEta, const TProfile3D * prof,
          nEvt += prof->GetBinEntries(Gbin);
          // avoid points with empty content or too small error
          if (prof   ->GetBinError  (iEta,irho,irefpt)  > 0.000001 &&
+             (fabs(prof->GetBinError(iEta,irho,irefpt)/prof->GetBinContent(iEta,irho,irefpt)))<0.3 &&
+             (fabs(prof->GetBinError(iEta,irho,irefpt)/prof->GetBinContent(iEta,irho,irefpt)))>0.05 &&
              profPt ->GetBinContent(iEta,irho,irefpt)  > 0 &&
-             profPt ->GetBinError  (iEta,irho,irefpt)  > 0.5 &&
+             profPt ->GetBinError  (iEta,irho,irefpt)  > 0.1 &&
              profRho->GetBinContent(iEta,irho,irefpt)  > 0 &&
-             profRho->GetBinError  (iEta,irho,irefpt)  > 0.5 ) {
+             profRho->GetBinError  (iEta,irho,irefpt)  > 0.1 ) {
             
             // get the relevant values
             double rho  = profRho->GetBinContent(iEta, irho, irefpt); 
