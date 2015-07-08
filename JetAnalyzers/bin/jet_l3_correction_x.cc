@@ -147,9 +147,9 @@ int main(int argc,char**argv)
       assert(hrefpt->GetEntries()>0);
       assert(hjetpt->GetEntries()>0);
 
-      double refpt   =hrefpt->GetMean();
+      double refpt   =hrefpt->GetXaxis()->GetBinCenter(hrefpt->GetMaximumBin());
       double erefpt  =hrefpt->GetMeanError();
-      double jetpt   =hjetpt->GetMean();
+      double jetpt   =hjetpt->GetXaxis()->GetBinCenter(hjetpt->GetMaximumBin());
       double ejetpt  =hjetpt->GetMeanError();
 
       double peak;
@@ -157,7 +157,8 @@ int main(int argc,char**argv)
       if(tpeak==1)
         {
           peak    =(frelrsp==0)?hrelrsp->GetMean():frelrsp->GetParameter(1);
-          epeak   =(frelrsp==0)?hrelrsp->GetMeanError():frelrsp->GetParError(1);
+          epeak   =(frelrsp==0)?hrelrsp->GetMeanError():frelrsp->GetParError(1); 
+
         }
       else if(tpeak==2)
         {
@@ -168,7 +169,7 @@ int main(int argc,char**argv)
       else
         {
           peak    =hrelrsp->GetMean();
-          epeak   =hrelrsp->GetMeanError();
+	  epeak   =hrelrsp->GetMeanError();
         }
       
       double rsp     =peak;
@@ -179,9 +180,10 @@ int main(int argc,char**argv)
       assert(grsp->GetN()==gcor->GetN());
       
       int n = grsp->GetN();
-      grsp->SetPoint     (n,refpt, rsp);
+
+      grsp->SetPoint     (n,refpt, rsp); 
       grsp->SetPointError(n,erefpt,ersp);
-      gcor->SetPoint     (n,jetpt, cor);
+      gcor->SetPoint     (n,jetpt, cor); 
       gcor->SetPointError(n,ejetpt,ecor);
     }
 
@@ -224,16 +226,18 @@ int main(int argc,char**argv)
       fitrsp->SetParameter(5,1.0);
     }
     else {
-      fitrsp = new TF1("fitrsp","[0]-[1]/(pow(log10(x),[2])+[3])+[4]/x",
-		       1.0,grsp->GetX()[grsp->GetN()-1]);
+      //fitrsp = new TF1("fitrsp","[0]-[1]/(pow(log10(x),[2])+[3])+[4]/x", 1.0,grsp->GetX()[grsp->GetN()-1]); // range !!??
+      fitrsp = new TF1("fitrsp","[0]-[1]/(pow(log10(x),[2])+[3])+[4]/x", 1.0, 1000);
       fitrsp->SetParameter(0,1.0);
       fitrsp->SetParameter(1,1.0);
       fitrsp->SetParameter(2,1.0);
       fitrsp->SetParameter(3,1.0);
       fitrsp->SetParameter(4,1.0);
+
     }
     fitrsp->SetLineWidth(2);
-    grsp->Fit(fitrsp,"QR");
+    fitrsp->SetLineColor(kRed);
+    grsp->Fit(fitrsp,"QR"); 
     
     string   cname_rsp = string(grsp->GetName())+"_"+alg;
     TCanvas* crsp      = new TCanvas(cname_rsp.c_str(),cname_rsp.c_str(),0,0,700,600);
@@ -265,12 +269,12 @@ int main(int argc,char**argv)
     
     if (alg.find("pf")!=string::npos) fitcor_as_str = "[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp((-[4]*(log10(x)-[5])*(log10(x)-[5]))+([6]*(log10(x)-[5])))";
     else if (alg.find("trk")!=string::npos) fitcor_as_str = "[0]+[1]*pow(x/500.0,[2])";
-    else if ((int)alg.find("jpt")>0) fitcor_as_str = "[0]+[1]*TMath::Erf([2]*(log10(x)-[3]))+[4]*exp([5]*log10(x))";
-    else                         fitcor_as_str = "[0]+[1]/(pow(log10(x),[2])+[3])-[4]/x";
+    else if ((int)alg.find("jpt")>0)        fitcor_as_str = "[0]+[1]*TMath::Erf([2]*(log10(x)-[3]))+[4]*exp([5]*log10(x))";
+    else                                    fitcor_as_str = "[0]+[1]/(pow(log10(x),[2])+[3])-[4]/x";
     
-    TF1* fitcor = new TF1("fitcor",fitcor_as_str.c_str(),
-			  2.0,gcor->GetX()[gcor->GetN()-1]);
-    
+    //TF1* fitcor = new TF1("fitcor",fitcor_as_str.c_str(), 2.0,gcor->GetX()[gcor->GetN()-1]); // range !!??
+    TF1* fitcor = new TF1("fitcor",fitcor_as_str.c_str(), 2.0, 1000);
+
     if (alg.find("pf")!=string::npos) {
       fitcor->SetParameter(0,1.04);
       fitcor->SetParameter(1,.033);
@@ -301,6 +305,7 @@ int main(int argc,char**argv)
       fitcor->SetParameter(4,1.0);       
     }
     fitcor->SetLineWidth(2);
+    fitcor->SetLineColor(kRed);
     gcor->Fit(fitcor,"QR");
     
     string   cname_cor = string(gcor->GetName())+"_"+alg;
