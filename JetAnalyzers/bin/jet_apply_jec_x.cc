@@ -101,9 +101,12 @@ int main(int argc,char**argv)
     }
   }
   
+  cout<<"alg.size: "<< algs.size() << endl;
+
   for (unsigned int ialg=0;ialg<algs.size();++ialg) {
+
     string alg=algs[ialg];
-    JetInfo jetInfo(algs[ialg]);
+    JetInfo jetInfo(algs[ialg]); 
     
     TDirectory* idir=(TDirectory*)ifile->Get(alg.c_str());
     if (0==idir) { cout<<"No dir "<<alg<<" found"<<endl; return 0; }
@@ -117,6 +120,7 @@ int main(int argc,char**argv)
       cout<<"exclude "<<alg<<endl;
       continue;
     }
+
     cout<<"jet algorithm: "<<alg<<endl;
     cout<<"correction level: "<<JetInfo::get_correction_levels(levels,L1FastJet)<<endl;
     cout<<"correction tag: "<<JetInfo::get_correction_tags(era,alg,levels,jecpath,L1FastJet)<<endl;
@@ -126,6 +130,7 @@ int main(int argc,char**argv)
     //
     if (debug) cout << "Setting up the FactorizedJetCorrector ... " << flush;
     FactorizedJetCorrector *corrector;
+
     if(useTags)
       {
          corrector = new FactorizedJetCorrector(JetInfo::get_correction_levels(levels,L1FastJet),
@@ -158,17 +163,19 @@ int main(int argc,char**argv)
       if (debug) cout << "DONE" << endl;
     }
     
-    itree->SetBranchStatus("jtpt",0);
-    itree->SetBranchStatus("jte", 0);
-    if (debug) cout << "Cloning the input tree to the output tree ... " << flush;
-    TTree*      otree = (debug) ? itree->CloneTree(10000) : itree->CloneTree();
-    if (debug) cout << "DONE" << endl;
-    itree->SetBranchStatus("jtpt",1);
-    itree->SetBranchStatus("jte", 1);
-    
+    // change directory here if not branch mat not be write in the clone tree!! 
     stringstream ssodirname; ssodirname<<jetInfo.abbreviation;
     for (unsigned int i=0;i<levels.size();i++) ssodirname<<"l"<<levels[i];
     odir=(TDirectory*)ofile->mkdir(ssodirname.str().c_str()); odir->cd();
+
+    itree->SetBranchStatus("jtpt",0); 
+    itree->SetBranchStatus("jte", 0); 
+    if (debug) cout << "Cloning the input tree to the output tree ... " << flush;
+    TTree*      otree = (debug) ? itree->CloneTree(10000) : itree->CloneTree();
+    if (debug) cout << "DONE" << endl;
+    itree->SetBranchStatus("jtpt",1); 
+    itree->SetBranchStatus("jte", 1); 
+    
     unsigned char nref;
     float         jtpt[100];
     float         jteta[100];
@@ -190,13 +197,16 @@ int main(int argc,char**argv)
     TBranch* b_jtpt=otree->Branch("jtpt",jtpt,"jtpt[nref]/F");
     TBranch* b_jte =otree->Branch("jte", jte, "jte[nref]/F");
     
+
     if (debug) cout << "Starting event loop ... " << endl;
     int nevt = (debug) ? 10000 : itree->GetEntries();
     for (int ievt=0;ievt<nevt;ievt++) {
        if (ievt % 100000 == 0)
           cout<<ievt<<endl;
        itree->GetEntry(ievt);
+
        for (unsigned int ijt=0;ijt<nref;ijt++) {
+
           corrector->setJetPt(jtpt[ijt]);
           corrector->setJetE(jte[ijt]);
           corrector->setJetEta(jteta[ijt]);
@@ -206,7 +216,7 @@ int main(int argc,char**argv)
              else if (jetInfo.coneSize>0)
                 corrector->setJetA(TMath::Pi()*TMath::Power(jetInfo.coneSize/10.0,2));
              else {
-                cout << "WARNING::Unknown jet area. Skipping event." << endl;
+                cout << "WARNING::Unknown jet area. Skipping event." << endl; return 1;
                 continue;
              }
 
