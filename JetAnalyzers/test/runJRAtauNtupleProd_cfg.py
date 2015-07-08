@@ -28,15 +28,16 @@ process = cms.Process("JRAtau")
 #! CONDITIONS (DELIVERING JEC BY DEFAULT!)
 #!
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-process.GlobalTag.globaltag = "START42_V13::All"
+process.GlobalTag.globaltag = "PHYS14_25_V2::All"
 
 
 #!
 #! INPUT
 #!
 tauFiles = cms.untracked.vstring(
-    'file:/data1/veelken/CMSSW_4_2_x/skims/skimGenZtoMuTauWithinAcc_Ztautau_2011Jun30v2__C1sel_AOD.root'
+    'file:TTbarH_HToTauTau_M-125_13TeV_AODSIM.root'
 )
+
 
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(100))
 process.source = cms.Source("PoolSource", fileNames = tauFiles )
@@ -78,6 +79,7 @@ algorithms.append('ak5tauHPStightCombDBcorrThreeProng0Pi0')
 doJetReco = True
 
 for algorithm in algorithms:
+    #addAlgorithm(process, algorithm, Defaults, doJetReco, True)
     addAlgorithm(process, algorithm, Defaults, doJetReco)
 
 
