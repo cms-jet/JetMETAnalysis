@@ -216,7 +216,7 @@ int main(int argc,char**argv)
              else if (jetInfo.coneSize>0)
                 corrector->setJetA(TMath::Pi()*TMath::Power(jetInfo.coneSize/10.0,2));
              else {
-                cout << "WARNING::Unknown jet area. Skipping event." << endl; return 1;
+                cout << "WARNING::Unknown jet area. Skipping event." << endl; 
                 continue;
              }
 
