@@ -297,7 +297,7 @@ int main(int argc,char**argv)
                    fabscor->FixParameter(6,xmin);
                    fabscor->FixParameter(7,0.0);
                 }
-                //home/calpas/JetMETAnalysis/CMSSW_7_3_6/src/JetMETAnalysis/JetAnalyzers/test/JRAtau/v1_2enRecoveryCBa/fitL2param_Ztautau.log/
+                //
                 // offline
                 //
                 else {
