@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from TauAnalysis.TauIdEfficiency.tools.buildConfigFilesTauIdEffAnalysis import buildConfigFile_hadd
+#from TauAnalysis.TauIdEfficiency.tools.buildConfigFilesTauIdEffAnalysis import buildConfigFile_hadd
 
 import os
 import re
@@ -8,22 +8,33 @@ import re
 version = 'v1_2enRecoveryCBa'
 era = 'TauJec11V1'
 
-inputFilePath = '/data2/veelken/CMSSW_4_2_x/JRAtauNtuples/Ztautau/v1_2enRecovery/' \
-               + 'user/v/veelken/CMSSW_4_2_x/JRAtauNtuples/Ztautau/v1_2enRecovery'
-outputFilePath = '/data1/veelken/tmp/JRAtau/%s' % version
+#inputFilePath = '/data2/veelken/CMSSW_4_2_x/JRAtauNtuples/Ztautau/v1_2enRecovery/' \
+#               + 'user/v/veelken/CMSSW_4_2_x/JRAtauNtuples/Ztautau/v1_2enRecovery'
+inputFilePath  = '/hdfs/cms/store/user/calpas/DYJetsToLL_M-50_13TeV-madgraph-pythia8/DYJetsToLL_M-50_13TeV-madgraph-pythia8_TransferFunc_v1/a683f4f5fc0a3cbafdd5a17e17e4babe/'
+
+#outputFilePath = '/data1/veelken/tmp/JRAtau/%s' % version
+outputFilePath = '/home/calpas/TransferFunction/CMSSW_7_2_5/src/JetMETAnalysis/JetAnalyzers/test/JRAtau/%s' % version
 
 samplesToAnalyze = [
     'Ztautau'
 ]
 
 algorithms = [
-    'ak5tauHPSlooseCombDBcorr',
-    'ak5tauHPSlooseCombDBcorrOneProng0Pi0',
-    'ak5tauHPSlooseCombDBcorrOneProng1Pi0',
-    'ak5tauHPSlooseCombDBcorrOneProng2Pi0',
-    'ak5tauHPSlooseCombDBcorrThreeProng0Pi0'
-    ##'ak5tauHPSmediumCombDBcorr',
-    ##'ak5tauHPStightCombDBcorr'
+  'ak5tauHPSlooseCombDBcorrAll',
+  'ak5tauHPSlooseCombDBcorrOneProng0Pi0',
+  'ak5tauHPSlooseCombDBcorrOneProng1Pi0',
+  'ak5tauHPSlooseCombDBcorrOneProng2Pi0',
+  'ak5tauHPSlooseCombDBcorrThreeProng0Pi0',
+  'ak5tauHPSmediumCombDBcorrAll',
+  'ak5tauHPSmediumCombDBcorrOneProng0Pi0',
+  'ak5tauHPSmediumCombDBcorrOneProng1Pi0',
+  'ak5tauHPSmediumCombDBcorrOneProng2Pi0',
+  'ak5tauHPSmediumCombDBcorrThreeProng0Pi0',
+  'ak5tauHPStightCombDBcorrAll',
+  'ak5tauHPStightCombDBcorrOneProng0Pi0',
+  'ak5tauHPStightCombDBcorrOneProng1Pi0',
+  'ak5tauHPStightCombDBcorrOneProng2Pi0',
+  'ak5tauHPStightCombDBcorrThreeProng0Pi0',
 ]
 
 execDir = "%s/bin/%s/" % (os.environ['CMSSW_BASE'], os.environ['SCRAM_ARCH'])
@@ -67,6 +78,35 @@ ntupleFileNames = os.listdir(inputFilePath)
 
 ntupleFile_regex = r"ntupleJRAtau_(?P<sample>\w*)_(?P<gridJob>\d*)_(?P<gridTry>\d*)_(?P<gridId>[a-zA-Z0-9]*).root"
 ntupleFile_matcher = re.compile(ntupleFile_regex)
+
+####################
+def buildConfigFile_hadd(haddCommand, shellFileName_full, inputFileNames, outputFileName_full):
+
+    """Build shell script to run 'hadd' command in order to add all histograms
+       in files specified by inputFileNames argument and write the sum to file outputFileName"""
+
+    shellFile = open(shellFileName_full, "w")
+    shellFile.write("#!/bin/csh -f\n")
+    shellFile.write("\n")
+    # CV: delete output file in case it exists 
+    shellFile.write("rm -f %s\n" % outputFileName_full)
+    shellFile.write("\n")
+    haddCommandLine = "%s %s" % (haddCommand, outputFileName_full)
+    for inputFileName in inputFileNames:
+        haddCommandLine += " %s" % inputFileName
+    shellFile.write("%s\n" % haddCommandLine)
+    shellFile.close()
+
+    logFileName_full = shellFileName_full.replace('.csh', '.log')
+
+    retVal = {}
+    retVal['shellFileName']  = shellFileName_full
+    retVal['outputFileName'] = outputFileName_full
+    retVal['logFileName']    = logFileName_full
+
+    return retVal
+####################
+
 
 for sampleToAnalyze in samplesToAnalyze:
     haddInputFileNames = []

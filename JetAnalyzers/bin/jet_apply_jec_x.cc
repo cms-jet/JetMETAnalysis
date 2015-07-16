@@ -158,6 +158,9 @@ int main(int argc,char**argv)
       if (debug) cout << "DONE" << endl;
     }
     
+    stringstream ssodirname; ssodirname<<jetInfo.abbreviation;
+    for (unsigned int i=0;i<levels.size();i++) ssodirname<<"l"<<levels[i];
+    odir=(TDirectory*)ofile->mkdir(ssodirname.str().c_str()); odir->cd();
     itree->SetBranchStatus("jtpt",0);
     itree->SetBranchStatus("jte", 0);
     if (debug) cout << "Cloning the input tree to the output tree ... " << flush;
@@ -166,9 +169,6 @@ int main(int argc,char**argv)
     itree->SetBranchStatus("jtpt",1);
     itree->SetBranchStatus("jte", 1);
     
-    stringstream ssodirname; ssodirname<<jetInfo.abbreviation;
-    for (unsigned int i=0;i<levels.size();i++) ssodirname<<"l"<<levels[i];
-    odir=(TDirectory*)ofile->mkdir(ssodirname.str().c_str()); odir->cd();
     unsigned char nref;
     float         jtpt[100];
     float         jteta[100];

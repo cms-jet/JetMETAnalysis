@@ -410,7 +410,7 @@ int main(int argc,char**argv)
                fabscor->SetParameter(3,0.0);
                fabscor->SetParameter(4,0.0);
              }
-             else if (alg.find("jpt")!=string::npos) {
+             else if (alg.find("jpt")!=string::npos || alg.find("tau")!=string::npos) {
                fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",xmin,xmax);
                //
                // INITIAL PARAMS: These are the fitted parameters that work for JetEta0.261to0.348
