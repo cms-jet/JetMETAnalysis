@@ -681,9 +681,13 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
                     src = cms.InputTag(recLabel),
                     discriminators = cms.VPSet(tauDiscriminatorConfigs)
                 )
-                if tauDecayMode != "*":
-                    #setattr(selTauModule, "cut", cms.string("isDecayMode('%s')" % tauDecayMode))
-                    setattr(selTauModule, "cut", cms.string("decayMode() == %s" % tauDecayMode))
+		# merge OneProg1Pi0 and OneProng2Pi0
+                if (tauDecayMode == "OneProng1Pi0" or tauDecayMode == "OneProng2Pi0"):
+                    setattr(selTauModule, "cut", cms.string("decayMode() == 1 || decayMode() == 2"))
+		else:
+                     if tauDecayMode != "*":
+                          #setattr(selTauModule, "cut", cms.string("isDecayMode('%s')" % tauDecayMode))
+                          setattr(selTauModule, "cut", cms.string("decayMode() == %s" % tauDecayMode))
                 selTauModuleName = alg_size_type + "Selected"
                 setattr(process, selTauModuleName, selTauModule)
                 tauRecoSequence += getattr(process, selTauModuleName)
