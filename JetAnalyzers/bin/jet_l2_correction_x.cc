@@ -81,6 +81,8 @@ int main(int argc,char**argv)
   bool           mpv       = cl.getValue<bool>    ("mpv",        false);
   bool           delphes   = cl.getValue<bool>    ("delphes",    false);
   int            maxFitIter= cl.getValue<int>     ("maxFitIter",    30);
+  int            tpeak     = cl.getValue<int>     ("tpeak",         1);
+  bool           corr      = cl.getValue<bool>    ("corr",       false);
 
   if (!cl.check()) return 0;
   cl.print();
@@ -210,8 +212,8 @@ int main(int argc,char**argv)
            double jetpt  =hjetpt->GetMean();
            double ejetpt =hjetpt->GetMeanError();
 
-           double peak;
-           double epeak;
+           double peak{0};
+           double epeak{0};
            if(alg.find("calo")!=string::npos)
            {
              peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(1);
@@ -222,546 +224,585 @@ int main(int argc,char**argv)
              peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(1);
              epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(1);
            }
-           else
-           {
-             peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(1);
-             epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(1);
-           }
+	   else
+	   {
+	     if(tpeak==0)
+	     {
+	       peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(0);
+	       epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(0);
+	     }
+	     else if(tpeak==1)
+	     {
+	       peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(1);
+	       epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(1);
+	     }
+	     else if(tpeak==2)
+	     {
+	       peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(2);
+	       epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(2);
+	     }
+	     else if(tpeak==3)
+	     {
+	       peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(3);
+	       epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(3);
+	     }
+	     else if(tpeak==4)
+	     {
+	       peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(4);
+	       epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(4);
+	     }
+	     else if(tpeak==5)
+	     {
+	       peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(5);
+	       epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(5);
+	     }
+	     else if(tpeak==6)
+	     {
+	       peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(6);
+	       epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(6);
+	     }
+	   }
 
-           double absrsp = peak;
-           double eabsrsp = epeak;
-           double abscor = 0.0;
-           double eabscor = 0.0;
-           
-           if (absrsp > 0) 
-           {  
-              abscor  =1.0/absrsp;
-              eabscor = abscor*abscor*epeak;
-           } 
-           if ((abscor>0) && (absrsp>0) && (eabscor>1e-5) && (eabscor/abscor<0.5) && (eabsrsp>1e-4) && (eabsrsp/absrsp<0.5)) { 
-              int n = vabsrsp_eta.back()->GetN();
-              vabsrsp_eta.back()->SetPoint     (n,refpt, absrsp);
-              vabsrsp_eta.back()->SetPointError(n,erefpt,eabsrsp);
-              vabscor_eta.back()->SetPoint     (n,jetpt, abscor);
-              vabscor_eta.back()->SetPointError(n,ejetpt,eabscor);      
-           }
-           else cout << "absrsp " << absrsp << " and eabsrsp " << eabsrsp << " and abscor " << abscor << " and eabscor " << eabscor << endl;
-        }
-        
-        //
-        // fit graphs if last pt of the current eta bin comes around
-        //
-        if (ipt==hl_jetpt.nobjects(1)-1 && (vabsrsp_eta.back())->GetN()!=0 && (vabscor_eta.back())->GetN()!=0) {
-           cout << "Doing fits for " << vabscor_eta.back()->GetName() << " ... " << endl;
-           TGraphErrors* gabsrsp = vabsrsp_eta.back();
-           TGraphErrors* gabscor = vabscor_eta.back();
-           TF1*          fabscor(0);
-           TF1*          flog(0);
-           TF1*          fgaus(0);
-           int npoints = gabscor->GetN(); 
-           double xmin(1.0),xmax(100.0);
-           if (npoints > 0)
-           {
-              //xmin = gabscor->GetX()[0];
-              //xmin = max(gabscor->GetX()[0],3.0);
-              xmin = max(gabscor->GetX()[0],6.0);
-              xmax = gabscor->GetX()[gabscor->GetN()-1];
-           }
+	   double absrsp = peak;
+	   double eabsrsp = epeak;
+	   double abscor = 0.0;
+	   double eabscor = 0.0;
 
-           //
-           // we don't want to fit for pt less than 5 GeV as even a corrected calo jet of 10 
-           // will be at least 5 Gev in raw energy.
-           //
-           //if (xmin<7) xmin=7;
-           if (npoints<3 && !delphes) {
-              gabscor->SetPoint     (0, 10.0,1.0);
-              gabscor->SetPointError(0,  0.0,0.0);
-              gabscor->SetPoint     (1,100.0,1.0);
-              gabscor->SetPointError(1,  0.0,0.0);
-              fabscor = new TF1("fit","[0]",10.0,100.0);
-              fabscor->FixParameter(0,1.0);
-           }
-           else if (!l2l3 && npoints > 2 && gabscor->GetN()<10) {
-             fabscor=new TF1("fit","[0]+[1]*log10(x)+[2]*pow(log10(x),2)",xmin,xmax);
-             fabscor->SetParameter(0,1.0);
-             fabscor->SetParameter(1,0.0);
-             fabscor->SetParameter(2,0.0);
-           }
-           else {
-              if (alg.find("pf")!=string::npos || alg.find("puppi")!=string::npos) {
-                //
-                // online
-                //
-                if(alg.find("HLT")!=string::npos){
-                   fabscor=new TF1("fit","(x>=[6])*([0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5])))+(x<[6])*[7]",xmin,xmax);
-                   fabscor->FixParameter(6,xmin);
-                   fabscor->FixParameter(7,0.0);
-                }
-                //
-                // offline
-                //
-                else {
-                   //int origIgnoreLevel = gErrorIgnoreLevel;
-                   //gErrorIgnoreLevel = kBreak;
-                   flog = new TF1("flog", "[3]+TMath::LogNormal(TMath::Log10(x), [0], [1], [2])", 3, 30);
-                   flog->SetLineColor(kBlue);
-                   flog->SetRange(xmin,30.0);
-                   flog->SetParameters(0.5, 0, 1);
-                   flog->SetParLimits(0,0,1000);
-                   flog->SetParLimits(1,0,1000);
-                   flog->SetParLimits(2,0,1000);
-                   flog->FixParameter(1,0.0);
-                   //gabscor->Fit("flog","RBQS");
+	   if (absrsp > 0) 
+	   {  
+	     if(corr){ 
+	       abscor = absrsp; 
+	       eabscor = eabsrsp;
+	     }
+	     else {
+	       abscor  =1.0/absrsp;
+	       eabscor = abscor*abscor*epeak;
+	     }
+	   } 
+	   if ((abscor>0) && (absrsp>0) && (eabscor>1e-5) && (eabscor/abscor<0.5) && (eabsrsp>1e-4) && (eabsrsp/absrsp<0.5)) { 
+	     int n = vabsrsp_eta.back()->GetN();
+	     vabsrsp_eta.back()->SetPoint     (n,refpt, absrsp);
+	     vabsrsp_eta.back()->SetPointError(n,erefpt,eabsrsp);
+	     vabscor_eta.back()->SetPoint     (n,jetpt, abscor);
+	     vabscor_eta.back()->SetPointError(n,ejetpt,eabscor);      
+	   }
+	   else cout << "absrsp " << absrsp << " and eabsrsp " << eabsrsp << " and abscor " << abscor << " and eabscor " << eabscor << endl;
+	}
 
-                   fgaus = new TF1("fgaus","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",30,2000);
-                   fgaus->SetLineColor(kOrange);
-                   fgaus->SetRange(30,2000);
-                   fgaus->SetParameter(0,0.5);
-                   fgaus->SetParameter(1,9.0);
-                   fgaus->SetParameter(2,8.0);
-                   fgaus->SetParameter(3,-0.3);
-                   fgaus->SetParameter(4,0.6);
-                   fgaus->SetParameter(5,1.0);
-                   fgaus->SetParLimits(2,0.1,100);
-                   fgaus->SetParLimits(3,-100,0);
-                   fgaus->SetParLimits(4,0,100);
-                   //gabscor->Fit("fgaus","RQS");
-                   //gErrorIgnoreLevel = origIgnoreLevel;
-//Original function
-                   //if (xmin<10) xmin=10;
-                   TString fcn = "[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))";
-                   //TString fcn = "([0]+TMath::LogNormal(TMath::Log10(x),[1],[2],[3]))+([4]+[5]/(pow(log10(x),2)+[6])+[7]*exp(-[8]*(log10(x)-[9])*(log10(x)-[9])))";
-//Updated Function
-//                   TString fcn = "(x<=[10])*([0]+TMath::LogNormal(TMath::Log10(x), [1], [2], [3]))+(x>[10])*([4]+[5]/(pow(log10(x),2)+[6])+[7]*exp(-[8]*(log10(x)-[9])*(log10(x)-[9])))";
-                   //TString fcn = "(x<=[10])*([0]+((1.0/(TMath::Log10(x)*TMath::Sqrt(2.0*TMath::Pi()*TMath::Power([2],2))))*TMath::Exp(-TMath::Power(TMath::Log(TMath::Log10(x))-[1],2)/(2.0*TMath::Power([2],2)))))+(x>[10])*([4]+[5]/(pow(log10(x),2)+[6])+[7]*exp(-[8]*(log10(x)-[9])*(log10(x)-[9])))";
-                   if(delphes) {
-                      //fcn = "[0]+[1]*log10(x)+[2]*pow(log10(x),2)+[3]*pow(log10(x),3)+[4]*pow(log10(x),4)+[5]*pow(log10(x),5)+[6]*pow(log10(x),6)+[7]*pow(log10(x),7)+[8]*pow(log10(x),8)+[9]*pow(log10(x),9)";
-                     fcn = "[0]+[1]*log10(x)+[2]*pow(log10(x),2)+([3]/pow(log10(x),3))+([4]/pow(log10(x),4))+([5]/pow(log10(x),5))";
-                   }
-                   fabscor=new TF1("fit",fcn.Data(),xmin,xmax);
-                }
+	//
+	// fit graphs if last pt of the current eta bin comes around
+	//
+	if (ipt==hl_jetpt.nobjects(1)-1 && (vabsrsp_eta.back())->GetN()!=0 && (vabscor_eta.back())->GetN()!=0) {
+	  cout << "Doing fits for " << vabscor_eta.back()->GetName() << " ... " << endl;
+	  TGraphErrors* gabsrsp = vabsrsp_eta.back();
+	  TGraphErrors* gabscor = vabscor_eta.back();
+	  TF1*          fabscor(0);
+	  TF1*          flog(0);
+	  TF1*          fgaus(0);
+	  int npoints = gabscor->GetN(); 
+	  double xmin(1.0),xmax(100.0);
+	  if (npoints > 0)
+	  {
+	    //xmin = gabscor->GetX()[0];
+	    //xmin = max(gabscor->GetX()[0],3.0);
+	    xmin = max(gabscor->GetX()[0],6.0);
+	    xmax = gabscor->GetX()[gabscor->GetN()-1];
+	  }
 
-//These go to the original function                
-                fabscor->SetParameter(0,0.5);
-                fabscor->SetParameter(1,9.0);
-                fabscor->SetParameter(2,8.0);
-                fabscor->SetParameter(3,-0.3);
-                fabscor->SetParameter(4,0.6);
-                fabscor->SetParameter(5,1.0);
-                fabscor->SetParLimits(2,0.1,100);
-                fabscor->SetParLimits(3,-100,0);
-                fabscor->SetParLimits(4,0,100);
+	  //
+	  // we don't want to fit for pt less than 5 GeV as even a corrected calo jet of 10 
+	  // will be at least 5 Gev in raw energy.
+	  //
+	  //if (xmin<7) xmin=7;
+	  if (npoints<3 && !delphes) {
+	    gabscor->SetPoint     (0, 10.0,1.0);
+	    gabscor->SetPointError(0,  0.0,0.0);
+	    gabscor->SetPoint     (1,100.0,1.0);
+	    gabscor->SetPointError(1,  0.0,0.0);
+	    fabscor = new TF1("fit","[0]",10.0,100.0);
+	    fabscor->FixParameter(0,1.0);
+	  }
+	  else if (!l2l3 && npoints > 2 && gabscor->GetN()<10) {
+	    fabscor=new TF1("fit","[0]+[1]*log10(x)+[2]*pow(log10(x),2)",xmin,xmax);
+	    fabscor->SetParameter(0,1.0);
+	    fabscor->SetParameter(1,0.0);
+	    fabscor->SetParameter(2,0.0);
+	  }
+	  else {
+	    if (alg.find("pf")!=string::npos || alg.find("puppi")!=string::npos) {
+	      //
+	      // online
+	      //
+	      if(alg.find("HLT")!=string::npos){
+		fabscor=new TF1("fit","(x>=[6])*([0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5])))+(x<[6])*[7]",xmin,xmax);
+		fabscor->FixParameter(6,xmin);
+		fabscor->FixParameter(7,0.0);
+	      }
+	      //
+	      // offline
+	      //
+	      else {
+		//int origIgnoreLevel = gErrorIgnoreLevel;
+		//gErrorIgnoreLevel = kBreak;
+		flog = new TF1("flog", "[3]+TMath::LogNormal(TMath::Log10(x), [0], [1], [2])", 3, 30);
+		flog->SetLineColor(kBlue);
+		flog->SetRange(xmin,30.0);
+		flog->SetParameters(0.5, 0, 1);
+		flog->SetParLimits(0,0,1000);
+		flog->SetParLimits(1,0,1000);
+		flog->SetParLimits(2,0,1000);
+		flog->FixParameter(1,0.0);
+		//gabscor->Fit("flog","RBQS");
 
-                //fabscor->SetRange(3,2000);
-                //fabscor->SetParameter(0,flog->GetParameter(3));
-                //fabscor->SetParameter(1,flog->GetParameter(0));
-                //fabscor->SetParameter(2,flog->GetParameter(1));
-                //fabscor->SetParameter(3,flog->GetParameter(2));
-                //fabscor->SetParLimits(1,0,5);
-                //fabscor->SetParLimits(2,-20,20);
-                //fabscor->SetParLimits(3,0,5);
-                //fabscor->SetParameter(4,fgaus->GetParameter(0));
-                //fabscor->SetParameter(5,fgaus->GetParameter(1));
-                //fabscor->SetParameter(6,fgaus->GetParameter(2));
-                //fabscor->SetParameter(7,fgaus->GetParameter(3));
-                //fabscor->SetParameter(8,fgaus->GetParameter(4));
-                //fabscor->SetParameter(9,fgaus->GetParameter(5));
-                //fabscor->SetParLimits(6,0.1,100);
-                //fabscor->SetParLimits(7,-100,0);
-                //fabscor->SetParLimits(8,0,100);
+		fgaus = new TF1("fgaus","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",30,2000);
+		fgaus->SetLineColor(kOrange);
+		fgaus->SetRange(30,2000);
+		fgaus->SetParameter(0,0.5);
+		fgaus->SetParameter(1,9.0);
+		fgaus->SetParameter(2,8.0);
+		fgaus->SetParameter(3,-0.3);
+		fgaus->SetParameter(4,0.6);
+		fgaus->SetParameter(5,1.0);
+		fgaus->SetParLimits(2,0.1,100);
+		fgaus->SetParLimits(3,-100,0);
+		fgaus->SetParLimits(4,0,100);
+		//gabscor->Fit("fgaus","RQS");
+		//gErrorIgnoreLevel = origIgnoreLevel;
+		//Original function
+		//if (xmin<10) xmin=10;
+		TString fcn = "[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))";
+		//TString fcn = "([0]+TMath::LogNormal(TMath::Log10(x),[1],[2],[3]))+([4]+[5]/(pow(log10(x),2)+[6])+[7]*exp(-[8]*(log10(x)-[9])*(log10(x)-[9])))";
+		//Updated Function
+		//                   TString fcn = "(x<=[10])*([0]+TMath::LogNormal(TMath::Log10(x), [1], [2], [3]))+(x>[10])*([4]+[5]/(pow(log10(x),2)+[6])+[7]*exp(-[8]*(log10(x)-[9])*(log10(x)-[9])))";
+		//TString fcn = "(x<=[10])*([0]+((1.0/(TMath::Log10(x)*TMath::Sqrt(2.0*TMath::Pi()*TMath::Power([2],2))))*TMath::Exp(-TMath::Power(TMath::Log(TMath::Log10(x))-[1],2)/(2.0*TMath::Power([2],2)))))+(x>[10])*([4]+[5]/(pow(log10(x),2)+[6])+[7]*exp(-[8]*(log10(x)-[9])*(log10(x)-[9])))";
+		if(delphes) {
+		  //fcn = "[0]+[1]*log10(x)+[2]*pow(log10(x),2)+[3]*pow(log10(x),3)+[4]*pow(log10(x),4)+[5]*pow(log10(x),5)+[6]*pow(log10(x),6)+[7]*pow(log10(x),7)+[8]*pow(log10(x),8)+[9]*pow(log10(x),9)";
+		  fcn = "[0]+[1]*log10(x)+[2]*pow(log10(x),2)+([3]/pow(log10(x),3))+([4]/pow(log10(x),4))+([5]/pow(log10(x),5))";
+		}
+		fabscor=new TF1("fit",fcn.Data(),xmin,xmax);
+	      }
 
-//These go to the updated function
-//                fabscor->SetRange(xmin,2000);
-//                fabscor->SetParameter(0,flog->GetParameter(3));
-//                fabscor->SetParameter(1,flog->GetParameter(0));
-//                fabscor->SetParameter(2,flog->GetParameter(1));
-//                fabscor->SetParameter(3,flog->GetParameter(2));
-//                fabscor->SetParLimits(1,0,1000);
-//                fabscor->SetParLimits(2,0,1000);
-//                fabscor->SetParLimits(3,0,1000);
-//                fabscor->FixParameter(2,0.0);
-//                fabscor->SetParameter(4,fgaus->GetParameter(0));
-//                fabscor->SetParameter(5,fgaus->GetParameter(1));
-//                fabscor->SetParameter(6,fgaus->GetParameter(2));
-//                fabscor->SetParameter(7,fgaus->GetParameter(3));
-//                fabscor->SetParameter(8,fgaus->GetParameter(4));
-//                fabscor->SetParameter(9,fgaus->GetParameter(5));
-//                fabscor->SetParLimits(6,0.1,100);
-//                fabscor->SetParLimits(7,-100,0);
-//                fabscor->SetParLimits(8,0,100);
-//                fabscor->SetParameter(10,30);
+	      //These go to the original function                
+	      fabscor->SetParameter(0,0.5);
+	      fabscor->SetParameter(1,9.0);
+	      fabscor->SetParameter(2,8.0);
+	      fabscor->SetParameter(3,-0.3);
+	      fabscor->SetParameter(4,0.6);
+	      fabscor->SetParameter(5,1.0);
+	      fabscor->SetParLimits(2,0.1,100);
+	      fabscor->SetParLimits(3,-100,0);
+	      fabscor->SetParLimits(4,0,100);
 
-                /*
-               if (xmax < 15) {
-                  fabscor->FixParameter(1,0.0);
-                  fabscor->FixParameter(2,0.0);
-                  fabscor->FixParameter(3,0.0);
-                  fabscor->FixParameter(4,0.0);
-                  fabscor->FixParameter(5,0.0);
-               }
-               */
-             }
-             else if (alg.find("trk")!=string::npos) {
-               fabscor=new TF1("fit","[0]+[1]*pow(x/500.0,[2])+[3]/log10(x)+[4]*log10(x)",xmin,xmax);
-               fabscor->SetParameter(0,1.7);
-               fabscor->SetParameter(1,0.7);
-               fabscor->SetParameter(2,3.0);
-               fabscor->SetParLimits(2,1,10);
-               fabscor->SetParameter(3,0.0);
-               fabscor->SetParameter(4,0.0);
-             }
-             else if (alg.find("jpt")!=string::npos || alg.find("tau")!=string::npos) {
-               fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",xmin,xmax);
-               //
-               // INITIAL PARAMS: These are the fitted parameters that work for JetEta0.261to0.348
-               //
-               fabscor->SetParameter(0,-8.9);
-               fabscor->SetParameter(1,530);
-               fabscor->SetParameter(2,16);
-               fabscor->SetParameter(3,-22);
-               fabscor->SetParameter(4,0.06);
-               fabscor->SetParameter(5,-0.28);
-             }
-             else if (alg.find("calo")!=string::npos) {
-               if (xmin<6) xmin=6;
-               fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),[2])+[3])",xmin,xmax);
-               fabscor->SetParameter(0,1.0);
-               fabscor->SetParameter(1,5.0);
-               fabscor->SetParameter(2,3.0);
-               fabscor->SetParameter(3,3.0);
+	      //fabscor->SetRange(3,2000);
+	      //fabscor->SetParameter(0,flog->GetParameter(3));
+	      //fabscor->SetParameter(1,flog->GetParameter(0));
+	      //fabscor->SetParameter(2,flog->GetParameter(1));
+	      //fabscor->SetParameter(3,flog->GetParameter(2));
+	      //fabscor->SetParLimits(1,0,5);
+	      //fabscor->SetParLimits(2,-20,20);
+	      //fabscor->SetParLimits(3,0,5);
+	      //fabscor->SetParameter(4,fgaus->GetParameter(0));
+	      //fabscor->SetParameter(5,fgaus->GetParameter(1));
+	      //fabscor->SetParameter(6,fgaus->GetParameter(2));
+	      //fabscor->SetParameter(7,fgaus->GetParameter(3));
+	      //fabscor->SetParameter(8,fgaus->GetParameter(4));
+	      //fabscor->SetParameter(9,fgaus->GetParameter(5));
+	      //fabscor->SetParLimits(6,0.1,100);
+	      //fabscor->SetParLimits(7,-100,0);
+	      //fabscor->SetParLimits(8,0,100);
 
-               fabscor->SetParLimits(3,0,100);
-             }
-             else {
-               cout << "WARNING::Cannot determine fit function for " << alg << "." << endl;
-             }
-           }
-           
-           //
-           // obtain the best fit of the function fabscor to the histo gabscor
-           //
-           int origIgnoreLevel = gErrorIgnoreLevel;
-           gErrorIgnoreLevel = kBreak;
-           perform_smart_fit(gabscor,fabscor,maxFitIter);
-           gErrorIgnoreLevel = origIgnoreLevel;
-           if (alg.find("pf")!=string::npos)
-              if (alg.find("HLT")!=string::npos) {
-                 ((TF1*)gabscor->GetListOfFunctions()->First())->FixParameter(7,fabscor->Eval(fabscor->GetParameter(6)));
-                 fabscor->FixParameter(7,fabscor->Eval(fabscor->GetParameter(6)));
-              }
+	      //These go to the updated function
+	      //                fabscor->SetRange(xmin,2000);
+	      //                fabscor->SetParameter(0,flog->GetParameter(3));
+	      //                fabscor->SetParameter(1,flog->GetParameter(0));
+	      //                fabscor->SetParameter(2,flog->GetParameter(1));
+	      //                fabscor->SetParameter(3,flog->GetParameter(2));
+	      //                fabscor->SetParLimits(1,0,1000);
+	      //                fabscor->SetParLimits(2,0,1000);
+	      //                fabscor->SetParLimits(3,0,1000);
+	      //                fabscor->FixParameter(2,0.0);
+	      //                fabscor->SetParameter(4,fgaus->GetParameter(0));
+	      //                fabscor->SetParameter(5,fgaus->GetParameter(1));
+	      //                fabscor->SetParameter(6,fgaus->GetParameter(2));
+	      //                fabscor->SetParameter(7,fgaus->GetParameter(3));
+	      //                fabscor->SetParameter(8,fgaus->GetParameter(4));
+	      //                fabscor->SetParameter(9,fgaus->GetParameter(5));
+	      //                fabscor->SetParLimits(6,0.1,100);
+	      //                fabscor->SetParLimits(7,-100,0);
+	      //                fabscor->SetParLimits(8,0,100);
+	      //                fabscor->SetParameter(10,30);
 
-           //
-           // format the graphs
-           //
-           gabscor->GetListOfFunctions()->First()->ResetBit(TF1::kNotDraw);
-           gabsrsp->SetMarkerStyle(20); 
-           gabscor->SetMarkerStyle(20); 
-           gabsrsp->Write();
-           gabscor->Write();
-        }        
+	      /*
+		 if (xmax < 15) {
+		 fabscor->FixParameter(1,0.0);
+		 fabscor->FixParameter(2,0.0);
+		 fabscor->FixParameter(3,0.0);
+		 fabscor->FixParameter(4,0.0);
+		 fabscor->FixParameter(5,0.0);
+		 }
+		 */
+	    }
+	    else if (alg.find("trk")!=string::npos) {
+	      fabscor=new TF1("fit","[0]+[1]*pow(x/500.0,[2])+[3]/log10(x)+[4]*log10(x)",xmin,xmax);
+	      fabscor->SetParameter(0,1.7);
+	      fabscor->SetParameter(1,0.7);
+	      fabscor->SetParameter(2,3.0);
+	      fabscor->SetParLimits(2,1,10);
+	      fabscor->SetParameter(3,0.0);
+	      fabscor->SetParameter(4,0.0);
+	    }
+	    else if (alg.find("jpt")!=string::npos || alg.find("tau")!=string::npos) {
+	      fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",xmin,xmax);
+	      //
+	      // INITIAL PARAMS: These are the fitted parameters that work for JetEta0.261to0.348
+	      //
+	      fabscor->SetParameter(0,-8.9);
+	      fabscor->SetParameter(1,530);
+	      fabscor->SetParameter(2,16);
+	      fabscor->SetParameter(3,-22);
+	      fabscor->SetParameter(4,0.06);
+	      fabscor->SetParameter(5,-0.28);
+	    }
+	    else if (alg.find("calo")!=string::npos) {
+	      if (xmin<6) xmin=6;
+	      fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),[2])+[3])",xmin,xmax);
+	      fabscor->SetParameter(0,1.0);
+	      fabscor->SetParameter(1,5.0);
+	      fabscor->SetParameter(2,3.0);
+	      fabscor->SetParameter(3,3.0);
+
+	      fabscor->SetParLimits(3,0,100);
+	    }
+	    else {
+	      cout << "WARNING::Cannot determine fit function for " << alg << "." << endl;
+	    }
+	  }
+
+	  //
+	  // obtain the best fit of the function fabscor to the histo gabscor
+	  //
+	  int origIgnoreLevel = gErrorIgnoreLevel;
+	  gErrorIgnoreLevel = kBreak;
+	  perform_smart_fit(gabscor,fabscor,maxFitIter);
+	  gErrorIgnoreLevel = origIgnoreLevel;
+	  if (alg.find("pf")!=string::npos)
+	    if (alg.find("HLT")!=string::npos) {
+	      ((TF1*)gabscor->GetListOfFunctions()->First())->FixParameter(7,fabscor->Eval(fabscor->GetParameter(6)));
+	      fabscor->FixParameter(7,fabscor->Eval(fabscor->GetParameter(6)));
+	    }
+
+	  //
+	  // format the graphs
+	  //
+	  gabscor->GetListOfFunctions()->First()->ResetBit(TF1::kNotDraw);
+	  gabsrsp->SetMarkerStyle(20); 
+	  gabscor->SetMarkerStyle(20); 
+	  gabsrsp->Write();
+	  gabscor->Write();
+	}        
+	}
+
+
+	//
+	// relative (L2) response/correction as a function of pT for each eta bin
+	//
+	string fnc_as_str = (alg.find("trk")!=string::npos) ? 
+	  "[0]+[1]*log10(x)+[2]*pow(log10(x),2)+[3]*pow(log10(x),3)+[4]*pow(x/500.0,3)" :
+	  "[0]+[1]*log10(x)+[2]*pow(log10(x),2)+[3]*pow(log10(x),3)+[4]*pow(log10(x),4)";
+
+	vector<TGraph*> vrelcor_eta;
+	TH1F*           hjetpt(0);
+	hl_jetpt.begin_loop();
+	while ((hjetpt=hl_jetpt.next_object(indices))) {
+
+	  unsigned int ieta = indices[0];
+	  unsigned int ipt  = indices[1];
+
+	  // create a new graph if a new eta bin comes around
+	  if (ipt==0) {
+	    vrelcor_eta.push_back(new TGraphErrors());
+	    stringstream ss;
+	    ss<<hl_jetpt.minimum(0,ieta)<<"to"<<hl_jetpt.maximum(0,ieta);
+	    vrelcor_eta.back()->SetName(("RelCorVsJetPt_JetEta"+ss.str()).c_str());
+	  }
+
+	  // only add a point to the graph if the current histo is not empty
+	  if (hjetpt->Integral()!=0) {
+	    TF1*   fabscor  =vabscor_eta[ieta]->GetFunction("fit");
+	    double jetpt    =hjetpt->GetMean();
+	    if(!fabscor) continue;
+	    double refpt    =jetpt*fabscor->Eval(jetpt);
+	    double l3cor    = 1;
+	    if (!l2l3) l3cor = fl3rsp->Eval(refpt);
+	    double controlpt=refpt*l3cor;
+	    double relcor   =controlpt/jetpt;
+	    if (relcor > 5)
+	      cout<<"WARNING !!! suspicious point: "<<hjetpt->GetName()
+		<<", jet pt = "<<jetpt<<", ref pt = "<<refpt<<" "<<endl;
+	    else { 
+	      int n=vrelcor_eta.back()->GetN();
+	      vrelcor_eta.back()->SetPoint(n,jetpt,relcor);
+	    }
+	  }
+
+	  // fit the graph if the last pt of the current eta bin comes around
+	  if (ipt==hl_jetpt.nobjects(1)-1 && (vrelcor_eta.back())->GetN()!=0) {
+	    TGraph* grelcor = vrelcor_eta.back();
+	    double  xmin    = grelcor->GetX()[0];
+	    double  xmax    = grelcor->GetX()[grelcor->GetN()-1];
+	    TF1*    frelcor = new TF1("fit",fnc_as_str.c_str(),xmin,xmax);
+
+	    frelcor->SetParameter(0,0.0);
+	    frelcor->SetParameter(1,0.0);
+	    frelcor->SetParameter(2,0.0);
+	    frelcor->SetParameter(3,0.0);
+	    frelcor->SetParameter(4,0.0);
+	    frelcor->SetParameter(5,0.0);
+
+	    if (grelcor->GetN()<2) {
+	      grelcor->SetPoint(0,10,1.0);
+	      grelcor->SetPoint(1,100,1.0);
+	      frelcor->FixParameter(1,0.0);
+	      frelcor->FixParameter(2,0.0);
+	      frelcor->FixParameter(3,0.0);
+	      frelcor->FixParameter(4,0.0);
+	      frelcor->FixParameter(5,0.0);
+	    }
+	    else if (grelcor->GetN()==2) {
+	      frelcor->FixParameter(2,0.0);
+	      frelcor->FixParameter(3,0.0);
+	      frelcor->FixParameter(4,0.0);
+	      frelcor->FixParameter(5,0.0);
+	    }
+
+	    grelcor->Fit(frelcor,"QRB0");
+	    grelcor->GetListOfFunctions()->First()->ResetBit(TF1::kNotDraw);
+	    grelcor->SetMarkerStyle(20); 
+	    grelcor->Write();
+	  }
+	}
+
+	//
+	// write the L2 correction text file for the current algorithm
+	//
+	TString txtfilename = outputDir + era + "_L2Relative_" + get_algorithm_suffix(alg) + ".txt";
+	ofstream fout(txtfilename);
+	fout.setf(ios::right); 
+
+	unsigned int vector_size = 0;
+	if(l2l3) vector_size = vabscor_eta.size(); //For L2L3 Corrections Together
+	else vector_size = vrelcor_eta.size(); //For L2 & L3 Corrections Separate
+	for (unsigned int ieta=0;ieta<vector_size;ieta++) { 
+	  TGraph* grelcor;
+	  if(l2l3) grelcor = vabscor_eta[ieta]; //For L2L3 Corrections Together
+	  else grelcor = vrelcor_eta[ieta]; //For L2 & L3 Corrections Separate
+	  TF1* frelcor = (TF1*)grelcor->GetListOfFunctions()->Last();
+	  if(frelcor!=0) {
+	    if(ieta==0 || (ieta==1 && delphes)) fout<<"{1 JetEta 1 JetPt max(0.0001,"<<frelcor->GetExpFormula()<<") Correction L2Relative}"<<endl;
+	    double  etamin  = hl_jetpt.minimum(0,ieta);
+	    double  etamax  = hl_jetpt.maximum(0,ieta);
+	    double  ptmin = grelcor->GetX()[0];
+	    double  ptmax = grelcor->GetX()[grelcor->GetN()-1];
+	    fout<<setw(11)<<etamin
+	      <<setw(11)<<etamax
+	      <<setw(11)<<(int)(frelcor->GetNpar()+2) //Number of parameters + 2 
+	      <<setw(12)<<ptmin
+	      <<setw(12)<<ptmax;
+	    for(int p=0; p<frelcor->GetNpar(); p++)
+	    {
+	      fout<<setw(13)<<frelcor->GetParameter(p);
+	    }
+	    fout<<endl;
+	  }
+	}
+	fout.close();
+
+	cout<<alg<<" is DONE."<<endl;
      }
-     
-     
-     //
-     // relative (L2) response/correction as a function of pT for each eta bin
-     //
-     string fnc_as_str = (alg.find("trk")!=string::npos) ? 
-       "[0]+[1]*log10(x)+[2]*pow(log10(x),2)+[3]*pow(log10(x),3)+[4]*pow(x/500.0,3)" :
-       "[0]+[1]*log10(x)+[2]*pow(log10(x),2)+[3]*pow(log10(x),3)+[4]*pow(log10(x),4)";
-     
-     vector<TGraph*> vrelcor_eta;
-     TH1F*           hjetpt(0);
-     hl_jetpt.begin_loop();
-     while ((hjetpt=hl_jetpt.next_object(indices))) {
-
-        unsigned int ieta = indices[0];
-        unsigned int ipt  = indices[1];
-        
-        // create a new graph if a new eta bin comes around
-        if (ipt==0) {
-           vrelcor_eta.push_back(new TGraphErrors());
-           stringstream ss;
-           ss<<hl_jetpt.minimum(0,ieta)<<"to"<<hl_jetpt.maximum(0,ieta);
-           vrelcor_eta.back()->SetName(("RelCorVsJetPt_JetEta"+ss.str()).c_str());
-        }
-
-        // only add a point to the graph if the current histo is not empty
-        if (hjetpt->Integral()!=0) {
-           TF1*   fabscor  =vabscor_eta[ieta]->GetFunction("fit");
-           double jetpt    =hjetpt->GetMean();
-           if(!fabscor) continue;
-           double refpt    =jetpt*fabscor->Eval(jetpt);
-           double l3cor    = 1;
-           if (!l2l3) l3cor = fl3rsp->Eval(refpt);
-           double controlpt=refpt*l3cor;
-           double relcor   =controlpt/jetpt;
-           if (relcor > 5)
-              cout<<"WARNING !!! suspicious point: "<<hjetpt->GetName()
-                  <<", jet pt = "<<jetpt<<", ref pt = "<<refpt<<" "<<endl;
-           else { 
-              int n=vrelcor_eta.back()->GetN();
-              vrelcor_eta.back()->SetPoint(n,jetpt,relcor);
-           }
-        }
-
-        // fit the graph if the last pt of the current eta bin comes around
-        if (ipt==hl_jetpt.nobjects(1)-1 && (vrelcor_eta.back())->GetN()!=0) {
-           TGraph* grelcor = vrelcor_eta.back();
-           double  xmin    = grelcor->GetX()[0];
-           double  xmax    = grelcor->GetX()[grelcor->GetN()-1];
-           TF1*    frelcor = new TF1("fit",fnc_as_str.c_str(),xmin,xmax);
-                     
-           frelcor->SetParameter(0,0.0);
-           frelcor->SetParameter(1,0.0);
-           frelcor->SetParameter(2,0.0);
-           frelcor->SetParameter(3,0.0);
-           frelcor->SetParameter(4,0.0);
-           frelcor->SetParameter(5,0.0);
-           
-           if (grelcor->GetN()<2) {
-              grelcor->SetPoint(0,10,1.0);
-              grelcor->SetPoint(1,100,1.0);
-              frelcor->FixParameter(1,0.0);
-              frelcor->FixParameter(2,0.0);
-              frelcor->FixParameter(3,0.0);
-              frelcor->FixParameter(4,0.0);
-              frelcor->FixParameter(5,0.0);
-           }
-           else if (grelcor->GetN()==2) {
-              frelcor->FixParameter(2,0.0);
-              frelcor->FixParameter(3,0.0);
-              frelcor->FixParameter(4,0.0);
-              frelcor->FixParameter(5,0.0);
-           }
-           
-           grelcor->Fit(frelcor,"QRB0");
-           grelcor->GetListOfFunctions()->First()->ResetBit(TF1::kNotDraw);
-           grelcor->SetMarkerStyle(20); 
-           grelcor->Write();
-        }
-     }
 
      //
-     // write the L2 correction text file for the current algorithm
+     // close output file
      //
-     TString txtfilename = outputDir + era + "_L2Relative_" + get_algorithm_suffix(alg) + ".txt";
-     ofstream fout(txtfilename);
-     fout.setf(ios::right); 
+     cout<<"Write "<<output<<" ... "<<flush;
+     ofile->Close();
+     delete ofile;
+     ifile->Close();
+     delete ifile;
+     cout<<"DONE"<<endl;
 
-     unsigned int vector_size = 0;
-     if(l2l3) vector_size = vabscor_eta.size(); //For L2L3 Corrections Together
-     else vector_size = vrelcor_eta.size(); //For L2 & L3 Corrections Separate
-     for (unsigned int ieta=0;ieta<vector_size;ieta++) { 
-       TGraph* grelcor;
-       if(l2l3) grelcor = vabscor_eta[ieta]; //For L2L3 Corrections Together
-       else grelcor = vrelcor_eta[ieta]; //For L2 & L3 Corrections Separate
-       TF1* frelcor = (TF1*)grelcor->GetListOfFunctions()->Last();
-       if(frelcor!=0) {
-         if(ieta==0 || (ieta==1 && delphes)) fout<<"{1 JetEta 1 JetPt max(0.0001,"<<frelcor->GetExpFormula()<<") Correction L2Relative}"<<endl;
-         double  etamin  = hl_jetpt.minimum(0,ieta);
-         double  etamax  = hl_jetpt.maximum(0,ieta);
-         double  ptmin = grelcor->GetX()[0];
-         double  ptmax = grelcor->GetX()[grelcor->GetN()-1];
-         fout<<setw(11)<<etamin
-             <<setw(11)<<etamax
-             <<setw(11)<<(int)(frelcor->GetNpar()+2) //Number of parameters + 2 
-             <<setw(12)<<ptmin
-             <<setw(12)<<ptmax;
-         for(int p=0; p<frelcor->GetNpar(); p++)
-           {
-             fout<<setw(13)<<frelcor->GetParameter(p);
-           }
-         fout<<endl;
-       }
-     }
-     fout.close();
-     
-     cout<<alg<<" is DONE."<<endl;
+
+     if (!batch) app->Run();
+
+     return 0;
   }
-  
-  //
-  // close output file
-  //
-  cout<<"Write "<<output<<" ... "<<flush;
-  ofile->Close();
-  delete ofile;
-  ifile->Close();
-  delete ifile;
-  cout<<"DONE"<<endl;
-  
-  
-  if (!batch) app->Run();
-  
-  return 0;
-}
 
 
-////////////////////////////////////////////////////////////////////////////////
-// implement local functions
-////////////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////////////
+  // implement local functions
+  ////////////////////////////////////////////////////////////////////////////////
 
-//______________________________________________________________________________
-bool contains(const vector<string>& collection,const string& element)
-{
-  vector<string>::const_iterator it;
-  for (it=collection.begin();it!=collection.end();++it)
-    if ((*it)==element) return true;
-  return false;
-}
-
-//______________________________________________________________________________
-string get_legend_title(const string& alg)
-{
-  string title;
-  string tmp(alg);
-  if      (alg.find("kt")==0) { title = "k_{T}, D=";      tmp = tmp.substr(2); }
-  else if (alg.find("sc")==0) { title = "SISCone, R=";    tmp = tmp.substr(2); }
-  else if (alg.find("ic")==0) { title = "ItCone, R=";     tmp = tmp.substr(2); }
-  else if (alg.find("mc")==0) { title = "MidCone. R=";    tmp = tmp.substr(2); }
-  else if (alg.find("ca")==0) { title = "Cam/Aachen, D="; tmp = tmp.substr(2); }
-  else if (alg.find("ak")==0) { title = "Anti k_{T}, D="; tmp = tmp.substr(2); }
-  else return alg;
-  
-  string reco[9] = { "gen", "caloHLT", "calo", "pfHLT", "pfchsHLT", "pfchs", "pf", "trk", "jpt" };
-  string RECO[9] = { "(Gen)", "(Calo@HLT)", "(Calo)", "(PFlow@HLT)", "(PFlow+CHS@HLT)", "(PFlow+CHS)", "(PFlow)", "(Tracks)", "(JPT)" };
-
-  string::size_type pos=string::npos; int ireco=-1;
-  while (pos==string::npos&&ireco<8) { pos = tmp.find(reco[++ireco]); }
-  if (pos==string::npos) return alg;
-  
-  double jet_size; stringstream ss1; ss1<<tmp.substr(0,pos); ss1>>jet_size;
-  jet_size/=10.0;  stringstream ss2; ss2<<jet_size;
-
-  title += ss2.str() + " " + RECO[ireco];
-
-  return title;
-}
-
-//______________________________________________________________________________
-template <typename T>
-T StringToNumber ( const string &Text, T defValue = T() )
-{
-   stringstream ss;
-   for ( string::const_iterator i=Text.begin(); i!=Text.end(); ++i ) {
-      if (*i=='l')
-         break;
-      if ( isdigit(*i) || *i=='e' || *i=='-' || *i=='+' || *i=='.' )
-         ss << *i;
-   }
-   T result;
-   return ss >> result ? result : defValue;
-}
-
-//______________________________________________________________________________
-string get_algorithm_suffix(const string& alg)
-{
-  string result;
-  result += std::toupper(alg[0]);
-  result += std::toupper(alg[1]);
-  //result += alg[2];
-  char buffer [50];
-  sprintf (buffer, "%d", StringToNumber(alg,-1));
-  result += string(buffer);
-  if      (alg.find("calol1off")  ==3) result += "Calol1off";
-  else if (alg.find("calol1")     ==3) result += "Calol1";
-  else if (alg.find("caloHLTl1")  ==3) result += "CaloHLTl1";
-  else if (alg.find("caloHLT")    ==3) result += "CaloHLT";
-  else if (alg.find("calo")       ==3) result += "Calo";
-  else if (alg.find("jptl1off")   ==3) result += "JPTl1off";
-  else if (alg.find("jptl1")      ==3) result += "JPTl1";
-  else if (alg.find("jpt")        ==3) result += "JPT";
-  else if (alg.find("pfchsHLTl1") ==3) result += "PFchsHLTl1";
-  else if (alg.find("pfchsHLT")   ==3) result += "PFchsHLT";
-  else if (alg.find("pfchsl1off") ==3) result += "PFchsl1off";
-  //else if (alg.find("pfchsl1")    ==3) result += "PFchsl1";
-  else if (alg.find("pfchsl1")!=string::npos) result += "PFchsl1";
-  //else if (alg.find("pfchs")      ==3) result += "PFchs";
-  else if (alg.find("pfchs")!=string::npos) result += "PFchs";
-  else if (alg.find("pfHLTl1")    ==3) result += "PFHLTl1";
-  else if (alg.find("pfHLT")      ==3) result += "PFHLT";
-  else if (alg.find("pfl1off")    ==3) result += "PFl1off";
-  //else if (alg.find("pfl1")       ==3) result += "PFl1";
-  else if (alg.find("pfl1")!=string::npos) result += "PFl1";
-  //else if (alg.find("pf")         ==3) result += "PF";
-  else if (alg.find("pf")!=string::npos) result += "PF";
-  else if (alg.find("puppi")!=string::npos) result += "PUPPI";
-  else if (alg.find("puppil1")!=string::npos) result += "PUPPIl1";
-  else if (alg.find("trk")        ==3) result += "TRK";
-  else if (alg.find("tau")        ==3) result += std::string(alg, 3);
-  cout<<"get_algorithm_suffix: result = "<<result<<" from algo = "<<alg<<endl;
-  return result;
-}
-
-//______________________________________________________________________________
-void perform_smart_fit(TGraphErrors * gabscor, TF1 * fabscor, int maxFitIter) {
-
-  int fitIter = 0;
-  vector<double> bestPars;
-  double bestRChi2 = 0;
-  do {	       
-
-    //
-    // do the fit, get the results and the parameters of the fitted function
-    //
-    TFitResultPtr fitResPtr = gabscor->Fit(fabscor,"RQS+");
-    vector<double> auxPars = fitResPtr.Get()->Parameters();
-
-    //
-    // compute the reduced chi2 of this fit and if it is the best fit so far
-    // then save the parameters
-    //
-    double rchi2 = fitResPtr.Get()->Chi2()/ fitResPtr.Get()->Ndf();
-    if (fitResPtr.Get()->Ndf() == 0) rchi2 = 0;
-    if (rchi2 > 0 && (rchi2<bestRChi2 || bestRChi2==0)){
-      bestRChi2 = rchi2;
-      bestPars  = auxPars;
-    } 
-
-    //
-    // increment the counter
-    //
-    fitIter++;
-  }while(( bestRChi2 > 2 || bestRChi2 == 0 ) && fitIter < maxFitIter);
- 
-  //
-  // set the best parameters and chi2 to the fit function
-  //
-  TF1 * ffh = gabscor->GetFunction("fit");
-  for (unsigned int np=0;np < bestPars.size() ; np++){
-    ffh->SetParameter(np,bestPars[np]);
-    fabscor->SetParameter(np,bestPars[np]);
+  //______________________________________________________________________________
+  bool contains(const vector<string>& collection,const string& element)
+  {
+    vector<string>::const_iterator it;
+    for (it=collection.begin();it!=collection.end();++it)
+      if ((*it)==element) return true;
+    return false;
   }
-  fabscor->SetChisquare(bestRChi2 * fabscor->GetNDF());
-  ffh->SetChisquare(bestRChi2 * fabscor->GetNDF());
-		
-  //
-  // warn if the fit diverges at low pt
-  //
-  if (fabscor->Integral(0,10) > 60)
-     cout << "\t***ERROR***, fit for histo " << gabscor->GetName() << " diverges at low pt" << endl;
 
-  //   
-  // check for failed fits
-  // a chi2 of zero is symptomatic of a failed fit.
-  //
-  if (bestRChi2 < 0.001){
-    cout<<"\t***ERROR***, FIT HAS FAILED for histo "<<gabscor->GetName()
+  //______________________________________________________________________________
+  string get_legend_title(const string& alg)
+  {
+    string title;
+    string tmp(alg);
+    if      (alg.find("kt")==0) { title = "k_{T}, D=";      tmp = tmp.substr(2); }
+    else if (alg.find("sc")==0) { title = "SISCone, R=";    tmp = tmp.substr(2); }
+    else if (alg.find("ic")==0) { title = "ItCone, R=";     tmp = tmp.substr(2); }
+    else if (alg.find("mc")==0) { title = "MidCone. R=";    tmp = tmp.substr(2); }
+    else if (alg.find("ca")==0) { title = "Cam/Aachen, D="; tmp = tmp.substr(2); }
+    else if (alg.find("ak")==0) { title = "Anti k_{T}, D="; tmp = tmp.substr(2); }
+    else return alg;
+
+    string reco[9] = { "gen", "caloHLT", "calo", "pfHLT", "pfchsHLT", "pfchs", "pf", "trk", "jpt" };
+    string RECO[9] = { "(Gen)", "(Calo@HLT)", "(Calo)", "(PFlow@HLT)", "(PFlow+CHS@HLT)", "(PFlow+CHS)", "(PFlow)", "(Tracks)", "(JPT)" };
+
+    string::size_type pos=string::npos; int ireco=-1;
+    while (pos==string::npos&&ireco<8) { pos = tmp.find(reco[++ireco]); }
+    if (pos==string::npos) return alg;
+
+    double jet_size; stringstream ss1; ss1<<tmp.substr(0,pos); ss1>>jet_size;
+    jet_size/=10.0;  stringstream ss2; ss2<<jet_size;
+
+    title += ss2.str() + " " + RECO[ireco];
+
+    return title;
+  }
+
+  //______________________________________________________________________________
+  template <typename T>
+    T StringToNumber ( const string &Text, T defValue = T() )
+    {
+      stringstream ss;
+      for ( string::const_iterator i=Text.begin(); i!=Text.end(); ++i ) {
+	if (*i=='l')
+	  break;
+	if ( isdigit(*i) || *i=='e' || *i=='-' || *i=='+' || *i=='.' )
+	  ss << *i;
+      }
+      T result;
+      return ss >> result ? result : defValue;
+    }
+
+  //______________________________________________________________________________
+  string get_algorithm_suffix(const string& alg)
+  {
+    string result;
+    result += std::toupper(alg[0]);
+    result += std::toupper(alg[1]);
+    //result += alg[2];
+    char buffer [50];
+    sprintf (buffer, "%d", StringToNumber(alg,-1));
+    result += string(buffer);
+    if      (alg.find("calol1off")  ==3) result += "Calol1off";
+    else if (alg.find("calol1")     ==3) result += "Calol1";
+    else if (alg.find("caloHLTl1")  ==3) result += "CaloHLTl1";
+    else if (alg.find("caloHLT")    ==3) result += "CaloHLT";
+    else if (alg.find("calo")       ==3) result += "Calo";
+    else if (alg.find("jptl1off")   ==3) result += "JPTl1off";
+    else if (alg.find("jptl1")      ==3) result += "JPTl1";
+    else if (alg.find("jpt")        ==3) result += "JPT";
+    else if (alg.find("pfchsHLTl1") ==3) result += "PFchsHLTl1";
+    else if (alg.find("pfchsHLT")   ==3) result += "PFchsHLT";
+    else if (alg.find("pfchsl1off") ==3) result += "PFchsl1off";
+    //else if (alg.find("pfchsl1")    ==3) result += "PFchsl1";
+    else if (alg.find("pfchsl1")!=string::npos) result += "PFchsl1";
+    //else if (alg.find("pfchs")      ==3) result += "PFchs";
+    else if (alg.find("pfchs")!=string::npos) result += "PFchs";
+    else if (alg.find("pfHLTl1")    ==3) result += "PFHLTl1";
+    else if (alg.find("pfHLT")      ==3) result += "PFHLT";
+    else if (alg.find("pfl1off")    ==3) result += "PFl1off";
+    //else if (alg.find("pfl1")       ==3) result += "PFl1";
+    else if (alg.find("pfl1")!=string::npos) result += "PFl1";
+    //else if (alg.find("pf")         ==3) result += "PF";
+    else if (alg.find("pf")!=string::npos) result += "PF";
+    else if (alg.find("puppi")!=string::npos) result += "PUPPI";
+    else if (alg.find("puppil1")!=string::npos) result += "PUPPIl1";
+    else if (alg.find("trk")        ==3) result += "TRK";
+    else if (alg.find("tau")        ==3) result += std::string(alg, 3);
+    cout<<"get_algorithm_suffix: result = "<<result<<" from algo = "<<alg<<endl;
+    return result;
+  }
+
+  //______________________________________________________________________________
+  void perform_smart_fit(TGraphErrors * gabscor, TF1 * fabscor, int maxFitIter) {
+
+    int fitIter = 0;
+    vector<double> bestPars;
+    double bestRChi2 = 0;
+    do {	       
+
+      //
+      // do the fit, get the results and the parameters of the fitted function
+      //
+      TFitResultPtr fitResPtr = gabscor->Fit(fabscor,"RQS+");
+      vector<double> auxPars = fitResPtr.Get()->Parameters();
+
+      //
+      // compute the reduced chi2 of this fit and if it is the best fit so far
+      // then save the parameters
+      //
+      double rchi2 = fitResPtr.Get()->Chi2()/ fitResPtr.Get()->Ndf();
+      if (fitResPtr.Get()->Ndf() == 0) rchi2 = 0;
+      if (rchi2 > 0 && (rchi2<bestRChi2 || bestRChi2==0)){
+	bestRChi2 = rchi2;
+	bestPars  = auxPars;
+      } 
+
+      //
+      // increment the counter
+      //
+      fitIter++;
+    }while(( bestRChi2 > 2 || bestRChi2 == 0 ) && fitIter < maxFitIter);
+
+    //
+    // set the best parameters and chi2 to the fit function
+    //
+    TF1 * ffh = gabscor->GetFunction("fit");
+    for (unsigned int np=0;np < bestPars.size() ; np++){
+      ffh->SetParameter(np,bestPars[np]);
+      fabscor->SetParameter(np,bestPars[np]);
+    }
+    fabscor->SetChisquare(bestRChi2 * fabscor->GetNDF());
+    ffh->SetChisquare(bestRChi2 * fabscor->GetNDF());
+
+    //
+    // warn if the fit diverges at low pt
+    //
+    if (fabscor->Integral(0,10) > 60)
+      cout << "\t***ERROR***, fit for histo " << gabscor->GetName() << " diverges at low pt" << endl;
+
+    //   
+    // check for failed fits
+    // a chi2 of zero is symptomatic of a failed fit.
+    //
+    if (bestRChi2 < 0.001){
+      cout<<"\t***ERROR***, FIT HAS FAILED for histo "<<gabscor->GetName()
 	<<" which has a reduced chi2="<<bestRChi2
 	<<" after "<<fitIter<<" iterations. "<<endl;
-  }
+    }
 
-  //
-  // check for large reduced chi2's
-  // above 10 is a plain error; between 5 and 10 is a warning
-  //
-  if (bestRChi2 > 5){
-    if (bestRChi2 > 10)
-      cout<<"\t***ERROR***,";
-    else
-      cout<<"\tWARNING,";
+    //
+    // check for large reduced chi2's
+    // above 10 is a plain error; between 5 and 10 is a warning
+    //
+    if (bestRChi2 > 5){
+      if (bestRChi2 > 10)
+	cout<<"\t***ERROR***,";
+      else
+	cout<<"\tWARNING,";
 
-    cout<<" fit for histo "<<gabscor->GetName()
+      cout<<" fit for histo "<<gabscor->GetName()
 	<<" has a reduced chi2="<<bestRChi2
 	<<" after "<<fitIter<<" iterations"<<endl;
+    }
   }
-}
