@@ -146,6 +146,23 @@ bool ObjectLoader<T>::load_objects(TDirectory* d,const string& expression)
 
 
 //______________________________________________________________________________
+template<class T>
+void ObjectLoader<T>::reset()
+{
+  quantity_ = "";
+  variables_.erase(variables_.begin(),variables_.end());
+  variable_index_.erase(variable_index_.begin(),variable_index_.end());
+  nobjects_.erase(nobjects_.begin(),nobjects_.end());
+  offset_.erase(offset_.begin(),offset_.end());
+  objects_.erase(objects_.begin(),objects_.end());
+  
+  bounds_.erase(bounds_.begin(),bounds_.end());
+
+  iloop_ = 0;
+
+}
+
+//______________________________________________________________________________
 template <class T>
 T* ObjectLoader<T>::object(unsigned int i) const
 {

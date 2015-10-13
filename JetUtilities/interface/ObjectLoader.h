@@ -22,6 +22,7 @@ public:
   // member functions
   //
   bool         load_objects(TDirectory* d,const std::string& expression);
+  void         reset();
   
   std::string  quantity()                   const { return quantity_; }
   unsigned int nvariables()                 const { return variables_.size(); }
