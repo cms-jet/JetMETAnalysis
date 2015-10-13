@@ -6,7 +6,7 @@
 //            12/09/2011 Alexx Perloff  <aperloff@physics.tamu.edu>
 ///////////////////////////////////////////////////////////////////
 
-#include "JetMETAnalysis/JetAnalyzers/interface/Style.h"
+#include "JetMETAnalysis/JetUtilities/interface/Style.h"
 #include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 #include "JetMETAnalysis/JetAnalyzers/interface/REStyle.h"

@@ -11,8 +11,7 @@
 
 #include <iostream>
 
-//#include "JetMETAnalysis/JetAnalyzers/interface/Settings.h"
-#include "JetMETAnalysis/JetAnalyzers/interface/Style.h"
+#include "JetMETAnalysis/JetUtilities/interface/Style.h"
 
 using namespace std;
 

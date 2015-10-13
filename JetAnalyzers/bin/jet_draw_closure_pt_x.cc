@@ -6,7 +6,7 @@
 //            12/09/2011 Alexx Perloff  <aperloff@physics.tamu.edu>
 ///////////////////////////////////////////////////////////////////
 
-#include "JetMETAnalysis/JetAnalyzers/interface/Style.h"
+#include "JetMETAnalysis/JetUtilities/interface/Style.h"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 #include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
 
@@ -96,13 +96,21 @@ int main(int argc,char**argv)
       TF1 *func[4][NPtBins];
       TH1D *h[4][NPtBins];
       TH1F *hClosure[4];
-      hClosure[0] = new TH1F("ClosureVsPt_Bar","ClosureVsPt_Bar",NPtBins,vpt);
-      hClosure[1] = new TH1F("ClosureVsPt_IEnd","ClosureVsPt_IEnd",NPtBins,vpt);
-      hClosure[2] = new TH1F("ClosureVsPt_OEnd","ClosureVsPt_OEnd",NPtBins,vpt);
-      hClosure[3] = new TH1F("ClosureVsPt_Fwd","ClosureVsPt_Fwd",NPtBins,vpt);
+      for(int ieta=0, ih=0; ieta<NETA_Coarse; ieta++) {
+        if(veta_coarse[ieta]<0) continue;
+        else {
+          TString hname = Form("ClosureVsRefPt_JetEta%sto%s",eta_boundaries_coarse[ieta],eta_boundaries_coarse[ieta+1]);
+          hClosure[ih] = new TH1F(hname,hname,NPtBins,vpt);
+          ih++;
+        }
+      }
+      //hClosure[0] = new TH1F("ClosureVsPt_Bar","ClosureVsPt_Bar",NPtBins,vpt);
+      //hClosure[1] = new TH1F("ClosureVsPt_IEnd","ClosureVsPt_IEnd",NPtBins,vpt);
+      //hClosure[2] = new TH1F("ClosureVsPt_OEnd","ClosureVsPt_OEnd",NPtBins,vpt);
+      //hClosure[3] = new TH1F("ClosureVsPt_Fwd","ClosureVsPt_Fwd",NPtBins,vpt);
       double XminCalo[4] = {15,15,15,15};
       double XminPF[4] = {5,5,5,5};
-      double Xmax[4] = {3000,3000,3000,190};
+      double Xmax[4] = {4000,4000,2000,190};
 
       //
       // Find the mean peak of the gaussian fit or the mean of the histogram and 
@@ -173,11 +181,11 @@ int main(int argc,char**argv)
       lineMinus1->SetLineColor(1);
       lineMinus1->SetLineWidth(1);
       lineMinus1->SetLineStyle(3);
-      TF1 *linePlus2 = new TF1("linePlus","0*x+1.02",0,5000);
+      TF1 *linePlus2 = new TF1("linePlus2","0*x+1.02",0,5000);
       linePlus2->SetLineColor(1);
       linePlus2->SetLineWidth(1);
       linePlus2->SetLineStyle(4);
-      TF1 *lineMinus2 = new TF1("lineMinus","0*x+0.98",0,5000);
+      TF1 *lineMinus2 = new TF1("lineMinus2","0*x+0.98",0,5000);
       lineMinus2->SetLineColor(1);
       lineMinus2->SetLineWidth(1);
       lineMinus2->SetLineStyle(4);
@@ -192,8 +200,8 @@ int main(int argc,char**argv)
       //
       if(!outputDir.EndsWith("/")) outputDir+="/";
       if(!gSystem->OpenDirectory(outputDir)) gSystem->mkdir(outputDir);
-      TString ofname = outputDir+"ClosureVsPt_"+algs[a]+".root";
-      if(!flavor.IsNull()) ofname = outputDir+"ClosureVsPt_"+algs[a]+"_"+flavor+".root";
+      TString ofname = outputDir+"ClosureVsRefPt_"+algs[a]+".root";
+      if(!flavor.IsNull()) ofname = outputDir+"ClosureVsRefPt_"+algs[a]+"_"+flavor+".root";
       TFile* outf = new TFile(ofname,"RECREATE");
 
       //
@@ -210,7 +218,7 @@ int main(int argc,char**argv)
              pave[j]->AddText(algs[a]);
           }
           pave[j]->AddText(Text[j]);
-          sprintf(name,"ClosureVsPt_%d",j);
+          sprintf(name,"ClosureVsRefPt_%d",j);
           TString ss(name);
           if(!flavor.IsNull()) ss+="_"+algs[a]+"_"+flavor;
           else ss+="_"+algs[a];
@@ -262,7 +270,7 @@ int main(int argc,char**argv)
       //
       // create overview canvas
       //
-      TString ss("ClosureVsPt_Overview");
+      TString ss("ClosureVsRefPt_Overview");
       if(!flavor.IsNull()) ss+="_"+algs[a]+"_"+flavor;
       else ss+="_"+algs[a];
 
@@ -293,7 +301,7 @@ int main(int argc,char**argv)
       //
       // create shared overview canvas
       //
-      ss = "ClosureVsPt_Overview2";
+      ss = "ClosureVsRefPt_Overview2";
       if(!flavor.IsNull()) ss+="_"+algs[a]+"_"+flavor;
       else ss+="_"+algs[a];
 

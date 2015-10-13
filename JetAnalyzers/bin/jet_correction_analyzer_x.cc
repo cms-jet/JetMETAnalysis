@@ -144,6 +144,7 @@ int main(int argc,char**argv)
    TString         DataPUReWeighting = cl.getValue<TString>      ("DataPUReWeighting",    "");
    bool            mpv               = cl.getValue<bool>         ("mpv",               false);
    TString         readRespVsPileup  = cl.getValue<TString>      ("readRespVsPileup",     "");
+   bool            debug             = cl.getValue<bool>         ("debug",             false);
 
    if (!cl.check()) return 0;
    cl.print();
@@ -187,6 +188,11 @@ int main(int argc,char**argv)
        LumiWeights_ = edm::LumiReWeighting(string(MCPUReWeighting),string(DataPUReWeighting),"pileup","pileup_jt400");
     }
 
+   if(!outputDir.IsNull() && !outputDir.EndsWith("/")) outputDir += "/";
+   TFile *outf = TFile::Open(outputDir+"Closure_"+
+                             JetInfo::ListToString(algs,TString("_"))+".root",
+                             "RECREATE");
+
    //
    // Loop over the algorithms
    //
@@ -195,8 +201,8 @@ int main(int argc,char**argv)
       JetInfo jetInfo(algs[a]);
 
       TFile *inf = new TFile(inputFilename);
-      if(!outputDir.IsNull() && !outputDir.EndsWith("/")) outputDir += "/";
-      TFile *outf = new TFile(outputDir+"Closure_"+algs[a]+".root","RECREATE");
+      TDirectoryFile* odir = (TDirectoryFile*)outf->mkdir(algs[a]);
+      odir->cd();
   
       int j,k;
       unsigned char nref;
@@ -220,12 +226,13 @@ int main(int argc,char**argv)
       Long64_t npv(0);
       Long64_t evt(0);
       Long64_t run(0);
-      TH2F *RespVsPt_Bar;
-      TH2F *RespVsPt_End;
-      TH2F *RespVsPt_IEnd;
-      TH2F *RespVsPt_OEnd;
-      TH2F *RespVsPt_Fwd;
-      TH2F *RespVsEta[NPtBins];
+      vector<TH2F*> RelRspVsRefPt;
+      //TH2F *RespVsPt_Bar;
+      //TH2F *RespVsPt_End;
+      //TH2F *RespVsPt_IEnd;
+      //TH2F *RespVsPt_OEnd;
+      //TH2F *RespVsPt_Fwd;
+      TH2F *RelRspVsJetEta[NPtBins];
       TH3F *RespVsEtaVsPt;
       TH3F *ScaleVsEtaVsPt;
       TProfile *RelRspVsSumPt;
@@ -342,16 +349,24 @@ int main(int argc,char**argv)
       //
       // book histograms
       //
-      RespVsPt_Bar = new TH2F("RespVsPt_Bar","RespVsPt_Bar",NPtBins,vpt,NRespBins,RespLow,RespHigh);
-      RespVsPt_Bar->Sumw2(); 
-      RespVsPt_End = new TH2F("RespVsPt_End","RespVsPt_End",NPtBins,vpt,NRespBins,RespLow,RespHigh);
-      RespVsPt_End->Sumw2();
-      RespVsPt_IEnd = new TH2F("RespVsPt_IEnd","RespVsPt_IEnd",NPtBins,vpt,NRespBins,RespLow,RespHigh);
-      RespVsPt_IEnd->Sumw2();
-      RespVsPt_OEnd = new TH2F("RespVsPt_OEnd","RespVsPt_OEnd",NPtBins,vpt,NRespBins,RespLow,RespHigh);
-      RespVsPt_OEnd->Sumw2();
-      RespVsPt_Fwd = new TH2F("RespVsPt_Fwd","RespVsPt_Fwd",NPtBins,vpt,NRespBins,RespLow,RespHigh);
-      RespVsPt_Fwd->Sumw2();
+      for(int ieta=0; ieta<NETA_Coarse; ieta++) {
+         if(veta_coarse[ieta]<0) continue;
+         else {
+            TString hname = Form("RelRspVsRefPt_JetEta%sto%s",eta_boundaries_coarse[ieta],eta_boundaries_coarse[ieta+1]);
+            RelRspVsRefPt.push_back(new TH2F(hname,hname,NPtBins,vpt,NRespBins,RespLow,RespHigh));
+            RelRspVsRefPt.back()->Sumw2();
+         }
+      }
+      //RespVsPt_Bar = new TH2F("RespVsPt_Bar","RespVsPt_Bar",NPtBins,vpt,NRespBins,RespLow,RespHigh);
+      //RespVsPt_Bar->Sumw2(); 
+      //RespVsPt_End = new TH2F("RespVsPt_End","RespVsPt_End",NPtBins,vpt,NRespBins,RespLow,RespHigh);
+      //RespVsPt_End->Sumw2();
+      //RespVsPt_IEnd = new TH2F("RespVsPt_IEnd","RespVsPt_IEnd",NPtBins,vpt,NRespBins,RespLow,RespHigh);
+      //RespVsPt_IEnd->Sumw2();
+      //RespVsPt_OEnd = new TH2F("RespVsPt_OEnd","RespVsPt_OEnd",NPtBins,vpt,NRespBins,RespLow,RespHigh);
+      //RespVsPt_OEnd->Sumw2();
+      //RespVsPt_Fwd = new TH2F("RespVsPt_Fwd","RespVsPt_Fwd",NPtBins,vpt,NRespBins,RespLow,RespHigh);
+      //RespVsPt_Fwd->Sumw2();
       RespVsPtProfile = new TProfile("RespVsPtProfile","RespVsPtProfile",NPtBins,vpt);
       RespVsPtProfile->Sumw2();
       RespVsPtProfile->SetErrorOption("s");
@@ -392,8 +407,8 @@ int main(int argc,char**argv)
       SolidAngleDist    = new TH1F("SolidAngleDist","SolidAngleDist",200, -2*TMath::Pi(),2*TMath::Pi());
       for(int i=0;i<NPtBins;i++)
       {
-         sprintf(name,"RespVsEta_RefPt%sto%s",Pt[i],Pt[i+1]);
-         RespVsEta[i] = new TH2F(name,name,NETA,veta,NRespBins,RespLow,RespHigh);
+         sprintf(name,"RelRspVsJetEta_RefPt%sto%s",Pt[i],Pt[i+1]);
+         RelRspVsJetEta[i] = new TH2F(name,name,NETA,veta,NRespBins,RespLow,RespHigh);
          sprintf(name,"RelContributions_RefPt%sto%s",Pt[i],Pt[i+1]);
          RelContributions[i] = new TH1F(name,name,1999,1,2000);
          sprintf(name,"ResolutionVsEta_RefPt%sto%s",Pt[i],Pt[i+1]);
@@ -441,7 +456,7 @@ int main(int argc,char**argv)
          }
          RespVsRho->SetDirectory(0);
       }
-      outf->cd();
+      odir->cd();
       OffVsRhoVsEta = new TProfile2D("OffVsRhoVsEta","OffVsRhoVsEta",26,0,26,NETA,veta);
       OffVsRhoVsEta->Sumw2();
       RhoVsOffETVsEta = new TProfile2D("RhoVsOffETVsEta","RhoVsOffETVsEta",100,0,50,NETA,veta);
@@ -520,7 +535,7 @@ int main(int argc,char**argv)
             float ptgen  = refpt[iref];
             if (ptgen<ptgenmin) continue;
             if (doflavor && abs(pdgid)!=123 && abs(refpdgid[iref])!=abs(pdgid)) continue;
-            else if (doflavor && abs(pdgid)==123 && (abs(refpdgid[iref])>3 || abs(refpdgid[iref])==0)) continue;
+            else if (doflavor && abs(pdgid)==123 && (abs(refpdgid[iref])>2 || abs(refpdgid[iref])==0)) continue;
             float eta    = jteta[iref];
             if (etamax>0 && TMath::Abs(eta)>etamax) continue;
             float pt     = jtpt[iref];
@@ -559,27 +574,37 @@ int main(int argc,char**argv)
                weight *= LumiWeight;
             }
 
-            if (fabs(eta)<=1.3)
-            {
-               RespVsPt_Bar->Fill(ptgen,relrsp,weight);
+            //-4 to cut off the negative side of the detector
+            if(fabs(eta)<veta_coarse[NETA_Coarse]) {
+               if(debug && ievt>5400000) {
+                  cout << "fabs(eta)="<< fabs(eta) << endl;
+                  cout << "veta_coarse[NETA_Coarse]=" << veta_coarse[NETA_Coarse] << endl;
+                  cout << "getBin(fabs(eta),veta_coarse,NETA_Coarse)-4=" << getBin(fabs(eta),veta_coarse,NETA_Coarse)-4 << endl;
+               }
+               RelRspVsRefPt[getBin(fabs(eta),veta_coarse,NETA_Coarse)-4]->Fill(ptgen,relrsp,weight);
             }
-            if ((fabs(eta)<=3.0) && (fabs(eta)>1.3))
-            {
-               RespVsPt_End->Fill(ptgen,relrsp,weight);
-            }
-            if ((fabs(eta)<=2.5) && (fabs(eta)>1.3))
-            {
-               RespVsPt_IEnd->Fill(ptgen,relrsp,weight);
-            }
-            if ((fabs(eta)<=3.0) && (fabs(eta)>2.5))
-            {
-               RespVsPt_OEnd->Fill(ptgen,relrsp,weight);
-            }
-            if ((fabs(eta)<=5.0) && (fabs(eta)>3))
-            {
-               RespVsPt_Fwd->Fill(ptgen,relrsp,weight); 
-            }
-              
+
+            //if (fabs(eta)<=1.3)
+            //{
+            //   RespVsPt_Bar->Fill(ptgen,relrsp,weight);
+            //}
+            //if ((fabs(eta)<=3.0) && (fabs(eta)>1.3))
+            //{
+            //   RespVsPt_End->Fill(ptgen,relrsp,weight);
+            //}
+            //if ((fabs(eta)<=2.5) && (fabs(eta)>1.3))
+            //{
+            //   RespVsPt_IEnd->Fill(ptgen,relrsp,weight);
+            //}
+            //if ((fabs(eta)<=3.0) && (fabs(eta)>2.5))
+            //{
+            //   RespVsPt_OEnd->Fill(ptgen,relrsp,weight);
+            //}
+            //if ((fabs(eta)<=5.0) && (fabs(eta)>3))
+            //{
+            //   RespVsPt_Fwd->Fill(ptgen,relrsp,weight); 
+            //}
+
             if(HigherDist->FindBin(scale*pt) < HigherDist->FindBin(ptgen)) HigherDist->Fill(scale*pt,weight);
             if(MiddleDist->FindBin(scale*pt) == MiddleDist->FindBin(ptgen)) MiddleDist->Fill(scale*pt,weight);
             if(LowerDist->FindBin(scale*pt) > LowerDist->FindBin(ptgen)) LowerDist->Fill(scale*pt,weight);
@@ -593,7 +618,7 @@ int main(int argc,char**argv)
             k = getBin(eta,veta,NETA);
             if (j<NPtBins && j>=0 && k<NETA && k>=0)
             {
-               RespVsEta[j]->Fill(eta,relrsp,weight);
+               RelRspVsJetEta[j]->Fill(eta,relrsp,weight);
                RelContributions[j]->Fill(scale*pt,weight);
                if(readRespVsPileup.IsNull())
                { 
@@ -782,12 +807,14 @@ int main(int argc,char**argv)
          tempout.Close();
          RhoVsPileupVsEta->WriteToFile(outputDir+"RhoVsPileupVsEta_"+jetInfo.alias+".root");
       }
-      cout << "DONE" << endl << "Write " << "Closure_" << algs[a] << ".root" << " ... ";
-      outf->cd();
-      outf->Write();
-      outf->Close();
       cout << "DONE" << endl;
    }//for(unsigned int a=0; a<algs.size(); a++)
+
+   cout << "Write " << "Closure.root" << " ... ";
+   outf->cd();
+   outf->Write();
+   cout << "DONE" << endl;
+   outf->Close();
 
    m_benchmark->Stop("event"); 
    cout << "jet_correction_analyzer_x" << endl << "\tCPU time = " << m_benchmark->GetCpuTime("event") << " s" << endl
@@ -822,12 +849,13 @@ string get_flavor_name(int pdgid)
 {
    string result;
    int abspdgid = abs(pdgid);
-   if      (abspdgid==1 || abspdgid==2 || abspdgid==3) result = "qJ";
-   else if (abspdgid==123)                             result = "qJ"; 
-   else if (abspdgid==4)                               result = "cJ";
-   else if (abspdgid==5)                               result = "bJ";
-   else if (abspdgid==21)                              result = "gJ";
-   else if (abspdgid==9999)                            result = "aJ";
+   if      (abspdgid==1 || abspdgid==2) result = "qJ";
+   else if (abspdgid==123)              result = "qJ"; 
+   else if (abspdgid==3)                result = "sJ";
+   else if (abspdgid==4)                result = "cJ";
+   else if (abspdgid==5)                result = "bJ";
+   else if (abspdgid==21)               result = "gJ";
+   else if (abspdgid==9999)             result = "aJ";
    else {
       cout << "***ERROR***get_flavor_name::flavor for PDGID="<<pdgid<<" is not known"<<endl;
    } 

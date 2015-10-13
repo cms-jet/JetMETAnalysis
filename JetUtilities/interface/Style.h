@@ -78,11 +78,12 @@ inline void tdrDraw(TMultiGraph* mg, string opt) {
   mg->Draw((opt+"SAME").c_str());
 }
 
-inline TLegend *tdrLeg(double x1, double y1, double x2, double y2) {
+inline TLegend *tdrLeg(double x1, double y1, double x2, double y2, int alignment = 12) {
   TLegend *leg = new TLegend(x1, y1, x2, y2, "", "brNDC");
   leg->SetFillStyle(kNone);
   leg->SetBorderSize(0);
   leg->SetTextSize(0.045);
+  leg->SetTextAlign(alignment);
   leg->Draw();
   return leg;
 }
@@ -611,5 +612,19 @@ inline void reset_globals() {
   drawLogo      = false;
 }
 */
+
+//From Rene Brun
+//https://root.cern.ch/root/roottalk/roottalk02/0654.html
+inline Int_t countpads(TVirtualPad *pad) {
+   //count the number of pads in pad
+   if (!pad) return 0;
+   Int_t npads = 0;
+   TObject *obj;
+   TIter next(pad->GetListOfPrimitives());
+   while ((obj = next())) {
+      if (obj->InheritsFrom(TVirtualPad::Class())) npads++;
+   }
+   return npads;
+}
 
 #endif

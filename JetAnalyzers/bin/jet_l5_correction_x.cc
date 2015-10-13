@@ -502,7 +502,9 @@ void interpolate_flavor(vector<TGraphErrors*>& v, vector<TGraphErrors*>& vint, v
    for(unsigned int i=0; i<vall.size(); i++)
    {
       vint.push_back(new TGraphErrors());
-      vint.back()->SetName(TString(v[i]->GetName())+"_norm");
+      TString orig_name = TString(v[i]->GetName());
+      //vint.back()->SetName(TString(v[i]->GetName())+"_norm");
+      vint.back()->SetName(orig_name.Insert(orig_name.First("_"),"_norm"));
       
       for(int j=0; j<vall[i]->GetN(); j++)
       {

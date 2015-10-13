@@ -6,7 +6,7 @@
 //            09/01/2011 Alexx Perloff  <aperloff@physics.tamu.edu>
 ///////////////////////////////////////////////////////////////////
 
-#include "JetMETAnalysis/JetAnalyzers/interface/Style.h"
+#include "JetMETAnalysis/JetUtilities/interface/Style.h"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 #include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
 
@@ -82,16 +82,23 @@ int main(int argc,char**argv)
       TH1F *hClosure[NPtBins+1];
       for(int i=0;i<NPtBins;i++)
         {
-          sprintf(name,"RespVsEta_RefPt%sto%s",Pt[i],Pt[i+1]);
+          sprintf(name,"RelRspVsJetEta_RefPt%sto%s",Pt[i],Pt[i+1]);
           RespVsEta[i] = (TH2F*)inf->Get(name);
-          sprintf(name,"ClosureVsEta_RefPt%sto%s",Pt[i],Pt[i+1]);
+          sprintf(name,"ClosureVsJetEta_RefPt%sto%s",Pt[i],Pt[i+1]);
           hClosure[i] = new TH1F(name,name,NETA,veta);
         }
       //
       // book histogram for total pt range
       //
-      RespVsEta[NPtBins] = (TH2F*)(((TH3F*)inf->Get("RespVsEtaVsPt"))->Project3D("zyoe"));
-      sprintf(name,"ClosureVsEta_RefPt%sto%s",Pt[0],Pt[NPtBins]);
+      TH3F* RespVsEtaVsPt = ((TH3F*)inf->Get("RespVsEtaVsPt"));
+      if(algs[a].Contains("calo",TString::kIgnoreCase) || JetInfo::contains_loose(algs,TString("calo"))) {
+        RespVsEtaVsPt->GetXaxis()->SetRangeUser(30,vpt[NPtBins]);
+        sprintf(name,"ClosureVsEta_MultiBin_RefPt%sto%s","30",Pt[NPtBins]);
+      }
+      else {
+        sprintf(name,"ClosureVsEta_MultiBin_RefPt%sto%s",Pt[0],Pt[NPtBins]);
+      }
+      RespVsEta[NPtBins] = (TH2F*)(RespVsEtaVsPt->Project3D("zyoe"));
       hClosure[NPtBins] = new TH1F(name,name,NETA,veta);
 
       TH1D *h[NPtBins+1][NETA];
@@ -190,16 +197,20 @@ int main(int argc,char**argv)
           pave[i]->AddText("QCD Monte Carlo");
           pave[i]->AddText(JetInfo::get_legend_title(string(algs[a])).c_str());
 
-          if(i!=NPtBins)
-            {
-              pave[i]->AddText(TString(Pt[i])+" GeV < p_{T}^{GEN} < "+TString(Pt[i+1])+" GeV");
-              ss = "ClosureVsEta_RefPt"+TString(Pt[i])+"to"+TString(Pt[i+1])+"_"+algs[a];
+          if(i!=NPtBins) {
+            pave[i]->AddText(TString(Pt[i])+" GeV < p_{T}^{GEN} < "+TString(Pt[i+1])+" GeV");
+            ss = "ClosureVsJetEta_RefPt"+TString(Pt[i])+"to"+TString(Pt[i+1])+"_"+algs[a];
+          }
+          else { 
+            if(algs[a].Contains("calo",TString::kIgnoreCase) || JetInfo::contains_loose(algs,TString("calo"))) {
+              pave[i]->AddText("30 GeV < p_{T}^{GEN} < "+TString(Pt[NPtBins])+" GeV");
+              ss = "ClosureVsJetEta_MultiBin_RefPt30to"+TString(Pt[NPtBins])+"_"+algs[a];
             }
-          else
-            { 
+            else {
               pave[i]->AddText(TString(Pt[0])+" GeV < p_{T}^{GEN} < "+TString(Pt[NPtBins])+" GeV");
-              ss = "ClosureVsEta_RefPt"+TString(Pt[0])+"to"+TString(Pt[NPtBins])+"_"+algs[a];
+              ss = "ClosureVsJetEta_MultiBin_RefPt"+TString(Pt[0])+"to"+TString(Pt[NPtBins])+"_"+algs[a];
             }
+          }
           if(!flavor.IsNull()) ss+="_"+flavor;
 
           TH1D* frame = new TH1D();
@@ -223,7 +234,8 @@ int main(int argc,char**argv)
           //lineMinus2->Draw("same");
           pave[i]->Draw("same");
           can[i]->Print(outputDir+"/"+ss+outputFormat);
-          hClosure[i]->Write();
+          //if(i!=NPtBins)
+            hClosure[i]->Write();
         }//for(int i=0;i<NPtBins+1;i++)
 
       TString ss("ClosureVsEta_Overview");

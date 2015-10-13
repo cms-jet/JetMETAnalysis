@@ -36,7 +36,7 @@
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 #include "JetMETAnalysis/JetUtilities/interface/ObjectLoader.h"
 #include "JetMETAnalysis/JetAnalyzers/interface/REStyle.h"
-#include "JetMETAnalysis/JetAnalyzers/interface/Style.h"
+#include "JetMETAnalysis/JetUtilities/interface/Style.h"
 
 using namespace std;
 
@@ -88,7 +88,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
    TIter nextHist(gDirectory->GetListOfKeys());
    TKey* histKey(0);
    while ((histKey=(TKey*)nextHist())) {
-      if (JetInfo::vfind(histogram_types, NHistogramTypes, histKey->GetClassName())<0) continue;
+      if (JetInfo::vfind(histogram_types, NHistogramTypes, TString(histKey->GetClassName()))<0) continue;
       histograms[histKey->GetName()] = (TH1*)histKey->ReadObj();
    }
    TString hname = "";

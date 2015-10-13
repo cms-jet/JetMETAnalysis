@@ -4,7 +4,7 @@
 using namespace std;
 
 //______________________________________________________________________________
-string JetInfo::get_legend_title(const string& alg, bool withSize, bool parentheses)
+string JetInfo::get_legend_title(const string& alg, bool withSize, bool withAlg, bool parentheses)
 {
   string title;
   string tmp(alg);
@@ -26,17 +26,26 @@ string JetInfo::get_legend_title(const string& alg, bool withSize, bool parenthe
   double jet_size; stringstream ss1; ss1<<tmp.substr(0,pos); ss1>>jet_size;
   jet_size/=10.0;  stringstream ss2; ss2<<jet_size;
 
-  if (withSize)
-    if (parentheses)
-      title += ss2.str() + ", (" + RECO[ireco] + ")";
-    else
-      title += ss2.str() + ", " + RECO[ireco];
+  if (withSize) {
+     title += ss2.str();
+  }
   else {
-    title = title.substr(0,title.size()-4);
-    if(parentheses)
-      title += " (" + RECO[ireco] + ")";
-    else
-      title += " " + RECO[ireco];
+     title = title.substr(0,title.size()-4);
+  }
+
+  if (withAlg) {
+     if (withSize)
+        title += ", ";
+     else
+        title += " ";
+
+     if (parentheses)
+        title += "(" + RECO[ireco] + ")";
+     else
+        title += RECO[ireco];
+  }
+  else {
+     return title;
   }
 
   return title;
@@ -61,6 +70,47 @@ int JetInfo::vfind(vector<TString> a, TString b) {
 }
 
 //______________________________________________________________________________
+bool JetInfo::contains(const vector<std::string>& collection,const std::string& element)
+{
+  vector<std::string>::const_iterator it;
+  for (it=collection.begin();it!=collection.end();++it)
+    if ((*it)==element) return true;
+  return false;
+}
+
+//______________________________________________________________________________
+bool JetInfo::contains(const vector<TString>& collection,const TString& element)
+{
+  vector<TString>::const_iterator it;
+  for (it=collection.begin();it!=collection.end();++it)
+    if ((*it)==element) return true;
+  return false;
+}
+
+//______________________________________________________________________________
+bool JetInfo::contains_loose(const vector<TString>& collection, const TString& element) {
+  vector<TString>::const_iterator it;
+  for (it=collection.begin();it!=collection.end();++it)
+    if ((*it).Contains(element)) return true;
+  return false;
+}
+
+//______________________________________________________________________________
+int JetInfo::getBin(double x, const double boundaries[], int length) {
+   int i;
+   int n = length;
+   if (n<=0) return -1;
+   if (x<boundaries[0] || x>=boundaries[n])
+      return -1;
+   for(i=0;i<n;i++)
+   {
+      if (x>=boundaries[i] && x<boundaries[i+1])
+         return i;
+   }
+   return 0; 
+}
+
+//______________________________________________________________________________
 TString JetInfo::getAlgorithm(TString s) {
   TRegexp e1("^[a-zA-Z]+"); //gets algorithm
   TString alg = s(e1);
@@ -75,6 +125,21 @@ TString JetInfo::getAlgorithm(TString s) {
   }
 
   return "";
+}
+
+//______________________________________________________________________________
+TString JetInfo::checkAlgorithm(TString s) {
+  TRegexp e1("^[a-zA-Z]+"); //gets algorithm
+  TString alg = s(e1);
+
+  int ialg = vfind(algorithms,NAlgorithms,alg);
+  if(ialg>-1) {
+    return algorithms[ialg];
+  }
+  else {
+    cout << "ERROR::checkAlgorithm Could not find the algorithm that corresponds to " << alg << "." << endl;
+    return "unknown";
+  }
 }
 
 //______________________________________________________________________________
@@ -352,3 +417,30 @@ vector<int> JetInfo::getPDGIDIndecies(int pdgid) {
    return res;
 }//getPDGIDIndecies
 
+//______________________________________________________________________________
+TString JetInfo::ListToString ( const std::vector<TString> &list, TString delimiter )
+{
+   TString result;
+   for(unsigned int i=0; i<list.size(); i++) {
+      if(i<list.size()-1)
+         result += list[i] + TString(delimiter);
+      else
+         result += list[i];
+   }
+   return result;
+}
+
+//______________________________________________________________________________
+template <typename T>
+T JetInfo::StringToNumber ( const string &Text, T defValue )
+{
+   stringstream ss;
+   for ( string::const_iterator i=Text.begin(); i!=Text.end(); ++i ) {
+      if (*i=='l')
+         break;
+      if ( isdigit(*i) || *i=='e' || *i=='-' || *i=='+' || *i=='.' )
+         ss << *i;
+   }
+   T result;
+   return ss >> result ? result : defValue;
+}

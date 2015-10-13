@@ -12,7 +12,7 @@
 // it will produce validation plots as well.
 ///////////////////////////////////////////////////////////////////
 
-#include "JetMETAnalysis/JetAnalyzers/interface/Style.h"
+#include "JetMETAnalysis/JetUtilities/interface/Style.h"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 #include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
