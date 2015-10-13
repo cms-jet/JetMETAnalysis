@@ -136,7 +136,7 @@ int main(int argc,char**argv)
   float          etaforwardmax     = cl.getValue<float>  ("etaforwardmax",            +5.0);
   bool           dobalance         = cl.getValue<bool>   ("dobalance",               false);
   bool           doflavor          = cl.getValue<bool>   ("doflavor",                false);
-  TString        flavorDefinition  = cl.getValue<TString>("flavorDefinition",       "algo");
+  TString        flavorDefinition  = cl.getValue<TString>("flavorDefinition",       "phys");
   bool           noabsflavors      = cl.getValue<bool>   ("noabsflavors",            false);
   float          drmax             = cl.getValue<float>  ("drmax",                     0.3);
   float          dphimin           = cl.getValue<float>  ("dphimin",                   2.7);
