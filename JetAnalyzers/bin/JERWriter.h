@@ -164,7 +164,8 @@ struct JERWriter
 	      if (0==f) {ssfile<<"ERROR\n";continue;}
 
 	      ssfile<<" "<<var2<<" "<<(2+f->GetNpar())
-		    <<" 0. 99999. ";
+		    //<<" 0. 99999. ";
+        << " " << f->GetXmin() << " " << f->GetXmax() << " ";
 	      for (int itf=0;itf<f->GetNpar()-1;itf++) 
 		ssfile<<f->GetParameter(itf)<<" ";
 	      ssfile<<f->GetParameter(f->GetNpar()-1);
@@ -201,7 +202,8 @@ struct JERWriter
 	    if (0==f) {ssfile<<"ERROR\n";continue;}
 
 	    ssfile<<" "<<var2<<" "<<(2+f->GetNpar())
-		  <<" 0. 99999. ";
+		  //<<" 0. 99999. ";
+      << " " << f->GetXmin() << " " << f->GetXmax() << " ";
 	    for (int itf=0;itf<f->GetNpar()-1;itf++) 
 	      ssfile<<f->GetParameter(itf)<<" ";
 	    ssfile<<f->GetParameter(f->GetNpar()-1);
