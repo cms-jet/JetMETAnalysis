@@ -14,6 +14,7 @@
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 
 #include "TSystem.h"
+#include "TEnv.h"
 #include "TMath.h"
 #include "TFile.h"
 #include "TDirectory.h"
@@ -65,6 +66,11 @@ int main(int argc,char**argv)
   
   if(!cl.check()) return 0;
   cl.print();
+  
+  //
+  // Speed up loading of data from the input file
+  //
+  gEnv->SetValue("TFile.AsyncPrefetching", 1);
   
   if (output.empty()) {
     output=input.substr(0,input.find(".root"))+"_jec.root";
