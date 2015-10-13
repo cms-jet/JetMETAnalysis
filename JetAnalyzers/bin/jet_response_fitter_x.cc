@@ -9,6 +9,7 @@
 
 
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
+#include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
 
 #include <TROOT.h>
 #include <TSystem.h>
@@ -18,6 +19,7 @@
 #include <TF1.h>
 #include <TVirtualFitter.h>
 #include <TMath.h>
+#include <TSpectrum.h>
 
 #include <iostream>
 #include <fstream>
@@ -39,14 +41,16 @@ using namespace std;
 void fit_gaussian(TH1F*& hrsp,
                   const double nsigma,
                   const double jtptmin,
-                  const int niter);
+                  const int niter,
+                  const int verbose);
 
 /// optional double sided crystal ball fit to response distributions
 int fit_dscb(TH1F*& hrsp,
              const double nsigma,
              const double jtptmin,
              const int niter,
-             const string alg);
+             const string alg,
+             const int verbose);
 
 /// double sided crystal ball function definition
 double fnc_dscb(double*xx,double*pp);
@@ -88,7 +92,12 @@ int main(int argc,char**argv)
   int            ndfmin  = cl.getValue<int>    ("ndfmin",         5);
   vector<string> algs    = cl.getVector<string>("algs",          "");
   int            verbose = cl.getValue<int>    ("verbose",        0);
-  int            fittype = cl.getValue<int>    ("fittype",        0);         
+  int            fittype = cl.getValue<int>    ("fittype",        0);
+  bool           doAbsRsp= cl.getValue<bool>   ("doAbsRsp",    true);
+  bool           doRelRsp= cl.getValue<bool>   ("doRelRsp",    true);
+  bool           doEtaRsp= cl.getValue<bool>   ("doEtaRsp",   false);
+  bool           doPhiRsp= cl.getValue<bool>   ("doPhiRsp",   false);
+  bool           doFlavor= cl.getValue<bool>   ("doFlavor",   false);
   
   if (!cl.check()) return 0;
   cl.print();
@@ -151,16 +160,50 @@ int main(int argc,char**argv)
       
       TH1F* hrsp = (TH1F*)histKey->ReadObj();
       string histname(hrsp->GetName());
-      
-      if (histname.find("RelRsp")>5&&histname.find("AbsRsp")!=0) {
+
+      //
+      // check if the histogram name contains a flavor
+      // if it does and doFlavor is set to false, skip the histogram
+      //
+      if(!doFlavor) {
+        vector<string> fields;
+        JetInfo::process(histname,char('_'),fields);
+        if(JetInfo::contains(flavors,fields[0])) {
+          hrsp->Write();
+          continue;
+        }
+      }
+
+      //
+      // Do not fit the RefPt or JetPt histograms
+      //
+      if(histname.find("RefPt")<5 || histname.find("JetPt")<5) {
         hrsp->Write();
         continue;
       }
+
+      //
+      // check if the histogram name contains any of the known options
+      //
+      if((!doAbsRsp || histname.find("AbsRsp")!=0) &&
+         (!doRelRsp || histname.find("RelRsp")>5) &&
+         (!doEtaRsp || histname.find("EtaRsp")>5) &&
+         (!doPhiRsp || histname.find("PhiRsp")>5)) {
+        hrsp->Write();
+        continue;
+      }
+
+      //if(verbose>0) cout << "Attempting to fit " << histname << " ... " << endl;
+
+      //if (histname.find("RelRsp")>5&&histname.find("AbsRsp")!=0) {
+      //  hrsp->Write();
+      //  continue;
+      //}
       
       if (hrsp->Integral()>0.0) {
         int fitstatus(0);
-        if (0==fittype) fit_gaussian(hrsp,nsigma,jtptmin,niter);
-        else fitstatus = fit_dscb(hrsp,nsigma,jtptmin,niter,alg);
+        if (0==fittype) fit_gaussian(hrsp,nsigma,jtptmin,niter,verbose);
+        else fitstatus = fit_dscb(hrsp,nsigma,jtptmin,niter,alg,verbose);
 
         TF1* fitfnc = (TF1*) hrsp->GetListOfFunctions()->Last();
         if (0!=fitfnc && 0==fitstatus) fitfnc->ResetBit(TF1::kNotDraw);
@@ -216,7 +259,8 @@ int fit_dscb(TH1F*& hrsp,
              const double nsigma,
              const double jtptmin,
              const int niter,
-             const string alg)
+             const string alg,
+             const int verbose)
 {
   if (0==hrsp) {
     cout<<"ERROR: Empty pointer to fit_dscb()"<<endl;return -1;
@@ -224,7 +268,7 @@ int fit_dscb(TH1F*& hrsp,
 
   // first use a gaussian to constrain crystal ball gaussian core
 
-  fit_gaussian(hrsp,nsigma,jtptmin,niter);
+  fit_gaussian(hrsp,nsigma,jtptmin,niter,verbose);
 
   TF1* fgaus = hrsp->GetFunction("fgaus");
   if (0==fgaus) {
@@ -247,11 +291,32 @@ int fit_dscb(TH1F*& hrsp,
       rspMax = jtptmin-ptRefMax;
   }
   
+  vector<double> vv; //Added by Alexx
   double fitrange_min(0.0);
   if (alg.find("pf")!=string::npos) fitrange_min = std::max(rspMax,0.3);
   else if (alg.find("PF")!=string::npos) fitrange_min = std::max(rspMax,0.3);
-  else fitrange_min = std::max(rspMax,0.2);
+  else {
+     double first_nonzero_bin = 0.0;
+     for(int ibin=1; ibin<=hrsp->GetNbinsX();ibin++) {
+        if(first_nonzero_bin==0 && hrsp->GetBinContent(ibin)!=0) {
+           first_nonzero_bin = hrsp->GetBinCenter(ibin);
+           break;
+        }
+     }
+     vv.push_back(rspMax);
+     vv.push_back(hrsp->GetXaxis()->GetXmin());
+     vv.push_back(0.2);
+     vv.push_back(first_nonzero_bin);
+     fitrange_min = *std::max_element(vv.begin(),vv.end());
+  }
+  //else fitrange_min = std::max(rspMax,0.2);
   double fitrange_max = 1.7;
+  if (histname.find("EtaRsp")==0 ||
+      histname.find("PhiRsp")==0) {
+    fitrange_min = -0.2;
+    fitrange_max = 0.2;
+  }
+
 
   adjust_fitrange(hrsp,fitrange_min,fitrange_max);
   //guesstimate_fitrange(hrsp,fitrange_min,fitrange_max,alg);
@@ -281,17 +346,25 @@ int fit_dscb(TH1F*& hrsp,
 
     fdscb->FixParameter(1,mean);
     fdscb->FixParameter(2,sigma);
-    
+
     if (i>0) fdscb->FixParameter(3,aone);
     else fdscb->SetParLimits(3,1.,5.);
 
     if (i>1) fdscb->FixParameter(5,atwo);
     else fdscb->SetParLimits(5,1.,5.);
 
-    fdscb->SetParLimits(4,0.,25.);
-    fdscb->SetParLimits(6,0.,25.);
+    fdscb->SetParLimits(4,0.,100.);//25.);
+    fdscb->SetParLimits(6,0.,100.);//25.);
 
-    fitstatus = hrsp->Fit(fdscb,"RQB0+");
+    if(hrsp->GetEntries()==0) {
+       if(verbose>0)
+         cout << "Warning in <Fit>: Fit data is empty" << endl
+              << "hrsp->GetName(): " << hrsp->GetName() << endl;
+       return -1;
+    }
+    else {
+       fitstatus = hrsp->Fit(fdscb,"RQB0+");
+    }
     
     if (0==fitstatus) i=999;
 
@@ -356,7 +429,8 @@ double fnc_dscb(double*xx,double*pp)
 void fit_gaussian(TH1F*& hrsp,
                   const double nsigma,
                   const double jtptmin,
-                  const int niter)
+                  const int niter,
+                  const int verbose)
 {
   if (0==hrsp) {
     cout<<"ERROR: Empty pointer to fit_gaussian()"<<endl;return;
@@ -369,6 +443,18 @@ void fit_gaussian(TH1F*& hrsp,
 
   double norm  = hrsp->GetMaximumStored();
   double peak  = mean;
+  int nbins = 50;//100;
+  TSpectrum *spec = new TSpectrum(2);
+  if(nbins < 100) spec->Search(hrsp,6,"nobackground nodraw goff"); //turn off background removal when nbins too small
+  else spec->Search(hrsp,6,"nodraw goff");
+  Double_t* xpos = spec->GetPositionX();
+  //Double_t* ypos = spec->GetPositionY();
+  Double_t p = xpos[0];
+  //Double_t ph = ypos[0];
+  //std::cout << "peak: " << p << std::endl;
+  //std::cout << "peak height: " << ph << std::endl;
+  peak = p;
+
   double sigma = rms;
   int pos1     = histname.find("RefPt");
   int pos2     = histname.find("to",pos1);
@@ -378,6 +464,8 @@ void fit_gaussian(TH1F*& hrsp,
       rspMax = jtptmin/ptRefMax;
     if (histname.find("AbsRsp")==0)
       rspMax = jtptmin-ptRefMax;
+    if (histname.find("EtaRsp")==0 || histname.find("PhiRsp")==0)
+      rspMax = -1.0;
   }
   double xmin  = hrsp->GetXaxis()->GetXmin();
   double xmax  = hrsp->GetXaxis()->GetXmax();
@@ -395,7 +483,15 @@ void fit_gaussian(TH1F*& hrsp,
     fitfnc->SetParameter(0,norm);
     fitfnc->SetParameter(1,peak);
     fitfnc->SetParameter(2,sigma);
-    fitstatus = hrsp->Fit(fitfnc,"RQ0");
+    if(hrsp->GetEntries()==0) {
+       if(verbose>0)
+         cout << "Warning in <Fit>: Fit data is empty" << endl
+              << "hrsp->GetName(): " << hrsp->GetName() << endl;
+       return;
+    }
+    else {
+       fitstatus = hrsp->Fit(fitfnc,"RQ0");
+    }
     delete fitfnc;
     fitfnc = hrsp->GetFunction("fgaus");
     //fitfnc->ResetBit(TF1::kNotDraw);
