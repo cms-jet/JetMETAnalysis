@@ -31,9 +31,6 @@
 #include <cmath>
 #include <cassert>
 
-
-
-
 using namespace std;
 
 /// set histo range to correspond to a specific fraction of events
@@ -61,6 +58,7 @@ int main(int argc,char**argv)
   vector<string> flavors   = cl.getVector<string>("flavors",              "");
   vector<string> algs      = cl.getVector<string>("algs",                 "");
   bool           fitres    = cl.getValue<bool>   ("fitres",             true);
+  bool			 unweighted= cl.getValue<bool>	 ("unweighted",        false);
   bool           verbose   = cl.getValue<bool>   ("verbose",           false);
   bool           forcefit  = cl.getValue<bool>   ("forcefit",          false);
   int            minentries= cl.getValue<int>    ("minentries",           -1);
@@ -83,15 +81,28 @@ int main(int argc,char**argv)
   float          jptfitmin = cl.getValue<float>  ("jptfitmin",           -1.);
   float          pffitmin  = cl.getValue<float>  ("pffitmin",            -1.);
 
-  bool           semifitted= cl.getValue<bool>  ("semifitted",        false);
+  float          calofitmax= cl.getValue<float>  ("calofitmax",          -1.);
+  float          jptfitmax = cl.getValue<float>  ("jptfitmax",           -1.);
+  float          pffitmax  = cl.getValue<float>  ("pffitmax",            -1.);
+
+  bool           semifitted= cl.getValue<bool>  ("semifitted",         false);
+  float			 addUnc    = cl.getValue<float> ("addUnc",				 0.0);
+  vector<float>  fixCTerm  = cl.getVector<float>("fixCTerm",	   "-9999.0");
+  int 			 nfititer  = cl.getValue<int> 	("nfititer",			  10);
 
   if (!cl.check()) return 0;
   cl.print();
   
+  //
+  // The stochastic ([1]*[1]/x) and constant ([2]*[2]) terms are effective descriptions
+  //  that work over a limited energy range only. Tweaked to be more like the 2010 JER
+  //  description and made the stochastic exponent a parameter.
+  //
+  //const string s_sigma_calo="sqrt([0]*[0]/(x*x) + [1]*[1]/x + [2]*[2])";
+  //const string s_sigma="sqrt([0]*abs([0])/(x*x) + [1]*[1]/x + [2]*[2])";
+  const string s_sigma="sqrt([0]*abs([0])/(x*x) + [1]*[1]*pow(x,[3]) + [2]*[2])";
+  const string s_sigma_calo="sqrt([0]*[0]/(x*x) + [1]*[1]*pow(x,[3]) + [2]*[2])";
   //const string s_sigma="sqrt(((TMath::Sign(1,[0])*sq([0]/x))+(sq([1])*(x^([3]-1))))+sq([2]))";
-  const string s_sigma="[0]+[1]*log10(x)+[2]*pow(log10(x),2)+([3]/pow(log10(x),3))+"
-  					   "([4]/pow(log10(x),4))+([5]/pow(log10(x),5))";
-  const string s_sigma_jetEta="pol9";
   const string s_aone ="[0]";
   const string s_atwo ="[0]*x**[1]";
   const string s_pone ="TMath::Max(0.0,([0]-[3])/(1.+exp([1]*(x-[2])))+[3])";
@@ -111,10 +122,10 @@ int main(int argc,char**argv)
     variables.push_back("RelRsp:JetEta#1:RefPt");
     variables.push_back("RelRsp:JetY:RefPt");
     variables.push_back("RelRsp:JetY#1:RefPt");
-    variables.push_back("RelRsp_Barrel:RefPt");
-    variables.push_back("RelRsp_InnerEndcap:RefPt");
-    variables.push_back("RelRsp_OuterEndcap:RefPt");
-    variables.push_back("RelRsp_Forward:RefPt");
+    //variables.push_back("RelRsp_Barrel:RefPt");
+    //variables.push_back("RelRsp_InnerEndcap:RefPt");
+    //variables.push_back("RelRsp_OuterEndcap:RefPt");
+    //variables.push_back("RelRsp_Forward:RefPt");
   }
   if (doabsrsp) {
     variables.push_back("AbsRsp:RefPt");
@@ -144,6 +155,8 @@ int main(int argc,char**argv)
     if (flavors.front()=="all") {
       flavors.clear();
       flavors.push_back("uds");
+      flavors.push_back("ud");
+      flavors.push_back("s");
       flavors.push_back("c");
       flavors.push_back("b");
       flavors.push_back("g");
@@ -377,6 +390,11 @@ int main(int argc,char**argv)
 	  //epone = std::sqrt(epone*epone+.0005*.0005);
 	  //eptwo = std::sqrt(eptwo*eptwo+.0005*.0005);
 	}
+	if(addUnc>0.0) {
+		// add an additional uncertainty in quadrature to each point
+		addUnc *= e;
+		ee  = std::sqrt(ee*ee+addUnc*addUnc);
+	}
 
 	int n = grsp->GetN();
 	grsp->SetPoint(n,x,y);
@@ -414,10 +432,15 @@ int main(int argc,char**argv)
 	//TVirtualFitter::SetDefaultFitter("Minuit2");
 
 	double fitmin(0.0);
+	double fitmax(0.0);
 
 	if (calofitmin!=-1. && alg.find("calo")!=string::npos)fitmin = calofitmin;
 	if (jptfitmin!=-1. && alg.find("jpt")!=string::npos)  fitmin = jptfitmin;
 	if (pffitmin!=-1. && alg.find("pf")!=string::npos)    fitmin = pffitmin;
+
+	if (calofitmax!=-1. && alg.find("calo")!=string::npos)fitmax = calofitmax;
+	if (jptfitmax!=-1. && alg.find("jpt")!=string::npos)  fitmax = jptfitmax;
+	if (pffitmax!=-1. && alg.find("pf")!=string::npos)    fitmax = pffitmax;
 
 	// SIGMA
 	for (unsigned int igraph=0;igraph<vres.size();igraph++) {
@@ -431,14 +454,15 @@ int main(int argc,char**argv)
 	  for (int ipoint=0;ipoint<g->GetN();ipoint++)
 	    if (g->GetX()[ipoint]>xmax) xmax = g->GetX()[ipoint];
 
-	  if (fitmin!=0.0) xmin = fitmin;
+	  if (fitmin!=0.0 && fitmin>xmin) xmin = fitmin;
+	  if (fitmax!=0.0 && fitmax<xmax) xmax = fitmax;
 
 	  //TF1* fnc=new TF1("fit",
 		//	   s_sigma.c_str(),
 		//	   xmin,xmax);
 	  TF1* fnc = 0;
-	  if(TString(g->GetName()).Contains("VsJetEta")) {
-	  	fnc = new TF1("fit",s_sigma_jetEta.c_str(),xmin,xmax);
+	  if(alg.find("calo")!=string::npos) {
+	  	fnc = new TF1("fit",s_sigma_calo.c_str(),xmin,xmax);
 	  }
 	  else {
 	  	fnc = new TF1("fit",s_sigma.c_str(),xmin,xmax);
@@ -453,16 +477,32 @@ int main(int argc,char**argv)
 
 	  //fnc->FixParameter(2,0.);
 
-	  if(!TString(g->GetName()).Contains("VsJetEta")) {
-		fnc->SetParameter(0,0.5);
-	    fnc->SetParameter(1,9.0);
-	    fnc->SetParameter(2,8.0);
-	    fnc->SetParameter(3,-0.3);
-	    fnc->SetParameter(4,0.6);
-	    fnc->SetParameter(5,1.0);
-	  }	  
+	  if(alg.find("calo")!=string::npos) {
+		fnc->SetParameters(+1,1,0.05,-0.8);
+	  }
+	  else{
+	  	fnc->SetParameters(-1,1,0.05,-0.8);
+	  }
 
-	  int fitstatus = g->Fit(fnc,"QR+");
+	  if(fixCTerm.size()==algs.size()) {
+	  	if(fixCTerm[ialg]>-9999.0) {
+	  		fnc->FixParameter(2,fixCTerm[ialg]);
+	  	}
+	  }
+
+	  TString fit_options = "QR+";
+	  if(unweighted) fit_options = "W" + fit_options;
+	  //int fitstatus = g->Fit(fnc,fit_options);
+	  int fitstatus = -1;
+	  for(int i=0; i<nfititer; i++) {
+	  	if(fitstatus==0)
+	  		i=nfititer+1;
+	  	else {
+	  		if(g->GetListOfFunctions()->Last())
+		  		g->GetListOfFunctions()->Last()->Delete();
+		  	fitstatus = g->Fit(fnc,fit_options);
+		}
+	  }
 
 	  if (0==fitstatus) resolutions.addEntry(g->GetName(),fnc);
 
@@ -472,7 +512,8 @@ int main(int argc,char**argv)
 		  <<" alg: "<<alg
 		  <<" var: "<<variable
 		  <<" name: "<<g->GetName()<<endl;
-	    g->GetListOfFunctions()->Last()->Delete();
+		if(g->GetListOfFunctions()->Last())
+	      g->GetListOfFunctions()->Last()->Delete();
 	    if (verbose)
 	      cout<<"...fnc deleted!"<<endl;
 	  }
@@ -684,8 +725,6 @@ int main(int argc,char**argv)
 
   return 0;
 }
-
-
 
 //______________________________________________________________________________
 void set_range_truncatedRMS(TH1* hist,float frac)
