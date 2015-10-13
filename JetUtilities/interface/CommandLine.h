@@ -12,8 +12,8 @@
 //
 // convert stringstream to element, allow std::string specialization
 //
-template <class T> void ssToVal(std::stringstream& ss,T& e){ss>>e;}
-template <> void ssToVal(std::stringstream& ss,std::string& e){e=ss.str();}
+template <class T> inline void ssToVal(std::stringstream& ss,T& e){ss>>e;}
+template <> inline void ssToVal(std::stringstream& ss,std::string& e){e=ss.str();}
 
 
 class CommandLine
@@ -68,7 +68,7 @@ private:
 
 //______________________________________________________________________________
 template <class T>
-T CommandLine::getValue(const std::string& name)
+inline T CommandLine::getValue(const std::string& name)
 {
   T result;
   OptionMap_t::iterator it=_options.find(name);
@@ -87,7 +87,7 @@ T CommandLine::getValue(const std::string& name)
 
 //______________________________________________________________________________
 template <class T>
-T CommandLine::getValue(const std::string& name,T default_value)
+inline T CommandLine::getValue(const std::string& name,T default_value)
 {
   OptionMap_t::const_iterator it=_options.find(name);
   if (it!=_options.end()) return getValue<T>(name);
@@ -100,10 +100,9 @@ T CommandLine::getValue(const std::string& name,T default_value)
   return default_value;
 }
 
-
 //______________________________________________________________________________
 template <>
-bool CommandLine::getValue<bool>(const std::string& name)
+inline bool CommandLine::getValue<bool>(const std::string& name)
 {
   OptionMap_t::iterator it=_options.find(name);
   if (it!=_options.end()) {
@@ -125,7 +124,7 @@ bool CommandLine::getValue<bool>(const std::string& name)
 
 //______________________________________________________________________________
 template <>
-bool CommandLine::getValue(const std::string& name,bool default_value)
+inline bool CommandLine::getValue(const std::string& name,bool default_value)
 {
   OptionMap_t::const_iterator it=_options.find(name);
   if (it!=_options.end()) return getValue<bool>(name);
