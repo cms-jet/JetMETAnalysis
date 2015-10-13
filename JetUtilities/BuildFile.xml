@@ -4,6 +4,7 @@
 <use   name="rootmath"/>
 <use   name="rootcore"/>
 <use   name="rootMinuit"/>
+<use   name="rootspectrum"/>
 <export>
   <lib   name="1"/>
 </export>
