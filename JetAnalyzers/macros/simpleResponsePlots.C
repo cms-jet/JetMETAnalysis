@@ -7,7 +7,7 @@
 #include "TPaveText.h"
 
 #include "JetMETAnalysis/JetUtilities/interface/JRANtuple.h"
-#include "JetMETAnalysis/JetAnalyzers/interface/Style.h"
+#include "JetMETAnalysis/JetUtilities/interface/Style.h"
 
 #include <iostream>
 #include <iomanip>
