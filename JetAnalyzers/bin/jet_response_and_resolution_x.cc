@@ -68,10 +68,10 @@ int main(int argc,char**argv)
   string         fera          = cl.getValue<string> ("fera",                 "");
   string         fprefix       = cl.getValue<string> ("fprefix",              "");
 
-  float          fractionRMS   =cl.getValue<float>  ("fractionRMS",          1.);
-  float          fracRMSpf     = cl.getValue<float> ("fracRMSpf",            1.);
-  float          fracRMSjpt    = cl.getValue<float> ("fracRMSjpt",           1.);
-  float          fracRMScalo   = cl.getValue<float> ("fracRMScalo",          1.);
+  float          fractionRMS   = cl.getValue<float> ("fractionRMS",           1.);
+  float          fracRMSpf     = cl.getValue<float> ("fracRMSpf",             1.);
+  float          fracRMSjpt    = cl.getValue<float> ("fracRMSjpt",            1.);
+  float          fracRMScalo   = cl.getValue<float> ("fracRMScalo",           1.);
 
   float          calomin       = cl.getValue<float>  ("calomin",             -1.);
   float          jptmin        = cl.getValue<float>  ("jptmin",              -1.);
@@ -81,7 +81,7 @@ int main(int argc,char**argv)
   float          calofitmin    = cl.getValue<float>  ("calofitmin",          -1.);
   float          jptfitmin     = cl.getValue<float>  ("jptfitmin",           -1.);
   float          pffitmin      = cl.getValue<float>  ("pffitmin",            -1.);
-  float          puppifitmin   =cl.getValue<float>  ("puppifitmin",         -1.);
+  float          puppifitmin   = cl.getValue<float>  ("puppifitmin",         -1.);
 
   float          calofitmax    = cl.getValue<float>  ("calofitmax",          -1.);
   float          jptfitmax     = cl.getValue<float>  ("jptfitmax",           -1.);
@@ -92,7 +92,7 @@ int main(int argc,char**argv)
   float			 addUnc        = cl.getValue<float> ("addUnc",				 0.0);
   vector<float>  fixCTerm      = cl.getVector<float>("fixCTerm",	   "-9999.0");
   int 			 nfititer      = cl.getValue<int> 	("nfititer",			  10);
-  string         hlvarOverride = cl.getValue<string>("hlvarOverride",         "");
+  string         xvarOverride  = cl.getValue<string>("xvarOverride",          "");
 
   if (!cl.check()) return 0;
   cl.print();
@@ -153,20 +153,6 @@ int main(int argc,char**argv)
     variables.push_back("PhiRsp:JetEta");
     variables.push_back("PhiRsp:JetEta:RefPt");
     variables.push_back("PhiRsp:JetEta#1:RefPt");
-  }
-
-  //
-  // Check if hlvarOverride is set.
-  // If so, double the entries in the variables vector.
-  //
-  if (hlvarOverride != "") {
-     vector<string>::iterator itBegin = variables.begin();
-     for(unsigned int ivar=0; ivar<variables.size(); ivar+=2) {
-        if(ivar+1<variables.size())
-           variables.insert(itBegin+ivar+1,variables[ivar]);
-        else
-           variables.emplace_back(variables[ivar]);
-     }
   }
 
   if (flavors.size()>0) {
@@ -260,7 +246,8 @@ int main(int argc,char**argv)
       hlrsp.load_objects(idir,variable);
 
       string xvar = hlrsp.variable(hlrsp.nvariables()-1);
-      if (hlvarOverride!="" && ivar%2==1) xvar = hlvarOverride;
+      if (xvarOverride!="" && xvar==xvarOverride.substr(0,xvarOverride.find(":")))
+         xvar = xvarOverride.substr(xvarOverride.find(":")+1,xvarOverride.rfind(":")-xvarOverride.find(":")-1);
       //string varexp=hlrsp.variable(hlrsp.nvariables()-1)+
       //variable.substr(variable.find(':'));
       string varexp=xvar+variable.substr(variable.find(':'));
