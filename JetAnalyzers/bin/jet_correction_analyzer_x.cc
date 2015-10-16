@@ -120,7 +120,7 @@ int main(int argc,char**argv)
    bool            useL5Cor          = cl.getValue<bool>         ("useL5Cor",          false);
    bool            doflavor          = cl.getValue<bool>         ("doflavor",          false);
    int             pdgid             = cl.getValue<int>          ("pdgid",                 0);
-   double          drmax             = cl.getValue<double>       ("drmax",                 0);
+   vector<double>  drmax             = cl.getVector<double>      ("drmax",                "");
    double          ptmin             = cl.getValue<double>       ("ptmin",                 0);
    double          ptgenmin          = cl.getValue<double>       ("ptgenmin",              0);
    double          ptrawmin          = cl.getValue<double>       ("ptrawmin",              0);
@@ -152,6 +152,16 @@ int main(int argc,char**argv)
    TBenchmark* m_benchmark = new TBenchmark();
    m_benchmark->Reset();
    m_benchmark->Start("event");
+
+   //
+   // Do some additional check
+   //
+
+   // Check that the size of the drmax values matches that of the algs
+   if(drmax.size()>0 && algs.size()!=drmax.size()) {
+      cout << "ERROR::jet_correction_analyzer_x The size of the drmax vector must match the size of the algs vector" << endl;
+      return 0;
+   }
 
    //
    // Some useful quantities
@@ -545,7 +555,7 @@ int main(int argc,char**argv)
                continue;
             }
             float dr     = refdrjt[iref];
-            if (drmax > 0 && dr > drmax) continue;
+            if (drmax.size()>0 && dr > drmax[a]) continue;
             JetCorrector->setJetPt(pt);
             JetCorrector->setJetEta(eta);
             int origIgnoreLevel = gErrorIgnoreLevel;
@@ -579,9 +589,9 @@ int main(int argc,char**argv)
                if(debug && ievt>5400000) {
                   cout << "fabs(eta)="<< fabs(eta) << endl;
                   cout << "veta_coarse[NETA_Coarse]=" << veta_coarse[NETA_Coarse] << endl;
-                  cout << "getBin(fabs(eta),veta_coarse,NETA_Coarse)-4=" << getBin(fabs(eta),veta_coarse,NETA_Coarse)-4 << endl;
+                  cout << "getBin(fabs(eta),veta_coarse,NETA_Coarse)-4=" << getBin(fabs(eta),veta_coarse,NETA_Coarse)-(NETA_Coarse/2) << endl;
                }
-               RelRspVsRefPt[getBin(fabs(eta),veta_coarse,NETA_Coarse)-4]->Fill(ptgen,relrsp,weight);
+               RelRspVsRefPt[getBin(fabs(eta),veta_coarse,NETA_Coarse)-(NETA_Coarse/2)]->Fill(ptgen,relrsp,weight);
             }
 
             //if (fabs(eta)<=1.3)
