@@ -550,7 +550,8 @@ int main(int argc,char** argv)
         if(useSpline) {
           spline = new TSpline3(Form("%s_spline",tmp->GetName()),tmp);
           spline->SetLineColor(tmp->GetLineColor());
-          spline->SetLineWidth(tmp->GetLineWidth());
+          //spline->SetLineWidth(tmp->GetLineWidth());
+          spline->SetLineWidth(1.0);
         }
         // This is do that I can draw qJ and gJ first and last of the
         //  graphs as an envelope surrounding other flavours (no markers)
@@ -1231,11 +1232,11 @@ string get_legend_label_from_alg(const string& alg)
   else if (alg.find("gk")==0) { label = "Gen k_{T}, R=";  tmp = tmp.substr(2); }
   else return alg;
   
-  string reco[6] = { "gen",  "calo",   "pfchs",    "pf",    "trk",      "jpt" };
-  string RECO[6] = { "(Gen)","(Calo)", "(PF+CHS)", "(PF)", "(Tracks)", "(JPT)" };
+  string reco[7] = { "gen",  "calo",   "pfchs",    "pf",    "trk",      "jpt",  "puppi"   };
+  string RECO[7] = { "(Gen)","(Calo)", "(PF+CHS)", "(PF)", "(Tracks)", "(JPT)", "(Puppi)" };
 
   size_t pos=string::npos; int ireco=-1;
-  while (pos==string::npos&&ireco<6) { pos = tmp.find(reco[++ireco]); }
+  while (pos==string::npos&&ireco<7) { pos = tmp.find(reco[++ireco]); }
   if (pos==string::npos) return alg;
 
   double jet_size; stringstream ss1; ss1<<tmp.substr(0,pos); ss1>>jet_size;
