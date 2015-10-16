@@ -16,6 +16,7 @@ RatioMaker::RatioMaker() {
 	numerator    	= "";
 	denominator  	= "";
 	CMEnergy	 	= 13000;
+    eta_max         = 4.7;
 	doflavor     	= false;
 	draw_guidelines = true;
 	draw_residual	= true;
@@ -49,6 +50,7 @@ RatioMaker::RatioMaker(CommandLine& cl) {
   	numerator    	= cl.getValue<string>   ("numerator",            "53X");
   	denominator  	= cl.getValue<string>   ("denominator",          "52X");
   	CMEnergy     	= cl.getValue<double>   ("CMEnergy",  			 13000);
+    eta_max         = cl.getValue<double>   ("eta_max",                4.7);
   	doflavor     	= cl.getValue<bool>     ("doflavor",             false);
   	draw_guidelines = cl.getValue<bool>		("draw_guidelines",       true);
   	draw_residual	= cl.getValue<bool>		("draw_residual",		  true);
@@ -328,10 +330,10 @@ void RatioMaker::makeRatio(const VARIABLES::Variable ivar, bool multiBin) {
 			frame->GetYaxis()->SetRangeUser(0.35,1.35);
 		}
 		else if(var == VARIABLES::refeta || var == VARIABLES::jteta) {
-			float etaMax = min(4.7,TMath::ACosH(CMEnergy/2.0/vpt[ibin]));
+			float etaMax = min(eta_max,TMath::ACosH(CMEnergy/2.0/vpt[ibin]));
 			if(hl_1.minimum(0,ibin)==30 && hl_1.maximum(0,ibin)==10000) {
-				float minEta = max(-4.7,veta[0]);
-				float maxEta = min(4.7,veta[NETA]);
+				float minEta = max(-eta_max,veta[0]);
+				float maxEta = min(eta_max,veta[NETA]);
 				frame->GetXaxis()->SetLimits(minEta,maxEta);
 				frameRatio->GetXaxis()->SetLimits(minEta,maxEta);
 			}	
@@ -433,10 +435,10 @@ void RatioMaker::makeRatio(const VARIABLES::Variable ivar, bool multiBin) {
 			}
 		}
 		else if(var == VARIABLES::refeta || var == VARIABLES::jteta) {
-			float etaMax = min(4.7,TMath::ACosH(CMEnergy/2.0/vpt[ibin]));
+			float etaMax = min(eta_max,TMath::ACosH(CMEnergy/2.0/vpt[ibin]));
 			if(hl_1.minimum(0,ibin)==30 && hl_1.maximum(0,ibin)==10000) {
-				float minEta = max(-4.7,veta[0]);
-				float maxEta = min(4.7,veta[NETA]);
+				float minEta = max(-eta_max,veta[0]);
+				float maxEta = min(eta_max,veta[NETA]);
 				hvar1->GetXaxis()->SetRangeUser(minEta,maxEta);
 				hvar2->GetXaxis()->SetRangeUser(minEta,maxEta);
 				ratioHist.back()->GetXaxis()->SetRangeUser(minEta,maxEta);

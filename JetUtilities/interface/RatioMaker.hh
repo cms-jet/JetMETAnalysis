@@ -74,7 +74,7 @@ public:
 
 private:
 	string         	 				 filepath1, filepath2, algo, numerator, denominator;
-	double							 CMEnergy;
+    double							 CMEnergy, eta_max;
 	bool           	 				 doflavor, algDiv, objects_loaded, draw_guidelines, draw_residual;
 	TString        	 				 outputDir, flavor1, flavor2;
 	vector<TString>	 				 outputFormat;
