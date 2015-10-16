@@ -40,6 +40,7 @@ struct JERWriter
   std::map<std::string,TF1*> name2func;
   std::set<std::string>      binisabs;
 
+  std::set<std::string>                  xpars;
   std::set<std::string>                   pars;
   std::map<std::string,std::set<float> >  bins;
 
@@ -64,202 +65,205 @@ struct JERWriter
 
   void writeJER()
   {
-    using namespace std;
-    if (alg.find("l2l3")==string::npos) return;
-    if (0==name2func.size()) {cout<<"Fill all entries first!"<<endl;return;}
-
-    decodeEntries();
-    
-    map<string,set<float> >::iterator itbins;
-    for (itbins=bins.begin();itbins!=bins.end();itbins++) {
-
-      stringstream ssfile;
-
-      //write the file header
-      time_t rawtime;
-      time (&rawtime);
-
-      ssfile<<"######################################################\n"
-	    <<"## auto generated file containing JER resolutions     \n"
-	    <<"## produced: "<<ctime(&rawtime)
-	    <<"## by JetMETAnalysis/JetAnalyzers/bin/JERWriter.h  \n"
-	    <<"######################################################\n\n";
+     using namespace std;
+     if (alg.find("l2l3")==string::npos) return;
+     if (0==name2func.size()) {cout<<"Fill all entries first!"<<endl;return;}
      
-      ssfile<<"######################################################\n"
-	    <<"## ERA: "<<era<<"  ALG: "<<alg<<"  TYPE: "<<(*itbins).first<<endl
-	    <<"######################################################\n\n";
-      
-      ssfile<<"[resolution]"<<endl;
-      
-      if (isptres) {
-	ssfile<<"{1 "<<(*itbins).first
-	      <<" 1 RefPt DSCB Resolution ";
-	for (unsigned i=0;i<dscb.size()-1;i++)ssfile<<dscb[i]<<":";
-	ssfile<<dscb[dscb.size()-1]<<"}\n"
-	      <<"-5. 5. 3 0. 99999. 1.\n";
+     decodeEntries();
 
-	// special for the mean here...
+     if (xpars.size()!=1) {cout<<"Can only handle 1 independent variable at a time!"<<endl;return;}
+     string xpar = (*xpars.begin());
 
-	ssfile<<"[mean]\n"
-	      <<"{1 "<<(*itbins).first<<" 1 RefPt [0] PAR0 \\mu}\n"
-	      <<"-9.9 9.9 3 0. 99999. 1.\n";
-
-
-	for (unsigned i=1;i<dscb.size();i++) {
-	  ssfile<<"["<<dscb[i]<<"]\n";
-
-
-	  stringstream ssfirstgraph;
-	  ssfirstgraph<<(*dscb2pars.find(dscb[i])).second;
-	  ssfirstgraph<<"VsRefPt_"+(*itbins).first;
-
-	  set<float>::iterator itvars = (*itbins).second.begin();
-	  ssfirstgraph<<(*itvars)<<"to";
-	  itvars++;
-	  ssfirstgraph<<(*itvars);
-
-	  map<string,TF1*>::iterator itfunc = name2func.find(ssfirstgraph.str());
-
-	  TF1* ff = (itfunc==name2func.end()) ? 0 : (*itfunc).second;
-	  
-	  if (0==ff) {cout<<"WARNING: did not find func "<<ssfirstgraph.str()<<endl;continue;}
-	  
-	  ssfile<<"{1 "<<(*itbins).first<<" 1 RefPt "
-		<<ff->GetTitle()<<" PAR"<<i<<" "
-		<<(*dscb2names.find(dscb[i])).second<<"}\n";
-
-
-	  vector<TF1*> fhistory;
-	  bool         fskip = false;
-	  
-	  if (binisabs.end()!=binisabs.find((*itbins).first)) {
-	    // absolute binning!!!
-
-	    set<float>::reverse_iterator ritvars;
-
-	    for (ritvars=(*itbins).second.rbegin();
-		 ritvars!=(*itbins).second.rend();ritvars++) {
-
-	      float var1(-1.0),var2(-1.0);
-	    
-	      stringstream ssfunc;
-	      set<float>::reverse_iterator rithelper = ritvars; rithelper++;
-	      ssfunc<<(*dscb2pars.find(dscb[i])).second;
-	      ssfunc<<"VsRefPt_"+(*itbins).first; 
-	      ssfunc<<(*rithelper)<<"to";
-	      var1 *= ((*ritvars)==5.) ? (9.9) : (*ritvars);
-	      ssfunc<<(*ritvars);
-	      var2 *= ((*rithelper)==5.) ? (9.9) : (*rithelper);
-	      itfunc = name2func.find(ssfunc.str());
-
-	      TF1* f = (itfunc==name2func.end()) ? 0 : (*itfunc).second;
-
-	      if (0==f&&fhistory.size()>0) f = fhistory.back();
-	      else fhistory.push_back(f);
-
-	      if      (0==f&&!fskip) {ssfile<<var1;fskip=true;continue;}
-	      else if (0==f&&fskip)  {continue;}
-
-	      if (!fskip) ssfile<<var1;
-	      if (0==f) {ssfile<<"ERROR\n";continue;}
-
-	      ssfile<<" "<<var2<<" "<<(2+f->GetNpar())
-		    //<<" 0. 99999. ";
-        << " " << f->GetXmin() << " " << f->GetXmax() << " ";
-	      for (int itf=0;itf<f->GetNpar()-1;itf++) 
-		ssfile<<f->GetParameter(itf)<<" ";
-	      ssfile<<f->GetParameter(f->GetNpar()-1);
-	      ssfile<<endl; fskip = false;
-	    
-	    if (++rithelper==(*itbins).second.rend()) break;
-	    }
-	  }
-
-	  for (itvars=(*itbins).second.begin();
-	       itvars!=(*itbins).second.end();itvars++) {
-	    
-	    float var1(1.0),var2(1.0);
-	    
-	    stringstream ssfunc;
-	    ssfunc<<(*dscb2pars.find(dscb[i])).second;
-	    ssfunc<<"VsRefPt_"+(*itbins).first; 
-	    ssfunc<<(*itvars)<<"to";
-	    var1 *= ((*itvars)==5.) ? (9.9) : (*itvars);
-	    set<float>::iterator ithelper = itvars; ithelper++;
-	    ssfunc<<(*ithelper);
-	    var2 *= ((*ithelper)==5.) ? (9.9) : (*ithelper);
-	    itfunc = name2func.find(ssfunc.str());
-
-	    TF1* f = (itfunc==name2func.end()) ? 0 : (*itfunc).second;
-
-	    if (0==f&&fhistory.size()>0) f = fhistory.back();
-	    else fhistory.push_back(f);
-
-	    if      (0==f&&!fskip) {ssfile<<var1;fskip=true;continue;}
-	    else if (0==f&&fskip)  {continue;}
-
-	    if (!fskip) ssfile<<var1;
-	    if (0==f) {ssfile<<"ERROR\n";continue;}
-
-	    ssfile<<" "<<var2<<" "<<(2+f->GetNpar())
-		  //<<" 0. 99999. ";
-      << " " << f->GetXmin() << " " << f->GetXmax() << " ";
-	    for (int itf=0;itf<f->GetNpar()-1;itf++) 
-	      ssfile<<f->GetParameter(itf)<<" ";
-	    ssfile<<f->GetParameter(f->GetNpar()-1);
-	    ssfile<<endl; fskip = false;
-	  
-	    if (++ithelper==(*itbins).second.end()) break;
-	  }
-	  
-	  fhistory.clear();
-
-	} // dscb[i]++
-
-      }
-      else {
-	cout<<"ERROR - non pt resolutions not yet implemented!!!"<<endl;return;
-      }
-
-      //printFile(ssfile);
-
-      ofstream jerfile;
-      stringstream ssfilename;
-
-      string algname;
-
-      if      (alg.find("ak5pfl2l3")!=string::npos)   algname="AK5PF";
-      else if (alg.find("AK5PFL2L3")!=string::npos)   algname="AK5PF";
-      else if (alg.find("ak5calol2l3")!=string::npos) algname="AK5Calo";
-      else if (alg.find("AK5CALOL2L3")!=string::npos) algname="AK5Calo";
-      else if (alg.find("ak5jptl2l3")!=string::npos)  algname="AK5JPT";
-      else if (alg.find("AK5JPTL2L3")!=string::npos)  algname="AK5JPT";
-      else if (alg.find("ak5genl2l3")!=string::npos)  algname="AK5GEN";
-      else if (alg.find("AK5GENL2L3")!=string::npos)  algname="AK5GEN";
-      else algname=alg;
-
-
-      if (!prefix.empty()) ssfilename<<prefix<<"_";
-      if (!era.empty()) ssfilename<<era<<"_";
-
-      ssfilename<<"PtResolution_"
-		<<algname;
-      if ((*itbins).first.find("JetEta")==string::npos)
-	ssfilename<<"_"<<(*itbins).first;
-		  
-      ssfilename<<".txt";
-
-      jerfile.open(ssfilename.str().c_str(), ofstream::trunc);
-      if (!jerfile.is_open()) {
-	cout<<"ERROR: Could not create "<<ssfilename.str()<<endl;return;
-      }
-      jerfile<<ssfile.str();
-      jerfile.close();
-      cout<<"Created JER file: "<<ssfilename.str()<<endl;
-      
-    } // itbins++
+     map<string,set<float> >::iterator itbins;
+     for (itbins=bins.begin();itbins!=bins.end();itbins++) {
+        
+        stringstream ssfile;
+        
+        //write the file header
+        time_t rawtime;
+        time (&rawtime);
+        
+        ssfile<<"######################################################\n"
+              <<"## auto generated file containing JER resolutions     \n"
+              <<"## produced: "<<ctime(&rawtime)
+              <<"## by JetMETAnalysis/JetAnalyzers/bin/JERWriter.h  \n"
+              <<"######################################################\n\n";
+        
+        ssfile<<"######################################################\n"
+              <<"## ERA: "<<era<<"  ALG: "<<alg<<"  TYPE: "<<(*itbins).first<<endl
+              <<"######################################################\n\n";
+        
+        ssfile<<"[resolution]"<<endl;
+        
+        if (isptres) {
+           ssfile<<"{1 "<<(*itbins).first
+                 <<" 1 "<<xpar<<" DSCB Resolution ";
+           for (unsigned i=0;i<dscb.size()-1;i++)ssfile<<dscb[i]<<":";
+           ssfile<<dscb[dscb.size()-1]<<"}\n"
+                 <<"-5. 5. 3 0. 99999. 1.\n";
+           
+           // special for the mean here...
+           
+           ssfile<<"[mean]\n"
+                 <<"{1 "<<(*itbins).first<<" 1 "<<xpar<<" [0] PAR0 \\mu}\n"
+                 <<"-9.9 9.9 3 0. 99999. 1.\n";
+           
+           
+           for (unsigned i=1;i<dscb.size();i++) {
+              ssfile<<"["<<dscb[i]<<"]\n";
+              
+              
+              stringstream ssfirstgraph;
+              ssfirstgraph<<(*dscb2pars.find(dscb[i])).second;
+              ssfirstgraph<<"Vs"+xpar+"_"+(*itbins).first;
+              
+              set<float>::iterator itvars = (*itbins).second.begin();
+              ssfirstgraph<<(*itvars)<<"to";
+              itvars++;
+              ssfirstgraph<<(*itvars);
+              
+              map<string,TF1*>::iterator itfunc = name2func.find(ssfirstgraph.str());
+              
+              TF1* ff = (itfunc==name2func.end()) ? 0 : (*itfunc).second;
+              
+              if (0==ff) {cout<<"WARNING: did not find func "<<ssfirstgraph.str()<<endl;continue;}
+              
+              ssfile<<"{1 "<<(*itbins).first<<" 1 "+xpar+" "
+                    <<ff->GetTitle()<<" PAR"<<i<<" "
+                    <<(*dscb2names.find(dscb[i])).second<<"}\n";
+              
+              
+              vector<TF1*> fhistory;
+              bool         fskip = false;
+              
+              if (binisabs.end()!=binisabs.find((*itbins).first)) {
+                 // absolute binning!!!
+                 
+                 set<float>::reverse_iterator ritvars;
+                 
+                 for (ritvars=(*itbins).second.rbegin();
+                      ritvars!=(*itbins).second.rend();ritvars++) {
+                    
+                    float var1(-1.0),var2(-1.0);
+                    
+                    stringstream ssfunc;
+                    set<float>::reverse_iterator rithelper = ritvars; rithelper++;
+                    ssfunc<<(*dscb2pars.find(dscb[i])).second;
+                    ssfunc<<"Vs"+xpar+"_"+(*itbins).first; 
+                    ssfunc<<(*rithelper)<<"to";
+                    var1 *= ((*ritvars)==5.) ? (9.9) : (*ritvars);
+                    ssfunc<<(*ritvars);
+                    var2 *= ((*rithelper)==5.) ? (9.9) : (*rithelper);
+                    itfunc = name2func.find(ssfunc.str());
+                    
+                    TF1* f = (itfunc==name2func.end()) ? 0 : (*itfunc).second;
+                    
+                    if (0==f&&fhistory.size()>0) f = fhistory.back();
+                    else fhistory.push_back(f);
+                    
+                    if      (0==f&&!fskip) {ssfile<<var1;fskip=true;continue;}
+                    else if (0==f&&fskip)  {continue;}
+                    
+                    if (!fskip) ssfile<<var1;
+                    if (0==f) {ssfile<<"ERROR\n";continue;}
+                    
+                    ssfile<<" "<<var2<<" "<<(2+f->GetNpar())
+                       //<<" 0. 99999. ";
+                          << " " << f->GetXmin() << " " << f->GetXmax() << " ";
+                    for (int itf=0;itf<f->GetNpar()-1;itf++) 
+                       ssfile<<f->GetParameter(itf)<<" ";
+                    ssfile<<f->GetParameter(f->GetNpar()-1);
+                    ssfile<<endl; fskip = false;
+                    
+                    if (++rithelper==(*itbins).second.rend()) break;
+                 }
+              }
+              
+              for (itvars=(*itbins).second.begin();
+                   itvars!=(*itbins).second.end();itvars++) {
+                 
+                 float var1(1.0),var2(1.0);
+                 
+                 stringstream ssfunc;
+                 ssfunc<<(*dscb2pars.find(dscb[i])).second;
+                 ssfunc<<"Vs"+xpar+"_"+(*itbins).first; 
+                 ssfunc<<(*itvars)<<"to";
+                 var1 *= ((*itvars)==5.) ? (9.9) : (*itvars);
+                 set<float>::iterator ithelper = itvars; ithelper++;
+                 ssfunc<<(*ithelper);
+                 var2 *= ((*ithelper)==5.) ? (9.9) : (*ithelper);
+                 itfunc = name2func.find(ssfunc.str());
+                 
+                 TF1* f = (itfunc==name2func.end()) ? 0 : (*itfunc).second;
+                 
+                 if (0==f&&fhistory.size()>0) f = fhistory.back();
+                 else fhistory.push_back(f);
+                 
+                 if      (0==f&&!fskip) {ssfile<<var1;fskip=true;continue;}
+                 else if (0==f&&fskip)  {continue;}
+                 
+                 if (!fskip) ssfile<<var1;
+                 if (0==f) {ssfile<<"ERROR\n";continue;}
+                 
+                 ssfile<<" "<<var2<<" "<<(2+f->GetNpar())
+                    //<<" 0. 99999. ";
+                       << " " << f->GetXmin() << " " << f->GetXmax() << " ";
+                 for (int itf=0;itf<f->GetNpar()-1;itf++) 
+                    ssfile<<f->GetParameter(itf)<<" ";
+                 ssfile<<f->GetParameter(f->GetNpar()-1);
+                 ssfile<<endl; fskip = false;
+                 
+                 if (++ithelper==(*itbins).second.end()) break;
+              }
+              
+              fhistory.clear();
+              
+           } // dscb[i]++
+           
+        }
+        else {
+           cout<<"ERROR - non pt resolutions not yet implemented!!!"<<endl;return;
+        }
+        
+        //printFile(ssfile);
+        
+        ofstream jerfile;
+        stringstream ssfilename;
+        
+        string algname;
+        
+        if      (alg.find("ak5pfl2l3")!=string::npos)   algname="AK5PF";
+        else if (alg.find("AK5PFL2L3")!=string::npos)   algname="AK5PF";
+        else if (alg.find("ak5calol2l3")!=string::npos) algname="AK5Calo";
+        else if (alg.find("AK5CALOL2L3")!=string::npos) algname="AK5Calo";
+        else if (alg.find("ak5jptl2l3")!=string::npos)  algname="AK5JPT";
+        else if (alg.find("AK5JPTL2L3")!=string::npos)  algname="AK5JPT";
+        else if (alg.find("ak5genl2l3")!=string::npos)  algname="AK5GEN";
+        else if (alg.find("AK5GENL2L3")!=string::npos)  algname="AK5GEN";
+        else algname=alg;
+        
+        
+        if (!prefix.empty()) ssfilename<<prefix<<"_";
+        if (!era.empty()) ssfilename<<era<<"_";
+        
+        ssfilename<<"PtResolution_"
+                  <<algname;
+        if ((*itbins).first.find("JetEta")==string::npos)
+           ssfilename<<"_"<<(*itbins).first;
+        
+        ssfilename<<".txt";
+        
+        jerfile.open(ssfilename.str().c_str(), ofstream::trunc);
+        if (!jerfile.is_open()) {
+           cout<<"ERROR: Could not create "<<ssfilename.str()<<endl;return;
+        }
+        jerfile<<ssfile.str();
+        jerfile.close();
+        cout<<"Created JER file: "<<ssfilename.str()<<endl;
+        
+     } // itbins++
   } // writeJER
-
+   
 
   void printFile(const std::stringstream& ss)
   {
@@ -306,6 +310,9 @@ struct JERWriter
       string parname = (vspos!=string::npos) ? gname.substr(0,vspos) : "";
       pars.insert(parname);
 
+      string xparname = (vspos!=string::npos) ? gname.substr(vspos+2,gname.find("_")-vspos-2) : "";
+      xpars.insert(xparname);
+
       assert (gname.find("_")==gname.rfind("_"));
       assert (gname.find("to")==gname.rfind("to"));
 
@@ -329,14 +336,14 @@ struct JERWriter
       map<string,set<float> >::iterator itbins = bins.find(bintype);
 
       if (itbins==bins.end()) {
-	bins.insert(pair<string,set<float> >(bintype,vars));
+         bins.insert(pair<string,set<float> >(bintype,vars));
       }
       else {
-	(*itbins).second.insert(fvar1);
-	(*itbins).second.insert(fvar2);
+         (*itbins).second.insert(fvar1);
+         (*itbins).second.insert(fvar2);
       }
     } // name2func++
-
+    
     checkAbs();
   }
 
@@ -349,18 +356,17 @@ struct JERWriter
     set<float>::iterator itvals;
 
     for (itpars=pars.begin();itpars!=pars.end();itpars++) {
-      cout<<"Par: "<<(*itpars)<<" has bins: "<<endl;
-      for (itbins=bins.begin();itbins!=bins.end();itbins++) {
-	cout<<"->bintype: "<<(*itbins).first<<endl;
-	cout<<"--> ";
-	for (itvals=(*itbins).second.begin();
-	     itvals!=(*itbins).second.end();itvals++) {
-	  cout<<(*itvals)<<" ";
-	}
-	cout<<endl;
-      }
+       cout<<"Par: "<<(*itpars)<<" has bins: "<<endl;
+       for (itbins=bins.begin();itbins!=bins.end();itbins++) {
+          cout<<"->bintype: "<<(*itbins).first<<endl;
+          cout<<"--> ";
+          for (itvals=(*itbins).second.begin();
+               itvals!=(*itbins).second.end();itvals++) {
+             cout<<(*itvals)<<" ";
+          }
+          cout<<endl;
+       }
     }
-
   }
 
   // add a new graph / fit pair
@@ -368,7 +374,8 @@ struct JERWriter
   {
     using namespace std;
     if (alg.find("l2l3")==string::npos) return;
-    if (isptres && graphname.find("VsRefPt_")==string::npos) return;
+    if (isptres && graphname.find("VsRefPt_")==string::npos &&
+        graphname.find("VsJetPt_")==string::npos) return;
 
     name2func.erase(graphname);
     name2func.insert(pair<string,TF1*>(graphname,func));
