@@ -210,26 +210,25 @@ int main(int argc,char**argv)
         continue;
       }
 
-      //if(verbose>0) cout << "Attempting to fit " << histname << " ... " << endl;
-
-      //if (histname.find("RelRsp")>5&&histname.find("AbsRsp")!=0) {
-      //  hrsp->Write();
-      //  continue;
-      //}
-      
+      //
+      // start fit process
+      //
       if (hrsp->Integral()>0.0) {
         int fitstatus(0);
         if (0==fittype) fit_gaussian(hrsp,nsigma,jtptmin,niter,verbose);
         else if (1==fittype) fitstatus = fit_dscb(hrsp,nsigma,jtptmin,niter,alg,verbose);
 	else fit_modified_fnc_dscb(hrsp, alg, calibrated, histName);        
 
-        TF1* fitfnc = (TF1*) hrsp->GetListOfFunctions()->Last();
+        TF1* fitfnc{0};
+	if(fittype==2) fitfnc = (TF1*) hrsp->GetFunction("modified_fdscb");
+	else fitfnc = (TF1*) hrsp->GetListOfFunctions()->Last();
+
         if (0!=fitfnc && 0==fitstatus) fitfnc->ResetBit(TF1::kNotDraw);
 
         if (verbose>0&&0!=fitfnc) 
           cout<<"histo: "<<hrsp->GetName()<<"-> fnc: "<<fitfnc->GetName()<<endl;
 
-        if (0!=fitfnc&&fitfnc->GetNDF()<ndfmin) {
+        if (fittype!=2&&0!=fitfnc&&fitfnc->GetNDF()<ndfmin) {
           if (verbose>0) cout<<"NDOF("<<fitfnc->GetName()<<")="
                              <<fitfnc->GetNDF()
                              <<" FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
@@ -263,7 +262,6 @@ int main(int argc,char**argv)
   delete ifile;
   cout<<" DONE."<<endl;
   
-  
   return 0;
 }
 
@@ -295,13 +293,16 @@ TH1F *hXaxis( TH1F* hist, double minX, double maxX)
 }
 
 //______________________________________________________________________________
-void fit_modified_fnc_dscb(TH1F*& hrsphist, string alg, bool calibrated, string histName){
+void fit_modified_fnc_dscb(TH1F*& hrspOrig, string alg, bool calibrated, string histName){
+
+  TH1F* hrsp=(TH1F*)hrspOrig->Clone(); 
+
 
   // do no write in the output file all the histogram
   TH1::AddDirectory(kFALSE);
 
   // select a particular algorithm
-  if (alg!="ak5tauHPSlooseCombDBcorrAll") return;
+  //if (alg!="ak5tauHPSlooseCombDBcorrAll") return;
   //if (alg!="ak5tauHPSlooseCombDBcorrOneProng0Pi0") return;
   //if (alg!="ak5tauHPSlooseCombDBcorrOneProng1Pi0") return;
   //if (alg!="ak5tauHPSlooseCombDBcorrTwoProng0Pi0") return;
@@ -311,15 +312,13 @@ void fit_modified_fnc_dscb(TH1F*& hrsphist, string alg, bool calibrated, string 
   //
   if (alg=="ak5tauHPSlooseCombDBcorrOneProng2Pi0") return; // =ak5tauHPSlooseCombDBcorrOne
 
-  TH1F *hrsp = (TH1F*)hrsphist->Clone();
-
   string histname{hrsp->GetName()};
 
-  // select the relative response histograms
+  // select the relative response histograms for an eta range
   if ( histname.find(histName) == string::npos) return;
 
   // select a particular histogram
-  if ( histname!="RelRsp_JetEta1.7to1.9_RefPt500to3000") return;
+  //if ( histname!="RelRsp_JetEta1.7to1.9_RefPt500to3000") return;
 
   cout << "\nModified CB processing "<<alg<<": " << histname << endl;
 
@@ -506,7 +505,7 @@ void fit_modified_fnc_dscb(TH1F*& hrsphist, string alg, bool calibrated, string 
   TRandom *random = new TRandom3();
 
   cout<<"\nStart Random...\n";
-  for(int i=1; i<2; i++){
+  for(int i=1; i<99; i++){
     cout<<"\ntest number: "<<i<<"/99"<<endl;
 
     modified_fdscb = new TF1("modified_fdscb", modified_fnc_dscb, 0., 2., maxPar);
@@ -689,43 +688,43 @@ void fit_modified_fnc_dscb(TH1F*& hrsphist, string alg, bool calibrated, string 
   if(mapKsFit.size()!=0){
     double maxKs{mapKsFit.rbegin()->first};
     if(maxKs<0.5) { 
-      goodFit=false; //hrsphist= (TH1F*)  mapKsFit.rbegin()->second->Clone();
-      cout<<"failed Ks>0.5!!, Ks: "<<mapKsFit.rbegin()->first<<endl;
+      goodFit=false; hrspOrig= (TH1F*) mapKsFit.rbegin()->second->Clone();
+      cout<<"failed Ks: "<<mapKsFit.rbegin()->first<<endl;
     }
     else {
-      goodFit=true; hrsphist= (TH1F*)  mapKsFit.rbegin()->second->Clone();
-      cout<<"pass Ks>0.5!!, Ks: "<<mapKsFit.rbegin()->first<<endl;
+      goodFit=true; hrspOrig= (TH1F*) mapKsFit.rbegin()->second->Clone();
+      cout<<"pass Ks: "<<mapKsFit.rbegin()->first<<endl;
     }
   }
   else if(mapChi2Fit.size()!=0){
       double minChi2{mapChi2Fit.begin()->first};
       if(minChi2>5) { 
-	goodFit=false; //hrsphist= (TH1F*)  mapChi2Fit.begin()->second->Clone();
-	cout<<"failed Chi2<5!!, Chi2: "<<mapChi2Fit.begin()->first<<endl;
+	goodFit=false; hrspOrig= (TH1F*) mapChi2Fit.begin()->second->Clone();
+	cout<<"failed Chi2: "<<mapChi2Fit.begin()->first<<endl;
       }
       else {
-	goodFit=true; hrsphist= (TH1F*)  mapChi2Fit.begin()->second->Clone();
-	cout<<"pass Chi2<5!!, Chi2: "<<mapChi2Fit.begin()->first<<endl;
+	goodFit=true; hrspOrig= (TH1F*) mapChi2Fit.begin()->second->Clone();
+	cout<<"pass Chi2: "<<mapChi2Fit.begin()->first<<endl;
       }
-    }
+  }
   else{ goodFit=false; cout<<"no fit at all, keeping original histogram!!\n"; }
 
-  //hrsphist->Write();
 
   // save fit plot
   TCanvas *c = new TCanvas("c", "", 700, 700);
   c->Divide(1,2);
-  c->cd(1); hrsphist->Draw();
-  c->cd(2); gPad->SetLogy(); hrsphist->Draw();
+  c->cd(1); hrspOrig->Draw();
+  c->cd(2); gPad->SetLogy(); hrspOrig->Draw();
+
   string savePath;
 
   if( goodFit){
-    if(!calibrated) savePath="/home/calpas/JetMETAnalysis/CMSSW_7_4_10_patch2/src/JetMETAnalysis/JetAnalyzers/test/fitPlots/uncalibrated/"+alg+"/pass/"+hrsphist->GetName()+".png";
-    else savePath="/home/calpas/JetMETAnalysis/CMSSW_7_4_10_patch2/src/JetMETAnalysis/JetAnalyzers/test/fitPlots/calibrated/"+alg+"/pass/"+hrsphist->GetName()+".png";
+    if(!calibrated) savePath="/home/calpas/JetMETAnalysis/CMSSW_7_4_15_patch1/src/JetMETAnalysis/JetAnalyzers/test/fitPlots/uncalibrated/"+alg+"/pass/"+hrspOrig->GetName()+".png";
+    else savePath="/home/calpas/JetMETAnalysis/CMSSW_7_4_15_patch1/src/JetMETAnalysis/JetAnalyzers/test/fitPlots/calibrated/"+alg+"/pass/"+hrspOrig->GetName()+".png";
   }
   else{
-    if(!calibrated) savePath="/home/calpas/JetMETAnalysis/CMSSW_7_4_10_patch2/src/JetMETAnalysis/JetAnalyzers/test/fitPlots/uncalibrated/"+alg+"/failed/"+hrsphist->GetName()+".png";
-    else savePath="/home/calpas/JetMETAnalysis/CMSSW_7_4_10_patch2/src/JetMETAnalysis/JetAnalyzers/test/fitPlots/calibrated/"+alg+"/failed/"+hrsphist->GetName()+".png";
+    if(!calibrated) savePath="/home/calpas/JetMETAnalysis/CMSSW_7_4_15_patch1/src/JetMETAnalysis/JetAnalyzers/test/fitPlots/uncalibrated/"+alg+"/failed/"+hrspOrig->GetName()+".png";
+    else savePath="/home/calpas/JetMETAnalysis/CMSSW_7_4_15_patch1/src/JetMETAnalysis/JetAnalyzers/test/fitPlots/calibrated/"+alg+"/failed/"+hrspOrig->GetName()+".png";
   }
 
   c->Print((savePath).c_str()); cout<<"fit plot saved at: "<< savePath <<endl;
