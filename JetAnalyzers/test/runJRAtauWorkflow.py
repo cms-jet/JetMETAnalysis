@@ -103,6 +103,7 @@ inputFilePaths = [
 
 outputFilePath = '%s/src/JetMETAnalysis/JetAnalyzers/test/JRAtau/%s' % (os.environ['CMSSW_BASE'], version)
 
+
 samplesToAnalyze = [
   'VBFHToTauTauM125',
   'GluGluHToTauTauM125',
@@ -207,6 +208,16 @@ algorithms = [
   'ak5tauHPSlooseCombDBcorrThreeProng1Pi0',
 ]
 
+toCal = ["uncalibrated", "calibrated"]
+cuts = ["pass", "failed"]
+
+for cal in toCal:
+     for alg in algorithms:
+         for cut in cuts:
+	      outputPlotPath = '%s/src/JetMETAnalysis/JetAnalyzers/test/fitPlots/%s/%s/%s' % (os.environ['CMSSW_BASE'], cal, alg, cut )
+	      if not os.path.exists(outputPlotPath):
+    	           os.makedirs(outputPlotPath)
+	            	 	
 execDir = "%s/bin/%s/" % (os.environ['CMSSW_BASE'], os.environ['SCRAM_ARCH'])
 
 executable_jrAnalyzer     = execDir + 'jet_response_analyzer_x'
