@@ -101,7 +101,7 @@ inputFilePaths = [
   '/hdfs/cms/store/user/calpas/JRAtauNtuple/v4/SUSYGluGluToBBHToTauTauM3200',
 ]
 
-outputFilePath = '/home/calpas/JetMETAnalysis/CMSSW_7_4_10_patch2/src/JetMETAnalysis/JetAnalyzers/test/JRAtau/%s' % version
+outputFilePath = '%s/src/JetMETAnalysis/JetAnalyzers/test/JRAtau/%s' % (os.environ['CMSSW_BASE'], version)
 
 samplesToAnalyze = [
   'VBFHToTauTauM125',
