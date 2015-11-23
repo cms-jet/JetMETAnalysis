@@ -1,5 +1,6 @@
 // This class libraries
 #include "JetMETAnalysis/JetUtilities/interface/L2Creator.hh"
+#include <algorithm>
 
 using namespace std;
 
@@ -23,6 +24,7 @@ L2Creator::L2Creator() {
   mpv = false;
   delphes = false;
   maxFitIter = 30;
+  modified_fdscb = false;
 }
 
 //______________________________________________________________________________
@@ -43,6 +45,7 @@ L2Creator::L2Creator(CommandLine& cl) {
   mpv        = cl.getValue<bool>    ("mpv",            false);
   delphes    = cl.getValue<bool>    ("delphes",        false);
   maxFitIter = cl.getValue<int>     ("maxFitIter",        30);
+  modified_fdscb= cl.getValue<bool> ("modified_fdscb", false);
 
   if (!cl.partialCheck()) return;
   cl.print();
@@ -160,7 +163,6 @@ void L2Creator::loopOverAlgorithms() {
     hl_refpt.load_objects(idir,"RefPt:JetEta:RefPt");
     hl_jetpt.load_objects(idir,"JetPt:JetEta:RefPt");
      
-     
     //
     // Absolute response/correction as a function of pT for each eta bin
     // Needed for both L2 only corrections and L2L3 corrections
@@ -214,66 +216,114 @@ void L2Creator::loopOverEtaBins() {
     //
     if (hrsp->GetEntries() > 10) {//hrsp->Integral()!=0) { 
 
-			TF1*  frsp    = (TF1*)hrsp->GetListOfFunctions()->Last();
-      //std::cout << "hrspName = " << hrsp->GetName() << ": frsp = " << frsp << std::endl;
+      			TF1*  frsp {0};
+			if(modified_fdscb) frsp = (TF1*)hrsp->GetFunction("modified_fdscb");
+			else frsp    = (TF1*)hrsp->GetListOfFunctions()->Last();
+      std::cout << "hrspName = " << hrsp->GetName() << ": frsp = " << frsp << std::endl;
 			TH1F* hrefpt  = hl_refpt.object(indices);
 			TH1F* hjetpt  = hl_jetpt.object(indices);
 
 			assert(hrefpt->GetEntries()>0&&hjetpt->GetEntries()>0);
 
-			double refpt  =hrefpt->GetMean();
-			double erefpt =hrefpt->GetMeanError();
-			double jetpt  =hjetpt->GetMean();
-			double ejetpt =hjetpt->GetMeanError();
+			double refpt; 
+			double erefpt;
+			double jetpt;
+			double ejetpt;
+			if(modified_fdscb){
+			  refpt  =hrefpt->GetXaxis()->GetBinCenter(hrsp->GetMaximumBin()); // get max of the histogram ???????
+			  erefpt =hrefpt->GetMeanError();
+			  jetpt  =hjetpt->GetXaxis()->GetBinCenter(hrsp->GetMaximumBin());
+			  ejetpt =hjetpt->GetMeanError();
+			}else{
+			  refpt  =hrefpt->GetMean();
+			  erefpt =hrefpt->GetMeanError();
+			  jetpt  =hjetpt->GetMean();
+			  ejetpt =hjetpt->GetMeanError();
+			}
 
 			double peak;
 			double epeak;
 			if(alg.find("calo")!=string::npos) {
-				peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(1);
-				epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(1);
+			  peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(1);
+			  epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(1);
 			}
 			else if(alg.find("pf")!=string::npos) {
-				peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(1);
-				epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(1);
+			  peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(1);
+			  epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(1);
+			}
+			else if(alg.find("tau")!=string::npos) {
+			  if( frsp==0 || !mpv ){
+			    peak  = hrsp->GetXaxis()->GetBinCenter(hrsp->GetMaximumBin()); // get the peak_x of the histogram  
+			    epeak = hrsp->GetMeanError();
+			  }else{
+			    peak  = hrsp->GetXaxis()->GetBinCenter(hrsp->GetMaximumBin()); 
+			    epeak = hrsp->GetMeanError();
+
+			    // norm of the 3 gauss
+			    vector <double> vNormG{frsp->GetParameter(0), frsp->GetParameter(16), frsp->GetParameter(19)};
+			    double sumNormG{0};
+			    for( auto &i : vNormG) sumNormG+=i;
+
+			    // select the closest mean to 1 only if the corresponding norm is>25% of the 2 other gauss sum
+			    // mean of the 3 gauss
+			    vector <double> vMeanG {frsp->GetParameter(1), frsp->GetParameter(17), frsp->GetParameter(20)};
+			    for( int i=0; i<3; i++ ) { cout<<"Gaus["<<i<<"] mean/norm: "<<vMeanG[i]<<" / "<<vNormG[i]<<endl;}
+			    //cout<<"0.25*sumGauss: "<<0.25*sumNormG<<endl;
+
+			    vector <double> vEMeanG {frsp->GetParError(1), frsp->GetParError(17), frsp->GetParError(20)};
+
+			    double closestToOne{100};
+			    for (unsigned i=0; i<vMeanG.size(); i++) {
+			      double dist{fabs(vMeanG[i]-1)};
+			      //cout<<"dist/closestToOne: "<< dist <<"/"<<closestToOne<<endl;
+			      if( dist<closestToOne && vNormG[i]>0.25*sumNormG) { peak=vMeanG[i]; epeak=vEMeanG[i]; closestToOne=dist; }
+			    }
+			    if(closestToOne==100) cout<<"NO GAUSS 1||2||3 mean selected!! using histogram mean..."<<endl;
+
+			    cout<<"fit peak: " << peak <<endl;
+			  }
 			}
 			else {
-				peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(1);
-				epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(1);
+			  peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(1);
+			  epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(1);
 			}
 
 			double absrsp = peak;
 			double eabsrsp = epeak;
 			double abscor = 0.0;
 			double eabscor = 0.0;
+			cout<<"hist peak: "<<hrsp->GetXaxis()->GetBinCenter(hrsp->GetMaximumBin())<<endl;
 
 			if (absrsp > 0) {  
-				abscor  =1.0/absrsp;
-				eabscor = abscor*abscor*epeak;
+			  abscor  =1.0/absrsp;
+			  eabscor = abscor*abscor*epeak;
 			} 
 			if ((abscor>0) && (absrsp>0) && (eabscor>1e-5) && (eabscor/abscor<0.5) && (eabsrsp>1e-4) && (eabsrsp/absrsp<0.5)) { 
-				int n = vabsrsp_eta.back()->GetN();
-				vabsrsp_eta.back()->SetPoint     (n,refpt, absrsp);
-				vabsrsp_eta.back()->SetPointError(n,erefpt,eabsrsp);
-				vabscor_eta.back()->SetPoint     (n,jetpt, abscor);
-				vabscor_eta.back()->SetPointError(n,ejetpt,eabscor);      
+			  int n = vabsrsp_eta.back()->GetN();
+			  vabsrsp_eta.back()->SetPoint     (n,refpt, absrsp);
+			  vabsrsp_eta.back()->SetPointError(n,erefpt,eabsrsp);
+			  vabscor_eta.back()->SetPoint     (n,jetpt, abscor);
+			  cout<<"\nsetPoint x y: "<< jetpt<<" "<<abscor<<endl<<endl;
+			  if(modified_fdscb) vabscor_eta.back()->SetPointError(n,0.01,0.01);      
+			  else vabscor_eta.back()->SetPointError(n,ejetpt,eabscor);      
 			}
 			else cout << "absrsp " << absrsp << " and eabsrsp " << eabsrsp << " and abscor " << abscor << " and eabscor " << eabscor << endl;
-		}
+    }
 
     //
     // fit graphs if last pt of the current eta bin comes around
     //
-		if (ipt==hl_jetpt.nobjects(1)-1 && (vabsrsp_eta.back())->GetN()!=0 && (vabscor_eta.back())->GetN()!=0) {
-			cout << "Doing fits for " << vabscor_eta.back()->GetName() << " ... " << endl;
-			TGraphErrors* gabsrsp = vabsrsp_eta.back();
-			TGraphErrors* gabscor = vabscor_eta.back();
-			TF1*          fabscor(0);
-			int npoints = gabscor->GetN(); 
-			double xmin(1.0),xmax(100.0);
-			if (npoints > 0) {
-        //
-        // we don't want to fit for pt less than 5 GeV as even a corrected calo jet of 10 
-        // will be at least 5 Gev in raw energy.
+    if (ipt==hl_jetpt.nobjects(1)-1 && (vabsrsp_eta.back())->GetN()!=0 && (vabscor_eta.back())->GetN()!=0) {
+      cout << "Doing fits for " << vabscor_eta.back()->GetName() << " ... " << endl;
+      TGraphErrors* gabsrsp = vabsrsp_eta.back();
+      TGraphErrors* gabscor = vabscor_eta.back();
+      TF1*          fabscor(0);
+      int npoints = gabscor->GetN(); 
+      double xmin(1.0),xmax(100.0);
+      if (npoints > 0) {
+	//
+	// we don't want to fit for pt less than 5 GeV as even a corrected calo jet of 10 
+	// will be at least 5 Gev in raw energy.
         //
         //xmin = gabscor->GetX()[0];
         //xmin = max(gabscor->GetX()[0],3.0);

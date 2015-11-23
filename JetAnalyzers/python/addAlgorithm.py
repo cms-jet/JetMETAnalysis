@@ -31,7 +31,10 @@ tauDecayModeDict = {
     "OneProng0Pi0"              : "%i" % tauToOneProng0PiZero,
     "OneProng1Pi0"              : "%i" % tauToOneProng1PiZero,
     "OneProng2Pi0"              : "%i" % tauToOneProng2PiZero,
-    "ThreeProng0Pi0"            : "%i" % tauToThreeProng0PiZero
+    "TwoProng0Pi0"              : "%i" % tauToTwoProng0PiZero,
+    "TwoProng1Pi0"              : "%i" % tauToTwoProng1PiZero,
+    "ThreeProng0Pi0"            : "%i" % tauToThreeProng0PiZero,
+    "ThreeProng1Pi0"            : "%i" % tauToThreeProng1PiZero
 }
 #
 tauDiscriminators_and_DecayModes = {}
@@ -532,11 +535,11 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
     ## create the sequence
     sequence = cms.Sequence(refPtEta * jetPtEta)
 
-	#############################
+    #############################
     jetPtEtaUncor = jetPtEta.clone()
     setattr(process, alg_size_type_corr + 'PtEtaUncor', jetPtEtaUncor)
     sequence = cms.Sequence(sequence * jetPtEtaUncor)
-	#############################
+    #############################
 
     ## correct jets
     corrLabel = ''
@@ -606,7 +609,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
     
     ## reconstruct jets
     if type == 'JPT':
-        process.load('Configuration.StandardSequences.Geometry_cff')
+        #process.load('Configuration.StandardSequences.Geometry_cff')
         process.load('Configuration.StandardSequences.MagneticField_cff')
 #        process.load('JetMETAnalysis.JetAnalyzers.JPTReconstruction_cff')
 #        if   alg_size == 'ak5':
@@ -618,7 +621,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         if correctl1 or correctl2l3:
             jetPtEta.src = corrLabel
     elif reco:
-        process.load('Configuration.StandardSequences.Geometry_cff')
+        #process.load('Configuration.StandardSequences.Geometry_cff')
         process.load('Configuration.StandardSequences.MagneticField_cff')
         (recLabel, recJets) = recJetsDict[alg_size_type]
         if correctl1 or correctl2l3:
@@ -644,28 +647,17 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
             #process.load("TrackingTools/TransientTrack/TransientTrackBuilder_cfi")
             process.load("RecoTauTag/Configuration/RecoPFTauTag_cff")
 
-            tauRecoSequence = cms.Sequence(process.recoTauCommonSequence)
-            if "HPS" in alg_size_type:
-                tauRecoSequence += process.recoTauClassicHPSSequence
-            elif "TaNC" in alg_size_type:
-                tauRecoSequence += process.recoTauHPSTancSequence
+            tauRecoSequence = cms.Sequence(process.PFTau)
 
             (tauIsoDiscriminator, tauDecayMode) = tauDiscriminators_and_DecayModes[alg_size_type]
 
-            if not (("HPSall" in alg_size_type or "TaNCall" in alg_size_type) and tauDecayMode == ""):
+            if not (("HPSall" in alg_size_type in alg_size_type) and tauDecayMode == ""):
                 tauDiscriminators = []
                 if "HPS" in alg_size_type:
                     tauDiscriminators = [
-                        "hpsPFTauDiscriminationByLooseElectronRejection",
-                        "hpsPFTauDiscriminationByTightMuonRejection",
-                        "hpsPFTauDiscriminationByDecayModeFinding",
+                        "hpsPFTauDiscriminationByTightMuonRejection3",
+			"hpsPFTauDiscriminationByDecayModeFindingNewDMs",
                     ]
-#                elif "TaNC" in alg_size_type:
-#                    tauDiscriminators = [
-#                        "hpsTancTausDiscriminationByLooseElectronRejection",
-#                        "hpsTancTausDiscriminationByTightMuonRejection",
-#                        "hpsTancTausDiscriminationByDecayModeSelection"
-#                    ]
                 tauDiscriminators.append(tauIsoDiscriminator)
 #                                
                 tauDiscriminatorConfigs = []
@@ -682,21 +674,22 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
                     discriminators = cms.VPSet(tauDiscriminatorConfigs)
                 )
 		# merge OneProg1Pi0 and OneProng2Pi0
-                if (tauDecayMode == "OneProng1Pi0" or tauDecayMode == "OneProng2Pi0"):
+                if (tauDecayMode == "1" or tauDecayMode == "2"):
                     setattr(selTauModule, "cut", cms.string("decayMode() == 1 || decayMode() == 2"))
 		else:
                      if tauDecayMode != "*":
-                          #setattr(selTauModule, "cut", cms.string("isDecayMode('%s')" % tauDecayMode))
                           setattr(selTauModule, "cut", cms.string("decayMode() == %s" % tauDecayMode))
+
                 selTauModuleName = alg_size_type + "Selected"
                 setattr(process, selTauModuleName, selTauModule)
                 tauRecoSequence += getattr(process, selTauModuleName)
-#                        
-#                jetPtEta.src = cms.InputTag(selTauModuleName)
-#            
+                        
+                jetPtEta.src = cms.InputTag(selTauModuleName)
+		jetPtEtaUncor.src = cms.InputTag(selTauModuleName) 
+               
             process.load("PhysicsTools.JetMCAlgos.TauGenJets_cfi")
-#
-            sequence = cms.Sequence(tauRecoSequence * process.tauGenJets * sequence)
+
+            sequence = cms.Sequence(tauRecoSequence * process.tauGenJets * sequence )
 
     # reconstruct genjets
     if reco:
