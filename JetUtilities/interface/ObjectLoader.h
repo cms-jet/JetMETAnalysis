@@ -23,6 +23,9 @@ public:
   //
   bool         load_objects(TDirectory* d,const std::string& expression);
   void         reset();
+  void         print();
+  template <class S>
+  unsigned int ndigits(S number);
   
   std::string  quantity()                   const { return quantity_; }
   unsigned int nvariables()                 const { return variables_.size(); }
@@ -58,6 +61,7 @@ public:
   
 private:
   void           compute_offset();
+  void           print_offset();
   void           set_object(const std::vector<unsigned int>& indices,T* obj);
   std::vector<std::string> split(const std::string& str,const std::string& delim);
   

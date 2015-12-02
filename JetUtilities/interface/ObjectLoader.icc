@@ -12,6 +12,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <map>
 
@@ -161,6 +162,86 @@ void ObjectLoader<T>::reset()
   iloop_ = 0;
 
 }
+
+
+//______________________________________________________________________________
+template<class T>
+template<class S>
+unsigned int ObjectLoader<T>::ndigits(S number)
+{
+  int digits = 0;
+  //if (number < 0) digits = 1; // remove this line if '-' counts as a digit
+  while (number) {
+    number /= 10;
+    digits++;
+  }
+  return digits;
+}
+
+
+//______________________________________________________________________________
+template<class T>
+void ObjectLoader<T>::print()
+{
+  //std::string                             quantity_;
+  //std::vector<std::string>                variables_;
+  //std::vector<unsigned int>               variable_index_;
+  //std::vector<unsigned int>               nobjects_;
+  //std::vector<unsigned int>               offset_;
+  //std::vector<T*>                         objects_;
+
+  stringstream ss, ss_to_match, ss_to_match_two;
+  string tmp = "ObjectLoader::print()";
+  ss << std::setfill('*') << std::setw(tmp.size()+4) << "" << endl
+     << "* " << tmp << " *" << endl
+     << std::setfill('*') << std::setw(tmp.size()+4) << "" << endl
+     << std::setfill(' ');
+  ss << "* quantity = " << quantity_ << endl;
+  ss << "* variables =       {";
+  ss_to_match << "* variable_index_ = {";
+  ss_to_match_two << "* offset_ =         {";
+  for (unsigned int ivar=0; ivar<variables_.size(); ivar++)
+  {
+    int variable_size = variables_[ivar].size();
+    ss << variables_[ivar];
+    ss_to_match << std::setw(variable_size) << variable_index_[ivar];
+    ss_to_match_two << std::setw(variable_size) << offset_[ivar];
+    if(ivar!=variables_.size()-1)
+    {
+      ss << ", ";
+      ss_to_match << ", ";
+      ss_to_match_two << ", ";
+    }
+  }
+  ss << "}" << endl;
+  ss_to_match << "}" << endl;
+  ss_to_match_two << "}" << endl;
+  ss << ss_to_match.str() << ss_to_match_two.str();
+  ss << "* nobjects = " << objects_.size() << endl;
+
+  int longest_name_size = 0;
+  int longest_position_size = 0;
+  for (unsigned int iobj=0; iobj<objects_.size(); iobj++) {
+    if(longest_name_size < string(objects_[iobj]->GetName()).size())
+      longest_name_size = string(objects_[iobj]->GetName()).size();
+    if(longest_position_size < ndigits<unsigned int>(iobj))
+      longest_position_size =  ndigits<unsigned int>(iobj);
+  }
+  string col1 = "Object Name";
+  string col2 = "Position";
+  int col1_size = std::max(int(col1.size()), longest_name_size);
+  int col2_size = std::max(int(col2.size()), longest_position_size);
+  ss << std::setfill('*') << std::setw(col1_size+col2_size+5) << "" << endl
+     << std::setfill(' ') << "* " << std:: setw(col1_size) << col1 << " " << std::setw(col2_size) << col2 << " *" << endl
+     << std::setfill('*') << std::setw(col1_size+col2_size+5) << "" << endl
+     << std::setfill(' ');
+  for (unsigned int iobj=0; iobj<objects_.size(); iobj++) {
+    ss << "* " << std::setw(col1_size) << objects_[iobj]->GetName() << " " << std::setw(col2_size) << iobj << endl;
+  }
+
+  cout << ss.str();
+}
+
 
 //______________________________________________________________________________
 template <class T>
@@ -329,4 +410,20 @@ void ObjectLoader<T>::compute_offset()
     offset_.push_back(tmp);
   }
   offset_.push_back(1);
+  //print_offset();
+}
+
+
+//______________________________________________________________________________
+template <class T>
+void ObjectLoader<T>::print_offset()
+{
+  cout << "offset_ = {";
+  for (unsigned int ioff=0; ioff<offset_.size(); ioff++)
+  {
+    cout << offset_[ioff];
+    if(ioff!=offset_.size()-1)
+      cout << ", ";
+  }
+  cout << "}" << endl;
 }

@@ -49,46 +49,50 @@ int main(int argc,char**argv)
   CommandLine cl;
   if (!cl.parse(argc,argv)) return 0;
 
-  string         input     = cl.getValue<string> ("input");
-  string         output    = cl.getValue<string> ("output",               "");
-  bool           dorelrsp  = cl.getValue<bool>   ("dorelrsp",           true);
-  bool           doabsrsp  = cl.getValue<bool>   ("doabsrsp",          false);
-  bool           doetarsp  = cl.getValue<bool>   ("doetarsp",          false);
-  bool           dophirsp  = cl.getValue<bool>   ("dophirsp",          false);
-  vector<string> flavors   = cl.getVector<string>("flavors",              "");
-  vector<string> algs      = cl.getVector<string>("algs",                 "");
-  bool           fitres    = cl.getValue<bool>   ("fitres",             true);
-  bool			 unweighted= cl.getValue<bool>	 ("unweighted",        false);
-  bool           verbose   = cl.getValue<bool>   ("verbose",           false);
-  bool           forcefit  = cl.getValue<bool>   ("forcefit",          false);
-  int            minentries= cl.getValue<int>    ("minentries",           -1);
-  bool           addminerr = cl.getValue<bool>   ("addminerr",         false);
-  bool           docbfits  = cl.getValue<bool>   ("docbfits",          false);
-  bool           dowrite   = cl.getValue<bool>   ("dowrite",           false);
-  string         fera      = cl.getValue<string> ("fera",                 "");
-  string         fprefix   = cl.getValue<string> ("fprefix",              "");
+  string         input         = cl.getValue<string> ("input");
+  string         output        = cl.getValue<string> ("output",               "");
+  bool           dorelrsp      = cl.getValue<bool>   ("dorelrsp",           true);
+  bool           doabsrsp      = cl.getValue<bool>   ("doabsrsp",          false);
+  bool           doetarsp      = cl.getValue<bool>   ("doetarsp",          false);
+  bool           dophirsp      = cl.getValue<bool>   ("dophirsp",          false);
+  vector<string> flavors       = cl.getVector<string>("flavors",              "");
+  vector<string> algs          = cl.getVector<string>("algs",                 "");
+  bool           fitres        = cl.getValue<bool>   ("fitres",             true);
+  bool			 unweighted    = cl.getValue<bool>	 ("unweighted",        false);
+  bool           verbose       = cl.getValue<bool>   ("verbose",           false);
+  bool           forcefit      = cl.getValue<bool>   ("forcefit",          false);
+  int            minentries    = cl.getValue<int>    ("minentries",           -1);
+  bool           addminerr     = cl.getValue<bool>   ("addminerr",         false);
+  bool           docbfits      = cl.getValue<bool>   ("docbfits",          false);
+  bool           dowrite       = cl.getValue<bool>   ("dowrite",           false);
+  string         fera          = cl.getValue<string> ("fera",                 "");
+  string         fprefix       = cl.getValue<string> ("fprefix",              "");
 
-  float          fractionRMS=cl.getValue<float>  ("fractionRMS",          1.);
-  float          fracRMSpf  = cl.getValue<float> ("fracRMSpf",            1.);
-  float          fracRMSjpt = cl.getValue<float> ("fracRMSjpt",           1.);
-  float          fracRMScalo= cl.getValue<float> ("fracRMScalo",          1.);
+  float          fractionRMS   = cl.getValue<float> ("fractionRMS",           1.);
+  float          fracRMSpf     = cl.getValue<float> ("fracRMSpf",             1.);
+  float          fracRMSjpt    = cl.getValue<float> ("fracRMSjpt",            1.);
+  float          fracRMScalo   = cl.getValue<float> ("fracRMScalo",           1.);
 
-  float          calomin   = cl.getValue<float>  ("calomin",             -1.);
-  float          jptmin    = cl.getValue<float>  ("jptmin",              -1.);
-  float          pfmin     = cl.getValue<float>  ("pfmin",               -1.);
+  float          calomin       = cl.getValue<float>  ("calomin",             -1.);
+  float          jptmin        = cl.getValue<float>  ("jptmin",              -1.);
+  float          pfmin         = cl.getValue<float>  ("pfmin",               -1.);
+  float          puppimin      = cl.getValue<float>  ("puppimin",            -1.);
 
-  float          calofitmin= cl.getValue<float>  ("calofitmin",          -1.);
-  float          jptfitmin = cl.getValue<float>  ("jptfitmin",           -1.);
-  float          pffitmin  = cl.getValue<float>  ("pffitmin",            -1.);
+  float          calofitmin    = cl.getValue<float>  ("calofitmin",          -1.);
+  float          jptfitmin     = cl.getValue<float>  ("jptfitmin",           -1.);
+  float          pffitmin      = cl.getValue<float>  ("pffitmin",            -1.);
+  float          puppifitmin   = cl.getValue<float>  ("puppifitmin",         -1.);
 
-  float          calofitmax= cl.getValue<float>  ("calofitmax",          -1.);
-  float          jptfitmax = cl.getValue<float>  ("jptfitmax",           -1.);
-  float          pffitmax  = cl.getValue<float>  ("pffitmax",            -1.);
+  float          calofitmax    = cl.getValue<float>  ("calofitmax",          -1.);
+  float          jptfitmax     = cl.getValue<float>  ("jptfitmax",           -1.);
+  float          pffitmax      = cl.getValue<float>  ("pffitmax",            -1.);
+  float          puppifitmax   = cl.getValue<float>  ("puppifitmax",         -1.);
 
-  bool           semifitted= cl.getValue<bool>  ("semifitted",         false);
-  float			 addUnc    = cl.getValue<float> ("addUnc",				 0.0);
-  vector<float>  fixCTerm  = cl.getVector<float>("fixCTerm",	   "-9999.0");
-  int 			 nfititer  = cl.getValue<int> 	("nfititer",			  10);
+  bool           semifitted    = cl.getValue<bool>  ("semifitted",         false);
+  float			 addUnc        = cl.getValue<float> ("addUnc",				 0.0);
+  vector<float>  fixCTerm      = cl.getVector<float>("fixCTerm",	   "-9999.0");
+  int 			 nfititer      = cl.getValue<int> 	("nfititer",			  10);
+  string         xvarOverride  = cl.getValue<string>("xvarOverride",          "");
 
   if (!cl.check()) return 0;
   cl.print();
@@ -102,6 +106,7 @@ int main(int argc,char**argv)
   //const string s_sigma="sqrt([0]*abs([0])/(x*x) + [1]*[1]/x + [2]*[2])";
   const string s_sigma="sqrt([0]*abs([0])/(x*x) + [1]*[1]*pow(x,[3]) + [2]*[2])";
   const string s_sigma_calo="sqrt([0]*[0]/(x*x) + [1]*[1]*pow(x,[3]) + [2]*[2])";
+  const string s_sigma_angle="[0]+[1]*exp(-x/[2])";
   //const string s_sigma="sqrt(((TMath::Sign(1,[0])*sq([0]/x))+(sq([1])*(x^([3]-1))))+sq([2]))";
   const string s_aone ="[0]";
   const string s_atwo ="[0]*x**[1]";
@@ -117,11 +122,11 @@ int main(int argc,char**argv)
     variables.push_back("RelRsp:RefPt");
     variables.push_back("RelRsp:JetEta");
     variables.push_back("RelRsp:JetPhi");
-    variables.push_back("RelRsp:JetY");
+    //variables.push_back("RelRsp:JetY");
     variables.push_back("RelRsp:JetEta:RefPt");
     variables.push_back("RelRsp:JetEta#1:RefPt");
-    variables.push_back("RelRsp:JetY:RefPt");
-    variables.push_back("RelRsp:JetY#1:RefPt");
+    //variables.push_back("RelRsp:JetY:RefPt");
+    //variables.push_back("RelRsp:JetY#1:RefPt");
     //variables.push_back("RelRsp_Barrel:RefPt");
     //variables.push_back("RelRsp_InnerEndcap:RefPt");
     //variables.push_back("RelRsp_OuterEndcap:RefPt");
@@ -149,7 +154,6 @@ int main(int argc,char**argv)
     variables.push_back("PhiRsp:JetEta:RefPt");
     variables.push_back("PhiRsp:JetEta#1:RefPt");
   }
-
 
   if (flavors.size()>0) {
     if (flavors.front()=="all") {
@@ -236,13 +240,17 @@ int main(int argc,char**argv)
     gROOT->cd();
     
     for (unsigned int ivar=0;ivar<variables.size();ivar++) {
-      //cout << "Loading variable " << variables[ivar] << " ... ";      
       string variable = variables[ivar];
+
       ObjectLoader<TH1F> hlrsp;
       hlrsp.load_objects(idir,variable);
-      //cout << "DONE";
-      string varexp=hlrsp.variable(hlrsp.nvariables()-1)+
-	variable.substr(variable.find(':'));
+
+      string xvar = hlrsp.variable(hlrsp.nvariables()-1);
+      if (xvarOverride!="" && xvar==xvarOverride.substr(0,xvarOverride.find(":")))
+         xvar = xvarOverride.substr(xvarOverride.find(":")+1,xvarOverride.rfind(":")-xvarOverride.find(":")-1);
+      //string varexp=hlrsp.variable(hlrsp.nvariables()-1)+
+      //variable.substr(variable.find(':'));
+      string varexp=xvar+variable.substr(variable.find(':'));
       
       ObjectLoader<TH1F> hlvar;
       hlvar.load_objects(idir,varexp);
@@ -273,16 +281,18 @@ int main(int argc,char**argv)
 	  string prefix = hlrsp.quantity().substr(0,3);
 	  string suffix;
 	  if(hlrsp.quantity().size()>6) suffix = hlrsp.quantity().substr(hlrsp.quantity().find("_"),hlrsp.quantity().size()-hlrsp.quantity().find("_"));
-	  //string grsp_name=prefix+"RspVs"+hlrsp.variable(hlrsp.nvariables()-1);
-	  //string gres_name=prefix+"ResVs"+hlrsp.variable(hlrsp.nvariables()-1);
-	  string grsp_name=prefix+"RspVs"+hlrsp.variable(hlrsp.nvariables()-1)+suffix;
-	  string gres_name=prefix+"ResVs"+hlrsp.variable(hlrsp.nvariables()-1)+suffix;
-	  //cout << "suffix = " << suffix << endl;
-	  //cout << "gres_name = " << gres_name << endl;
-	  string gaone_name="AoneVs"+hlrsp.variable(hlrsp.nvariables()-1);
-	  string gatwo_name="AtwoVs"+hlrsp.variable(hlrsp.nvariables()-1);
-	  string gpone_name="PoneVs"+hlrsp.variable(hlrsp.nvariables()-1);
-	  string gptwo_name="PtwoVs"+hlrsp.variable(hlrsp.nvariables()-1);
+	  //string grsp_name=prefix+"RspVs"+hlrsp.variable(hlrsp.nvariables()-1)+suffix;
+	  //string gres_name=prefix+"ResVs"+hlrsp.variable(hlrsp.nvariables()-1)+suffix;
+	  //string gaone_name="AoneVs"+hlrsp.variable(hlrsp.nvariables()-1);
+	  //string gatwo_name="AtwoVs"+hlrsp.variable(hlrsp.nvariables()-1);
+	  //string gpone_name="PoneVs"+hlrsp.variable(hlrsp.nvariables()-1);
+	  //string gptwo_name="PtwoVs"+hlrsp.variable(hlrsp.nvariables()-1);
+      string grsp_name=prefix+"RspVs"+xvar+suffix;
+	  string gres_name=prefix+"ResVs"+xvar+suffix;
+	  string gaone_name="AoneVs"+xvar;
+	  string gatwo_name="AtwoVs"+xvar;
+	  string gpone_name="PoneVs"+xvar;
+	  string gptwo_name="PtwoVs"+xvar;
 
 	  if (hlrsp.nvariables()>1) {
 	    for (unsigned int i=0;i<hlrsp.nvariables()-1;i++) {
@@ -326,9 +336,10 @@ int main(int argc,char**argv)
 
 	//exclude points outside the physics range of the reco-algs
 
-	if      ( (alg.find("calo")!=string::npos)&&(x<calomin) ) continue;
-	else if ( (alg.find("jpt")!=string::npos)&&(x<jptmin) )   continue;
-	else if ( (alg.find("pf")!=string::npos)&&(x<pfmin) )     continue;
+	if      ( (alg.find("calo")!=string::npos)&&(x<calomin) )   continue;
+	else if ( (alg.find("jpt")!=string::npos)&&(x<jptmin) )     continue;
+    else if ( (alg.find("puppi")!=string::npos)&&(x<puppimin) ) continue;
+	else if ( (alg.find("pf")!=string::npos)&&(x<pfmin) )       continue;
 	
 
 	TF1*   frsp    = (TF1*)hrsp->GetListOfFunctions()->Last();
@@ -434,13 +445,15 @@ int main(int argc,char**argv)
 	double fitmin(0.0);
 	double fitmax(0.0);
 
-	if (calofitmin!=-1. && alg.find("calo")!=string::npos)fitmin = calofitmin;
-	if (jptfitmin!=-1. && alg.find("jpt")!=string::npos)  fitmin = jptfitmin;
-	if (pffitmin!=-1. && alg.find("pf")!=string::npos)    fitmin = pffitmin;
+	if (calofitmin!=-1. && alg.find("calo")!=string::npos)   fitmin = calofitmin;
+	if (jptfitmin!=-1. && alg.find("jpt")!=string::npos)     fitmin = jptfitmin;
+	if (pffitmin!=-1. && alg.find("pf")!=string::npos)       fitmin = pffitmin;
+	if (puppifitmin!=-1. && alg.find("puppi")!=string::npos) fitmin = puppifitmin;
 
-	if (calofitmax!=-1. && alg.find("calo")!=string::npos)fitmax = calofitmax;
-	if (jptfitmax!=-1. && alg.find("jpt")!=string::npos)  fitmax = jptfitmax;
-	if (pffitmax!=-1. && alg.find("pf")!=string::npos)    fitmax = pffitmax;
+	if (calofitmax!=-1. && alg.find("calo")!=string::npos)   fitmax = calofitmax;
+	if (jptfitmax!=-1. && alg.find("jpt")!=string::npos)     fitmax = jptfitmax;
+	if (pffitmax!=-1. && alg.find("pf")!=string::npos)       fitmax = pffitmax;
+    if (puppifitmax!=-1. && alg.find("puppi")!=string::npos) fitmax = puppifitmax;
 
 	// SIGMA
 	for (unsigned int igraph=0;igraph<vres.size();igraph++) {
@@ -461,11 +474,15 @@ int main(int argc,char**argv)
 		//	   s_sigma.c_str(),
 		//	   xmin,xmax);
 	  TF1* fnc = 0;
-	  if(alg.find("calo")!=string::npos) {
-	  	fnc = new TF1("fit",s_sigma_calo.c_str(),xmin,xmax);
+      if(hlrsp.quantity().find("EtaRsp")!=string::npos ||
+         hlrsp.quantity().find("PhiRsp")!=string::npos) {
+         fnc = new TF1("fit",s_sigma_angle.c_str(),xmin,xmax);
+      }
+	  else if(alg.find("calo")!=string::npos) {
+         fnc = new TF1("fit",s_sigma_calo.c_str(),xmin,xmax);
 	  }
 	  else {
-	  	fnc = new TF1("fit",s_sigma.c_str(),xmin,xmax);
+         fnc = new TF1("fit",s_sigma.c_str(),xmin,xmax);
 	  }
 			   
 	  fnc->SetLineWidth(2);
@@ -477,7 +494,11 @@ int main(int argc,char**argv)
 
 	  //fnc->FixParameter(2,0.);
 
-	  if(alg.find("calo")!=string::npos) {
+      if(hlrsp.quantity().find("EtaRsp")!=string::npos ||
+         hlrsp.quantity().find("PhiRsp")!=string::npos) {
+         fnc->SetParameters(0.005,0.02,150.0);
+      }
+	  else if(alg.find("calo")!=string::npos) {
 		fnc->SetParameters(+1,1,0.05,-0.8);
 	  }
 	  else{

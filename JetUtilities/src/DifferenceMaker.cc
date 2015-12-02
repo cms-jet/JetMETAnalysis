@@ -258,7 +258,7 @@ void DifferenceMaker::openCanvas() {
     if(algs.size()==1 && algs[0].Contains("Calo"))
         frame->GetYaxis()->SetRangeUser(0.0,0.2);
     else if(algs.size()==1 && algs[0].Contains("pf"))
-        frame->GetYaxis()->SetRangeUser(0.0,0.08);
+       frame->GetYaxis()->SetRangeUser(0.0,0.2);//0.08);
     else
         frame->GetYaxis()->SetRangeUser(0.0,0.2);
     frame->GetXaxis()->SetTitle("p_{T}^{REF} (GeV)");
