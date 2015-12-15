@@ -55,10 +55,12 @@ int main(int argc,char**argv)
   bool           doabsrsp      = cl.getValue<bool>   ("doabsrsp",          false);
   bool           doetarsp      = cl.getValue<bool>   ("doetarsp",          false);
   bool           dophirsp      = cl.getValue<bool>   ("dophirsp",          false);
+  bool           domu          = cl.getValue<bool>   ("domu",              false);
+  bool           dorho         = cl.getValue<bool>   ("dorho",             false);
   vector<string> flavors       = cl.getVector<string>("flavors",              "");
   vector<string> algs          = cl.getVector<string>("algs",                 "");
   bool           fitres        = cl.getValue<bool>   ("fitres",             true);
-  bool			 unweighted    = cl.getValue<bool>	 ("unweighted",        false);
+  bool           unweighted    = cl.getValue<bool>   ("unweighted",        false);
   bool           verbose       = cl.getValue<bool>   ("verbose",           false);
   bool           forcefit      = cl.getValue<bool>   ("forcefit",          false);
   int            minentries    = cl.getValue<int>    ("minentries",           -1);
@@ -67,6 +69,7 @@ int main(int argc,char**argv)
   bool           dowrite       = cl.getValue<bool>   ("dowrite",           false);
   string         fera          = cl.getValue<string> ("fera",                 "");
   string         fprefix       = cl.getValue<string> ("fprefix",              "");
+  bool           writeHeader   = cl.getValue<bool>   ("writeHeader",       false);
 
   float          fractionRMS   = cl.getValue<float> ("fractionRMS",           1.);
   float          fracRMSpf     = cl.getValue<float> ("fracRMSpf",             1.);
@@ -81,6 +84,7 @@ int main(int argc,char**argv)
   float          calofitmin    = cl.getValue<float>  ("calofitmin",          -1.);
   float          jptfitmin     = cl.getValue<float>  ("jptfitmin",           -1.);
   float          pffitmin      = cl.getValue<float>  ("pffitmin",            -1.);
+  float          pfchsfitmin   = cl.getValue<float>  ("pfchsfitmin",         -1.);
   float          puppifitmin   = cl.getValue<float>  ("puppifitmin",         -1.);
 
   float          calofitmax    = cl.getValue<float>  ("calofitmax",          -1.);
@@ -89,10 +93,11 @@ int main(int argc,char**argv)
   float          puppifitmax   = cl.getValue<float>  ("puppifitmax",         -1.);
 
   bool           semifitted    = cl.getValue<bool>  ("semifitted",         false);
-  float			 addUnc        = cl.getValue<float> ("addUnc",				 0.0);
-  vector<float>  fixCTerm      = cl.getVector<float>("fixCTerm",	   "-9999.0");
-  int 			 nfititer      = cl.getValue<int> 	("nfititer",			  10);
+  float          addUnc        = cl.getValue<float> ("addUnc",               0.0);
+  vector<float>  fixCTerm      = cl.getVector<float>("fixCTerm",       "-9999.0");
+  int            nfititer      = cl.getValue<int>   ("nfititer",              10);
   string         xvarOverride  = cl.getValue<string>("xvarOverride",          "");
+  string         indirectProf  = cl.getValue<string>("indirectProf",          "");
 
   if (!cl.check()) return 0;
   cl.print();
@@ -119,18 +124,22 @@ int main(int argc,char**argv)
   //
   vector<string> variables;
   if (dorelrsp) {
-    variables.push_back("RelRsp:RefPt");
-    variables.push_back("RelRsp:JetEta");
-    variables.push_back("RelRsp:JetPhi");
-    //variables.push_back("RelRsp:JetY");
-    variables.push_back("RelRsp:JetEta:RefPt");
-    variables.push_back("RelRsp:JetEta#1:RefPt");
-    //variables.push_back("RelRsp:JetY:RefPt");
-    //variables.push_back("RelRsp:JetY#1:RefPt");
-    //variables.push_back("RelRsp_Barrel:RefPt");
-    //variables.push_back("RelRsp_InnerEndcap:RefPt");
-    //variables.push_back("RelRsp_OuterEndcap:RefPt");
-    //variables.push_back("RelRsp_Forward:RefPt");
+    if (domu) variables.push_back("RelRsp:JetEta:Mu:RefPt");
+    else if (dorho) variables.push_back("RelRsp:JetEta:Rho:RefPt");
+    else{
+      variables.push_back("RelRsp:RefPt");
+      variables.push_back("RelRsp:JetEta");
+      variables.push_back("RelRsp:JetPhi");
+      //variables.push_back("RelRsp:JetY");
+      variables.push_back("RelRsp:JetEta:RefPt");
+      variables.push_back("RelRsp:JetEta#1:RefPt");  //fitmin and min options affect JetEta#1 (vs. JetEta), seems to try to fit res but not rsp
+      //variables.push_back("RelRsp:JetY:RefPt");
+      //variables.push_back("RelRsp:JetY#1:RefPt");
+      //variables.push_back("RelRsp_Barrel:RefPt");
+      //variables.push_back("RelRsp_InnerEndcap:RefPt");
+      //variables.push_back("RelRsp_OuterEndcap:RefPt");
+      //variables.push_back("RelRsp_Forward:RefPt");
+    }
   }
   if (doabsrsp) {
     variables.push_back("AbsRsp:RefPt");
@@ -170,7 +179,7 @@ int main(int argc,char**argv)
     vector<string> vtmp(variables.begin(),variables.end());
     for (unsigned iflv=0;iflv<flavors.size();iflv++)
       for (unsigned iv=0;iv<vtmp.size();iv++)
-	variables.push_back(flavors[iflv]+"_"+vtmp[iv]);
+    variables.push_back(flavors[iflv]+"_"+vtmp[iv]);
   }
   cout<<"List of variables: "<<endl;
   for (unsigned iv=0;iv<variables.size();iv++) cout<<variables[iv]<<endl;
@@ -229,7 +238,7 @@ int main(int argc,char**argv)
     }
 
     // for each algorithm use a JERWriter (PtResolution=true)
-    JERWriter resolutions(alg,fera,fprefix,true);
+    JERWriter resolutions(alg,fera,fprefix,true, domu || dorho, writeHeader, indirectProf);
 
     TDirectory* idir = (TDirectory*)ifile->Get(alg.c_str());
     if (0==idir) { cout<<"No dir "<<alg<<" found"<<endl; return 0; }
@@ -251,10 +260,10 @@ int main(int argc,char**argv)
       //string varexp=hlrsp.variable(hlrsp.nvariables()-1)+
       //variable.substr(variable.find(':'));
       string varexp=xvar+variable.substr(variable.find(':'));
-      
+
       ObjectLoader<TH1F> hlvar;
       hlvar.load_objects(idir,varexp);
-      
+
       vector<unsigned int> indices;
       // first the std resolution
       TH1F* hrsp(0); TGraphErrors* grsp(0); TGraphErrors* gres(0);
@@ -266,171 +275,173 @@ int main(int argc,char**argv)
 
       hlrsp.begin_loop();
       while ((hrsp=hlrsp.next_object(indices))) {
-      	//cout << "Quantity = " << hlrsp.quantity() << endl;
-	// create new graphs for response & resolution
-	if (indices.back()==0) {
-	  grsp = new TGraphErrors(0);  vrsp.push_back(grsp);
-	  gres = new TGraphErrors(0);  vres.push_back(gres);
 
-	  gaone = new TGraphErrors(0); vaone.push_back(gaone);
-	  gatwo = new TGraphErrors(0); vatwo.push_back(gatwo);
-	  gpone = new TGraphErrors(0); vpone.push_back(gpone);
-	  gptwo = new TGraphErrors(0); vptwo.push_back(gptwo);
+        //cout << "Quantity = " << hlrsp.quantity() << endl;
+    // create new graphs for response & resolution
+    if (indices.back()==0) {
+      grsp = new TGraphErrors(0);  vrsp.push_back(grsp);
+      gres = new TGraphErrors(0);  vres.push_back(gres);
 
-	  // this is where the magic happens...
-	  string prefix = hlrsp.quantity().substr(0,3);
-	  string suffix;
-	  if(hlrsp.quantity().size()>6) suffix = hlrsp.quantity().substr(hlrsp.quantity().find("_"),hlrsp.quantity().size()-hlrsp.quantity().find("_"));
-	  //string grsp_name=prefix+"RspVs"+hlrsp.variable(hlrsp.nvariables()-1)+suffix;
-	  //string gres_name=prefix+"ResVs"+hlrsp.variable(hlrsp.nvariables()-1)+suffix;
-	  //string gaone_name="AoneVs"+hlrsp.variable(hlrsp.nvariables()-1);
-	  //string gatwo_name="AtwoVs"+hlrsp.variable(hlrsp.nvariables()-1);
-	  //string gpone_name="PoneVs"+hlrsp.variable(hlrsp.nvariables()-1);
-	  //string gptwo_name="PtwoVs"+hlrsp.variable(hlrsp.nvariables()-1);
+      gaone = new TGraphErrors(0); vaone.push_back(gaone);
+      gatwo = new TGraphErrors(0); vatwo.push_back(gatwo);
+      gpone = new TGraphErrors(0); vpone.push_back(gpone);
+      gptwo = new TGraphErrors(0); vptwo.push_back(gptwo);
+
+      // this is where the magic happens...
+      string prefix = hlrsp.quantity().substr(0,3);
+      string suffix;
+      if(hlrsp.quantity().size()>6) suffix = hlrsp.quantity().substr(hlrsp.quantity().find("_"),hlrsp.quantity().size()-hlrsp.quantity().find("_"));
+      //string grsp_name=prefix+"RspVs"+hlrsp.variable(hlrsp.nvariables()-1)+suffix;
+      //string gres_name=prefix+"ResVs"+hlrsp.variable(hlrsp.nvariables()-1)+suffix;
+      //string gaone_name="AoneVs"+hlrsp.variable(hlrsp.nvariables()-1);
+      //string gatwo_name="AtwoVs"+hlrsp.variable(hlrsp.nvariables()-1);
+      //string gpone_name="PoneVs"+hlrsp.variable(hlrsp.nvariables()-1);
+      //string gptwo_name="PtwoVs"+hlrsp.variable(hlrsp.nvariables()-1);
       string grsp_name=prefix+"RspVs"+xvar+suffix;
-	  string gres_name=prefix+"ResVs"+xvar+suffix;
-	  string gaone_name="AoneVs"+xvar;
-	  string gatwo_name="AtwoVs"+xvar;
-	  string gpone_name="PoneVs"+xvar;
-	  string gptwo_name="PtwoVs"+xvar;
+      string gres_name=prefix+"ResVs"+xvar+suffix;
+      string gaone_name="AoneVs"+xvar;
+      string gatwo_name="AtwoVs"+xvar;
+      string gpone_name="PoneVs"+xvar;
+      string gptwo_name="PtwoVs"+xvar;
 
-	  if (hlrsp.nvariables()>1) {
-	    for (unsigned int i=0;i<hlrsp.nvariables()-1;i++) {
-	      stringstream suffix;
-	      suffix<<"_"<<hlrsp.variable(i)
-		    <<hlrsp.minimum(i,indices[i])<<"to"
-		    <<hlrsp.maximum(i,indices[i]);
-	      grsp_name += suffix.str();
-	      gres_name += suffix.str();
+      if (hlrsp.nvariables()>1) {
+        for (unsigned int i=0;i<hlrsp.nvariables()-1;i++) {
 
-	      gaone_name += suffix.str();
-	      gatwo_name += suffix.str();
-	      gpone_name += suffix.str();
-	      gptwo_name += suffix.str();
-	    }
-	  }
-	  grsp->SetName(grsp_name.c_str());
-	  gres->SetName(gres_name.c_str());
+          stringstream suffix;
+          suffix<<"_"<<hlrsp.variable(i)
+            <<hlrsp.minimum(i,indices[i])<<"to"
+            <<hlrsp.maximum(i,indices[i]);
+          grsp_name += suffix.str();
+          gres_name += suffix.str();
 
-	  gaone->SetName(gaone_name.c_str());
-	  gatwo->SetName(gatwo_name.c_str());
-	  gpone->SetName(gpone_name.c_str());
-	  gptwo->SetName(gptwo_name.c_str());
-	}
-	
-	// add new points to current response & resolution graphs
-	if (hrsp->Integral()==0) continue;
-	
-	double x(0.0),ex(0.0);
-	if (hlvar.nobjects()>0) {
-	  TH1F*  hvar = hlvar.object(indices);
-	  assert(hvar->GetEntries()>0);
-	  x  = hvar->GetMean();
-	  ex = hvar->GetMeanError();
-	}
-	else {
-	  double min = hlrsp.minimum(hlrsp.nvariables()-1,indices.back());
-	  double max = hlrsp.maximum(hlrsp.nvariables()-1,indices.back());
-	  x=0.5*(min+max);
-	}
+          gaone_name += suffix.str();
+          gatwo_name += suffix.str();
+          gpone_name += suffix.str();
+          gptwo_name += suffix.str();
+        }
+      }
+      grsp->SetName(grsp_name.c_str());
+      gres->SetName(gres_name.c_str());
 
-	//exclude points outside the physics range of the reco-algs
+      gaone->SetName(gaone_name.c_str());
+      gatwo->SetName(gatwo_name.c_str());
+      gpone->SetName(gpone_name.c_str());
+      gptwo->SetName(gptwo_name.c_str());
+    }
+    
+    // add new points to current response & resolution graphs
+    if (hrsp->Integral()==0) continue;
+    
+    double x(0.0),ex(0.0);
+    if (hlvar.nobjects()>0) {
+      TH1F*  hvar = hlvar.object(indices);
+      assert(hvar->GetEntries()>0);
+      x  = hvar->GetMean();
+      ex = hvar->GetMeanError();
+    }
+    else {
+      double min = hlrsp.minimum(hlrsp.nvariables()-1,indices.back());
+      double max = hlrsp.maximum(hlrsp.nvariables()-1,indices.back());
+      x=0.5*(min+max);
+    }
 
-	if      ( (alg.find("calo")!=string::npos)&&(x<calomin) )   continue;
-	else if ( (alg.find("jpt")!=string::npos)&&(x<jptmin) )     continue;
+    //exclude points outside the physics range of the reco-algs
+
+    if      ( (alg.find("calo")!=string::npos)&&(x<calomin) )   continue;
+    else if ( (alg.find("jpt")!=string::npos)&&(x<jptmin) )     continue;
     else if ( (alg.find("puppi")!=string::npos)&&(x<puppimin) ) continue;
-	else if ( (alg.find("pf")!=string::npos)&&(x<pfmin) )       continue;
-	
+    else if ( (alg.find("pf")!=string::npos)&&(x<pfmin) )       continue;
+    
 
-	TF1*   frsp    = (TF1*)hrsp->GetListOfFunctions()->Last();
-	bool   isFDSCB = (0==frsp) ? false : ("fdscb"==(string)frsp->GetName());
-	
-	if (minentries>0 && hrsp->GetEffectiveEntries()<minentries) continue;
-	if (forcefit && frsp==0) continue;
-	
-	if (fractionRMS<1.) set_range_truncatedRMS(hrsp,fractionRMS);
+    TF1*   frsp    = (TF1*)hrsp->GetListOfFunctions()->Last();
+    bool   isFDSCB = (0==frsp) ? false : ("fdscb"==(string)frsp->GetName());
+    
+    if (minentries>0 && hrsp->GetEffectiveEntries()<minentries) continue;
+    if (forcefit && frsp==0) continue;
+    
+    if (fractionRMS<1.) set_range_truncatedRMS(hrsp,fractionRMS);
 
-	double y  = (frsp==0 || (semifitted && x<40.0)) ? hrsp->GetMean()      : frsp->GetParameter(1);
-	double ey = (frsp==0 || (semifitted && x<40.0)) ? hrsp->GetMeanError() : frsp->GetParError(1);
-	double e  = (frsp==0 || (semifitted && x<40.0)) ? hrsp->GetRMS()       : frsp->GetParameter(2);
-	double ee = (frsp==0 || (semifitted && x<40.0)) ? hrsp->GetRMSError()  : frsp->GetParError(2);
+    double y  = (frsp==0 || (semifitted && x<40.0)) ? hrsp->GetMean()      : frsp->GetParameter(1);
+    double ey = (frsp==0 || (semifitted && x<40.0)) ? hrsp->GetMeanError() : frsp->GetParError(1);
+    double e  = (frsp==0 || (semifitted && x<40.0)) ? hrsp->GetRMS()       : frsp->GetParameter(2);
+    double ee = (frsp==0 || (semifitted && x<40.0)) ? hrsp->GetRMSError()  : frsp->GetParError(2);
 
-	// declare the addtional pars for the CB function
+    // declare the addtional pars for the CB function
 
-	double aone(0.0),eaone(.25),atwo(0.0),eatwo(.25);
-	double pone(0.0),epone(2.5),ptwo(0.0),eptwo(2.5);
+    double aone(0.0),eaone(.25),atwo(0.0),eatwo(.25);
+    double pone(0.0),epone(2.5),ptwo(0.0),eptwo(2.5);
 
-	if (isFDSCB) {
-	  aone  = frsp->GetParameter(3);
-	  //eaone = frsp->GetParError(3);
-	  atwo  = frsp->GetParameter(5);
-	  //eatwo = frsp->GetParError(5);
+    if (isFDSCB) {
+      aone  = frsp->GetParameter(3);
+      //eaone = frsp->GetParError(3);
+      atwo  = frsp->GetParameter(5);
+      //eatwo = frsp->GetParError(5);
 
-	  pone  = frsp->GetParameter(4);
-	  //epone = frsp->GetParError(4);
-	  ptwo  = frsp->GetParameter(6);
-	  //eptwo = frsp->GetParError(6);
-	}
-	
-	if (hlrsp.quantity().find("AbsRsp")!=string::npos) {
-	  
-	  double yabs  = (x+y)/x;
-	  double eyabs = std::abs(yabs-1)*std::sqrt(ey*ey/y/y+ex*ex/x/x);
-	  double eabs  = e/x;
-	  double eeabs = eabs*std::sqrt(ee*ee/e/e+ex*ex/x/x);
-	    
-	  y  = yabs;
-	  ey = eyabs;
-	  e  = eabs;
-	  ee = eeabs;
-	}
-	else if (hlrsp.quantity().find("RelRsp")!=string::npos) {
-	  
-	  double erel  = e/y;
-	  double eerel = erel*std::sqrt(ee*ee/e/e+ey*ey/y/y);
-	  
-	  e  = erel;
-	  ee = eerel;
-	}
-		
-	if (addminerr) {
-	  // add a minimal uncertainty of .5% in quadrature to each point
-	  ee    = std::sqrt(ee*ee+.0005*.0005);
-	  //eaone = std::sqrt(eaone*eaone+.0005*.0005);
-	  //eatwo = std::sqrt(eatwo*eatwo+.0005*.0005);
-	  //epone = std::sqrt(epone*epone+.0005*.0005);
-	  //eptwo = std::sqrt(eptwo*eptwo+.0005*.0005);
-	}
-	if(addUnc>0.0) {
-		// add an additional uncertainty in quadrature to each point
-		addUnc *= e;
-		ee  = std::sqrt(ee*ee+addUnc*addUnc);
-	}
+      pone  = frsp->GetParameter(4);
+      //epone = frsp->GetParError(4);
+      ptwo  = frsp->GetParameter(6);
+      //eptwo = frsp->GetParError(6);
+    }
+    
+    if (hlrsp.quantity().find("AbsRsp")!=string::npos) {
+      
+      double yabs  = (x+y)/x;
+      double eyabs = std::abs(yabs-1)*std::sqrt(ey*ey/y/y+ex*ex/x/x);
+      double eabs  = e/x;
+      double eeabs = eabs*std::sqrt(ee*ee/e/e+ex*ex/x/x);
+        
+      y  = yabs;
+      ey = eyabs;
+      e  = eabs;
+      ee = eeabs;
+    }
+    else if (hlrsp.quantity().find("RelRsp")!=string::npos) {
+      
+      double erel  = e/y;
+      double eerel = erel*std::sqrt(ee*ee/e/e+ey*ey/y/y);
+      
+      e  = erel;
+      ee = eerel;
+    }
+        
+    if (addminerr) {
+      // add a minimal uncertainty of .5% in quadrature to each point
+      ee    = std::sqrt(ee*ee+.0005*.0005);
+      //eaone = std::sqrt(eaone*eaone+.0005*.0005);
+      //eatwo = std::sqrt(eatwo*eatwo+.0005*.0005);
+      //epone = std::sqrt(epone*epone+.0005*.0005);
+      //eptwo = std::sqrt(eptwo*eptwo+.0005*.0005);
+    }
+    if(addUnc>0.0) {
+        // add an additional uncertainty in quadrature to each point
+        addUnc *= e;
+        ee  = std::sqrt(ee*ee+addUnc*addUnc);
+    }
 
-	int n = grsp->GetN();
-	grsp->SetPoint(n,x,y);
-	grsp->SetPointError(n,ex,ey);
-	gres->SetPoint(n,x,e);
-	gres->SetPointError(n,ex,ee);
+    int n = grsp->GetN();
+    grsp->SetPoint(n,x,y);
+    grsp->SetPointError(n,ex,ey);
+    gres->SetPoint(n,x,e);
+    gres->SetPointError(n,ex,ee);
 
-	if (isFDSCB) {
-	  n = gaone->GetN();
-	  gaone->SetPoint(n,x,aone);
-	  gaone->SetPointError(n,ex,eaone);
+    if (isFDSCB) {
+      n = gaone->GetN();
+      gaone->SetPoint(n,x,aone);
+      gaone->SetPointError(n,ex,eaone);
 
-	  n = gatwo->GetN();
-	  gatwo->SetPoint(n,x,atwo);
-	  gatwo->SetPointError(n,ex,eatwo);
-	  	  
-	  n = gpone->GetN();
-	  gpone->SetPoint(n,x,pone);
-	  gpone->SetPointError(n,ex,epone);
-	  
-	  n = gptwo->GetN();
-	  gptwo->SetPoint(n,x,ptwo);
-	  gptwo->SetPointError(n,ex,eptwo);
-	  
-	}
+      n = gatwo->GetN();
+      gatwo->SetPoint(n,x,atwo);
+      gatwo->SetPointError(n,ex,eatwo);
+          
+      n = gpone->GetN();
+      gpone->SetPoint(n,x,pone);
+      gpone->SetPointError(n,ex,epone);
+      
+      n = gptwo->GetN();
+      gptwo->SetPoint(n,x,ptwo);
+      gptwo->SetPointError(n,ex,eptwo);
+      
+    }
 
       } //while hrsp iteration 
 
@@ -439,264 +450,272 @@ int main(int argc,char**argv)
       // fit resolution if requested
       // ---------------------------
       if (fitres) {
-	
-	//TVirtualFitter::SetDefaultFitter("Minuit2");
+    
+    //TVirtualFitter::SetDefaultFitter("Minuit2");
 
-	double fitmin(0.0);
-	double fitmax(0.0);
+    double fitmin(0.0);
+    double fitmax(0.0);
 
-	if (calofitmin!=-1. && alg.find("calo")!=string::npos)   fitmin = calofitmin;
-	if (jptfitmin!=-1. && alg.find("jpt")!=string::npos)     fitmin = jptfitmin;
-	if (pffitmin!=-1. && alg.find("pf")!=string::npos)       fitmin = pffitmin;
-	if (puppifitmin!=-1. && alg.find("puppi")!=string::npos) fitmin = puppifitmin;
+    if (calofitmin!=-1. && alg.find("calo")!=string::npos)   fitmin = calofitmin;
+    if (jptfitmin!=-1. && alg.find("jpt")!=string::npos)     fitmin = jptfitmin;    
+    if (pfchsfitmin!=-1. && alg.find("pfchs")!=string::npos) fitmin = pfchsfitmin;
+    else if (pffitmin!=-1. && alg.find("pf")!=string::npos)  fitmin = pffitmin;
+    if (puppifitmin!=-1. && alg.find("puppi")!=string::npos) fitmin = puppifitmin;
 
-	if (calofitmax!=-1. && alg.find("calo")!=string::npos)   fitmax = calofitmax;
-	if (jptfitmax!=-1. && alg.find("jpt")!=string::npos)     fitmax = jptfitmax;
-	if (pffitmax!=-1. && alg.find("pf")!=string::npos)       fitmax = pffitmax;
+    if (calofitmax!=-1. && alg.find("calo")!=string::npos)   fitmax = calofitmax;
+    if (jptfitmax!=-1. && alg.find("jpt")!=string::npos)     fitmax = jptfitmax;
+    if (pffitmax!=-1. && alg.find("pf")!=string::npos)       fitmax = pffitmax;
     if (puppifitmax!=-1. && alg.find("puppi")!=string::npos) fitmax = puppifitmax;
 
-	// SIGMA
-	for (unsigned int igraph=0;igraph<vres.size();igraph++) {
-	  
-	  TGraphErrors* g = vres[igraph];
-	  //cout << g->GetName() << endl;
+    // SIGMA
+    for (unsigned int igraph=0;igraph<vres.size();igraph++) {
+      
+      TGraphErrors* g = vres[igraph];
+      //cout << g->GetName() << endl;
 
-	  if (g->GetN()==0) continue;
-	  double xmin(g->GetX()[0]);
-	  double xmax(-1e100);
-	  for (int ipoint=0;ipoint<g->GetN();ipoint++)
-	    if (g->GetX()[ipoint]>xmax) xmax = g->GetX()[ipoint];
+      if (g->GetN()==0) continue;
+      double xmin(g->GetX()[0]);
+      double xmax(-1e100);
+      for (int ipoint=0;ipoint<g->GetN();ipoint++)
+        if (g->GetX()[ipoint]>xmax) xmax = g->GetX()[ipoint];
 
-	  if (fitmin!=0.0 && fitmin>xmin) xmin = fitmin;
-	  if (fitmax!=0.0 && fitmax<xmax) xmax = fitmax;
+      if (fitmin!=0.0 && fitmin>xmin) xmin = fitmin;
+      if (fitmax!=0.0 && fitmax<xmax) xmax = fitmax;
 
-	  //TF1* fnc=new TF1("fit",
-		//	   s_sigma.c_str(),
-		//	   xmin,xmax);
-	  TF1* fnc = 0;
+      //TF1* fnc=new TF1("fit",
+        //     s_sigma.c_str(),
+        //     xmin,xmax);
+      TF1* fnc = 0;
+
       if(hlrsp.quantity().find("EtaRsp")!=string::npos ||
          hlrsp.quantity().find("PhiRsp")!=string::npos) {
          fnc = new TF1("fit",s_sigma_angle.c_str(),xmin,xmax);
       }
-	  else if(alg.find("calo")!=string::npos) {
+      else if(alg.find("calo")!=string::npos) {
          fnc = new TF1("fit",s_sigma_calo.c_str(),xmin,xmax);
-	  }
-	  else {
+      }
+      else {
          fnc = new TF1("fit",s_sigma.c_str(),xmin,xmax);
-	  }
-			   
-	  fnc->SetLineWidth(2);
-	  fnc->SetLineColor(g->GetLineColor());
-	  //fnc->SetParameter(0,2.0);
-	  //fnc->SetParameter(1,0.5);
-	  //fnc->SetParameter(2,0.1);
-	  //fnc->SetParameter(3,0.2);
+      }
+               
+      fnc->SetLineWidth(2);
+      fnc->SetLineColor(g->GetLineColor());
+      //fnc->SetParameter(0,2.0);
+      //fnc->SetParameter(1,0.5);
+      //fnc->SetParameter(2,0.1);
+      //fnc->SetParameter(3,0.2);
 
-	  //fnc->FixParameter(2,0.);
+      //fnc->FixParameter(2,0.);
 
       if(hlrsp.quantity().find("EtaRsp")!=string::npos ||
          hlrsp.quantity().find("PhiRsp")!=string::npos) {
          fnc->SetParameters(0.005,0.02,150.0);
       }
-	  else if(alg.find("calo")!=string::npos) {
-		fnc->SetParameters(+1,1,0.05,-0.8);
-	  }
-	  else{
-	  	fnc->SetParameters(-1,1,0.05,-0.8);
-	  }
+      else if(alg.find("calo")!=string::npos) {
+        fnc->SetParameters(+1,1,0.05,-0.8);
+      }
+      else if(alg.find("pf")!=string::npos) {
+        fnc->SetParameters(3.5,0.5,0.03,-1);
+      }
+      else if(alg.find("puppi")!=string::npos) {
+        fnc->SetParameters(3.5,0.5,0.03,-1);
+      }
+      else{
+        fnc->SetParameters(-1,1,0.05,-0.8);
+      }
 
-	  if(fixCTerm.size()==algs.size()) {
-	  	if(fixCTerm[ialg]>-9999.0) {
-	  		fnc->FixParameter(2,fixCTerm[ialg]);
-	  	}
-	  }
+      if(fixCTerm.size()==algs.size()) {
+        if(fixCTerm[ialg]>-9999.0) {
+            fnc->FixParameter(2,fixCTerm[ialg]);
+        }
+      }
 
-	  TString fit_options = "QR+";
-	  if(unweighted) fit_options = "W" + fit_options;
-	  //int fitstatus = g->Fit(fnc,fit_options);
-	  int fitstatus = -1;
-	  for(int i=0; i<nfititer; i++) {
-	  	if(fitstatus==0)
-	  		i=nfititer+1;
-	  	else {
-	  		if(g->GetListOfFunctions()->Last())
-		  		g->GetListOfFunctions()->Last()->Delete();
-		  	fitstatus = g->Fit(fnc,fit_options);
-		}
-	  }
+      TString fit_options = "QR+";
+      if(unweighted) fit_options = "W" + fit_options;
+      //int fitstatus = g->Fit(fnc,fit_options);
+      int fitstatus = -1;
+      for(int i=0; i<nfititer; i++) {
+        if(fitstatus==0)
+            i=nfititer+1;
+        else {
+            if(g->GetListOfFunctions()->Last())
+                g->GetListOfFunctions()->Last()->Delete();
+            fitstatus = g->Fit(fnc,fit_options);
+        }
+      }
 
-	  if (0==fitstatus) resolutions.addEntry(g->GetName(),fnc);
+      if (0==fitstatus) resolutions.addEntry(g->GetName(),fnc);
 
-	  if (0!=fitstatus) {
-	    if (verbose)
-	      cout<<"Fit failed: "<<fitstatus
-		  <<" alg: "<<alg
-		  <<" var: "<<variable
-		  <<" name: "<<g->GetName()<<endl;
-		if(g->GetListOfFunctions()->Last())
-	      g->GetListOfFunctions()->Last()->Delete();
-	    if (verbose)
-	      cout<<"...fnc deleted!"<<endl;
-	  }
-	  /*
-	  else {
-	  	if (verbose)
-	  	cout<<"Fit successful: "<<fitstatus<<" chi2/NDF: "<<fnc->GetChisquare()/fnc->GetNDF()
-	  		<<" alg: "<<alg<<" var: "<<variable<<" name: "<<g->GetName()<<endl;
-	  }
-	  */
-	} // SIGMA
+      if (0!=fitstatus) {
+        if (verbose)
+          cout<<"Fit failed: "<<fitstatus
+          <<" alg: "<<alg
+          <<" var: "<<variable
+          <<" name: "<<g->GetName()<<endl;
+        if(g->GetListOfFunctions()->Last())
+          g->GetListOfFunctions()->Last()->Delete();
+        if (verbose)
+          cout<<"...fnc deleted!"<<endl;
+      }
+      /*
+      else {
+        if (verbose)
+        cout<<"Fit successful: "<<fitstatus<<" chi2/NDF: "<<fnc->GetChisquare()/fnc->GetNDF()
+            <<" alg: "<<alg<<" var: "<<variable<<" name: "<<g->GetName()<<endl;
+      }
+      */
+    } // SIGMA
 
-	if (docbfits) {
-	  // AONE
-	  for (unsigned int igraph=0;igraph<vaone.size();igraph++) {
-	  
-	    TGraphErrors* g = vaone[igraph];
+    if (docbfits) {
+      // AONE
+      for (unsigned int igraph=0;igraph<vaone.size();igraph++) {
+      
+        TGraphErrors* g = vaone[igraph];
 
-	    if (g->GetN()==0) continue;
-	    double xmin(g->GetX()[0]);
-	    double xmax(-1e100);
-	    for (int ipoint=0;ipoint<g->GetN();ipoint++)
-	      if (g->GetX()[ipoint]>xmax) xmax = g->GetX()[ipoint];
+        if (g->GetN()==0) continue;
+        double xmin(g->GetX()[0]);
+        double xmax(-1e100);
+        for (int ipoint=0;ipoint<g->GetN();ipoint++)
+          if (g->GetX()[ipoint]>xmax) xmax = g->GetX()[ipoint];
 
-	    TF1* fnc=new TF1("fit",
-			     s_aone.c_str(),
-			     xmin,xmax);
+        TF1* fnc=new TF1("fit",
+                 s_aone.c_str(),
+                 xmin,xmax);
 
-	    fnc->SetLineWidth(2);
-	    fnc->SetLineColor(g->GetLineColor());
-	    fnc->SetParameter(0,2.);
+        fnc->SetLineWidth(2);
+        fnc->SetLineColor(g->GetLineColor());
+        fnc->SetParameter(0,2.);
 
-	    int fitstatus = g->Fit(fnc,"QR");
+        int fitstatus = g->Fit(fnc,"QR");
 
-	    if (0==fitstatus) resolutions.addEntry(g->GetName(),fnc);
+        if (0==fitstatus) resolutions.addEntry(g->GetName(),fnc);
 
-	    if (0!=fitstatus) {
-	      if (verbose)
-		cout<<"Fit failed: "<<fitstatus
-		    <<" alg: "<<alg
-		    <<" var: "<<variable
-		    <<" name: "<<g->GetName()<<endl;
-	      g->GetListOfFunctions()->Last()->Delete();
-	      if (verbose)
-		cout<<"...fnc deleted!"<<endl;
-	    }
-	  } // AONE
+        if (0!=fitstatus) {
+          if (verbose)
+        cout<<"Fit failed: "<<fitstatus
+            <<" alg: "<<alg
+            <<" var: "<<variable
+            <<" name: "<<g->GetName()<<endl;
+          g->GetListOfFunctions()->Last()->Delete();
+          if (verbose)
+        cout<<"...fnc deleted!"<<endl;
+        }
+      } // AONE
 
-	  // ATWO
-	  for (unsigned int igraph=0;igraph<vatwo.size();igraph++) {
-	  
-	    TGraphErrors* g = vatwo[igraph];
+      // ATWO
+      for (unsigned int igraph=0;igraph<vatwo.size();igraph++) {
+      
+        TGraphErrors* g = vatwo[igraph];
 
-	    if (g->GetN()==0) continue;
-	    double xmin(g->GetX()[0]);
-	    double xmax(-1e100);
-	    for (int ipoint=0;ipoint<g->GetN();ipoint++)
-	      if (g->GetX()[ipoint]>xmax) xmax = g->GetX()[ipoint];
+        if (g->GetN()==0) continue;
+        double xmin(g->GetX()[0]);
+        double xmax(-1e100);
+        for (int ipoint=0;ipoint<g->GetN();ipoint++)
+          if (g->GetX()[ipoint]>xmax) xmax = g->GetX()[ipoint];
 
-	    TF1* fnc=new TF1("fit",
-			     s_atwo.c_str(),
-			     xmin,xmax);
+        TF1* fnc=new TF1("fit",
+                 s_atwo.c_str(),
+                 xmin,xmax);
 
-	    fnc->SetLineWidth(2);
-	    fnc->SetLineColor(g->GetLineColor());
-	    fnc->SetParameter(0,2.);
-	    fnc->SetParameter(1,0.7);
+        fnc->SetLineWidth(2);
+        fnc->SetLineColor(g->GetLineColor());
+        fnc->SetParameter(0,2.);
+        fnc->SetParameter(1,0.7);
 
-	    int fitstatus = g->Fit(fnc,"QR");
+        int fitstatus = g->Fit(fnc,"QR");
 
-	    if (0==fitstatus) resolutions.addEntry(g->GetName(),fnc);
+        if (0==fitstatus) resolutions.addEntry(g->GetName(),fnc);
 
-	    if (0!=fitstatus) {
-	      if (verbose)
-		cout<<"Fit failed: "<<fitstatus
-		    <<" alg: "<<alg
-		    <<" var: "<<variable
-		    <<" name: "<<g->GetName()<<endl;
-	      g->GetListOfFunctions()->Last()->Delete();
-	      if (verbose)
-		cout<<"...fnc deleted!"<<endl;
-	    }
-	  } // ATWO
+        if (0!=fitstatus) {
+          if (verbose)
+        cout<<"Fit failed: "<<fitstatus
+            <<" alg: "<<alg
+            <<" var: "<<variable
+            <<" name: "<<g->GetName()<<endl;
+          g->GetListOfFunctions()->Last()->Delete();
+          if (verbose)
+        cout<<"...fnc deleted!"<<endl;
+        }
+      } // ATWO
 
-	  // PONE
-	  for (unsigned int igraph=0;igraph<vpone.size();igraph++) {
-	  
-	    TGraphErrors* g = vpone[igraph];
+      // PONE
+      for (unsigned int igraph=0;igraph<vpone.size();igraph++) {
+      
+        TGraphErrors* g = vpone[igraph];
 
-	    if (g->GetN()==0) continue;
-	    double xmin(g->GetX()[0]);
-	    double xmax(-1e100);
-	    for (int ipoint=0;ipoint<g->GetN();ipoint++)
-	      if (g->GetX()[ipoint]>xmax) xmax = g->GetX()[ipoint];
+        if (g->GetN()==0) continue;
+        double xmin(g->GetX()[0]);
+        double xmax(-1e100);
+        for (int ipoint=0;ipoint<g->GetN();ipoint++)
+          if (g->GetX()[ipoint]>xmax) xmax = g->GetX()[ipoint];
 
-	    TF1* fnc=new TF1("fit",
-			     s_pone.c_str(),
-			     xmin,xmax);
+        TF1* fnc=new TF1("fit",
+                 s_pone.c_str(),
+                 xmin,xmax);
 
-	    fnc->SetLineWidth(2);
-	    fnc->SetLineColor(g->GetLineColor());
+        fnc->SetLineWidth(2);
+        fnc->SetLineColor(g->GetLineColor());
 
-	    fnc->FixParameter(0,25);
-	    fnc->SetParameter(1,.05);
-	    fnc->SetParameter(2,100);
-	    fnc->SetParameter(3,3);
-	    
-	    int fitstatus = g->Fit(fnc,"QR");
+        fnc->FixParameter(0,25);
+        fnc->SetParameter(1,.05);
+        fnc->SetParameter(2,100);
+        fnc->SetParameter(3,3);
+        
+        int fitstatus = g->Fit(fnc,"QR");
 
-	    if (0==fitstatus) resolutions.addEntry(g->GetName(),fnc);
+        if (0==fitstatus) resolutions.addEntry(g->GetName(),fnc);
 
-	    if (0!=fitstatus) {
-	      if (verbose)
-		cout<<"Fit failed: "<<fitstatus
-		    <<" alg: "<<alg
-		    <<" var: "<<variable
-		    <<" name: "<<g->GetName()<<endl;
-	      g->GetListOfFunctions()->Last()->Delete();
-	      if (verbose)
-		cout<<"...fnc deleted!"<<endl;
-	    }
-	  } // PONE
+        if (0!=fitstatus) {
+          if (verbose)
+        cout<<"Fit failed: "<<fitstatus
+            <<" alg: "<<alg
+            <<" var: "<<variable
+            <<" name: "<<g->GetName()<<endl;
+          g->GetListOfFunctions()->Last()->Delete();
+          if (verbose)
+        cout<<"...fnc deleted!"<<endl;
+        }
+      } // PONE
 
-	  // PTWO
-	  for (unsigned int igraph=0;igraph<vptwo.size();igraph++) {
-	  
-	    TGraphErrors* g = vptwo[igraph];
+      // PTWO
+      for (unsigned int igraph=0;igraph<vptwo.size();igraph++) {
+      
+        TGraphErrors* g = vptwo[igraph];
 
-	    if (g->GetN()==0) continue;
-	    double xmin(g->GetX()[0]);
-	    double xmax(-1e100);
-	    for (int ipoint=0;ipoint<g->GetN();ipoint++)
-	      if (g->GetX()[ipoint]>xmax) xmax = g->GetX()[ipoint];
+        if (g->GetN()==0) continue;
+        double xmin(g->GetX()[0]);
+        double xmax(-1e100);
+        for (int ipoint=0;ipoint<g->GetN();ipoint++)
+          if (g->GetX()[ipoint]>xmax) xmax = g->GetX()[ipoint];
 
-	    TF1* fnc=new TF1("fit",
-			     s_ptwo.c_str(),
-			     xmin,xmax);
+        TF1* fnc=new TF1("fit",
+                 s_ptwo.c_str(),
+                 xmin,xmax);
 
-	    fnc->SetLineWidth(2);
-	    fnc->SetLineColor(g->GetLineColor());
+        fnc->SetLineWidth(2);
+        fnc->SetLineColor(g->GetLineColor());
 
-	    fnc->FixParameter(0,25);
-	    fnc->SetParameter(1,.05);
-	    fnc->SetParameter(2,100);
-	    fnc->SetParameter(3,3);
+        fnc->FixParameter(0,25);
+        fnc->SetParameter(1,.05);
+        fnc->SetParameter(2,100);
+        fnc->SetParameter(3,3);
 
-	    int fitstatus = g->Fit(fnc,"QR");
+        int fitstatus = g->Fit(fnc,"QR");
 
-	    if (0==fitstatus) resolutions.addEntry(g->GetName(),fnc);
+        if (0==fitstatus) resolutions.addEntry(g->GetName(),fnc);
 
-	    if (0!=fitstatus) {
-	      if (verbose)
-		cout<<"Fit failed: "<<fitstatus
-		    <<" alg: "<<alg
-		    <<" var: "<<variable
-		    <<" name: "<<g->GetName()<<endl;
-	      g->GetListOfFunctions()->Last()->Delete();
-	      if (verbose)
-		cout<<"...fnc deleted!"<<endl;
-	    }
-	  } // PTWO
-	} 
+        if (0!=fitstatus) {
+          if (verbose)
+        cout<<"Fit failed: "<<fitstatus
+            <<" alg: "<<alg
+            <<" var: "<<variable
+            <<" name: "<<g->GetName()<<endl;
+          g->GetListOfFunctions()->Last()->Delete();
+          if (verbose)
+        cout<<"...fnc deleted!"<<endl;
+        }
+      } // PTWO
+    } 
  
       } // if (fitres)
 
@@ -733,7 +752,6 @@ int main(int argc,char**argv)
 
   }
   
-  
   //
   // close input & output files
   //
@@ -741,6 +759,7 @@ int main(int argc,char**argv)
   ofile->Close();
   delete ofile;
 
+  gROOT->GetListOfFiles()->Remove(ifile);
   ifile->Close();
   delete ifile;
 
