@@ -162,9 +162,9 @@ struct JERWriter
                         if (profy != "" ) xfile = profy;
                         else xfile = (*it2ndBins).first;
 
-                        ssfile<<"{2 "<<(*itbins).first<<" "<<xfile <<" 1 "+xpar+" "
+                        ssfile<<"{2    "<<(*itbins).first<<"    "<<xfile <<"    1    "+xpar+"    "
                               <<ff->GetTitle()  //<<" PAR"<<i
-                              <<" "<<(*dscb2names.find(dscb[i])).second<<"}\n";
+                              <<"    "<<(*dscb2names.find(dscb[i])).second<<"}\n";
                     }
                     else{
                         ssfile<<"{1 "<<(*itbins).first<<" 1 "+xpar+" "
@@ -537,7 +537,7 @@ struct JERWriter
         dscb2pars["ptwo"]  =string("Ptwo");
 
         dscb2names["mean"] =string("\\mu");
-        dscb2names["sigma"]=string("resolution");
+        dscb2names["sigma"]=string("Resolution");
         dscb2names["aone"] =string("Aone");
         dscb2names["atwo"] =string("Atwo");
         dscb2names["pone"] =string("Pone");
