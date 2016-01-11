@@ -170,7 +170,7 @@ int main(int argc,char**argv)
     itree->SetBranchStatus("jtpt",0);
     itree->SetBranchStatus("jte", 0);
     if (debug) cout << "Cloning the input tree to the output tree ... " << flush;
-    TTree*      otree = (debug) ? itree->CloneTree(10000) : itree->CloneTree();
+    TTree*      otree = (debug) ? itree->CloneTree(10000) : itree->CloneTree(-1,"fast");
     if (debug) cout << "DONE" << endl;
     itree->SetBranchStatus("jtpt",1);
     itree->SetBranchStatus("jte", 1);
@@ -230,6 +230,8 @@ int main(int argc,char**argv)
        b_jte ->Fill();
     }
     otree->Write();
+    delete itree;
+    delete otree;
   }
   
   // close files
