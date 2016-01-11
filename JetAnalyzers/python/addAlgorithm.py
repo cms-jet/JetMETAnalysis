@@ -6,7 +6,8 @@ import FWCore.ParameterSet.Config as cms
 
 partons = cms.EDProducer('PartonSelector',
     src = cms.InputTag('genParticles'),
-    withLeptons = cms.bool(False)
+    withLeptons = cms.bool(False),
+    skipFirstN = cms.uint32(0)
 )
 
 
@@ -45,7 +46,8 @@ for tauDiscriminator in tauDiscriminatorDict:
 stdGenJetsDict = {
 #	'ak3calo'       : 'ak3GenJets',
 #	'ak4calo'       : 'ak4GenJets',
-    'ak4calo'       : 'ak5GenJets',
+    'ak4calo'       : 'ak4GenJets',
+    'ak5calo'       : 'ak5GenJets',
 #	'ak6calo'       : 'ak6GenJets',
     'ak7calo'       : 'ak7GenJets',
 #	'ak8calo'       : 'ak8GenJets',
@@ -106,7 +108,8 @@ for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
 genJetsDict = {
 #	'ak3calo'       : ('ak3GenJetsNoNu',               ak3GenJetsNoNu),
 #	'ak4calo'       : ('ak4GenJetsNoNu',               ak4GenJetsNoNu),
-    'ak4calo'       : ('ak5GenJetsNoNu',               ak5GenJetsNoNu), #chaned to NoNu from NoMuNoNu
+    'ak4calo'       : ('ak4GenJetsNoNu',               ak4GenJetsNoNu), #chaned to NoNu from NoMuNoNu
+    'ak5calo'       : ('ak5GenJetsNoNu',               ak5GenJetsNoNu),
 #	'ak6calo'       : ('ak6GenJetsNoNu',               ak6GenJetsNoNu),
     'ak7calo'       : ('ak7GenJetsNoNu',               ak7GenJetsNoNu),
 #	'ak8calo'       : ('ak8GenJetsNoNu',               ak8GenJetsNoNu),
@@ -169,6 +172,7 @@ stdRecJetsDict = {
 #    'ak3calo'       : 'ak3CaloJets',
 #    'ak4calo'       : 'ak4CaloJets',
     'ak4calo'       : 'ak4CaloJets',
+    'ak5calo'       : 'ak5CaloJets',
 #	'ak6calo'       : 'ak6CaloJets',
     'ak7calo'       : 'ak7CaloJets',
 #	'ak8calo'       : 'ak8CaloJets',
@@ -228,6 +232,7 @@ recJetsDict = {
 #    'ak3calo'       : ('ak3CaloJets',        ak3CaloJets),
 #    'ak4calo'       : ('ak4CaloJets',        ak4CaloJets),
     'ak4calo'       : ('ak4CaloJets',        ak4CaloJets),
+    'ak5calo'       : ('ak5CaloJets',        ak5CaloJets),
 #	'ak6calo'       : ('ak6CaloJets',        ak6CaloJets),
     'ak7calo'       : ('ak7CaloJets',        ak7CaloJets),
 #	'ak8calo'       : ('ak8CaloJets',        ak8CaloJets),
@@ -337,6 +342,7 @@ corrJetsDict = {
     'ak8puppil1'           : ('ak8PUPPIJetsL1Fast',       ak8PUPPIJetsL1Fast),
     'ak9puppil1'           : ('ak9PUPPIJetsL1Fast',       ak9PUPPIJetsL1Fast),
     'ak10puppil1'          : ('ak10PUPPIJetsL1Fast',      ak10PUPPIJetsL1Fast),
+    'ak5calol2l3'          : ('ak5CaloJetsL2L3',           ak5CaloJetsL2L3),
     'ak4calol2l3'          : ('ak4CaloJetsL2L3',           ak4CaloJetsL2L3),
     'ak7calol2l3'          : ('ak7CaloJetsL2L3',           ak7CaloJetsL2L3),
     'kt4calol2l3'          : ('kt4CaloJetsL2L3',           kt4CaloJetsL2L3),
@@ -344,6 +350,7 @@ corrJetsDict = {
     'ak5caloHLTl2l3'       : ('ak5CaloHLTJetsL2L3',        ak5CaloHLTJetsL2L3),
 #    'ak5jptl2l3'           : ('ak5JPTJetsL2L3',            ak5JPTJetsL2L3),
 #    'ak7jptl2l3'           : ('ak7JPTJetsL2L3',            ak7JPTJetsL2L3),
+    'ak4pfl2l3'            : ('ak4PFJetsL2L3',             ak4PFJetsL2L3),
     'ak5pfl2l3'            : ('ak5PFJetsL2L3',             ak5PFJetsL2L3),
     'ak7pfl2l3'            : ('ak7PFJetsL2L3',             ak7PFJetsL2L3),
     'kt4pfl2l3'            : ('kt4PFJetsL2L3',             kt4PFJetsL2L3),
@@ -629,6 +636,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         if correctl1:
             recJets.doAreaFastjet = True #Should this be on for L1Offset
             recJets.Rho_EtaMax    = cms.double(4.4) # FIX LATER
+        recJets.jetPtMin = cms.double(3.0)
         setattr(process, recLabel, recJets)
         sequence = cms.Sequence(recJets * sequence)
         if type == 'PUPPI':
