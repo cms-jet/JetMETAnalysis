@@ -78,6 +78,7 @@ public:
 	void loopOverHistograms();
 	void etaClosureMergedPtBins(TDirectoryFile* idir);
 	void loopOverBins(TH2F* hvar, unsigned int iVarBin);
+    void adjust_fitrange(TH1* h,double& min,double& max);
 	void checkResponse();
 	void makeCanvases();
 	void makeMergedCanvas();
@@ -86,12 +87,14 @@ public:
 
 private:
 	bool           	 				 useMPV, objects_loaded, draw_guidelines;
-	double							 CMEnergy;
+   double							 CMEnergy, nsigma;
 	TString        	 				 path, filename, outputDir, flavor, alg;
 	vector<TString>	 				 algs, outputFormat;
 	JetInfo							 *ji;
 	TFile							 *ifile, *ofile;
 	ObjectLoader<TH2F> 				 hl;
+    vector<TH1D*>                    h;
+    vector<TF1*>                     func;
 	vector<TH1F*> 					 hClosure;
 	TF1				   				 *line, *linePlus, *lineMinus;
 	vector<pair<TCanvas*,TLegend*> > canvases_legends;

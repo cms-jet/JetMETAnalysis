@@ -79,7 +79,7 @@ public:
 	void loopOverFilesAndDirectories();
 	void loopOverFilesAndAlgorithms();
 	void getGraphs(TDirectoryFile* idir);
-	void makeDifferenceGraph();
+	void makeDifferenceGraph(double epsilon_point = 0.05);
 	void drawDifference(int count);
 	void writeToFile();
 	void closeFiles();

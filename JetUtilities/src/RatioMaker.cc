@@ -327,7 +327,8 @@ void RatioMaker::makeRatio(const VARIABLES::Variable ivar, bool multiBin) {
 				frameRatio->GetXaxis()->SetLimits(XminCalo[ibin],Xmax[ibin]);
 			}
 			//frame->GetYaxis()->SetRangeUser(0.95,1.05);
-			frame->GetYaxis()->SetRangeUser(0.35,1.35);
+			//frame->GetYaxis()->SetRangeUser(0.35,1.35);
+            frame->GetYaxis()->SetRangeUser(0.00,1.3);
 		}
 		else if(var == VARIABLES::refeta || var == VARIABLES::jteta) {
 			float etaMax = min(eta_max,TMath::ACosH(CMEnergy/2.0/vpt[ibin]));

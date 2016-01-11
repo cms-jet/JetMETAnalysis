@@ -252,13 +252,13 @@ void DifferenceMaker::openCanvas() {
     double paveymin = paveymax - (npavelabels)*0.055;
 
     TH1D* frame = new TH1D();
-    frame->GetXaxis()->SetLimits(30.0,4000.0);
+    frame->GetXaxis()->SetLimits(20.0,5000.0);
     frame->GetXaxis()->SetMoreLogLabels();
     frame->GetXaxis()->SetNoExponent();
-    if(algs.size()==1 && algs[0].Contains("Calo"))
-        frame->GetYaxis()->SetRangeUser(0.0,0.2);
-    else if(algs.size()==1 && algs[0].Contains("pf"))
-       frame->GetYaxis()->SetRangeUser(0.0,0.2);//0.08);
+    if(algs.size()==1 && algs[0].Contains("calo",TString::kIgnoreCase))
+        frame->GetYaxis()->SetRangeUser(-0.01,0.2);
+    else if(algs.size()==1 && algs[0].Contains("pf",TString::kIgnoreCase))
+       frame->GetYaxis()->SetRangeUser(-0.01,0.2);//0.08);
     else
         frame->GetYaxis()->SetRangeUser(0.0,0.2);
     frame->GetXaxis()->SetTitle("p_{T}^{REF} (GeV)");
@@ -283,7 +283,18 @@ void DifferenceMaker::openCanvas() {
                                //tdrLeg(0.38,0.67,0.78,0.92)));
     canvases_legends.back().first->GetPad(0)->SetLogx();
 
-    canvases_legends.back().second->AddEntry((TObject*)0,"|#eta|<1.3","");
+    if(object.Contains("_JetEta",TString::kIgnoreCase)) {
+       if(object.Contains("0to1.3"))
+          canvases_legends.back().second->AddEntry((TObject*)0,"|#eta|<1.3","");
+       else if(object.Contains("1.3to2.5"))
+          canvases_legends.back().second->AddEntry((TObject*)0,"1.3<|#eta|<2.5","");
+       else if(object.Contains("1.6to2.5"))
+          canvases_legends.back().second->AddEntry((TObject*)0,"1.6<|#eta|<2.5","");
+       else if(object.Contains("2.5to3"))
+          canvases_legends.back().second->AddEntry((TObject*)0,"2.5<|#eta|<3","");
+       else if(object.Contains("3to5"))
+          canvases_legends.back().second->AddEntry((TObject*)0,"3<|#eta|<5","");
+    }
     canvases_legends.back().second->AddEntry((TObject*)0,"Parton Flavor",""); //A.K.A Physics Definition
     //leg->AddEntry((TObject*)0,"Algorithmic Flavor","");
     if(flavorDiffSingleAlg) {
@@ -360,15 +371,20 @@ void DifferenceMaker::getGraphs(TDirectoryFile* idir) {
 }
 
 //______________________________________________________________________________
-void DifferenceMaker::makeDifferenceGraph() {
+void DifferenceMaker::makeDifferenceGraph(double epsilon_point) {
     for(unsigned int ig=0; ig<gl.size(); ig++) {
-        int N_ = gl[ig].first->GetN();
+        int offset_first = 0, offset_second = 0;
+        int N_ = min(gl[ig].first->GetN(),gl[ig].second->GetN());
         int ibin = 0;
         vector<double> x(N_,0.0), y(N_,0.0), exl(N_,0.0), exh(N_,0.0), ey(N_,0.0);
         for(int i=0; i<N_; i++) {
-            x[i] = (gl[ig].first->GetX()[i]);
-            y[i] = (gl[ig].first->GetY()[i]-gl[ig].second->GetY()[i]);
-            ey[i] = (TMath::Sqrt(TMath::Power(gl[ig].first->GetEY()[i],2)+TMath::Power(gl[ig].second->GetEY()[i],2)));
+            double diff_x = gl[ig].first->GetX()[i+offset_first]-gl[ig].second->GetX()[i+offset_second];
+            if(diff_x<-epsilon_point*gl[ig].second->GetX()[i+offset_second]) {offset_first++; i--; continue;}
+            else if(diff_x>epsilon_point*gl[ig].first->GetX()[i+offset_first]) {offset_second++; i--; continue;}
+
+            x[i] = (gl[ig].first->GetX()[i+offset_first]+gl[ig].second->GetX()[i+offset_second])/2.0;
+            y[i] = (gl[ig].first->GetY()[i+offset_first]-gl[ig].second->GetY()[i+offset_second]);
+            ey[i] = (TMath::Sqrt(TMath::Power(gl[ig].first->GetEY()[i+offset_first],2)+TMath::Power(gl[ig].second->GetEY()[i+offset_second],2)));
             if(var == VARIABLES::refpt)
                 ibin = JetInfo::getBin(x[i],vpt,NPtBins);
             else {
@@ -378,10 +394,17 @@ void DifferenceMaker::makeDifferenceGraph() {
             }
             exl[i] = x[i]-vpt[ibin];
             exh[i] = vpt[ibin+1]-x[i];
+            //cout << gl[ig].first->GetName() << " minus " << gl[ig].second->GetName() << endl;
             //cout << "i=" << i << " ibin=" << ibin << " x=" << x[i] << " y=" << y[i] << " ey=" << ey[i]
             //     << " exl=" << exl[i] << " exh=" << exh[i] << endl;
+            //cout << "\toffset_first=" << offset_first << " offset_second=" << offset_second << endl;
         }
         TGraphAsymmErrors* diff = new TGraphAsymmErrors(N_,&x.at(0),&y.at(0),&exl.at(0),&exh.at(0),&ey.at(0),&ey.at(0));
+        if(flavorDiff) {
+           TString name = Form("%sMinus%s_%s_%s",flavor1[ig].Data(),flavor2[ig].Data(),
+                               object.Data(),JetInfo::ListToString(algs,"_").Data());
+           diff->SetNameTitle(name,name);
+        }
         glDiff.push_back(diff);
     }
 }
@@ -411,6 +434,9 @@ void DifferenceMaker::drawDifference(int count) {
 //______________________________________________________________________________
 void DifferenceMaker::writeToFile() {
     ofile->cd();
+    for(auto it : glDiff) {
+       it->Write();
+    }
     for(auto it : canvases_legends) {
         it.first->Write();
         for(unsigned int iformat=0; iformat<outputFormat.size(); iformat++) {

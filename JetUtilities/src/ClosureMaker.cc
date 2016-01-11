@@ -14,6 +14,7 @@ ClosureMaker::ClosureMaker() {
   	path 	     	= "";
   	filename		= "Closure";
 	useMPV		 	= false;
+    nsigma          = 1.5;
 	outputDir    	= "./";
 	outputFormat 	= {".png",".eps",".pdf"};
 	CMEnergy	 	= 13000;
@@ -46,6 +47,7 @@ ClosureMaker::ClosureMaker(CommandLine& cl) {
   	path         = cl.getValue<TString>  ("path",       	         "");
   	filename	 = cl.getValue<TString>	 ("filename",    	  "Closure");
     useMPV       = cl.getValue<bool>     ("useMPV",     	      false);
+    nsigma       = cl.getValue<double>   ("nsigma",                 1.5);
     draw_guidelines = cl.getValue<bool>	 ("draw_guidelines",       true);
 	outputDir    = cl.getValue<TString>  ("outputDir",  	   	   "./");
 	outputFormat = cl.getVector<TString> ("outputFormat", ".png:::.eps");
@@ -186,6 +188,8 @@ void ClosureMaker::resetForNextAlgorithm() {
   		delete linePlus;
   	if(lineMinus!=0)
   		delete lineMinus;
+    h.erase(h.begin(),h.end());
+    func.erase(func.begin(),func.end());
   	hClosure.erase(hClosure.begin(),hClosure.end());
   	canvases_legends.erase(canvases_legends.begin(),canvases_legends.end());
   	pave.erase(pave.begin(),pave.end());
@@ -313,8 +317,7 @@ void ClosureMaker::etaClosureMergedPtBins(TDirectoryFile* idir) {
 void ClosureMaker::loopOverBins(TH2F* hvar, unsigned int iVarBin) {
 
 	TString name;
-	vector<TH1D*> h(0);
-	vector<TF1*> func(0);
+    string const_bin, hvar_name(hvar->GetName());
 	vector<string> varBins;
 	unsigned int nbins = 0;
 
@@ -327,23 +330,46 @@ void ClosureMaker::loopOverBins(TH2F* hvar, unsigned int iVarBin) {
 		varBins.insert(varBins.end(), &eta_boundaries[0], &eta_boundaries[NETA+1]);
 	}
 
+    const_bin = hvar_name.substr(hvar_name.find("_")+1);
+
 	for(unsigned int ibin=0; ibin<nbins; ibin++) {
-        name = Form("CorResponse_%d_%s%sto%s",ibin,getVariableTitleString(var).c_str(),
+        name = Form("Response_%s_%d_%s%sto%s",const_bin.c_str(),
+                    ibin,getVariableTitleString(var).c_str(),
                     varBins[ibin].c_str(),varBins[ibin+1].c_str());
         h.push_back(hvar->ProjectionY(name,ibin+1,ibin+1));
 
         if (h.back()->GetEntries()>5) {
           	if(useMPV) {
-          		name = Form("FitResponse_%d_%s%sto%s",ibin,getVariableTitleString(var).c_str(),
+                int nbins = 50;//100;
+                TSpectrum *spec = new TSpectrum(10);
+                if(nbins < 100) spec->Search(h.back(),6,"nobackground nodraw goff"); //turn off background removal when nbins too small
+                else spec->Search(h.back(),6,"nodraw goff");
+                Double_t* xpos = spec->GetPositionX();
+                Double_t p = xpos[0];
+                double fitrange_min = p-nsigma*h.back()->GetRMS();
+                double fitrange_max = p+nsigma*h.back()->GetRMS();
+
+          		name = Form("FitResponse_%s_%d_%s%sto%s",const_bin.c_str(),
+                            ibin,getVariableTitleString(var).c_str(),
                     	    varBins[ibin].c_str(),varBins[ibin+1].c_str());
-        		func.push_back(new TF1(name,"gaus",h.back()->GetMean()-1.5*h.back()->GetRMS(),
-                           	   h.back()->GetMean()+1.5*h.back()->GetRMS()));
+        		//func.push_back(new TF1(name,"gaus",h.back()->GetMean()-1.5*h.back()->GetRMS(),
+                //           	   h.back()->GetMean()+1.5*h.back()->GetRMS()));
+                adjust_fitrange(h.back(),fitrange_min,fitrange_max);
+                if(TString(alg).Contains("calo",TString::kIgnoreCase) && ibin<20) {
+                   fitrange_min = p;
+                   fitrange_max += 0.1;
+                }
+                func.push_back(new TF1(name,"gaus",fitrange_min,fitrange_max));
         		func.back()->SetLineColor(4);
     	    	func.back()->SetLineWidth(2);
 	        	func.back()->SetParNames("N","#mu","#sigma");
+                func.back()->SetParameters(h.back()->GetMaximumStored(),p,h.back()->GetRMS());
           		h.back()->Fit(func.back(),"RQ");
-            	hClosure.back()->SetBinContent(ibin+1,func.back()->GetParameter(1));
-            	hClosure.back()->SetBinError(ibin+1,func.back()->GetParError(1));
+
+                hClosure.back()->SetBinContent(ibin+1,func.back()->GetParameter(1));
+                hClosure.back()->SetBinError(ibin+1,func.back()->GetParError(1));
+
+                delete spec;
           	}
           	else {
             	hClosure.back()->SetBinContent(ibin+1,h.back()->GetMean());
@@ -358,6 +384,16 @@ void ClosureMaker::loopOverBins(TH2F* hvar, unsigned int iVarBin) {
           	continue;
         }
     }
+}
+
+//______________________________________________________________________________
+void ClosureMaker::adjust_fitrange(TH1* h,double& min,double& max) {
+   int imin=1; while (h->GetBinLowEdge(imin)<min) imin++;
+   int imax=1; while (h->GetBinLowEdge(imax)<max) imax++;
+   while ((imax-imin)<8) {
+      if (imin>1) {imin--; min = h->GetBinCenter(imin); }
+      if (imax<h->GetNbinsX()-1) { imax++; max=h->GetBinCenter(imax); }
+   }
 }
 
 //______________________________________________________________________________
@@ -418,7 +454,8 @@ void ClosureMaker::makeCanvases() {
 		frame->GetXaxis()->SetMoreLogLabels();
 		frame->GetXaxis()->SetNoExponent();
 		//frame->GetYaxis()->SetRangeUser(0.95,1.05);
-		frame->GetYaxis()->SetRangeUser(0.35,1.35);
+		//frame->GetYaxis()->SetRangeUser(0.35,1.35);
+        frame->GetYaxis()->SetRangeUser(0.00,1.3);
 		frame->GetXaxis()->SetTitle(getVariableAxisTitleString(var).c_str());
 		frame->GetYaxis()->SetTitle("Response");
 		canvases_legends.push_back(make_pair(tdrCanvas(name,frame,14,11,true),
@@ -533,6 +570,12 @@ void ClosureMaker::makeMergedCanvas() {
 //______________________________________________________________________________
 void ClosureMaker::writeToFile() {
 	odir->cd();
+    TDirectory* hdir = odir->mkdir("RelRspHistograms");
+    hdir->cd();
+    for(auto it : h) {
+       it->Write();
+    }
+    odir->cd();
 	for(auto it : hClosure) {
 		it->Write();
 	}
