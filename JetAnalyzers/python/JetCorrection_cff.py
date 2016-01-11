@@ -76,7 +76,13 @@ ak4CaloJetsL1Off = cms.EDProducer(
 		    correctors  = cms.vstring('ak4CaloL1Offset')
 		    )
 ak7CaloJetsL1Off = ak4CaloJetsL1Off.clone(src='ak7CaloJets', correctors=['ak7CaloL1Offset'])
-ak5CaloJetsL2L3   = cms.EDProducer('PFJetCorrectionProducer',
+ak5CaloL2Relative = ak4CaloL2Relative.clone( algorithm = 'AK5Calo' )
+ak5CaloL3Absolute = ak4CaloL3Absolute.clone( algorithm = 'AK5Calo' )
+ak5CaloL2L3 = cms.ESProducer(
+    'JetCorrectionESChain',
+    correctors = cms.vstring('ak5CaloL2Relative','ak5CaloL3Absolute')
+    )
+ak5CaloJetsL2L3   = cms.EDProducer('CaloJetCorrectionProducer',
     src         = cms.InputTag('ak5CaloJets'),
     correctors  = cms.vstring('ak5CaloL2L3')
     )
