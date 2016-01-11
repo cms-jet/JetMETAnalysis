@@ -536,7 +536,7 @@ int main(int argc,char** argv)
                << "alg=" << algs[i] << endl
                << "variable=" << variables[0] << endl;
           for(int ipoint=0; ipoint<nPoints; ipoint++) {
-            if(xVals[ipoint]<30) {
+            if(xVals[ipoint]<20) {
               cout << "\tRemoving point " << ipoint << " at x=" << xVals[ipoint] << endl;
               tmp->RemovePoint(ipoint);
               ipoint--;
@@ -580,6 +580,7 @@ int main(int argc,char** argv)
           }
           tdrDraw(tmp,"P",tmp->GetMarkerStyle(),tmp->GetMarkerColor(),
                   tmp->GetLineStyle(),tmp->GetLineColor());
+          draw_extrapolation(mg,fullfit,xmin,xmax);
         }
       }
       if(residual>=0) {
