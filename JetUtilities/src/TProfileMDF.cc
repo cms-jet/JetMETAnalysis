@@ -215,9 +215,9 @@ void TProfileMDF::Add(TProfileMDF *h1, TProfileMDF *h2, Double_t c1, Double_t c2
    SetMinimum();
    SetMaximum();
 
-//    Reset the kCanRebin option. Otherwise SetBinContent on the overflow bin
+//    Reset the SetCanExtend option. Otherwise SetBinContent on the overflow bin
 //    would resize the axis limits!
-   ResetBit(kCanRebin);
+   SetCanExtend(TH1::kNoAxis);
 
 //   - Loop on bins (including underflows/overflows)
    vector<Int_t> coord(fAxes.size(),0);
