@@ -381,12 +381,16 @@ corrJetsDict = {
 #	'ak7jptl1l2l3'         : ('ak5JPTJetsL1FastL2L3',      ak7JPTJetsL1FastL2L3),
 #    'ak5jptl1offl2l3'      : ('ak5JPTJetsL1L2L3',          ak5JPTJetsL1L2L3),
 #    'ak7jptl1offl2l3'      : ('ak7JPTJetsL1L2L3',          ak7JPTJetsL1L2L3),
+    'ak4pfl1l2l3'          : ('ak4PFJetsL1FastL2L3',       ak4PFJetsL1FastL2L3),
+    'ak8pfl1l2l3'          : ('ak8PFJetsL1FastL2L3',       ak8PFJetsL1FastL2L3),
     'ak5pfl1l2l3'          : ('ak5PFJetsL1FastL2L3',       ak5PFJetsL1FastL2L3),
     'ak5pfl1offl2l3'       : ('ak5PFJetsL1L2L3',           ak5PFJetsL1L2L3),
     'ak7pfl1l2l3'          : ('ak7PFJetsL1FastL2L3',       ak7PFJetsL1FastL2L3),
     'ak7pfl1offl2l3'       : ('ak7PFJetsL1L2L3',           ak7PFJetsL1L2L3),
     'kt4pfl1l2l3'          : ('kt4PFJetsL1FastL2L3',       kt4PFJetsL1FastL2L3),
     'kt6pfl1l2l3'          : ('kt6PFJetsL1FastL2L3',       kt6PFJetsL1FastL2L3),
+    'ak4pfchsl1l2l3'       : ('ak4PFchsJetsL1FastL2L3',    ak4PFchsJetsL1FastL2L3),
+    'ak8pfchsl1l2l3'       : ('ak8PFchsJetsL1FastL2L3',    ak8PFchsJetsL1FastL2L3),
     'ak5pfchsl1l2l3'       : ('ak5PFchsJetsL1FastL2L3',    ak5PFchsJetsL1FastL2L3),
     'ak5pfchsl1offl2l3'    : ('ak5PFchsJetsL1L2L3',        ak5PFchsJetsL1L2L3),
     'ak7pfchsl1l2l3'       : ('ak7PFchsJetsL1FastL2L3',    ak7PFchsJetsL1FastL2L3),
@@ -788,7 +792,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
     elif type == 'PFchs':
         process.kt6PFchsJetsRhos = kt6PFJets.clone(src = 'pfNoPileUpJME',
                                                    doFastJetNonUniform = cms.bool(True),
-                                                   puCenters = cms.vdouble(5,-4,-3,-2,-1,0,1,2,3,4,5), 
+                                                   puCenters = cms.vdouble(-5,-4,-3,-2,-1,0,1,2,3,4,5), 
                                                    puWidth = cms.double(.8),
                                                    nExclude = cms.uint32(2))
         sequence = cms.Sequence(process.kt6PFchsJetsRhos * sequence)
@@ -802,7 +806,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         jra.srcRhoHLT = ak5PFchsHLTL1Fastjet.srcRho
     elif type == 'PF':
         process.kt6PFJetsRhos = kt6PFJets.clone(doFastJetNonUniform = cms.bool(True),
-                                                puCenters = cms.vdouble(5,-4,-3,-2,-1,0,1,2,3,4,5),
+                                                puCenters = cms.vdouble(-5,-4,-3,-2,-1,0,1,2,3,4,5),
                                                 puWidth = cms.double(.8), 
                                                 nExclude = cms.uint32(2))
         sequence = cms.Sequence(process.kt6PFJetsRhos * sequence)
@@ -810,7 +814,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         jra.srcRho = ak4PFL1Fastjet.srcRho #added 10/14/2011
     elif type == 'PUPPI':
         process.kt6PFJetsRhos = kt6PFJets.clone(doFastJetNonUniform = cms.bool(True),
-                                                puCenters = cms.vdouble(5,-4,-3,-2,-1,0,1,2,3,4,5),
+                                                puCenters = cms.vdouble(-5,-4,-3,-2,-1,0,1,2,3,4,5),
                                                 puWidth = cms.double(.8), nExclude = cms.uint32(2))
         sequence = cms.Sequence(process.kt6PFJetsRhos * sequence)
         jra.srcRhos = cms.InputTag("kt6PFJetsRhos", "rhos")

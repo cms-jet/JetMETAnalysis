@@ -498,7 +498,7 @@ int main(int argc,char** argv)
         c->GetPad(2)->SetLogx(logx);
       }
       else {
-        c = tdrCanvas(mg->GetName(),frame,14,11,true);
+        c = tdrCanvas(mg->GetName(),frame,14,0,true);
         frame->GetXaxis()->SetTitleOffset(frame->GetXaxis()->GetTitleOffset()+0.05);
         if(TString(variables[0]).Contains("RelResVsRefPt"))
           frame->GetYaxis()->SetTitleOffset(1.16);
