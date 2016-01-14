@@ -6,12 +6,19 @@
 //            06/07/2008 Philipp Schieferdecker <philipp.schieferdecker@cern.ch>
 ////////////////////////////////////////////////////////////////////////////////
 
+//Might want to switch to
+//https://github.com/cms-sw/cmssw/blob/6b16de370881dd8ef339d34811b3d1e176c02b80/PhysicsTools/JetMCAlgos/plugins/CandOneToOneDeltaRMatcher.cc
+//Though I think it will have problems with the CandViewMatchMap (AssociationMap not working)
+//See:
+//https://github.com/cms-sw/cmssw/blob/CMSSW_7_6_X/DataFormats/Common/interface/AssociationMap.h
+//https://github.com/cms-sw/cmssw/blob/6b16de370881dd8ef339d34811b3d1e176c02b80/DataFormats/Candidate/interface/CandMatchMap.h
 
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDProducer.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
+#include "FWCore/Framework/interface/makeRefToBaseProdFrom.h"
  
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
@@ -64,8 +71,8 @@ public:
 
 private:
   // member data
-  edm::InputTag srcRec_;
-  edm::InputTag srcGen_;
+  edm::EDGetTokenT<CandidateView> srcRec_;
+  edm::EDGetTokenT<CandidateView> srcGen_;
 
   std::string  moduleName_;
 
@@ -90,15 +97,15 @@ private:
 
 //______________________________________________________________________________
 MatchRecToGen::MatchRecToGen(const edm::ParameterSet& iConfig)
-  : srcRec_(iConfig.getParameter<InputTag>("srcRec"))
-  , srcGen_(iConfig.getParameter<InputTag>("srcGen"))
+  : srcRec_(consumes<CandidateView>(iConfig.getParameter<edm::InputTag>("srcRec")))
+  , srcGen_(consumes<CandidateView>(iConfig.getParameter<edm::InputTag>("srcGen")))
   , moduleName_(iConfig.getParameter<string>("@module_label"))
   , nRecTot_(0)
   , nGenTot_(0)
   , nMatchedTot_(0)
 {
-  produces<reco::CandViewMatchMap>("rec2gen");
-  produces<reco::CandViewMatchMap>("gen2rec");
+  produces<CandViewMatchMap>("rec2gen");
+  produces<CandViewMatchMap>("gen2rec");
 }
 
 
@@ -116,8 +123,8 @@ void MatchRecToGen::produce(edm::Event& iEvent,const edm::EventSetup& iSetup)
   edm::Handle<CandidateView> rec_;
   edm::Handle<CandidateView> gen_;
   
-  iEvent.getByLabel(srcRec_,rec_);
-  iEvent.getByLabel(srcGen_,gen_);
+  iEvent.getByToken(srcRec_,rec_);
+  iEvent.getByToken(srcGen_,gen_);
   
   nRec = std::min((size_t)rec_->size(),(size_t)100);
   nGen = std::min((size_t)gen_->size(),(size_t)100);
@@ -139,9 +146,24 @@ void MatchRecToGen::produce(edm::Event& iEvent,const edm::EventSetup& iSetup)
   }
   
   // two association maps: rec2gen and gen2rec
-  auto_ptr<CandViewMatchMap> recToGenMap(new CandViewMatchMap());
-  auto_ptr<CandViewMatchMap> genToRecMap(new CandViewMatchMap());
-  
+  // First check is a blank association map should be put into the event
+  // (i.e. there are either no rec or no gen jets and you can't get a
+  // refToBaseProd). Otherwise make and fill the map normally.
+  auto_ptr<CandViewMatchMap> recToGenMap;
+  auto_ptr<CandViewMatchMap> genToRecMap;
+  if(nRec==0 || nGen==0) {
+     recToGenMap.reset(new CandViewMatchMap());
+     genToRecMap.reset(new CandViewMatchMap());
+  }
+  else {
+     recToGenMap.reset(new CandViewMatchMap(
+                          edm::makeRefToBaseProdFrom(rec_->refAt(0), iEvent),
+                          edm::makeRefToBaseProdFrom(gen_->refAt(0), iEvent)));
+     genToRecMap.reset(new CandViewMatchMap(
+                          edm::makeRefToBaseProdFrom(gen_->refAt(0), iEvent),
+                          edm::makeRefToBaseProdFrom(rec_->refAt(0), iEvent)));
+  }
+
   MatchIter_t it=matchSet.begin();
   while (it!=matchSet.end()&&iRecSet.size()>0&&iGenSet.size()>0) {
     unsigned int iRec  = it->second.first;
