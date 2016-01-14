@@ -617,7 +617,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
     
     ## reconstruct jets
     if type == 'JPT':
-        process.load('Configuration.StandardSequences.Geometry_cff')
+        process.load('Configuration.Geometry.GeometryIdeal_cff')
         process.load('Configuration.StandardSequences.MagneticField_cff')
 #        process.load('JetMETAnalysis.JetAnalyzers.JPTReconstruction_cff')
 #        if   alg_size == 'ak5':
@@ -629,7 +629,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         if correctl1 or correctl2l3:
             jetPtEta.src = corrLabel
     elif reco:
-        process.load('Configuration.StandardSequences.Geometry_cff')
+        process.load('Configuration.Geometry.GeometryIdeal_cff')
         process.load('Configuration.StandardSequences.MagneticField_cff')
         (recLabel, recJets) = recJetsDict[alg_size_type]
         if correctl1 or correctl2l3:

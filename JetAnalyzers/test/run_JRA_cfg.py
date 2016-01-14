@@ -64,19 +64,19 @@ if conditionsSource != "GT":
 #!
 #! INPUT
 #!
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(10))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(2000))
 
 ########################################
-# QCD_PY6_RunIISpring15DR74_Asympt50ns #
+# QCD_PY8_RunIIFall15DR76_Asympt_25ns #
 ########################################
-process.load("JetMETAnalysis.JetAnalyzers.QCD_PY6_RunIISpring15DR74_Asympt50ns_cff")
+#process.load("JetMETAnalysis.JetAnalyzers.QCD_PY8_RunIIFall15DR76_Asympt_25ns_cff")
 #############################################
-# QCD_PY6_RunIISpring15DR74_AsymptNoPU_50ns #
+# QCD_PY8_RunIIFall15DR76_AsymptNoPU_25ns #
 #############################################
-#process.load("JetMETAnalysis.JetAnalyzers.QCD_PY6_RunIISpring15DR74_AsymptNoPU_50ns_cff")
+process.load("JetMETAnalysis.JetAnalyzers.QCD_PY8_RunIIFall15DR76_AsymptNoPU_25ns_cff")
 
 qcdFiles = cms.untracked.vstring(
-	'root://cmsxrootd.fnal.gov//store/mc/Fall14DR73/QCD_Pt-15to7000_TuneCUETP8M1_Flat_13TeV_pythia8/GEN-SIM-RECO/PFr1_Flat_20_50_50ns_GSFromFall14_MCRUN2_73_V11-v1/00000/000998AB-A8E7-E411-A76F-00261894394F.root',
+	'root://cmsxrootd.fnal.gov//store/mc/RunIIFall15DR76/QCD_Pt-15to7000_TuneCUETP8M1_Flat_13TeV_pythia8/AODSIM/PU25nsData2015v1_magnetOn_76X_mcRun2_asymptotic_v12-v1/20000/022F2CE9-6FA3-E511-BA9D-D4AE5269DC07.root',
     )
 #process.source = cms.Source("PoolSource", fileNames = qcdFiles )
 
@@ -114,7 +114,7 @@ outCom = cms.untracked.vstring('drop *')
 from JetMETAnalysis.JetAnalyzers.addAlgorithm import addAlgorithm
 for algorithm in algorithms:
     if (algorithm.find('HLT') > 0) :
-        process.load("Configuration.StandardSequences.Geometry_cff")
+        process.load("Configuration.Geometry.GeometryIdeal_cff")
         process.load("Configuration.StandardSequences.MagneticField_cff")
         addAlgorithm(process,algorithm,Defaults,False,doProducer)
     else:
