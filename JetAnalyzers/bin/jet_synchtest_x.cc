@@ -20,7 +20,7 @@
 
 // JetMETAnalysis Libraries
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
-#include "JetMETAnalysis/JetUtilities/interface/JRANtuple.h"
+#include "JetMETAnalysis/JetUtilities/interface/JRAEvent.h"
 #include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
 #include "JetMETAnalysis/JetUtilities/interface/EvtID.hh"
 #include "JetMETAnalysis/JetUtilities/interface/ProgressBar.hh"
@@ -82,8 +82,8 @@ private:
    double maxDeltaR;
 
    //Ntuples
-   JRANtuple* tpu;
-   JRANtuple* tnopu;
+   JRAEvent* tpu;
+   JRAEvent* tnopu;
    
    //JEC
    bool ApplyJEC;
@@ -181,7 +181,7 @@ void MatchEventsAndJets::MakeMatchedEventsMaps(TString treeName) {
 //______________________________________________________________________________
 map<evtid, pair<Long64_t, Long64_t>, evtid> MatchEventsAndJets::fillMap(bool noPU, TString treeName) {
    TFile* f;
-   JRANtuple* t;
+   JRAEvent* t;
    TString algo;
    map<evtid, pair<Long64_t, Long64_t>, evtid> mapTree;
    if(noPU == false) {
@@ -214,11 +214,11 @@ map<evtid, pair<Long64_t, Long64_t>, evtid> MatchEventsAndJets::fillMap(bool noP
       if (ientry < 0) break;
       t->GetEntry(ientry);
 
-      if(mapTree.find(evtid(t->run, lumi, t->evt, t->refpt[0], runDep))!=mapTree.end()) {
+      if(mapTree.find(evtid(t->run, lumi, t->evt, t->refpt->at(0), runDep))!=mapTree.end()) {
          cout << "\tWARNING::This evtid already exists in the map." << endl;
       }
 
-      mapTree[evtid(t->run, lumi, t->evt, t->refpt[0], runDep)] = std::make_pair(jentry, ientry);
+      mapTree[evtid(t->run, lumi, t->evt, t->refpt->at(0), runDep)] = std::make_pair(jentry, ientry);
       loadbar2(jentry+1,nentries,50,"\t\t");
    }
 
@@ -230,10 +230,10 @@ map<evtid, pair<Long64_t, Long64_t>, evtid> MatchEventsAndJets::fillMap(bool noP
 //______________________________________________________________________________
 void MatchEventsAndJets::GetNtuples(TString treeName) {
    fpu->cd(algo1);
-   tpu   = new JRANtuple((TTree*) fpu->Get(algo1+"/"+treeName));
+   tpu   = new JRAEvent((TTree*) fpu->Get(algo1+"/"+treeName));
 
    fnopu->cd(algo2);
-   tnopu = new JRANtuple((TTree*) fnopu->Get(algo2+"/"+treeName));
+   tnopu = new JRAEvent((TTree*) fnopu->Get(algo2+"/"+treeName));
 }
 
 //______________________________________________________________________________
@@ -607,8 +607,8 @@ void MatchEventsAndJets::FillJetMap() {
    map<double, pair<Int_t, Int_t> >  auxMap;
    for (int j1=0; j1 < tpu->nref; j1++){
       for (int j2=0; j2 < tnopu->nref; j2++){
-         double dR  = pow(tpu->jteta[j1] - tnopu->jteta[j2],2);
-         dR += pow(tpu->jtphi[j1] - tnopu->jtphi[j2],2);
+         double dR  = pow(tpu->jteta->at(j1) - tnopu->jteta->at(j2),2);
+         dR += pow(tpu->jtphi->at(j1) - tnopu->jtphi->at(j2),2);
          dR = sqrt(dR);
          auxMap[dR] = std::make_pair(j1, j2);
       }
@@ -625,7 +625,7 @@ void MatchEventsAndJets::FillJetMap() {
       int j2 = auxMap.begin()->second.second;
 
       // Add to the results
-      if (auxMap.begin()->first < maxDeltaR && fabs(tpu->refpt[j1] - tnopu->refpt[j2])<1 && tnopu->refdrjt[j2] < maxDeltaR)
+      if (auxMap.begin()->first < maxDeltaR && fabs(tpu->refpt->at(j1) - tnopu->refpt->at(j2))<1 && tnopu->refdrjt->at(j2) < maxDeltaR)
          jetMap[j1] = j2; 
     
       // 2- Now remove all elements from the auxMap that contain either the first or second jet
@@ -640,11 +640,11 @@ void MatchEventsAndJets::FillJetMap() {
 }//FillJetMap
 
 //______________________________________________________________________________
-bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
+bool MatchEventsAndJets::FillHistograms() {
    //=========================================================
    //              FILLING OF HISTOS START HERE
    //=========================================================
-   
+
    // GENERAL HISTOS, no cuts.
    if(!reduceHistograms) {
       histograms["g_nj"]        ->Fill(tpu->nref,tnopu->nref);              // njet distributions
@@ -663,7 +663,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
       }
       return false;
    }
-   
+
    int iIT        = tpu->itIndex();
    int inpv       = JetInfo::getBinIndex(tpu->npv,NBinsNpvRhoNpu,npvRhoNpuBinWidth);
    int inpv_low   = inpv*npvRhoNpuBinWidth;
@@ -684,18 +684,99 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
    //
    vector<double> tpu_jtpt_raw;
    if (JetCorrector) {
-      for (int j1 = 0; j1 < tpu->nref; j1++) {
-         JetCorrector->setJetEta(tpu->jteta[j1]);
-         JetCorrector->setJetPt(tpu->jtpt[j1]);
-         JetCorrector->setJetA(tpu->jtarea[j1]);
-         JetCorrector->setRho(tpu->rho);
-         double correction = JetCorrector->getCorrection();
-         //cout <<correction<<" "<<tpu->jtpt[j1];
-         tpu_jtpt_raw.push_back(tpu->jtpt[j1]);
-         tpu->jtpt[j1] *= correction;
-         //cout <<" "<<tpu->jtpt[j1]<<endl;
+     for (int j1 = 0; j1 < tpu->nref; j1++) {
+       JetCorrector->setJetEta(tpu->jteta->at(j1));
+       JetCorrector->setJetPt(tpu->jtpt->at(j1));
+       JetCorrector->setJetA(tpu->jtarea->at(j1));
+       JetCorrector->setRho(tpu->rho);
+       double correction = JetCorrector->getCorrection();
+       //cout <<correction<<" "<<tpu->jtpt->at(j1);
+       tpu_jtpt_raw.push_back(tpu->jtpt->at(j1));
+       tpu->jtpt->at(j1) *= correction;
+       //cout <<" "<<tpu->jtpt->at(j1)<<endl;
+     }
+   }
+
+   double avg_jtpt_all       = 0;
+   double avg_jtpt_matched   = 0;
+   double avg_jtpt_unmatched = 0;
+
+   // fill unmatch jets for PU sample
+   for (int j1 = 0; j1 < tpu->nref; j1++){
+
+      // matching recon-jet with gen-jet
+      bool ismatchRG = tpu->refdrjt->at(j1)<getMaxDeltaR(algo1);
+
+      histograms["m_njet_pt_pu"]->Fill(tpu->jtpt->at(j1));
+      if(tpu->refpt->at(j1)>10){
+        histograms["m_njet_pthigh_pu"]->Fill(tpu->jtpt->at(j1));
+      }
+
+      avg_jtpt_all += tpu->jtpt->at(j1);
+
+      // if j1 is matched in this sample
+      bool ismatch =  jetMap.find(j1) != jetMap.end();
+
+      if (ismatch) avg_jtpt_matched   += tpu->jtpt->at(j1);
+      else     avg_jtpt_unmatched += tpu->jtpt->at(j1);
+
+      if (fabs(tpu->jteta->at(j1))<1.3) {
+         histograms["m_frac_nj_pt_b_match_pu"]   ->Fill(tpu->jtpt->at(j1),ismatch);
+         histograms["m_frac_nj_pt_b_match_RG_pu"]->Fill(tpu->jtpt->at(j1),ismatchRG);
+         if (tpu->npv<=10) {
+            histograms["m_frac_nj_pt_b_match_pu_npv10"]   ->Fill(tpu->jtpt->at(j1),ismatch);
+            histograms["m_frac_nj_pt_b_match_RG_pu_npv10"]->Fill(tpu->jtpt->at(j1),ismatchRG);
+         }
+         else if (tpu->npv<=20) {
+            histograms["m_frac_nj_pt_b_match_pu_npv20"]   ->Fill(tpu->jtpt->at(j1),ismatch);
+            histograms["m_frac_nj_pt_b_match_RG_pu_npv20"]->Fill(tpu->jtpt->at(j1),ismatchRG);
+         }
+         else if (tpu->npv<=30) {
+            histograms["m_frac_nj_pt_b_match_pu_npv30"]   ->Fill(tpu->jtpt->at(j1),ismatch);
+            histograms["m_frac_nj_pt_b_match_RG_pu_npv30"]->Fill(tpu->jtpt->at(j1),ismatchRG);
+         } 
+         else {
+            histograms["m_frac_nj_pt_b_match_pu_npvO"]   ->Fill(tpu->jtpt->at(j1),ismatch);
+            histograms["m_frac_nj_pt_b_match_RG_pu_npvO"]->Fill(tpu->jtpt->at(j1),ismatchRG);
+         }
+      }
+      else if (fabs(tpu->jteta->at(j1))<3) {
+         histograms["m_frac_nj_pt_e_match_pu"]   ->Fill(tpu->jtpt->at(j1),ismatch);
+         histograms["m_frac_nj_pt_e_match_RG_pu"]->Fill(tpu->jtpt->at(j1),ismatchRG);
+      }
+      else {
+         histograms["m_frac_nj_pt_f_match_pu"]   ->Fill(tpu->jtpt->at(j1),ismatch);
+         histograms["m_frac_nj_pt_f_match_RG_pu"]->Fill(tpu->jtpt->at(j1),ismatchRG);
+      }
+      if (!ismatch) {
+         hname = Form("m_njet_pt_npv%i_%i_unmatch",inpv*npvRhoNpuBinWidth,inpv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
+         histograms[hname]->Fill(tpu->jtpt->at(j1),+1);
+         hname = Form("m_njet_etaVspt_npv%i_%i_unmatch",inpv*npvRhoNpuBinWidth,inpv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
+         dynamic_cast<TProfile2D*>(histograms[hname])->Fill(tpu->jteta->at(j1), tpu->jtpt->at(j1),+1);
       }
    }
+
+   if (tpu->nref>0)               avg_jtpt_all        /= (double) tpu->nref;     else avg_jtpt_all = 0;
+   if (jetMap.size()>0)           avg_jtpt_matched    /= (double) jetMap.size(); else avg_jtpt_matched = 0;
+   if (tpu->nref-jetMap.size()>0) avg_jtpt_unmatched  /= (double) (tpu->nref - jetMap.size()); else avg_jtpt_unmatched = 0;
+
+   histograms["m_all_nj_npv"]      ->Fill(tpu->npv,tpu->nref);
+   histograms["m_matched_nj_npv"]  ->Fill(tpu->npv, jetMap.size());
+   histograms["m_unmatched_nj_npv"]->Fill(tpu->npv, tpu->nref-jetMap.size());
+
+   histograms["m_all_jtpt_npv"]      ->Fill(tpu->npv, avg_jtpt_all);
+   histograms["m_matched_jtpt_npv"]  ->Fill(tpu->npv, avg_jtpt_matched);
+   histograms["m_unmatched_jtpt_npv"]->Fill(tpu->npv, avg_jtpt_unmatched);
+
+   // fill unmatch jets for NOPU sample
+   for (int j1 = 0; j1 < tnopu->nref; j1++) {
+
+      histograms["m_njet_pt_nopu"]->Fill(tnopu->jtpt->at(j1));
+      if(tnopu->refpt->at(j1)>10){
+         histograms["m_njet_pthigh_nopu"]->Fill(tnopu->jtpt->at(j1));
+      }
+
+      bool ismatchRG = tnopu->refdrjt->at(j1)<getMaxDeltaR(algo2);
 
    if(!reduceHistograms) {   
       double avg_jtpt_all       = 0;
@@ -790,30 +871,30 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
          }
          
          if (fabs(tnopu->jteta[j1])<1.3) {
-            histograms["m_frac_nj_pt_b_match_nopu"]   ->Fill(tnopu->jtpt[j1],ismatch);
-            histograms["m_frac_nj_pt_b_match_RG_nopu"]->Fill(tnopu->jtpt[j1],ismatchRG);
+            histograms["m_frac_nj_pt_b_match_nopu"]   ->Fill(tnopu->jtpt->at(j1),ismatch);
+            histograms["m_frac_nj_pt_b_match_RG_nopu"]->Fill(tnopu->jtpt->at(j1),ismatchRG);
             if (tpu->npv<=10)
-               histograms["m_frac_nj_pt_b_match_nopu_npv1"]->Fill(tnopu->jtpt[j1],ismatch);
+               histograms["m_frac_nj_pt_b_match_nopu_npv1"]->Fill(tnopu->jtpt->at(j1),ismatch);
             else if (tpu->npv<=20)
-               histograms["m_frac_nj_pt_b_match_nopu_npv2"]->Fill(tnopu->jtpt[j1],ismatch);
+               histograms["m_frac_nj_pt_b_match_nopu_npv2"]->Fill(tnopu->jtpt->at(j1),ismatch);
             else if (tpu->npv<=30)
-               histograms["m_frac_nj_pt_b_match_nopu_npv3"]->Fill(tnopu->jtpt[j1],ismatch);
+               histograms["m_frac_nj_pt_b_match_nopu_npv3"]->Fill(tnopu->jtpt->at(j1),ismatch);
             else
-               histograms["m_frac_nj_pt_b_match_nopu_npvO"]->Fill(tnopu->jtpt[j1],ismatch);
+               histograms["m_frac_nj_pt_b_match_nopu_npvO"]->Fill(tnopu->jtpt->at(j1),ismatch);
          }
-         else if (fabs(tnopu->jteta[j1])<3) {
-            histograms["m_frac_nj_pt_e_match_nopu"]   ->Fill(tnopu->jtpt[j1],ismatch);
-            histograms["m_frac_nj_pt_e_match_RG_nopu"]->Fill(tnopu->jtpt[j1],ismatchRG);
+         else if (fabs(tnopu->jteta->at(j1))<3) {
+            histograms["m_frac_nj_pt_e_match_nopu"]   ->Fill(tnopu->jtpt->at(j1),ismatch);
+            histograms["m_frac_nj_pt_e_match_RG_nopu"]->Fill(tnopu->jtpt->at(j1),ismatchRG);
          }
          else {
-            histograms["m_frac_nj_pt_f_match_nopu"]   ->Fill(tnopu->jtpt[j1],ismatch);
-            histograms["m_frac_nj_pt_f_match_RG_nopu"]->Fill(tnopu->jtpt[j1],ismatchRG);
+            histograms["m_frac_nj_pt_f_match_nopu"]   ->Fill(tnopu->jtpt->at(j1),ismatch);
+            histograms["m_frac_nj_pt_f_match_RG_nopu"]->Fill(tnopu->jtpt->at(j1),ismatchRG);
          }
          if (!ismatch) {
             hname = Form("m_njet_pt_npv%i_%i_unmatch",inpv*npvRhoNpuBinWidth,inpv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
-            histograms[hname]->Fill(tnopu->jtpt[j1],-1);
+            histograms[hname]->Fill(tnopu->jtpt->at(j1),-1);
             hname = Form("m_njet_etaVspt_npv%i_%i_unmatch",inpv*npvRhoNpuBinWidth,inpv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
-            dynamic_cast<TProfile2D*>(histograms[hname])->Fill(tnopu->jteta[j1], tnopu->jtpt[j1],-1);
+            dynamic_cast<TProfile2D*>(histograms[hname])->Fill(tnopu->jteta->at(j1), tnopu->jtpt->at(j1),-1);
          }
       }  
    }
@@ -829,168 +910,168 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
     int jpu = itj->first;
     int jnopu = itj->second;
         
-    int idet = JetInfo::getDetIndex(tpu->jteta[jpu]);
+    int idet = JetInfo::getDetIndex(tpu->jteta->at(jpu));
     TString detectorAbbreviation = JetInfo::get_detector_abbreviation(detector_names[idet]);
     detectorAbbreviation.ToLower();
-    vector<int> pdgid_indecies = JetInfo::getPDGIDIndecies(tpu->refpdgid[jpu]);
+    vector<int> pdgid_indecies = JetInfo::getPDGIDIndecies(tpu->refpdgid->at(jpu));
 
-    //double eta_avg = 0.5*(tpu->jteta[jpu]+tnopu->jteta[jnopu]);
-    double offset     = tpu->jtpt[jpu] - tnopu->jtpt[jnopu];
+    //double eta_avg = 0.5*(tpu->jteta->at(jpu)+tnopu->jteta->at(jnopu));
+    double offset     = tpu->jtpt->at(jpu) - tnopu->jtpt->at(jnopu);
     double offset_raw = -1.0;
     if(tpu_jtpt_raw.size()>0)
-      offset_raw = tpu_jtpt_raw[jpu] - tnopu->jtpt[jnopu];
-    int diff_pdgid       = tpu->refpdgid[jpu] - tnopu->refpdgid[jnopu];
-    double areaDiff      = tpu->jtarea[jpu] - tnopu->jtarea[jnopu];
-    double resp          = tpu->jtpt[jpu] / tpu->refpt[jpu];   // response relative to reference jet
-    double respTonopu    = tpu->jtpt[jpu] / tnopu->jtpt[jnopu];// response relative to no pu jet
-    double respNopu       = tnopu->jtpt[jnopu] / tnopu->refpt[jnopu]; // response no pu jet to reference jet
+       offset_raw = tpu_jtpt_raw[jpu] - tnopu->jtpt->at(jnopu);
+    int diff_pdgid       = tpu->refpdgid->at(jpu) - tnopu->refpdgid->at(jnopu);
+    double areaDiff      = tpu->jtarea->at(jpu) - tnopu->jtarea->at(jnopu);
+    double resp          = tpu->jtpt->at(jpu) / tpu->refpt->at(jpu);   // response relative to reference jet
+    double respTonopu    = tpu->jtpt->at(jpu) / tnopu->jtpt->at(jnopu);// response relative to no pu jet
+    double respNopu       = tnopu->jtpt->at(jnopu) / tnopu->refpt->at(jnopu); // response no pu jet to reference jet
     double PUEff      = 0.020*(tpu->sumEOOT())+0.975*(tpu->npus->at(iIT))+0.005*(tpu->sumLOOT()); // effective pu
-    double GenSumPtOA    = (0.020*(tpu->sumpt_lowpt->at(0))+0.975*(tpu->sumpt_lowpt->at(1))+0.005*(tpu->sumpt_lowpt->at(2)))/tpu->jtarea[jpu];
+    double GenSumPtOA    = (0.020*(tpu->sumpt_lowpt->at(0))+0.975*(tpu->sumpt_lowpt->at(1))+0.005*(tpu->sumpt_lowpt->at(2)))/tpu->jtarea->at(jpu);
     //nef,cef,muf,nhf,hfhf,hfef,chf
-    double offset_PFcat[NPFcat] = {tpu->jtpt[jpu]*tpu->jtnef[jpu] - tnopu->jtpt[jnopu]*tnopu->jtnef[jnopu],
-                                   tpu->jtpt[jpu]*tpu->jtcef[jpu] - tnopu->jtpt[jnopu]*tnopu->jtcef[jnopu],
-                                   tpu->jtpt[jpu]*tpu->jtmuf[jpu] - tnopu->jtpt[jnopu]*tnopu->jtmuf[jnopu],
-                                   tpu->jtpt[jpu]*tpu->jtnhf[jpu] - tnopu->jtpt[jnopu]*tnopu->jtnhf[jnopu],
-                                   tpu->jtpt[jpu]*tpu->jthfhf[jpu] - tnopu->jtpt[jnopu]*tnopu->jthfhf[jnopu],
-                                   tpu->jtpt[jpu]*tpu->jthfef[jpu] - tnopu->jtpt[jnopu]*tnopu->jthfef[jnopu],
-                                   tpu->jtpt[jpu]*tpu->jtchf[jpu] - tnopu->jtpt[jnopu]*tnopu->jtchf[jnopu]};
-    double offsetOA      = offset / tpu->jtarea[jpu];
-    double offsetOrefpt  = offset / tpu->refpt[jpu];
+    double offset_PFcat[NPFcat] = {tpu->jtpt->at(jpu)*tpu->jtnef->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtnef->at(jnopu),
+                                   tpu->jtpt->at(jpu)*tpu->jtcef->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtcef->at(jnopu),
+                                   tpu->jtpt->at(jpu)*tpu->jtmuf->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtmuf->at(jnopu),
+                                   tpu->jtpt->at(jpu)*tpu->jtnhf->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtnhf->at(jnopu),
+                                   tpu->jtpt->at(jpu)*tpu->jthfhf->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jthfhf->at(jnopu),
+                                   tpu->jtpt->at(jpu)*tpu->jthfef->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jthfef->at(jnopu),
+                                   tpu->jtpt->at(jpu)*tpu->jtchf->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtchf->at(jnopu)};
+    double offsetOA      = offset / tpu->jtarea->at(jpu);
+    double offsetOrefpt  = offset / tpu->refpt->at(jpu);
     if(!reduceHistograms) {
-       dynamic_cast<TProfile2D*>(histograms["p_off_etaVsNpv"])                ->Fill(tpu->jteta[jpu],tpu->npv,offset);
-       dynamic_cast<TProfile2D*>(histograms["p_off_etaVsRho"])                ->Fill(tpu->jteta[jpu],tpu->rho,offset);
-       dynamic_cast<TProfile2D*>(histograms["p_off_etaVspueff"])              ->Fill(tpu->jteta[jpu],PUEff,offset);
-       dynamic_cast<TProfile2D*>(histograms["p_off_etaVsGenSumPtOA"])         ->Fill(tpu->jteta[jpu],GenSumPtOA,offset);
-       dynamic_cast<TProfile2D*>(histograms["p_off_etaVsJetPt"])              ->Fill(tpu->jteta[jpu],tpu->jtpt[jpu],offset);
-       dynamic_cast<TProfile2D*>(histograms["p_offOverA_etaVsJetPt"])         ->Fill(tpu->jteta[jpu],tpu->jtpt[jpu],offsetOA);
+       dynamic_cast<TProfile2D*>(histograms["p_off_etaVsNpv"])                ->Fill(tpu->jteta->at(jpu),tpu->npv,offset);
+       dynamic_cast<TProfile2D*>(histograms["p_off_etaVsRho"])                ->Fill(tpu->jteta->at(jpu),tpu->rho,offset);
+       dynamic_cast<TProfile2D*>(histograms["p_off_etaVspueff"])              ->Fill(tpu->jteta->at(jpu),PUEff,offset);
+       dynamic_cast<TProfile2D*>(histograms["p_off_etaVsGenSumPtOA"])         ->Fill(tpu->jteta->at(jpu),GenSumPtOA,offset);
+       dynamic_cast<TProfile2D*>(histograms["p_off_etaVsJetPt"])              ->Fill(tpu->jteta->at(jpu),tpu->jtpt->at(jpu),offset);
+       dynamic_cast<TProfile2D*>(histograms["p_offOverA_etaVsJetPt"])         ->Fill(tpu->jteta->at(jpu),tpu->jtpt->at(jpu),offsetOA);
        dynamic_cast<TProfile3D*>(histograms["p_off_EOOTVsITVsLOOT"])        ->Fill(tpu->sumEOOT(),tpu->npus->at(iIT),tpu->sumLOOT(),offset);
     }
     
     //TNPU
-    dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsTnpusVsJetPt"])->Fill(tpu->jteta[jpu],tpu->tnpus->at(iIT),tpu->refpt[jpu],offsetOA);
-    dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsTnpusVsJetPt"])   ->Fill(tpu->jteta[jpu],tpu->tnpus->at(iIT),tpu->refpt[jpu],tpu->jtpt[jpu]);
-    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsTnpusVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->tnpus->at(iIT),tpu->refpt[jpu],tpu->rho);
+    dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsTnpusVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),offsetOA);
+    dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsTnpusVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
+    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsTnpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),tpu->rho);
 
     //NPU
-    //dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNpusVsJetPt"])->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],offsetOA,1.0/TMath::Gaus(tpu->npus->at(iIT),20,sqrt(20)));
-    //dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNpusVsJetPt"])   ->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],tpu->jtpt[jpu],1.0/TMath::Gaus(tpu->npus->at(iIT),20,sqrt(20)));
-    //dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNpusVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],tpu->rho,1.0/TMath::Gaus(tpu->npus->at(iIT),20,sqrt(20)));
-    dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNpusVsJetPt"])->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],offsetOA);
-    dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNpusVsJetPt"])   ->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],tpu->jtpt[jpu]);
-    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNpusVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->npus->at(iIT),tpu->refpt[jpu],tpu->rho);
+    //dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNpusVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),offsetOA,1.0/TMath::Gaus(tpu->npus->at(iIT),20,sqrt(20)));
+    //dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNpusVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->jtpt->at(jpu),1.0/TMath::Gaus(tpu->npus->at(iIT),20,sqrt(20)));
+    //dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->rho,1.0/TMath::Gaus(tpu->npus->at(iIT),20,sqrt(20)));
+    dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNpusVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),offsetOA);
+    dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNpusVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
+    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->rho);
     
     //Rho
-    dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->rho,tpu->refpt[jpu],offsetOA);
-    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->rho,tpu->refpt[jpu],tpu->rho);
-    dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsRhoVsJetPt"])     ->Fill(tpu->jteta[jpu],tpu->rho,tpu->refpt[jpu],tpu->jtpt[jpu]);
+    dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),offsetOA);
+    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),tpu->rho);
+    dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsRhoVsJetPt"])     ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
 
     //NPV
-    dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNPVVsJetPt"])  ->Fill(tpu->jteta[jpu],tpu->npv,tpu->refpt[jpu],offsetOA);
-    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNPVVsJetPt"])     ->Fill(tpu->jteta[jpu],tpu->npv,tpu->refpt[jpu],tpu->rho);
-    dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNPVVsJetPt"])     ->Fill(tpu->jteta[jpu],tpu->npv,tpu->refpt[jpu],tpu->jtpt[jpu]);
+    dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNPVVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),offsetOA);
+    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNPVVsJetPt"])     ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),tpu->rho);
+    dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNPVVsJetPt"])     ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
 
     if(!reduceHistograms) {
        //NPV+Rho
        dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsN_RVsJetPt"])  ->Fill(tpu->jteta[jpu],(tpu->rho+tpu->npv)/2.,tpu->refpt[jpu],offsetOA);
        dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsN_RVsJetPt"])     ->Fill(tpu->jteta[jpu],(tpu->rho+tpu->npv)/2,tpu->refpt[jpu],tpu->jtpt[jpu]);
-       histograms["p_areaVsrefpt"]->Fill(tpu->refpt[jpu],areaDiff);
-       if (tpu->refpt[jpu]>1000)
-          histograms["p_areaVsoffset_1000"]->Fill(offset,areaDiff);
-       if (tpu->refpt[jpu]>30 && tpu->refpt[jpu]<50)
-          histograms["p_areaVsoffset_30_50"]->Fill(offset,areaDiff);
-       
-       histograms["p_drVsrefpt"]    ->Fill(tpu->refpt[jpu],tpu->refdrjt[jpu]);
-       histograms["m_refpt_diff"]   ->Fill(tpu->refpt[jpu] - tnopu->refpt[jnopu]);
+       histograms["p_areaVsrefpt"]->Fill(tpu->refpt->at(jpu),areaDiff);
+       if (tpu->refpt->at(jpu)>1000)
+         histograms["p_areaVsoffset_1000"]->Fill(offset,areaDiff);
+       if (tpu->refpt->at(jpu)>30 && tpu->refpt->at(jpu)<50)
+         histograms["p_areaVsoffset_30_50"]->Fill(offset,areaDiff);
+
+       histograms["p_drVsrefpt"]    ->Fill(tpu->refpt->at(jpu),tpu->refdrjt->at(jpu));
+       histograms["m_refpt_diff"]   ->Fill(tpu->refpt->at(jpu) - tnopu->refpt->at(jnopu));
        histograms["m_refpdgid_diff"]->Fill(diff_pdgid);
 
        //2D histo npv vs. rho with 15<offset<15.5
        if (offset > 15 && offset < 15.5)  histograms["p_npvVsRho_offset_15_15h"]->Fill(tpu->rho,tpu->npv);
        if (idet == 0) {
-          dynamic_cast<TH3F*>(histograms["p_rho_npv_refpt_BB"])               ->Fill(tpu->rho,tpu->npv,tpu->refpt[jpu]);
-          dynamic_cast<TProfile3D*>(histograms["p_offsetOA_rho_npv_refpt_BB"])->Fill(tpu->rho,tpu->npv,tpu->refpt[jpu],offsetOA);
+          dynamic_cast<TH3F*>(histograms["p_rho_npv_refpt_BB"])               ->Fill(tpu->rho,tpu->npv,tpu->refpt->at(jpu));
+          dynamic_cast<TProfile3D*>(histograms["p_offsetOA_rho_npv_refpt_BB"])->Fill(tpu->rho,tpu->npv,tpu->refpt->at(jpu),offsetOA);
        }
     }
 
    //Break into detector regions
    for (int iPF=0;iPF<NPFcat;iPF++) {
       hname = Form("p_offResVsrefpt_%s_%s",detectorAbbreviation.Data(),PFstr[iPF].Data());
-      histograms[hname]->Fill(tpu->refpt[jpu],offset_PFcat[iPF]);
+      histograms[hname]->Fill(tpu->refpt->at(jpu),offset_PFcat[iPF]);
       hname = Form("p_offResOtnpuVsrefpt_%s_%s",detectorAbbreviation.Data(),PFstr[iPF].Data());
-      histograms[hname]->Fill(tpu->refpt[jpu],offset_PFcat[iPF]/tpu->tnpus->at(iIT));
+      histograms[hname]->Fill(tpu->refpt->at(jpu),offset_PFcat[iPF]/tpu->tnpus->at(iIT));
       hname = Form("prof_offResVsrefpt_%s_%s",detectorAbbreviation.Data(),PFstr[iPF].Data());
-      histograms[hname]->Fill(tpu->refpt[jpu],offset_PFcat[iPF]);
+      histograms[hname]->Fill(tpu->refpt->at(jpu),offset_PFcat[iPF]);
       hname = Form("prof_offResOtnpuVsrefpt_%s_%s",detectorAbbreviation.Data(),PFstr[iPF].Data());
-      histograms[hname]->Fill(tpu->refpt[jpu],offset_PFcat[iPF]/tpu->tnpus->at(iIT));
+      histograms[hname]->Fill(tpu->refpt->at(jpu),offset_PFcat[iPF]/tpu->tnpus->at(iIT));
    }
    hname = Form("p_offResVsrefpt_%s_all",detectorAbbreviation.Data());
-   dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt[jpu],offset);
+   dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset);
    hname = Form("p_offResOtnpuVsrefpt_%s_all",detectorAbbreviation.Data());
-   dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt[jpu],offset/tpu->tnpus->at(iIT));
+   dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset/tpu->tnpus->at(iIT));
    hname = Form("prof_offResVsrefpt_%s_all",detectorAbbreviation.Data());
-   dynamic_cast<TProfile*>(histograms[hname])->Fill(tpu->refpt[jpu],offset);
+   dynamic_cast<TProfile*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset);
    hname = Form("prof_offResOtnpuVsrefpt_%s_all",detectorAbbreviation.Data());
-   dynamic_cast<TProfile*>(histograms[hname])->Fill(tpu->refpt[jpu],offset/tpu->tnpus->at(iIT));
+   dynamic_cast<TProfile*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset/tpu->tnpus->at(iIT));
 
     hname = Form("p_resVsrefpt_%s",detectorAbbreviation.Data());
-    histograms[hname]->Fill(tpu->refpt[jpu],resp);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),resp);
     hname = Form("np_resVsrefpt_%s",detectorAbbreviation.Data());
-    histograms[hname]->Fill(tpu->refpt[jpu],respNopu);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),respNopu);
 
     hname = Form("p_resVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
-    histograms[hname]->Fill(tpu->refpt[jpu],resp);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),resp);
     hname = Form("p_offresVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
-    histograms[hname]->Fill(tpu->refpt[jpu],offset);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
     hname = Form("p_offresOrefptVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
-    histograms[hname]->Fill(tpu->refpt[jpu],offsetOrefpt);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),offsetOrefpt);
     hname = Form("p_resVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
-    histograms[hname]->Fill(tpu->refpt[jpu],resp);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),resp);
     hname = Form("p_resVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),itnpu_low,itnpu_high);
-    histograms[hname]->Fill(tpu->refpt[jpu],resp);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),resp);
     hname = Form("p_resVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),inpu_low,inpu_high);
-    histograms[hname]->Fill(tpu->refpt[jpu],resp);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),resp);
     hname = Form("p_resVsnpu_%s_pt%.1f_%.1f",detectorAbbreviation.Data(),
-                 vpt[JetInfo::getBinIndex(tpu->refpt[jpu],vpt,NPtBins)],vpt[JetInfo::getBinIndex(tpu->refpt[jpu],vpt,NPtBins)+1]);
-    if(tpu->refpt[jpu]>10.0) {
+                 vpt[JetInfo::getBinIndex(tpu->refpt->at(jpu),vpt,NPtBins)],vpt[JetInfo::getBinIndex(tpu->refpt->at(jpu),vpt,NPtBins)+1]);
+    if(tpu->refpt->at(jpu)>10.0) {
        histograms[hname]->Fill(tpu->npus->at(iIT),resp);
     }
     hname = Form("p_offresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
-    histograms[hname]->Fill(tpu->refpt[jpu],offset);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
     hname = Form("p_offresOrefptVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
-    histograms[hname]->Fill(tpu->refpt[jpu],offsetOrefpt);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),offsetOrefpt);
     hname = Form("p_offresVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),itnpu_low,itnpu_high);
-    histograms[hname]->Fill(tpu->refpt[jpu],offset);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
     hname = Form("p_offresVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),inpu_low,inpu_high);
-    histograms[hname]->Fill(tpu->refpt[jpu],offset);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
     hname = Form("p_offresVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
-    histograms[hname]->Fill(tpu->refpt[jpu],offset);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
     hname = Form("p_offresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
-    histograms[hname]->Fill(tpu->refpt[jpu],offset);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
     hname = Form("p_offresVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
-    histograms[hname]->Fill(tpu->refpt[jpu],offset);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
     hname = Form("p_offresVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
-    histograms[hname]->Fill(tpu->refpt[jpu],offset);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
 
     for (unsigned int ipdgid=0; ipdgid<pdgid_indecies.size(); ipdgid++) {
       hname = Form("p_offresVsrefpt_%s_pdgid_%s",detectorAbbreviation.Data(),pdgidstr[ipdgid].Data());
-      histograms[hname]->Fill(tpu->refpt[jpu],offset);
+      histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
     }
 
     hname = Form("p_resnopuVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
-    histograms[hname]->Fill(tpu->refpt[jpu],respTonopu);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),respTonopu);
     hname = Form("p_resnopuVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
-    histograms[hname]->Fill(tpu->refpt[jpu],respTonopu);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),respTonopu);
     hname = Form("p_nopuresVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
-    histograms[hname]->Fill(tpu->refpt[jpu],respNopu);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),respNopu);
     hname = Form("p_nopuresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
-    histograms[hname]->Fill(tpu->refpt[jpu],respNopu);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),respNopu);
     hname = Form("p_nopuresVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),itnpu_low,itnpu_high);
-    histograms[hname]->Fill(tpu->refpt[jpu],respNopu);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),respNopu);
     hname = Form("p_nopuresVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),inpu_low,inpu_high);
-    histograms[hname]->Fill(tpu->refpt[jpu],respNopu);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),respNopu);
     hname = Form("p_offAfterOoffBeforeVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
-    histograms[hname]->Fill(tpu->refpt[jpu],offset/offset_raw);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),offset/offset_raw);
     hname = Form("p_offAfterOoffBeforeVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
-    histograms[hname]->Fill(tpu->refpt[jpu],offset/offset_raw);
+    histograms[hname]->Fill(tpu->refpt->at(jpu),offset/offset_raw);
 
     avg_offset +=  offset;
     avg_offset_det[idet]+=offset;
