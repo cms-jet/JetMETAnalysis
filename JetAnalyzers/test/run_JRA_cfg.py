@@ -8,8 +8,10 @@ conditionsSource = "GT"
 era = "Fall15_25nsV1_MC"
 doProducer = False
 process = cms.Process("JRA")
+multithread = False
 if doProducer:
 	process = cms.Process("JRAP")
+	multithread = True
 
 
 #!
@@ -64,7 +66,7 @@ if conditionsSource != "GT":
 #!
 #! INPUT
 #!
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(2000))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(100))
 
 ########################################
 # QCD_PY8_RunIIFall15DR76_Asympt_25ns #
@@ -85,8 +87,13 @@ qcdFiles = cms.untracked.vstring(
 #! SERVICES
 #!
 process.load('FWCore.MessageLogger.MessageLogger_cfi')
-process.MessageLogger.cerr.FwkReport.reportEvery = 5000
-if not doProducer:
+process.MessageLogger.cerr.FwkReport.reportEvery = 10
+process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(True))
+if doProducer:
+    process.add_(cms.Service("Tracer"))
+    process.options.numberOfThreads = cms.untracked.uint32(8)
+    process.options.numberOfStreams = cms.untracked.uint32(0)
+else:
     process.load('CommonTools.UtilAlgos.TFileService_cfi')
     process.TFileService.fileName=cms.string('JRA.root')
 
@@ -149,4 +156,3 @@ if doProducer:
 #Not sure what this does
 #processDumpFile = open('runJRA.dump' , 'w')
 #print >> processDumpFile, process.dumpPython()
-process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )

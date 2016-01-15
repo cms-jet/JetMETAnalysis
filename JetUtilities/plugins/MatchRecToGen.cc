@@ -80,7 +80,7 @@ public:
    static std::unique_ptr<Count> initializeGlobalCache(edm::ParameterSet const& iConfig) {
        return std::unique_ptr<Count>(new Count(iConfig));
    }
-  void produce(edm::Event& iEvent,const edm::EventSetup& iSetup);
+  void produce(edm::Event& iEvent,const edm::EventSetup& iSetup) override;
   static void globalEndJob(Count const* iCount);
 
 private:
