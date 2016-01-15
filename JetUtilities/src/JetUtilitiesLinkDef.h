@@ -1,5 +1,5 @@
 #include "JetMETAnalysis/JetUtilities/interface/TProfileMDF.h"
-#include "JetMETAnalysis/JetUtilities/interface/JRANtuple.h"
+#include "JetMETAnalysis/JetUtilities/interface/JRAEvent.h"
 #include "JetMETAnalysis/JetUtilities/interface/PUNtuple.hh"
 #include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
 #include "JetMETAnalysis/JetUtilities/interface/EvtID.hh"
@@ -11,7 +11,7 @@
 #pragma link C++ nestedclasses;
 
 #pragma link C++ class TProfileMDF+;
-#pragma link C++ class JRANtuple+;
+#pragma link C++ class JRAEvent+;
 #pragma link C++ class PUNtuple+;
 #pragma link C++ class JetInfo+;
 #pragma link C++ class evtid+;
