@@ -75,6 +75,7 @@ public :
    vector<Float_t>* jtnhf;
    vector<Float_t>* jtnef;
    vector<Float_t>* jtcef;
+   vector<Float_t>* jtemf;
    vector<Float_t>* jtmuf;
    vector<Float_t>* jthfhf;
    vector<Float_t>* jthfef;
@@ -124,6 +125,7 @@ public :
    TBranch        *b_jtnhf;   //!
    TBranch        *b_jtnef;   //!
    TBranch        *b_jtcef;   //!
+   TBranch        *b_jtemf;   //!
    TBranch        *b_jtmuf;   //!
    TBranch        *b_jthfhf;   //!
    TBranch        *b_jthfef;   //!

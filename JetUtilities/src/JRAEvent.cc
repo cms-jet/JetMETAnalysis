@@ -101,6 +101,7 @@ void JRAEvent::MakeTree(TTree *tree)
    fChain->Branch("jtnhf", "vector<Float_t>", &jtnhf);
    fChain->Branch("jtnef", "vector<Float_t>", &jtnef);
    fChain->Branch("jtcef", "vector<Float_t>", &jtcef);
+   fChain->Branch("jtemf", "vector<Float_t>", &jtemf);
    fChain->Branch("jtmuf", "vector<Float_t>", &jtmuf);
    fChain->Branch("jthfhf", "vector<Float_t>", &jthfhf);
    fChain->Branch("jthfef", "vector<Float_t>", &jthfef);
@@ -170,6 +171,7 @@ void JRAEvent::Init(TTree *tree)
    fChain->SetBranchAddress("jtnhf", &jtnhf, &b_jtnhf);
    fChain->SetBranchAddress("jtnef", &jtnef, &b_jtnef);
    fChain->SetBranchAddress("jtcef", &jtcef, &b_jtcef);
+   fChain->SetBranchAddress("jtemf", &jtemf, &b_jtemf);
    fChain->SetBranchAddress("jtmuf", &jtmuf, &b_jtmuf);
    fChain->SetBranchAddress("jthfhf", &jthfhf, &b_jthfhf);
    fChain->SetBranchAddress("jthfef", &jthfef, &b_jthfef);
@@ -238,6 +240,7 @@ void JRAEvent::MakeVectors()
    jtnhf                   = new vector<float>;
    jtnef                   = new vector<float>;
    jtcef                   = new vector<float>;
+   jtemf                   = new vector<float>;
    jtmuf                   = new vector<float>;
    jthfhf                  = new vector<float>;
    jthfef                  = new vector<float>;
@@ -278,6 +281,7 @@ void JRAEvent::clear()
    jtnhf->clear();
    jtnef->clear();
    jtcef->clear();
+   jtemf->clear();
    jtmuf->clear();
    jthfhf->clear();
    jthfef->clear();
