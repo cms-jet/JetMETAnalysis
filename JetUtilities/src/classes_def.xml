@@ -14,6 +14,15 @@
 	<version ClassVersion="10" checksum="1374876231"/>
   </class>
   <class name="std::vector<JRAEvent>"/>
-  <class pattern="edm::Wrapper<JRAEvent>"/>
+  <class name="edm::Wrapper<JRAEvent>"/>
   <class name="edm::Wrapper<std::vector<JRAEvent> >"/>
+  <class name="TProfileMDF" ClassVersion="1">
+	<version ClassVersion="1" checksum="329505606"/>
+  </class>
+  <class name="JRANtuple" ClassVersion="0"/>
+  <class name="PUNtuple" ClassVersion="1">
+	<version ClassVersion="1" checksum="331599642"/>
+  </class>
+  <class name="JetInfo" ClassVersion="0"/>
+  <class name="evtid" ClassVersion="0"/>
 </lcgdict>

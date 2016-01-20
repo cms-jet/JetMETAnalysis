@@ -54,11 +54,11 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 // define constants
 ////////////////////////////////////////////////////////////////////////////////
-vector<int> colors = {kRed+1,kBlue+1};
-vector<int> colorsMore = {kRed+1,kOrange+1,kGreen+2,kBlue+1,kViolet+1,kMagenta+1};
-vector<int> shapes = {kFullCircle,kOpenCircle};
-vector<int> shapesMore = {kFullSquare,kFullCircle,kFullDiamond,
-						  kOpenSquare,kOpenCircle,kOpenDiamond};
+static vector<int> colors = {kRed+1,kBlue+1};
+static vector<int> colorsMore = {kRed+1,kOrange+1,kGreen+2,kBlue+1,kViolet+1,kMagenta+1};
+static vector<int> shapes = {kFullCircle,kOpenCircle};
+static vector<int> shapesMore = {kFullSquare,kFullCircle,kFullDiamond,
+                                 kOpenSquare,kOpenCircle,kOpenDiamond};
 
 ////////////////////////////////////////////////////////////////////////////////
 // define DifferenceMaker class
