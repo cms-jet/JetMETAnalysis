@@ -419,6 +419,25 @@ void ClosureMaker::checkResponse() {
 }
 
 //______________________________________________________________________________
+pair<double,double> ClosureMaker::determineCanvasRange(double xmin, double xmax) {
+  bool above105 = false, below95 = false;
+  bool above115 = false, below85 = false;
+  for(unsigned int ih=0; ih<hClosure.size(); ih++) {
+    for(int ibin=hClosure[ih]->FindBin(xmin); ibin<hClosure[ih]->FindBin(xmax)+1; ibin++) {
+      if(hClosure[ih]->GetBinContent(ibin)>1.05) above105 = true;
+      if(hClosure[ih]->GetBinContent(ibin)<0.95 &&
+         hClosure[ih]->GetBinContent(ibin)!=0.0) below95 = true;
+      if(hClosure[ih]->GetBinContent(ibin)>1.15) above115 = true;
+      if(hClosure[ih]->GetBinContent(ibin)<0.85 &&
+         hClosure[ih]->GetBinContent(ibin)!=0.0) below85 = true;
+    }
+  }
+  if(above115 || below85)      return make_pair(0.35,1.35);
+  else if(above105 || below95) return make_pair(0.85,1.15);
+  else                         return make_pair(0.95,1.05);
+}
+
+//______________________________________________________________________________
 void ClosureMaker::makeCanvases() {
 	for(unsigned int ih=0; ih<hClosure.size(); ih++) {
 		TString name = Form("%s_%s",hClosure[ih]->GetName(),alg.Data());
@@ -429,7 +448,8 @@ void ClosureMaker::makeCanvases() {
 		//
 		TH1D* frame = new TH1D();
 		if(var == VARIABLES::refpt || var == VARIABLES::jtpt) {
-			if(TString(alg).Contains("pf",TString::kIgnoreCase)) {
+			if(TString(alg).Contains("pf",TString::kIgnoreCase) ||
+         TString(alg).Contains("puppi",TString::kIgnoreCase)) {
 				frame->GetXaxis()->SetLimits(XminPF[ih],Xmax[ih]);
 				hClosure[ih]->GetXaxis()->SetLimits(XminPF[ih],Xmax[ih]);
 			}
@@ -512,14 +532,17 @@ void ClosureMaker::makeMergedCanvas() {
 	// Setup the frame, canvas, legend, and pave
 	//
 	TH1D* frame = new TH1D();
-	if(TString(alg).Contains("pf",TString::kIgnoreCase))
+	if(TString(alg).Contains("pf",TString::kIgnoreCase) ||
+     TString(alg).Contains("puppi",TString::kIgnoreCase))
 		frame->GetXaxis()->SetLimits(XminPF[0],Xmax[0]);
 	else
 		frame->GetXaxis()->SetLimits(XminCalo[0],Xmax[0]);
 	frame->GetXaxis()->SetMoreLogLabels();
 	frame->GetXaxis()->SetNoExponent();
+  pair<double,double> range = determineCanvasRange(frame->GetXaxis()->GetXmin(),frame->GetXaxis()->GetXmax());
 	//frame->GetYaxis()->SetRangeUser(0.95,1.05);
-	frame->GetYaxis()->SetRangeUser(0.35,1.35);
+	//frame->GetYaxis()->SetRangeUser(0.35,1.35);
+  frame->GetYaxis()->SetRangeUser(range.first,range.second);
 	frame->GetXaxis()->SetTitle(getVariableAxisTitleString(var).c_str());
 	frame->GetYaxis()->SetTitle("Response");
 	canvases_legends.push_back(make_pair(tdrCanvas(name,frame,14,11,true),
@@ -540,7 +563,8 @@ void ClosureMaker::makeMergedCanvas() {
 	// Format and draw the histograms
 	//
 	for(unsigned int ih=0; ih<hClosure.size(); ih++) {
-		if(TString(alg).Contains("pf",TString::kIgnoreCase)) {
+		if(TString(alg).Contains("pf",TString::kIgnoreCase) ||
+       TString(alg).Contains("puppi",TString::kIgnoreCase)) {
 			hClosure[ih]->GetXaxis()->SetLimits(XminPF[ih],Xmax[ih]);
 			hClosure[ih]->GetXaxis()->SetRangeUser(XminPF[ih],Xmax[ih]);
 		}

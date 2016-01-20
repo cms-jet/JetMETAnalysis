@@ -67,27 +67,28 @@ public:
 	//
 	// member functions
 	//
-	void openInputFile();
-	void getHistograms(TDirectoryFile* idir);
-	void openOutputFile();
-	void closeFiles();
-	void makeLines();
-	void loopOverDirectories();
-	void loopOverAlgorithms();
-	void resetForNextAlgorithm();
-	void loopOverHistograms();
-	void etaClosureMergedPtBins(TDirectoryFile* idir);
-	void loopOverBins(TH2F* hvar, unsigned int iVarBin);
-    void adjust_fitrange(TH1* h,double& min,double& max);
-	void checkResponse();
-	void makeCanvases();
-	void makeMergedCanvas();
-	void writeToFile();
-	void makeClosure(const VARIABLES::Variable ivar = VARIABLES::refpt);
+	void 				openInputFile();
+	void 				getHistograms(TDirectoryFile* idir);
+	void 				openOutputFile();
+	void 				closeFiles();
+	void 				makeLines();
+	void 				loopOverDirectories();
+	void 				loopOverAlgorithms();
+	void 				resetForNextAlgorithm();
+	void 				loopOverHistograms();
+	void 				etaClosureMergedPtBins(TDirectoryFile* idir);
+	void 				loopOverBins(TH2F* hvar, unsigned int iVarBin);
+    void 				adjust_fitrange(TH1* h,double& min,double& max);
+	void 				checkResponse();
+	pair<double,double> determineCanvasRange(double xmin, double xmax);
+	void 				makeCanvases();
+	void 				makeMergedCanvas();
+	void 				writeToFile();
+	void 				makeClosure(const VARIABLES::Variable ivar = VARIABLES::refpt);
 
 private:
 	bool           	 				 useMPV, objects_loaded, draw_guidelines;
-   double							 CMEnergy, nsigma;
+    double							 CMEnergy, nsigma;
 	TString        	 				 path, filename, outputDir, flavor, alg;
 	vector<TString>	 				 algs, outputFormat;
 	JetInfo							 *ji;
