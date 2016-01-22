@@ -52,7 +52,7 @@ if conditionsSource != "GT":
     if conditionsSource == "DB":
         conditionsConnect = cms.string("frontier://FrontierPrep/CMS_COND_PHYSICSTOOLS")
     elif conditionsSource == "SQLite":
-	conditionsConnect = cms.string('sqlite_file:DBFiles/'+era+'.db')    
+	conditionsConnect = cms.string('sqlite_file:'+era+'.db')    
 
     from CondCore.DBCommon.CondDBSetup_cfi import *
     process.jec = cms.ESSource("PoolDBESSource",CondDBSetup,
@@ -64,16 +64,16 @@ if conditionsSource != "GT":
 #!
 #! INPUT
 #!
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(2000))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1000))
 
 ########################################
 # QCD_PY8_RunIIFall15DR76_Asympt_25ns #
 ########################################
-#process.load("JetMETAnalysis.JetAnalyzers.QCD_PY8_RunIIFall15DR76_Asympt_25ns_cff")
+process.load("JetMETAnalysis.JetAnalyzers.QCD_PY8_RunIIFall15DR76_Asympt_25ns_cff")
 #############################################
 # QCD_PY8_RunIIFall15DR76_AsymptNoPU_25ns #
 #############################################
-process.load("JetMETAnalysis.JetAnalyzers.QCD_PY8_RunIIFall15DR76_AsymptNoPU_25ns_cff")
+#process.load("JetMETAnalysis.JetAnalyzers.QCD_PY8_RunIIFall15DR76_AsymptNoPU_25ns_cff")
 
 qcdFiles = cms.untracked.vstring(
 	'root://cmsxrootd.fnal.gov//store/mc/RunIIFall15DR76/QCD_Pt-15to7000_TuneCUETP8M1_Flat_13TeV_pythia8/AODSIM/PU25nsData2015v1_magnetOn_76X_mcRun2_asymptotic_v12-v1/20000/022F2CE9-6FA3-E511-BA9D-D4AE5269DC07.root',
@@ -150,3 +150,4 @@ if doProducer:
 #processDumpFile = open('runJRA.dump' , 'w')
 #print >> processDumpFile, process.dumpPython()
 process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(True) )
+process.options.allowUnscheduled = cms.untracked.bool(True)
