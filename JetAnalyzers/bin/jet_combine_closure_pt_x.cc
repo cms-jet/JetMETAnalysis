@@ -36,9 +36,6 @@ using namespace std;
 // define local functions
 ////////////////////////////////////////////////////////////////////////////////
 
-///CMS Preliminary label;
-void cmsPrelim(double intLUMI = 0);
-
 ///Get colors for the markers
 vector<Int_t> getColors();
 
@@ -348,25 +345,6 @@ int main(int argc,char**argv)
 ////////////////////////////////////////////////////////////////////////////////
 // implement local functions
 ////////////////////////////////////////////////////////////////////////////////
-
-//______________________________________________________________________________
-void cmsPrelim(double intLUMI)
-{
-   const float LUMINOSITY = intLUMI;
-  TLatex latex;
-  latex.SetNDC();
-  latex.SetTextSize(0.04);
-
-  latex.SetTextAlign(31); // align right
-  latex.DrawLatex(0.93,0.96,"#sqrt{s} = 8 TeV");
-  if (LUMINOSITY > 0.) {
-    latex.SetTextAlign(31); // align right
-    //latex.DrawLatex(0.82,0.7,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //Original
-    latex.DrawLatex(0.65,0.85,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //29/07/2011
-  }
-  latex.SetTextAlign(11); // align left
-  latex.DrawLatex(0.16,0.96,"CMS Simulation");
-}
 
 //______________________________________________________________________________
 vector<Int_t> getColors() {

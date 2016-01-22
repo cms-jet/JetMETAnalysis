@@ -30,6 +30,7 @@
 #include "TH2.h"
 #include "TH2F.h"
 #include "TH3F.h"
+#include "TGraphErrors.h"
 #include "TF1.h"
 #include "TString.h"
 #include "TPaveText.h"
@@ -37,10 +38,13 @@
 #include "TLatex.h"
 #include "TMath.h"
 #include "TColor.h"
+#include "TLine.h"
 
 #include <fstream>
 #include <string>
 #include <cmath>
+#include <vector>
+#include <stdlib.h>
 
 using namespace std;
 
@@ -67,6 +71,8 @@ TCanvas * getCorrectionVsPtComparisonCanvasTDR(vector<TString>& algs, vector<pai
 
 TCanvas * getCorrectionMap(TString algo, FactorizedJetCorrector * jetCorr, TString suffix, double CMEnergy);
 
+TCanvas * drawATLASresponse(TString algo, FactorizedJetCorrector * jetCorr, TString suffix);
+
 vector<Int_t> getColors();
 
 vector<Int_t> getMarkerNumbers();
@@ -75,14 +81,23 @@ string getAlias(TString s);
 
 TString getAlgNameLong(TString algo, int coneSize = 0);
 
-///CMS Preliminary label;
-void cmsPrelim(double intLUMI = 0);
+// Move to mu-based mapping, which is better for comparing
+// different PU scenarios as it considers both IT and OOT PU,
+// plus we have a number directly comparable to ATLAS
+double rhoFromMu(double mu);
+
+// Use this for solving ptmeas from ptgen = JEC(ptmeas) * ptmeas
+Double_t fJECPt(Double_t *x, Double_t *p);
+
+// Response as a function of pTprime (instead of JEC vs pTmeas)
+double getResp(TF1 *_jecpt, double ptgen, double eta, double jeta, double mu);
 
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
 ////////////////////////////////////////////////////////////////////////////////
 vector<pair<FactorizedJetCorrector*,TString> > allJetCorrs;
 double fixedRho;
+FactorizedJetCorrector* _jec;
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -183,12 +198,14 @@ void analyzeAlgo(TString algo, CommandLine & cl){
   for(unsigned int of=0; of<outputFormat.size(); of++) {
      ove->SaveAs(outputDir+string(ove->GetName())+outputFormat[of]);
   }
+  ove->Write();
+
+  // get the canvas of correction vs eta and pt, write and save to file
   TCanvas * omap = getCorrectionMap(algo, jetCorr,suffix,CMEnergy);
   for(unsigned int of=0; of<outputFormat.size(); of++) {
      omap->SaveAs(outputDir+string(omap->GetName())+outputFormat[of]);
   }
   omap->Write();
-  ove->Write();
 
   // get the canvas of correction vs eta in tdr format, write and save to file
   if(tdr) {
@@ -205,7 +222,13 @@ void analyzeAlgo(TString algo, CommandLine & cl){
      ovp->SaveAs(outputDir+string(ovp->GetName())+outputFormat[of]);
   }
   ovp->Write();
-  
+
+  // get the canvas of response vs pt in the ATLAS style, write and save to file
+  TCanvas * oATLAS = drawATLASresponse(algo, jetCorr, suffix);
+  for(unsigned int of=0; of<outputFormat.size(); of++) {
+     oATLAS->SaveAs(outputDir+string(oATLAS->GetName())+outputFormat[of]);
+  }
+  oATLAS->Write();
 
 }//analyzeAlgo
 
@@ -980,6 +1003,102 @@ TCanvas * getCorrectionMap(TString algo, FactorizedJetCorrector * jetCorr,
 }//getCorrectionMap()
 
 //---------------------------------------------------------------------
+TCanvas * drawATLASresponse(TString algo, FactorizedJetCorrector * jetCorr, TString suffix) {
+  if (!_jec) {
+    _jec = jetCorr;
+  }
+  TF1 *_jecpt(0);
+  if (!_jecpt) {
+    _jecpt = new TF1("jecpt",fJECPt,0,4000,3);
+  }
+
+  double ergs[] = {30, 60, 110, 400, 2000};
+  const int ne = sizeof(ergs)/sizeof(ergs[0]);
+  const int neta = 48;//52;
+  const int jeta = TMath::Pi()*0.5*0.5;
+  const int mu = 0;
+
+  TGraph *gs[ne];
+  for (int ie = 0; ie != ne; ++ie) {
+
+    double energy = ergs[ie];
+
+    TGraph *g = new TGraph(0); gs[ie] = g;
+    for (int ieta = 0; ieta != neta; ++ieta) {
+      
+      double eta = (ieta+0.5)*0.1;
+      double pt = energy / cosh(eta);
+      if (pt > 10.) {
+        double jes = getResp(_jecpt, pt, eta, jeta, mu);
+        int n = g->GetN();
+        g->SetPoint(n, eta, jes);
+      }
+    } // for ie
+  } // for ieta
+
+  // Draw results
+  //TCanvas *c1 = new TCanvas("c1","c1",600,600);
+  //TCanvas *c1 = new TCanvas("c1","c1",800,600); // ATLAS shape
+  TH1D *h = new TH1D("h",";Jet |#eta|;Jet response at PF scale",40,0,4.8);
+  h->SetMaximum(1.25);
+  h->SetMinimum(0.5);
+  //h->Draw("AXIS");
+  TString ss("ATLASresponse");
+  ss += suffix;
+  TCanvas *c1 = tdrCanvas(ss.Data(),h,2,0);
+
+  TLegend *leg1 = tdrLeg(0.25,0.25,0.55,0.30);
+  TLegend *leg2 = tdrLeg(0.25,0.20,0.55,0.25);
+  TLegend *leg3 = tdrLeg(0.25,0.15,0.55,0.20);
+  TLegend *leg4 = tdrLeg(0.55,0.25,0.85,0.30);
+  TLegend *leg5 = tdrLeg(0.55,0.20,0.85,0.25);
+  TLegend *legs[ne] = {leg1, leg2, leg3, leg4, leg5};
+
+  int colors[] = {kGreen+2, kBlack, kOrange+1, kBlue, kRed+1};
+  int markers[] = {kFullCircle, kOpenCircle, kFullSquare, kOpenSquare,
+       kFullTriangleUp};
+
+  for (int ie = 0; ie != ne; ++ie) {
+    
+    TGraph *g = gs[ie];
+    g->SetMarkerColor(colors[ie]);
+    g->SetMarkerStyle(markers[ie]);
+    g->Draw("SAMEP");
+
+    //TLegend *leg = (ie<3 ? leg1 : leg2);
+    TLegend *leg = legs[ie];
+    leg->SetTextColor(colors[ie]);
+    leg->AddEntry(g, Form("E = %1.0f GeV",ergs[ie]), "P");
+  }
+
+
+  TLatex *tex = new TLatex();
+  tex->SetNDC();
+  tex->SetTextSize(0.045);
+  
+  TLine *l = new TLine();
+  l->DrawLine(1.3,0.7,1.3,1.1);
+  l->DrawLine(2.5,0.7,2.5,1.1);
+  l->DrawLine(3.0,0.7,3.0,1.1);
+  l->DrawLine(4.5,0.7,4.5,1.1);
+  l->SetLineStyle(kDashed);
+  l->DrawLine(3.2,0.7,3.2,1.1);
+
+  tex->DrawLatex(0.35,0.86,"2012 JES: Anti-k_{t} R = 0.5, PF");
+
+  tex->DrawLatex(0.19,0.78,"Barrel");
+  tex->DrawLatex(0.47,0.78,"Endcap"); //0.42
+  tex->DrawLatex(0.73,0.78,"Forward");
+
+  tex->DrawLatex(0.21,0.73,"BB");
+  tex->DrawLatex(0.43,0.73,"EC1");
+  tex->DrawLatex(0.57,0.73,"EC2");
+  tex->DrawLatex(0.77,0.73,"HF");
+
+  return c1;
+}
+
+//---------------------------------------------------------------------
 FactorizedJetCorrector * getFactorizedCorrector(TString algo, CommandLine & cl, TString & label) {
 
   string  path         = cl.getValue<string> ("path","./");
@@ -1317,21 +1436,40 @@ vector<Int_t> getMarkerNumbers() {
 }
 
 //______________________________________________________________________________
-void cmsPrelim(double intLUMI)
-{
-   const float LUMINOSITY = intLUMI;
-   TLatex latex;
-   latex.SetNDC();
-   latex.SetTextSize(0.045);
+// Move to mu-based mapping, which is better for comparing
+// different PU scenarios as it considers both IT and OOT PU,
+// plus we have a number directly comparable to ATLAS
+double rhoFromMu(double mu) {
+  // Eta_0.0-1.3, jt320
+  return (1.01272 + 0.551183*mu + 0.000362936*mu*mu);
+}
 
-   latex.SetTextAlign(31); // align right
-   latex.DrawLatex(0.93,0.96,"#sqrt{s} = 13 TeV");
-   if (LUMINOSITY > 0.) {
-      latex.SetTextAlign(31); // align right
-      //latex.DrawLatex(0.82,0.7,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //Original
-      latex.DrawLatex(0.65,0.85,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //29/07/2011
-   }
-   latex.SetTextAlign(11); // align left
-   //latex.DrawLatex(0.16,0.96,"CMS preliminary");// 2012");
-   latex.DrawLatex(0.16,0.96,"CMS Simulation");// 2012");
+//______________________________________________________________________________
+// Use this for solving ptmeas from ptgen = JEC(ptmeas) * ptmeas
+Double_t fJECPt(Double_t *x, Double_t *p) {
+
+  double ptmeas = x[0];
+  double eta = p[0];
+  double jeta = p[1];
+  double rho = p[2];
+
+  _jec->setJetPt(ptmeas);
+  _jec->setJetEta(eta);
+  _jec->setJetA(jeta);
+  _jec->setRho(rho);
+
+  double jec = _jec->getCorrection();
+  
+  return (ptmeas * jec);
+}
+
+//______________________________________________________________________________
+// Response as a function of pTprime (instead of JEC vs pTmeas)
+double getResp(TF1 *_jecpt, double ptgen, double eta, double jeta, double mu) {
+
+  _jecpt->SetParameters(eta, jeta, rhoFromMu(mu));
+  double ptmeas = _jecpt->GetX(ptgen, 1, 4000);
+  double resp = ptmeas / _jecpt->Eval(ptmeas); // 1/jec
+
+  return resp;
 }

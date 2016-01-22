@@ -542,18 +542,31 @@ inline void cmsPrel(int energy = 8, double intLumi=-1, bool wide = false) {
   if (intLumi > 0.) {
     latex->SetTextAlign(11); // align left
     latex->DrawLatex(wide ? 0.06 : 0.15, 0.96,
-         Form("CMS preliminary, L = %.3g fb^{-1}",intLumi*0.001));
-  }
-  else if (intLumi==0) { // simulation
-    latex->SetTextAlign(11); // align left
-    //latex->DrawLatex(wide ? 0.06 : 0.15, 0.96, "CMS simulation (Summer12)");
-    latex->DrawLatex(wide ? 0.06 : 0.15, 0.96, "CMS Simulation");
+         Form("CMS simulation preliminary, L = %.3g fb^{-1}",intLumi*0.001));
   }
   else {
     latex->SetTextAlign(11); // align left
-    latex->DrawLatex(0.15,0.96,"CMS preliminary 2014");
+    latex->DrawLatex(0.15,0.96,"CMS simulation preliminary");
   }
 } // cmsPrel
+
+///CMS Preliminary label;
+inline void cmsPrelim(double intLUMI = 0) {
+   const float LUMINOSITY = intLUMI;
+   TLatex latex;
+   latex.SetNDC();
+   latex.SetTextSize(0.045);
+
+   latex.SetTextAlign(31); // align right
+   latex.DrawLatex(0.93,0.96,"#sqrt{s} = 13 TeV");
+   if (LUMINOSITY > 0.) {
+      latex.SetTextAlign(31); // align right
+      //latex.DrawLatex(0.82,0.7,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //Original
+      latex.DrawLatex(0.65,0.85,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //29/07/2011
+   }
+   latex.SetTextAlign(11); // align left
+   latex.DrawLatex(0.16,0.96,"CMS simulation preliminary");
+}
 
 inline void cmsFinal(double intLumi=-1, bool wide = false) {
 

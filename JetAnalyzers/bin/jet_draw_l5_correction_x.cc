@@ -50,9 +50,6 @@ std::string concatString(const T& obj1, const U& obj2)
 /// divide one graph by another, assuming they have the same abscissa
 void divTGraphErrors(TGraphErrors* num, TGraphErrors* den);
 
-/// CMS Preliminary label;
-void cmsPrelim(double intLUMI = 0);
-
 /// Returns a vector of colors to be used for the various graphs
 vector<Int_t> getColors();
 
@@ -408,27 +405,6 @@ void divTGraphErrors(TGraphErrors* num, TGraphErrors* den)
       num->SetPointError(k,ex,TMath::Sqrt((TMath::Power((1/normy),2)*TMath::Power(ey,2))+
                                           (TMath::Power((y/TMath::Power(normy,2)),2)*TMath::Power(normey,2))));
    }
-}
-
-//______________________________________________________________________________
-void cmsPrelim(double intLUMI)
-{
-   const float LUMINOSITY = intLUMI;
-  TLatex latex;
-  latex.SetNDC();
-  //latex.SetTextSize(0.05);
-  latex.SetTextSize(0.045);
-
-  latex.SetTextAlign(31); // align right
-  latex.DrawLatex(0.93,0.96,"#sqrt{s} = 8 TeV");
-  if (LUMINOSITY > 0.) {
-    latex.SetTextAlign(31); // align right
-    //latex.DrawLatex(0.82,0.7,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //Original
-    latex.DrawLatex(0.65,0.85,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //29/07/2011
-  }
-  latex.SetTextAlign(11); // align left
-  //latex.DrawLatex(0.16,0.96,"CMS preliminary");// 2012");
-  latex.DrawLatex(0.16,0.96,"CMS Preliminary");// 2012");
 }
 
 //______________________________________________________________________________

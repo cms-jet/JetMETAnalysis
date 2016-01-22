@@ -72,9 +72,6 @@ void doOptimalConeSizeScans(map<JetInfo,TFile*>& ifiles, vector<double> scanPts,
 /// Combine the DeltaR plots
 void combineCSPlots(map<JetInfo,TFile*>& ifiles, TString outputDir, vector<TString> outputFormat, TString algsString);
 
-///CMS Preliminary label;
-void cmsPrelim(double intLUMI = 0);
-
 /// get the colors for the 8 cone sizes
 vector<Int_t> getColors();
 
@@ -854,26 +851,4 @@ vector<Int_t> getMarkerNumbers() {
   ret.push_back(28);
   ret.push_back(34);
   return ret;
-}
-
-//______________________________________________________________________________
-void cmsPrelim(double intLUMI)
-{
-   const float LUMINOSITY = intLUMI;
-  TLatex latex;
-  latex.SetNDC();
-  latex.SetTextSize(0.045);
-
-  latex.SetTextAlign(31); // align right
-  //latex.DrawLatex(0.90,0.91,"#sqrt{s} = 8 TeV");
-  latex.DrawLatex(0.93,0.96,"#sqrt{s} = 8 TeV");
-  if (LUMINOSITY > 0.) {
-    latex.SetTextAlign(31); // align right
-    //latex.DrawLatex(0.82,0.7,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //Original
-    //latex.DrawLatex(0.59,0.91,Form("#scale[0.5]{#lower[-0.3]{#int}} #font[12]{L} dt = %d fb^{-1}", (int) LUMINOSITY)); //29/07/2011
-    //////latex.DrawLatex(0.65,0.96,Form("#scale[0.5]{#lower[-0.3]{#int}} #font[12]{L} dt = %d fb^{-1}", (int) LUMINOSITY)); //29/07/2011
-  }
-  latex.SetTextAlign(11); // align left
-  //latex.DrawLatex(0.10,0.91,"CMS preliminary");// 2012");
-  latex.DrawLatex(0.16,0.96,"CMS Simulation");// 2012");
 }

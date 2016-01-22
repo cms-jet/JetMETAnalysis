@@ -37,9 +37,6 @@ using namespace std;
 // define local functions
 ////////////////////////////////////////////////////////////////////////////////
 
-///CMS Preliminary label;
-void cmsPrelim(double intLUMI = 0);
-
 /// get the uppercase version of the algorithm name
 TString getAlias(TString s);
 
@@ -369,25 +366,6 @@ void scanBins(double CMEnergy, double pt, TH1* histo) {
          if(TMath::Abs(histo->GetBinCenter(ibin))>etaMax)
             histo->SetBinContent(ibin,-1.0);
       }
-}
-
-//______________________________________________________________________________
-void cmsPrelim(double intLUMI)
-{
-   const float LUMINOSITY = intLUMI;
-   TLatex latex;
-   latex.SetNDC();
-   latex.SetTextSize(0.045);
-
-   latex.SetTextAlign(31); // align right
-   latex.DrawLatex(0.93,0.96,"#sqrt{s} = 8 TeV");
-   if (LUMINOSITY > 0.) {
-      latex.SetTextAlign(31); // align right
-      //latex.DrawLatex(0.82,0.7,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //Original
-      latex.DrawLatex(0.65,0.85,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //29/07/2011
-   }
-   latex.SetTextAlign(11); // align left
-   latex.DrawLatex(0.16,0.96,"CMS preliminary");// 2012");
 }
 
 //______________________________________________________________________________
