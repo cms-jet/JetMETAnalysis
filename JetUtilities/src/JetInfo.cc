@@ -52,6 +52,11 @@ string JetInfo::get_legend_title(const string& alg, bool withSize, bool withAlg,
 }
 
 //______________________________________________________________________________
+TString JetInfo::get_legend_title(const TString& alg, bool withSize, bool withAlg, bool parentheses) {
+  return TString(JetInfo::get_legend_title(string(alg),withSize,withAlg,parentheses));
+}
+
+//______________________________________________________________________________
 int JetInfo::vfind(const TString a[], const int size, TString b) {
   for (int i=0; i<size; i++) {
     if (a[i].CompareTo(b,TString::kIgnoreCase)==0)

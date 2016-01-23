@@ -98,7 +98,8 @@ public:
   static std::string get_level_tag(int level, bool L1FastJet);
 
   /// transform the alg label into a title, e.g.: kt4calo -> k_{T}, D=0.4 (Calo)
-   static std::string get_legend_title(const std::string& alg, bool withSize = true, bool withAlg = true, bool parentheses = false);
+  static std::string get_legend_title(const std::string& alg, bool withSize = true, bool withAlg = true, bool parentheses = false);
+  static TString get_legend_title(const TString& alg, bool withSize = true, bool withAlg = true, bool parentheses = false);
 
   /// Get the abbreviation for each detector section
   static TString get_detector_abbreviation(TString dn);

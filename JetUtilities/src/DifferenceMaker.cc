@@ -298,7 +298,7 @@ void DifferenceMaker::openCanvas() {
     canvases_legends.back().second->AddEntry((TObject*)0,"Parton Flavor",""); //A.K.A Physics Definition
     //leg->AddEntry((TObject*)0,"Algorithmic Flavor","");
     if(flavorDiffSingleAlg) {
-        canvases_legends.back().second->AddEntry((TObject*)0,ji->get_legend_title(algs[0].Data()).c_str(),"");
+        canvases_legends.back().second->AddEntry((TObject*)0,ji->get_legend_title(algs[0]),"");
     }
 }
 
@@ -424,7 +424,7 @@ void DifferenceMaker::drawDifference(int count) {
         else {
             tdrDraw(glDiff[ig],"P",shapes[count],colors[count]);
             //ji = make_unique<JetInfo>(alg);
-            canvases_legends.back().second->AddEntry(glDiff[ig],ji->get_legend_title(algs[count].Data()).c_str(),"pl");
+            canvases_legends.back().second->AddEntry(glDiff[ig],ji->get_legend_title(algs[count]),"pl");
             //canvases_legends.back().second->AddEntry(gl[2],"Anti-k_{T} R=0.5, Calo","pl");
             //canvases_legends.back().second->AddEntry(gl[2],"Anti-k_{T} R=0.5, PF","pl"); 
         }  

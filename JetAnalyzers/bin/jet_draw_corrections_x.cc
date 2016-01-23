@@ -77,10 +77,6 @@ vector<Int_t> getColors();
 
 vector<Int_t> getMarkerNumbers();
 
-string getAlias(TString s);
-
-TString getAlgNameLong(TString algo, int coneSize = 0);
-
 // Move to mu-based mapping, which is better for comparing
 // different PU scenarios as it considers both IT and OOT PU,
 // plus we have a number directly comparable to ATLAS
@@ -411,7 +407,7 @@ TCanvas * getCorrectionVsEtaCanvasTDR(TString algo, FactorizedJetCorrector * jet
   leg->SetFillColor(0);
 
   //Create a pave indicating the algorithm name
-  TString algNameLong = getAlgNameLong(algo);
+  TString algNameLong = JetInfo::get_legend_title(string(algo));
   leg->AddEntry((TObject*)0,algNameLong,"");
   leg->AddEntry((TObject*)0,"","");
 
@@ -574,7 +570,7 @@ vector<TCanvas*> getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, ve
 
     bool allAlgsSame = true;
     for(unsigned int ialg=0; ialg<algs.size(); ialg++) {
-      if(getAlgNameLong(algs[0],1).CompareTo(getAlgNameLong(algs[ialg],1))!=0) {
+      if(JetInfo::get_legend_title(algs[0],false).CompareTo(JetInfo::get_legend_title(algs[ialg],false))!=0) {
         allAlgsSame=false;
         break;
       }
@@ -704,9 +700,9 @@ vector<TCanvas*> getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, ve
       //Create a pave indicating the algorithm name
       if ( (normAlg.IsNull()) || (ialg>0 && !normAlg.IsNull()) ) {
         if(allAlgsSame)
-          legs.back()->AddEntry(cc[hstr],getAlgNameLong(algs[ialg],2),"p");
+          legs.back()->AddEntry(cc[hstr],Form(" R=%.1f",JetInfo(algs[ialg]).coneSize/10.0),"p");
         else
-          legs.back()->AddEntry(cc[hstr],getAlgNameLong(algs[ialg]),"p");
+          legs.back()->AddEntry(cc[hstr],JetInfo::get_legend_title(algs[ialg]),"p");
       }
     }//for alg
 
@@ -896,7 +892,7 @@ TCanvas * getCorrectionVsPtComparisonCanvasTDR(vector<TString>& algs, vector<pai
          cc->Draw("Psame");
 
       //Create a pave indicating the algorithm name
-      TString algNameLong = getAlgNameLong(algs[ialg]);
+      TString algNameLong = JetInfo::get_legend_title(algs[ialg]);
       legs.back()->AddEntry(cc,algNameLong,"p");
     }//for alg
 
@@ -929,7 +925,7 @@ TCanvas * getCorrectionMap(TString algo, FactorizedJetCorrector * jetCorr,
    gStyle->SetOptStat(0);
 
    //Create a pave indicating the algorithm name
-   TString algNameLong = getAlgNameLong(algo);
+   TString algNameLong = JetInfo::get_legend_title(algo);
 
    TPaveText * pave = new TPaveText(0.295,0.93,0.519,0.99,"NDC tr");
    pave->AddText(algNameLong);
@@ -1084,7 +1080,7 @@ TCanvas * drawATLASresponse(TString algo, FactorizedJetCorrector * jetCorr, TStr
   l->SetLineStyle(kDashed);
   l->DrawLine(3.2,0.7,3.2,1.1);
 
-  tex->DrawLatex(0.35,0.86,"2012 JES: Anti-k_{t} R = 0.5, PF");
+  tex->DrawLatex(0.35,0.86,"2016 JES: "+JetInfo::get_legend_title(algo));
 
   tex->DrawLatex(0.19,0.78,"Barrel");
   tex->DrawLatex(0.47,0.78,"Endcap"); //0.42
@@ -1173,235 +1169,6 @@ FactorizedJetCorrector * getFactorizedCorrector(TString algo, CommandLine & cl, 
   return new FactorizedJetCorrector(vPar);
 
 }//getFactorizedCorrector
-
-
-//______________________________________________________________________________
-string getAlias(TString s)
-{
-   if (s=="ic5calo")
-      return "IC5Calo";
-   else if (s=="ic5pf")
-      return "IC5PF";
-   else if (s=="ak5calo")
-      return "AK5Calo";  
-   else if (s=="ak5calol1")
-      return "AK5Calol1";
-   else if (s=="ak5calol1off")
-      return "AK5Calol1off";
-   else if (s=="ak5calol1offl2l3")
-      return "AK5Calol1off";
-   else if (s=="ak7calo")
-      return "AK7Calo";
-   else if (s=="ak7calol1")
-      return "AK7Calol1";
-   else if (s=="ak7calol1off")
-      return "AK7Calol1off";
-   else if (s=="ak5caloHLT")
-      return "AK5CaloHLT";
-   else if (s=="ak5caloHLTl1")
-      return "AK5CaloHLTl1";
-   else if (s=="ak1pf")
-      return "AK1PF";
-   else if (s=="ak1pfl1")
-      return "AK1PFl1";
-   else if (s=="ak2pf")
-      return "AK2PF";
-   else if (s=="ak2pfl1")
-      return "AK2PFl1";
-   else if (s=="ak3pf")
-      return "AK3PF";
-   else if (s=="ak3pfl1")
-      return "AK3PFl1";
-   else if (s=="ak4pf")
-      return "AK4PF";
-   else if (s=="ak4pfl1")
-      return "AK4PFl1";
-   else if (s=="ak5pf")
-      return "AK5PF";
-   else if (s=="ak5pfl1")
-      return "AK5PFl1";
-   else if (s=="ak5pfl1l2l3")
-      return "AK5PFl1";
-   else if (s=="ak5pfl1off")
-      return "AK5PFl1off";
-   else if (s=="ak6pf")
-      return "AK6PF";
-   else if (s=="ak6pfl1")
-      return "AK6PFl1";
-   else if (s=="ak7pf")
-      return "AK7PF";
-   else if (s=="ak7pfl1")
-      return "AK7PFl1";
-   else if (s=="ak7pfl1off")
-      return "AK7PFl1off";
-   else if (s=="ak8pf")
-      return "AK8PF";
-   else if (s=="ak8pfl1")
-      return "AK8PFl1";
-   else if (s=="ak9pf")
-      return "AK9PF";
-   else if (s=="ak9pfl1")
-      return "AK9PFl1";
-   else if (s=="ak10pf")
-      return "AK10PF";
-   else if (s=="ak10pfl1")
-      return "AK10PFl1";
-   else if (s=="ak1pfchs")
-      return "AK1PFchs";
-   else if (s=="ak1pfchsl1")
-      return "AK1PFchsl1";
-   else if (s=="ak2pfchs")
-      return "AK2PFchs";
-   else if (s=="ak2pfchsl1")
-      return "AK2PFchsl1";
-   else if (s=="ak3pfchs")
-      return "AK3PFchs";
-   else if (s=="ak3pfchsl1")
-      return "AK3PFchsl1";
-   else if (s=="ak4pfchs")
-      return "AK4PFchs";
-   else if (s=="ak4pfchsl1")
-      return "AK4PFchsl1";
-   else if (s=="ak5pfchs")
-      return "AK5PFchs";
-   else if (s=="ak5pfchsl1")
-      return "AK5PFchsl1";
-   else if (s=="ak5pfchsl1l2l3")
-      return "AK5PFchsl1";
-   else if (s=="ak5pfchsl1off")
-      return "AK5PFchsl1off";
-   else if (s=="ak6pfchs")
-      return "AK6PFchs";
-   else if (s=="ak6pfchsl1")
-      return "AK6PFchsl1";
-   else if (s=="ak7pfchs")
-      return "AK7PFchs";
-   else if (s=="ak7pfchsl1")
-      return "AK7PFchsl1";
-   else if (s=="ak7pfchsl1off")
-      return "AK7PFchsl1off";
-   else if (s=="ak8pfchs")
-      return "AK8PFchs";
-   else if (s=="ak8pfchsl1")
-      return "AK8PFchsl1";
-   else if (s=="ak9pfchs")
-      return "AK9PFchs";
-   else if (s=="ak9pfchsl1")
-      return "AK9PFchsl1";
-   else if (s=="ak10pfchs")
-      return "AK10PFchs";
-   else if (s=="ak10pfchsl1")
-      return "AK10PFchsl1";
-   else if (s=="ak5pfHLT")
-      return "AK5PFHLT";
-  else if (s=="ak5pfHLTl1")
-      return "AK5PFHLTl1";
-   else if (s=="ak5pfchsHLT")
-      return "AK5PFchsHLT";
-   else if (s=="ak5pfchsHLTl1")
-      return "AK5PFchsHLTl1";
-   else if (s=="ak5jpt")
-      return "AK5JPT";
-   else if (s=="ak5jptl1")
-      return "AK5JPTl1";
-   else if (s=="ak5jptl1off")
-      return "AK5JPTl1off";
-   else if (s=="ak5jptl1l2l3")
-      return "AK5JPTl1";
-   else if (s=="ak5jptl1offl2l3")
-      return "AK5JPTl1off";
-   else if (s=="ak7jpt")
-      return "AK7JPT";
-   else if (s=="ak7jptl1")
-      return "AK7JPTl1";
-   else if (s=="ak7jptl1off")
-      return "AK7JPTl1off";
-   else if (s=="sc5calo")
-      return "SC5Calo";
-   else if (s=="sc5pf")
-      return "SC5PF";
-   else if (s=="sc7calo")
-      return "SC5Calo";
-   else if (s=="sc7pf")
-      return "SC5PF";
-   else if (s=="kt4calo")
-      return "KT4Calo";
-   else if (s=="kt4pf")
-      return "KT4PF";
-   else if (s=="kt6calo")
-      return "KT6Calo";
-   else if (s=="kt6pf")
-      return "KT6PF";
-   else if (s=="ak5calordl1")
-      return "AK5CaloRDl1";
-   else if (s=="ak5pfrdl1")
-      return "AK5PFRDl1";
-   else if (s=="ak5pfchsrdl1")
-      return "AK5PFchsRDl1";
-   else if (s=="ak7calordl1")
-      return "AK7CaloRDl1";
-   else if (s=="ak7pfrdl1")
-      return "AK7PFRDl1";
-   else if (s=="ak7pfchsrdl1")
-      return "AK7PFchsRDl1";
-   else if (s=="ak1puppi")
-      return "AK1PUPPI";
-   else if (s=="ak2puppi")
-      return "AK2PUPPI";
-   else if (s=="ak3puppi")
-      return "AK3PUPPI";
-   else if (s=="ak4puppi")
-      return "AK4PUPPI";
-   else if (s=="ak5puppi")
-      return "AK5PUPPI";
-   else if (s=="ak6puppi")
-      return "AK6PUPPI";
-   else if (s=="ak7puppi")
-      return "AK7PUPPI";
-   else if (s=="ak8puppi")
-      return "AK8PUPPI";
-   else if (s=="ak9puppi")
-      return "AK9PUPPI";
-   else if (s=="ak10puppi")
-      return "AK10PUPPI";
-   else
-      return "unknown";
-}
-
-//______________________________________________________________________________
-//coneSize = 0 the entire name
-//coneSize = 1 no cone size
-//coneSize = 2 only cone size
-TString getAlgNameLong(TString algo, int coneSize) {
-  TString algNameLong;
-
-  if (coneSize<2)
-    if(algo.Contains("ak"))        algNameLong += "Anti-kT";
-  if(coneSize==0 || coneSize==2) {
-     if(algo.Contains("ak1") && !algo.Contains("ak10")) algNameLong += " R=0.1";
-    else if(algo.Contains("2"))    algNameLong += " R=0.2";
-    else if(algo.Contains("3"))    algNameLong += " R=0.3";
-    else if(algo.Contains("4"))    algNameLong += " R=0.4";
-    else if(algo.Contains("5"))    algNameLong += " R=0.5";
-    else if(algo.Contains("6"))    algNameLong += " R=0.6";
-    else if(algo.Contains("7"))    algNameLong += " R=0.7";
-    else if(algo.Contains("8"))    algNameLong += " R=0.8";
-    else if(algo.Contains("9"))    algNameLong += " R=0.9";
-    else if(algo.Contains("10"))   algNameLong += " R=1.0";
-  }
-  if(coneSize<2) {
-    if(algo.Contains("pfchs"))     algNameLong += ", PF+CHS";
-    //else if(algo.Contains("pf"))   algNameLong += ", PFlow";
-    else if(algo.Contains("pf"))   algNameLong += ", Particle-Flow Jets";
-    else if(algo.Contains("calo")) algNameLong += ", Calo";
-    else if(algo.Contains("jpt"))  algNameLong += ", JPT";
-    else if(algo.Contains("puppi"))  algNameLong += ", PUPPI";
-
-    if(algo.Contains("rd")) algNameLong += ", (RD)";
-  }
-
-  return algNameLong;
-}
 
 //______________________________________________________________________________
 vector<Int_t> getColors() {
