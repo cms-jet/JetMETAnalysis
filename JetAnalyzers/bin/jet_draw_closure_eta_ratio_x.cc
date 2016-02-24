@@ -8,7 +8,7 @@
 
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 #include "JetMETAnalysis/JetAnalyzers/interface/Settings.h"
-#include "JetMETAnalysis/JetUtilities/interface/Style.h"
+#include "JetMETAnalysis/JetAnalyzers/interface/Style.h"
 
 #include "TROOT.h"
 #include "TSystem.h"
@@ -68,7 +68,7 @@ int main(int argc,char**argv)
    string          filepath2    = cl.getValue<string>   ("filepath2");
    string          algo         = cl.getValue<string>   ("algo");
    string          numerator    = cl.getValue<string>   ("numerator",            "53X");
-   string          denominator  = cl.getValue<string>   ("denominator",          "52X");
+   string          denomenator  = cl.getValue<string>   ("denomenator",          "52X");
    bool            doflavor     = cl.getValue<bool>     ("doflavor",             false);
    TString         outputDir    = cl.getValue<TString>  ("outputDir",         "images");
    vector<TString> outputFormat = cl.getVector<TString> ("outputFormat", ".png:::.eps");
@@ -82,8 +82,8 @@ int main(int argc,char**argv)
    }
 
    bool algDiv = false;
-   if(getAlias(TString(numerator)).CompareTo("unknown") && getAlias(TString(denominator)).CompareTo("unknown")) {
-      algo = numerator+"Over"+denominator;
+   if(getAlias(TString(numerator)).CompareTo("unknown") && getAlias(TString(denomenator)).CompareTo("unknown")) {
+      algo = numerator+"Over"+denomenator;
       algDiv = true;
    }
 
@@ -205,7 +205,7 @@ int main(int argc,char**argv)
          else {
             pave[i]->AddText(get_legend_title(numerator).c_str());
             pave[i]->AddText("Over");
-            pave[i]->AddText(get_legend_title(denominator).c_str());
+            pave[i]->AddText(get_legend_title(denomenator).c_str());
          }
       }
       else {
@@ -303,9 +303,9 @@ int main(int argc,char**argv)
       h1[ca[c]]->Draw("EPsame");
       h2[ca[c]]->Draw("EPsame");
       leg[c]->AddEntry(h1[ca[c]],numerator.c_str(),"lep");
-      leg[c]->AddEntry(h2[ca[c]],denominator.c_str(),"lep");
+      leg[c]->AddEntry(h2[ca[c]],denomenator.c_str(),"lep");
 
-      leg[c]->AddEntry(ratioHist[ca[c]],"Ratio = #frac{"+TString(numerator)+"}{"+TString(denominator)+"}","lep");
+      leg[c]->AddEntry(ratioHist[ca[c]],"Ratio = #frac{"+TString(numerator)+"}{"+TString(denomenator)+"}","lep");
       line->Draw("same");
       linePlus->Draw("same");
       lineMinus->Draw("same");

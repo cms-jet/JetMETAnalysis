@@ -12,7 +12,7 @@
 // it will produce validation plots as well.
 ///////////////////////////////////////////////////////////////////
 
-#include "JetMETAnalysis/JetUtilities/interface/Style.h"
+#include "JetMETAnalysis/JetAnalyzers/interface/Style.h"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 #include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
@@ -64,8 +64,6 @@ TCanvas * getCorrectionVsPtCanvas(TString algo, FactorizedJetCorrector * jetCorr
 
 TCanvas * getCorrectionVsPtComparisonCanvasTDR(vector<TString>& algs, vector<pair<FactorizedJetCorrector*,TString> > allJetCorrs,
                                                TString suffix);
-
-TCanvas * getCorrectionMap(TString algo, FactorizedJetCorrector * jetCorr, TString suffix, double CMEnergy);
 
 vector<Int_t> getColors();
 
@@ -160,7 +158,6 @@ void analyzeAlgo(TString algo, CommandLine & cl){
   string          outputDir    = cl.getValue<string>   ("outputDir",         "images");
   vector<TString> outputFormat = cl.getVector<TString> ("outputFormat", ".png:::.eps");
   bool            tdr          = cl.getValue<bool>     ("tdr",                   true);
-  double          CMEnergy     = cl.getValue<double>   ("CMEnergy",             13000);
 
   if(combineAlgs) {
     allJetCorrs.push_back(make_pair(jetCorr,corrLabel));
@@ -183,11 +180,6 @@ void analyzeAlgo(TString algo, CommandLine & cl){
   for(unsigned int of=0; of<outputFormat.size(); of++) {
      ove->SaveAs(outputDir+string(ove->GetName())+outputFormat[of]);
   }
-  TCanvas * omap = getCorrectionMap(algo, jetCorr,suffix,CMEnergy);
-  for(unsigned int of=0; of<outputFormat.size(); of++) {
-     omap->SaveAs(outputDir+string(omap->GetName())+outputFormat[of]);
-  }
-  omap->Write();
   ove->Write();
 
   // get the canvas of correction vs eta in tdr format, write and save to file
@@ -634,7 +626,7 @@ vector<TCanvas*> getCorrectionVsEtaComparisonCanvasTDR(vector<TString>& algs, ve
       //cc[hstr]->GetYaxis()->SetTitle("Corr. Factor");
       if(!normAlg.IsNull()) {
         cc_norm[Form("%s_norm",hstr.Data())] = (TH1F*)cc[hstr]->Clone(Form("%s_norm",hstr.Data()));
-        cc_norm[Form("%s_norm",hstr.Data())]->GetYaxis()->SetTitle(Form("Corr. Factor / Corr. Factor (%s)",JetInfo(normAlg).getAlias().Data()));
+        cc_norm[Form("%s_norm",hstr.Data())]->GetYaxis()->SetTitle(Form("Corr. Factor / Corr. Factor (%s)",getAlias(normAlg).c_str()));
         //cc_norm[Form("%s_norm",hstr.Data())]->GetYaxis()->SetRangeUser(0.85,1.15);
       }
       //if(algs[ialg].Contains("calo"))
@@ -888,98 +880,6 @@ TCanvas * getCorrectionVsPtComparisonCanvasTDR(vector<TString>& algs, vector<pai
 }//getCorrectionVsPtComparisonCanvasTDR
 
 //---------------------------------------------------------------------
-TCanvas * getCorrectionMap(TString algo, FactorizedJetCorrector * jetCorr,
-                           TString suffix, double CMEnergy) {
-
-   TString ss("CorrectionMap_Overview_TDR");
-   ss += suffix;
-   TCanvas *ove = new TCanvas(ss,ss,900,900);
-   ove->cd();
-   ove->SetLogx();
-
-   ove->SetLeftMargin(0.145089);
-   ove->SetRightMargin(0.132812);
-   ove->SetTopMargin(0.0860092);
-   ove->SetBottomMargin(0.178899);
-
-   gStyle->SetOptTitle(0);
-   gStyle->SetOptStat(0);
-
-   //Create a pave indicating the algorithm name
-   TString algNameLong = getAlgNameLong(algo);
-
-   TPaveText * pave = new TPaveText(0.295,0.93,0.519,0.99,"NDC tr");
-   pave->AddText(algNameLong);
-   pave->SetFillColor(0);
-   pave->SetShadowColor(0);
-   pave->SetTextFont(42);
-   pave->SetTextSize(0.05);
-
-   TString hstr = "CorrMap";
-
-   TH2D * cc = new TH2D(hstr,hstr,NPtBins,vpt,NETA,veta);
-
-   // loop over all pads
-   for (unsigned int b = 0; b < NETA; b++){
-      double eta = (veta[b] + veta[b+1])/2;
-
-
-      for (unsigned int c = 0; c < NPtBins; c++) {
-         double pt = (vpt[c]+vpt[c+1])/2;
-         float etaMax = min(5.191,TMath::ACosH(CMEnergy/2.0/pt));
-         if(abs(eta)>etaMax || pt>CMEnergy/2.0) continue;
-
-         jetCorr->setJetPt(vpt[c]);
-         jetCorr->setJetEta(eta);
-         jetCorr->setRho(fixedRho);
-         jetCorr->setJetA(TMath::Pi()*TMath::Power(JetInfo(algo).coneSize/10.0,2));
-         double cor = jetCorr->getCorrection();
-         if (std::isnan((double)cor) || std::isinf((double)cor) ){
-            cout<<" *** ERROR *** " << endl;//getCorrectionVsEtaCanvas(). For eta="<<cc->GetBinCenter(b)
-               //              <<" and pt="<<PtVals[c]<<" the correction is "<<cor<<"!!"<<endl;
-               //cor = 10000;
-               }
-         //        if ( cor < 0.8  || cor > 3 ){
-         //cout<<" WARNING  *** getCorrectionVsEtaCanvas(). Correction of "<<cor<<" is out of the (0.8,3) range"<<endl;
-         //}
-         cout << pt << " "<< eta  << " " << cor <<  endl;
-
-         //if (pt > vPar[0].record(b).parameter(0) && pt < vPar[0].record(b).parameter(1)){
-           cc->Fill(pt,eta, cor);
-       //}
-       }//for eta bins
-
-  }//for loop
-
-   //pave->Draw("same");
-
-   cc->GetYaxis()->SetTitle("#eta");
-   cc->GetXaxis()->SetRangeUser(1,10000);
-   cc->GetXaxis()->SetTitle("p_{T}^{raw}");
-   cc->GetXaxis()->SetLabelSize(0.04);
-
-   ove->Update();
-   /*TPaletteAxis *palette = (TPaletteAxis*)cc->GetListOfFunctions()->FindObject("palette");
-     palette->SetX1NDC(0.879464);
-     palette->SetX2NDC(0.917411);
-     palette->SetY1NDC(0.172018);
-     palette->SetY2NDC(0.915138);*/
-   ove->Modified();
-   ove->Update();
-   cc->SetContour(20);
-   gStyle->SetPalette(55);
-   cc->Draw("colz");
-   //leg->Draw("same");
-   pave->Draw("same");
-   //CMS_lumi(ove,14,11);
-   //cmsPrelim();
-
-   // return the canvas
-   return ove;
-
-}//getCorrectionMap()
-
-//---------------------------------------------------------------------
 FactorizedJetCorrector * getFactorizedCorrector(TString algo, CommandLine & cl, TString & label) {
 
   string  path         = cl.getValue<string> ("path","./");
@@ -997,7 +897,7 @@ FactorizedJetCorrector * getFactorizedCorrector(TString algo, CommandLine & cl, 
   }
     
 
-  string alias = JetInfo(algo).getAlias().Data();
+  string alias = getAlias(algo);
 
   // Create the corrections from the text files
   vector<JetCorrectorParameters> vPar;
@@ -1225,26 +1125,6 @@ string getAlias(TString s)
       return "AK7PFRDl1";
    else if (s=="ak7pfchsrdl1")
       return "AK7PFchsRDl1";
-   else if (s=="ak1puppi")
-      return "AK1PUPPI";
-   else if (s=="ak2puppi")
-      return "AK2PUPPI";
-   else if (s=="ak3puppi")
-      return "AK3PUPPI";
-   else if (s=="ak4puppi")
-      return "AK4PUPPI";
-   else if (s=="ak5puppi")
-      return "AK5PUPPI";
-   else if (s=="ak6puppi")
-      return "AK6PUPPI";
-   else if (s=="ak7puppi")
-      return "AK7PUPPI";
-   else if (s=="ak8puppi")
-      return "AK8PUPPI";
-   else if (s=="ak9puppi")
-      return "AK9PUPPI";
-   else if (s=="ak10puppi")
-      return "AK10PUPPI";
    else
       return "unknown";
 }
@@ -1276,7 +1156,6 @@ TString getAlgNameLong(TString algo, int coneSize) {
     else if(algo.Contains("pf"))   algNameLong += ", Particle-Flow Jets";
     else if(algo.Contains("calo")) algNameLong += ", Calo";
     else if(algo.Contains("jpt"))  algNameLong += ", JPT";
-    else if(algo.Contains("puppi"))  algNameLong += ", PUPPI";
 
     if(algo.Contains("rd")) algNameLong += ", (RD)";
   }

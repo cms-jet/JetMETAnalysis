@@ -8,7 +8,7 @@
 
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 #include "JetMETAnalysis/JetAnalyzers/interface/Settings.h"
-#include "JetMETAnalysis/JetUtilities/interface/Style.h"
+#include "JetMETAnalysis/JetAnalyzers/interface/Style.h"
 
 #include "TROOT.h"
 #include "TSystem.h"
@@ -67,7 +67,7 @@ int main(int argc,char**argv)
    string          filepath2    = cl.getValue<string>   ("filepath2");
    string          algo         = cl.getValue<string>   ("algo");
    string          numerator    = cl.getValue<string>   ("numerator",            "53X");
-   string          denominator  = cl.getValue<string>   ("denominator",          "52X");
+   string          denomenator  = cl.getValue<string>   ("denomenator",          "52X");
    bool            doflavor     = cl.getValue<bool>     ("doflavor",             false);
    TString         outputDir    = cl.getValue<TString>  ("outputDir",         "images");
    vector<TString> outputFormat = cl.getVector<TString> ("outputFormat", ".png:::.eps");
@@ -81,8 +81,8 @@ int main(int argc,char**argv)
    }
 
    bool algDiv = false;
-   if(getAlias(TString(numerator)).CompareTo("unknown") && getAlias(TString(denominator)).CompareTo("unknown")) {
-      algo = numerator+"Over"+denominator;
+   if(getAlias(TString(numerator)).CompareTo("unknown") && getAlias(TString(denomenator)).CompareTo("unknown")) {
+      algo = numerator+"Over"+denomenator;
       algDiv = true;
    }
 
@@ -90,20 +90,18 @@ int main(int argc,char**argv)
    // Open the files containing the original closure plots and retrieve the histograms
    //
    TFile* file1 = new TFile(filepath1.c_str(),"READ");
-   TH1F* bar1  = (TH1F*)gDirectory->Get("ClosureVsPt_Bar");
-   TH1F* iend1 = (TH1F*)gDirectory->Get("ClosureVsPt_IEnd");
-   TH1F* oend1 = (TH1F*)gDirectory->Get("ClosureVsPt_OEnd");
-   TH1F* fwd1  = (TH1F*)gDirectory->Get("ClosureVsPt_Fwd");
-   if(bar1==0 || iend1==0 || oend1==0 || fwd1==0)
+   TH1F* bar1 = (TH1F*)gDirectory->Get("ClosureVsPt_Bar");
+   TH1F* end1 = (TH1F*)gDirectory->Get("ClosureVsPt_End");
+   TH1F* fwd1 = (TH1F*)gDirectory->Get("ClosureVsPt_Fwd");
+   if(bar1==0 || end1==0 || fwd1==0)
    {
       cout << "One or more of the histogram pointers from file " << filepath1 << " is NULL." << endl;
    }
    TFile* file2 = new TFile(filepath2.c_str(),"READ");
-   TH1F* bar2  = (TH1F*)gDirectory->Get("ClosureVsPt_Bar");
-   TH1F* iend2 = (TH1F*)gDirectory->Get("ClosureVsPt_IEnd");
-   TH1F* oend2 = (TH1F*)gDirectory->Get("ClosureVsPt_OEnd");
-   TH1F* fwd2  = (TH1F*)gDirectory->Get("ClosureVsPt_Fwd");
-   if(bar2==0 || iend2==0 || oend2==0 || fwd2==0)
+   TH1F* bar2 = (TH1F*)gDirectory->Get("ClosureVsPt_Bar");
+   TH1F* end2 = (TH1F*)gDirectory->Get("ClosureVsPt_End");
+   TH1F* fwd2 = (TH1F*)gDirectory->Get("ClosureVsPt_Fwd");
+   if(bar2==0 || end2==0 || fwd2==0)
    {
       cout << "One or more of the histogram pointers from file " << filepath2 << " is NULL." << endl;
    }
@@ -111,27 +109,23 @@ int main(int argc,char**argv)
    //
    // book histograms
    //
-   TH1F* ratioHist[4];
-   ratioHist[0] = new TH1F("ClosureVsPtRatio_Bar", "ClosureVsPtRatio_Bar", bar1->GetNbinsX(), bar1->GetXaxis()->GetXmin(), bar1->GetXaxis()->GetXmax()); //barRatio->Sumw2();
-   ratioHist[1] = new TH1F("ClosureVsPtRatio_IEnd","ClosureVsPtRatio_IEnd",iend1->GetNbinsX(),iend1->GetXaxis()->GetXmin(),iend1->GetXaxis()->GetXmax()); //endRatio->Sumw2();
-   ratioHist[2] = new TH1F("ClosureVsPtRatio_OEnd","ClosureVsPtRatio_OEnd",oend1->GetNbinsX(),oend1->GetXaxis()->GetXmin(),oend1->GetXaxis()->GetXmax()); //endRatio->Sumw2();
-   ratioHist[3] = new TH1F("ClosureVsPtRatio_Fwd", "ClosureVsPtRatio_Fwd", fwd1->GetNbinsX(), fwd1->GetXaxis()->GetXmin(), fwd1->GetXaxis()->GetXmax()); //fwdRatio->Sumw2();
+   TH1F* ratioHist[3];
+   ratioHist[0] = new TH1F("ClosureVsPtRatio_Bar","ClosureVsPtRatio_Bar",bar1->GetNbinsX(),bar1->GetXaxis()->GetXmin(),bar1->GetXaxis()->GetXmax()); //barRatio->Sumw2();
+   ratioHist[1] = new TH1F("ClosureVsPtRatio_End","ClosureVsPtRatio_End",end1->GetNbinsX(),end1->GetXaxis()->GetXmin(),end1->GetXaxis()->GetXmax()); //endRatio->Sumw2();
+   ratioHist[2] = new TH1F("ClosureVsPtRatio_Fwd","ClosureVsPtRatio_Fwd",fwd1->GetNbinsX(),fwd1->GetXaxis()->GetXmin(),fwd1->GetXaxis()->GetXmax()); //fwdRatio->Sumw2();
 
    //
    // divide histograms
    //
-   TH1F* bar1copy  = (TH1F*)bar1->Clone();
-   TH1F* iend1copy = (TH1F*)iend1->Clone();
-   TH1F* oend1copy = (TH1F*)oend1->Clone();
-   TH1F* fwd1copy  = (TH1F*)fwd1->Clone();
+   TH1F* bar1copy = (TH1F*)bar1->Clone();
+   TH1F* end1copy = (TH1F*)end1->Clone();
+   TH1F* fwd1copy = (TH1F*)fwd1->Clone();
    bar1copy->Divide(bar2);
-   iend1copy->Divide(iend2);
-   oend1copy->Divide(oend2);
+   end1copy->Divide(end2);
    fwd1copy->Divide(fwd2);
    ratioHist[0] = bar1copy;
-   ratioHist[1] = iend1copy;
-   ratioHist[2] = oend1copy;
-   ratioHist[3] = fwd1copy;  
+   ratioHist[1] = end1copy;
+   ratioHist[2] = fwd1copy;  
 
    //
    // Create guides (lines) for the output histograms
@@ -157,13 +151,13 @@ int main(int argc,char**argv)
    lineMinus->SetLineWidth(1);
    lineMinus->SetLineStyle(2);
   
-   double XminCalo[4] = {15,15,15,15};
-   double XminPF[4] = {5,5,5,5};
-   double Xmax[4] = {3000,3000,3000,190};
+   double XminCalo[3] = {15,15,15};
+   double XminPF[3] = {5,5,5};
+   double Xmax[3] = {3000,3000,190};
 
-   TCanvas* can[4];
-   TString Text[4] = {"|#eta| < 1.3","1.3 < |#eta| < 2.5","2.5 < |#eta| < 3","3 < |#eta| < 5"};
-   TPaveText *pave[4];
+   TCanvas* can[3];
+   TString Text[3] = {"|#eta| < 1.3","1.3 < |#eta| < 3","3 < |#eta| < 5"};
+   TPaveText *pave[3];
    char name[1024];
    //string algo = filepath1.substr(int(filepath1.find("_")+1),int(filepath1.rfind("_")-filepath1.find("_")-1));
    TString flavor1, flavor2;
@@ -184,7 +178,7 @@ int main(int argc,char**argv)
    //
    // Format and save the output
    //
-   for(int i=0; i<4; i++)
+   for(int i=0; i<3; i++)
    {
       sprintf(name,"ClosureVsPtRatio_%d",i);
       TString ss(name);
@@ -210,7 +204,7 @@ int main(int argc,char**argv)
          else {
             pave[i]->AddText(get_legend_title(numerator).c_str());
             pave[i]->AddText("Over");
-            pave[i]->AddText(get_legend_title(denominator).c_str());
+            pave[i]->AddText(get_legend_title(denomenator).c_str());
          }
       }
       else {
@@ -219,7 +213,7 @@ int main(int argc,char**argv)
       pave[i]->AddText(Text[i]);
       can[i] = new TCanvas(ss,ss,800,800);
       can[i]->SetLeftMargin(0.15);
-      if (i<3)
+      if (i<2)
          gPad->SetLogx();
       if (ss.Contains("pf"))	
          ratioHist[i]->GetXaxis()->SetRangeUser(XminPF[i],Xmax[i]);
@@ -227,8 +221,7 @@ int main(int argc,char**argv)
          ratioHist[i]->GetXaxis()->SetRangeUser(XminCalo[i],Xmax[i]);
       ratioHist[i]->SetTitle(ss);
       ratioHist[i]->Draw();
-      //ratioHist[i]->GetXaxis()->SetTitle("GenJet p_{T} (GeV)");
-      ratioHist[i]->GetXaxis()->SetTitle("p_{T}^{ptcl} (GeV)");
+      ratioHist[i]->GetXaxis()->SetTitle("GenJet p_{T} (GeV)");
       //ratioHist[i]->GetYaxis()->SetTitle("Particle Over Anti-Particle Closure");
       ratioHist[i]->GetYaxis()->SetTitle("Response");
       ratioHist[i]->GetYaxis()->SetTitleOffset(1.5);
@@ -273,20 +266,20 @@ int main(int argc,char**argv)
    //
    // create overview canvas
    //
-   TLegend* leg[4];
+   TLegend* leg[3];
    TString ss("ClosureVsPtRatio_Overview");
    ss+="_"+algo;
    if(doflavor) ss+="_"+flavor1+"over"+flavor2;
    
    TCanvas *ove = new TCanvas(ss,ss,1200,400);
-   ove->Divide(4,1);
-   for (int c=0;c<4;c++) {
+   ove->Divide(3,1);
+   for (int c=0;c<3;c++) {
       leg[c] = new TLegend(0.40,0.20,0.80,0.40);
       leg[c]->SetTextSize(0.04);//0.03);
       leg[c]->SetBorderSize(0);
       leg[c]->SetFillColor(0);
       ove->cd(c+1);
-      if (c<3) 
+      if (c<2) 
          gPad->SetLogx();
       if (!tdr) {
          ratioHist[c]->GetXaxis()->SetMoreLogLabels();
@@ -303,27 +296,17 @@ int main(int argc,char**argv)
          bar1->Draw("EPsame");
          bar2->Draw("EPsame");
          leg[c]->AddEntry(bar1,numerator.c_str(),"lep");
-         leg[c]->AddEntry(bar2,denominator.c_str(),"lep");
+         leg[c]->AddEntry(bar2,denomenator.c_str(),"lep");
       }
       else if (c==1) {
-         iend1->SetMarkerColor(kBlue);
-         iend1->SetLineColor(kBlue);
-         iend2->SetMarkerColor(kRed);
-         iend2->SetLineColor(kRed);
-         iend1->Draw("EPsame");
-         iend2->Draw("EPsame");
-         leg[c]->AddEntry(iend1,numerator.c_str(),"lep");
-         leg[c]->AddEntry(iend2,denominator.c_str(),"lep");
-      }
-      else if (c==2) {
-         oend1->SetMarkerColor(kBlue);
-         oend1->SetLineColor(kBlue);
-         oend2->SetMarkerColor(kRed);
-         oend2->SetLineColor(kRed);
-         oend1->Draw("EPsame");
-         oend2->Draw("EPsame");
-         leg[c]->AddEntry(oend1,numerator.c_str(),"lep");
-         leg[c]->AddEntry(oend2,denominator.c_str(),"lep");
+         end1->SetMarkerColor(kBlue);
+         end1->SetLineColor(kBlue);
+         end2->SetMarkerColor(kRed);
+         end2->SetLineColor(kRed);
+         end1->Draw("EPsame");
+         end2->Draw("EPsame");
+         leg[c]->AddEntry(end1,numerator.c_str(),"lep");
+         leg[c]->AddEntry(end2,denomenator.c_str(),"lep");
       }
       else {
          fwd1->SetMarkerColor(kBlue);
@@ -333,9 +316,9 @@ int main(int argc,char**argv)
          fwd1->Draw("EPsame");
          fwd2->Draw("EPsame");
          leg[c]->AddEntry(fwd1,numerator.c_str(),"lep");
-         leg[c]->AddEntry(fwd2,denominator.c_str(),"lep");
+         leg[c]->AddEntry(fwd2,denomenator.c_str(),"lep");
       }
-      leg[c]->AddEntry(ratioHist[c],"Ratio = #frac{"+TString(numerator)+"}{"+TString(denominator)+"}","lep");
+      leg[c]->AddEntry(ratioHist[c],"Ratio = #frac{"+TString(numerator)+"}{"+TString(denomenator)+"}","lep");
       line->Draw("same");
       linePlus->Draw("same");
       lineMinus->Draw("same");
@@ -495,16 +478,16 @@ string get_legend_title(const string& alg)
 {
   string title;
   string tmp(alg);
-  if      (alg.find("kt")==0) { title = "k_{T}, R=";      tmp = tmp.substr(2); }
+  if      (alg.find("kt")==0) { title = "k_{T}, D=";      tmp = tmp.substr(2); }
   else if (alg.find("sc")==0) { title = "SISCone, R=";    tmp = tmp.substr(2); }
   else if (alg.find("ic")==0) { title = "ItCone, R=";     tmp = tmp.substr(2); }
   else if (alg.find("mc")==0) { title = "MidCone. R=";    tmp = tmp.substr(2); }
-  else if (alg.find("ca")==0) { title = "Cam/Aachen, R="; tmp = tmp.substr(2); }
-  else if (alg.find("ak")==0) { title = "Anti k_{T}, R="; tmp = tmp.substr(2); }
+  else if (alg.find("ca")==0) { title = "Cam/Aachen, D="; tmp = tmp.substr(2); }
+  else if (alg.find("ak")==0) { title = "Anti k_{T}, D="; tmp = tmp.substr(2); }
   else return alg;
   
   string reco[9] = { "gen", "caloHLT", "calo", "pfHLT", "pfchsHLT", "pfchs", "pf", "trk", "jpt" };
-  string RECO[9] = { "(Gen)", "(Calo@HLT)", "(Calo)", "(PF@HLT)", "(PF+CHS@HLT)", "(PF+CHS)", "(PF)", "(Tracks)", "(JPT)" };
+  string RECO[9] = { "(Gen)", "(Calo@HLT)", "(Calo)", "(PFlow@HLT)", "(PFlow+CHS@HLT)", "(PFlow+CHS)", "(PFlow)", "(Tracks)", "(JPT)" };
 
   string::size_type pos=string::npos; int ireco=-1;
   while (pos==string::npos&&ireco<8) { pos = tmp.find(reco[++ireco]); }

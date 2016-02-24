@@ -5,7 +5,6 @@
 void set_root_style();
 void set_tdr_style();
 void set_vasu_style();
-void setTDRStyle();
 
 
 #endif

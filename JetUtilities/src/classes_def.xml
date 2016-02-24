@@ -2,9 +2,7 @@
 <!--
   <class name="JRAEvent"/>
 -->
-  <class name="JRAEvent" ClassVersion="19">
-	<version ClassVersion="19" checksum="1808589907"/>
-	<version ClassVersion="18" checksum="2880715763"/>
+  <class name="JRAEvent" ClassVersion="17">
 	<version ClassVersion="17" checksum="1808589907"/>
 	<version ClassVersion="16" checksum="2880715763"/>
     <version ClassVersion="15" checksum="576286046"/>
@@ -14,15 +12,6 @@
 	<version ClassVersion="10" checksum="1374876231"/>
   </class>
   <class name="std::vector<JRAEvent>"/>
-  <class name="edm::Wrapper<JRAEvent>"/>
+  <class pattern="edm::Wrapper<JRAEvent>"/>
   <class name="edm::Wrapper<std::vector<JRAEvent> >"/>
-  <class name="TProfileMDF" ClassVersion="1">
-	<version ClassVersion="1" checksum="329505606"/>
-  </class>
-  <class name="JRANtuple" ClassVersion="0"/>
-  <class name="PUNtuple" ClassVersion="1">
-	<version ClassVersion="1" checksum="331599642"/>
-  </class>
-  <class name="JetInfo" ClassVersion="0"/>
-  <class name="evtid" ClassVersion="0"/>
 </lcgdict>

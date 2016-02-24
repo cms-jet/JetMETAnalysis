@@ -4,48 +4,33 @@
 using namespace std;
 
 //______________________________________________________________________________
-string JetInfo::get_legend_title(const string& alg, bool withSize, bool withAlg, bool parentheses)
+string JetInfo::get_legend_title(const string& alg, bool withSize)
 {
   string title;
   string tmp(alg);
-  if      (alg.find("kt")==0) { title = "k_{T} R=";      tmp = tmp.substr(2); }
-  else if (alg.find("sc")==0) { title = "SISCone R=";    tmp = tmp.substr(2); }
-  else if (alg.find("ic")==0) { title = "ItCone R=";     tmp = tmp.substr(2); }
-  else if (alg.find("mc")==0) { title = "MidCone R=";    tmp = tmp.substr(2); }
-  else if (alg.find("ca")==0) { title = "Cam/Aachen R="; tmp = tmp.substr(2); }
-  else if (alg.find("ak")==0) { title = "Anti-k_{T} R="; tmp = tmp.substr(2); }
+  if      (alg.find("kt")==0) { title = "k_{T}, R=";      tmp = tmp.substr(2); }
+  else if (alg.find("sc")==0) { title = "SISCone, R=";    tmp = tmp.substr(2); }
+  else if (alg.find("ic")==0) { title = "ItCone, R=";     tmp = tmp.substr(2); }
+  else if (alg.find("mc")==0) { title = "MidCone. R=";    tmp = tmp.substr(2); }
+  else if (alg.find("ca")==0) { title = "Cam/Aachen, R="; tmp = tmp.substr(2); }
+  else if (alg.find("ak")==0) { title = "Anti-k_{T}, R="; tmp = tmp.substr(2); }
   else return alg;
   
-  string reco[10] = { "gen", "caloHLT", "calo", "pfHLT", "pfchsHLT", "pfchs", "pf", "trk", "jpt", "puppi" };
-  string RECO[10] = { "Gen", "Calo@HLT", "Calo", "PF@HLT", "PF+CHS@HLT", "PF+CHS", "PF", "Tracks", "JPT", "PF+PUPPI" };
+  string reco[9] = { "gen", "caloHLT", "calo", "pfHLT", "pfchsHLT", "pfchs", "pf", "trk", "jpt" };
+  string RECO[9] = { "(Gen)", "(Calo@HLT)", "(Calo)", "(PFlow@HLT)", "(PFlow+CHS@HLT)", "(PF+CHS)", "(PF)", "(Tracks)", "(JPT)" };
 
   string::size_type pos=string::npos; int ireco=-1;
-  while (pos==string::npos&&ireco<10) { pos = tmp.find(reco[++ireco]); }
+  while (pos==string::npos&&ireco<8) { pos = tmp.find(reco[++ireco]); }
   if (pos==string::npos) return alg;
   
   double jet_size; stringstream ss1; ss1<<tmp.substr(0,pos); ss1>>jet_size;
   jet_size/=10.0;  stringstream ss2; ss2<<jet_size;
 
-  if (withSize) {
-     title += ss2.str();
-  }
+  if (withSize)
+    title += ss2.str() + " " + RECO[ireco];
   else {
-     title = title.substr(0,title.size()-4);
-  }
-
-  if (withAlg) {
-     if (withSize)
-        title += ", ";
-     else
-        title += " ";
-
-     if (parentheses)
-        title += "(" + RECO[ireco] + ")";
-     else
-        title += RECO[ireco];
-  }
-  else {
-     return title;
+    title = title.substr(0,title.size()-4);
+    title += " " + RECO[ireco];
   }
 
   return title;
@@ -70,47 +55,6 @@ int JetInfo::vfind(vector<TString> a, TString b) {
 }
 
 //______________________________________________________________________________
-bool JetInfo::contains(const vector<std::string>& collection,const std::string& element)
-{
-  vector<std::string>::const_iterator it;
-  for (it=collection.begin();it!=collection.end();++it)
-    if ((*it)==element) return true;
-  return false;
-}
-
-//______________________________________________________________________________
-bool JetInfo::contains(const vector<TString>& collection,const TString& element)
-{
-  vector<TString>::const_iterator it;
-  for (it=collection.begin();it!=collection.end();++it)
-    if ((*it)==element) return true;
-  return false;
-}
-
-//______________________________________________________________________________
-bool JetInfo::contains_loose(const vector<TString>& collection, const TString& element) {
-  vector<TString>::const_iterator it;
-  for (it=collection.begin();it!=collection.end();++it)
-    if ((*it).Contains(element)) return true;
-  return false;
-}
-
-//______________________________________________________________________________
-int JetInfo::getBin(double x, const double boundaries[], int length) {
-   int i;
-   int n = length;
-   if (n<=0) return -1;
-   if (x<boundaries[0] || x>=boundaries[n])
-      return -1;
-   for(i=0;i<n;i++)
-   {
-      if (x>=boundaries[i] && x<boundaries[i+1])
-         return i;
-   }
-   return 0; 
-}
-
-//______________________________________________________________________________
 TString JetInfo::getAlgorithm(TString s) {
   TRegexp e1("^[a-zA-Z]+"); //gets algorithm
   TString alg = s(e1);
@@ -128,21 +72,6 @@ TString JetInfo::getAlgorithm(TString s) {
 }
 
 //______________________________________________________________________________
-TString JetInfo::checkAlgorithm(TString s) {
-  TRegexp e1("^[a-zA-Z]+"); //gets algorithm
-  TString alg = s(e1);
-
-  int ialg = vfind(algorithms,NAlgorithms,alg);
-  if(ialg>-1) {
-    return algorithms[ialg];
-  }
-  else {
-    cout << "ERROR::checkAlgorithm Could not find the algorithm that corresponds to " << alg << "." << endl;
-    return "unknown";
-  }
-}
-
-//______________________________________________________________________________
 TString JetInfo::getConeSize(TString s) {
   TRegexp e2("[0-9][0-9]?"); //gets cone size
   TString sizeString = s(e2);
@@ -155,7 +84,7 @@ TString JetInfo::getConeSize(TString s) {
     return sizeString;
   }
   else {
-    cout << "ERROR::getConeSize Could not find the cone size that corresponds to " << sizeString << "." << endl;
+    cout << "ERROR::getAlias Could not find the cone size that corresponds to " << sizeString << "." << endl;
     assert(isize>-1);
   }
 
@@ -182,18 +111,11 @@ TString JetInfo::getJetType(TString s) {
     return jet_types[itype];
   }
   else {
-    cout << "ERROR::getJetType Could not find the jet type that corresponds to " << jtype << "." << endl;
+    cout << "ERROR::getAlias Could not find the jet type that corresponds to " << jtype << "." << endl;
     assert(itype>-1);
   }
 
   return "";
-}
-
-//______________________________________________________________________________
-bool JetInfo::isHLT() {
-  if(getJetType(abbreviation).Contains("hlt",TString::kIgnoreCase))
-    return true;
-  return false;
 }
 
 //______________________________________________________________________________
@@ -227,89 +149,6 @@ TString JetInfo::getAlias(TString s)
   res += getJetType(s);
   res += getCorrString(s);
   return res;
-}
-
-//______________________________________________________________________________
-string JetInfo::get_correction_levels(const vector<int>& levels, bool L1FastJet)
-{
-  stringstream ssresult;
-  for (unsigned int ilevel=0;ilevel<levels.size();++ilevel) {
-    if (ilevel!=0) ssresult<<":";
-    int level(levels[ilevel]);
-    switch (level) {
-    case 1 : 
-       if (L1FastJet) {
-          ssresult<<"L1FastJet"; break;
-       }
-       else {
-          ssresult<<"L1Offset"; break;
-       }
-    case 2 : ssresult<<"L2Relative"; break;
-    case 3 : ssresult<<"L3Absolute"; break;
-    case 4 : ssresult<<"L4EMF"; break;
-    case 5 : ssresult<<"L5Flavor"; break;
-    case 6 : ssresult<<"L6SLB"; break;
-    case 7 : ssresult<<"L7Parton"; break;
-    default: throw std::runtime_error(((string)"get_correction_levels ERROR: "+
-               (string)"invalid correction level").c_str());
-    }
-  }
-    return ssresult.str();
-}
-
-//______________________________________________________________________________
-string JetInfo::get_correction_tags(const string& era,const string& alg,
-                                    const vector<int>& levels,
-                                    const string& jecpath, bool L1FastJet)
-{
-  stringstream ssresult;
-  for (unsigned int ilevel=0;ilevel<levels.size();ilevel++) {
-    
-    if (ilevel!=0) ssresult<<":";
-    
-    int level=levels[ilevel];
-    stringstream ssera;
-    
-    if(jecpath[jecpath.length()-1] != '/') ssera<<jecpath<<"/"<<era<<"_";
-    else ssera<<jecpath<<era<<"_";
-
-    if      (level==1 && !L1FastJet) ssera<<"L1Offset_";
-    else if (level==1 && L1FastJet) ssera<<"L1FastJet_";
-    else if (level==2) ssera<<"L2Relative_";
-    else if (level==3) ssera<<"L3Absolute_";
-    else if (level==4) ssera<<"L4EMF_";
-    else if (level==5) ssera<<"L5Flavor_";
-    else if (level==6) ssera<<"L6SLB_";
-    else if (level==7) ssera<<"L7Parton_";
-    else throw std::runtime_error("unknown correction level");
-    
-    if (level==6) {
-      ssresult<<ssera.str()<<".txt";
-      continue;
-    }
-
-    JetInfo tmp(alg);
-    ssera<<tmp.getAlias();
-
-    ssresult<<ssera.str()<<".txt";
-  }
-  
-  return ssresult.str();
-}
-
-//______________________________________________________________________________
-string JetInfo::get_level_tag(int level, bool L1FastJet)
-{
-    if      (level==1 && !L1FastJet) return "_L1Offset_";
-    else if (level==1 && L1FastJet)  return "_L1FastJet_";
-    else if (level==2)               return "_L2Relative_";
-    else if (level==3)               return "_L3Absolute_";
-    else if (level==4)               return "_L4EMF_";
-    else if (level==5)               return "_L5Flavor_";
-    else if (level==6)               return "_L6SLB_";
-    else if (level==7)               return "_L7Parton_";
-    else if (level==23)              return "_L2L3Residual_";
-    else throw std::runtime_error("unknown correction level");
 }
 
 //______________________________________________________________________________
@@ -417,30 +256,3 @@ vector<int> JetInfo::getPDGIDIndecies(int pdgid) {
    return res;
 }//getPDGIDIndecies
 
-//______________________________________________________________________________
-TString JetInfo::ListToString ( const std::vector<TString> &list, TString delimiter )
-{
-   TString result;
-   for(unsigned int i=0; i<list.size(); i++) {
-      if(i<list.size()-1)
-         result += list[i] + TString(delimiter);
-      else
-         result += list[i];
-   }
-   return result;
-}
-
-//______________________________________________________________________________
-template <typename T>
-T JetInfo::StringToNumber ( const string &Text, T defValue )
-{
-   stringstream ss;
-   for ( string::const_iterator i=Text.begin(); i!=Text.end(); ++i ) {
-      if (*i=='l')
-         break;
-      if ( isdigit(*i) || *i=='e' || *i=='-' || *i=='+' || *i=='.' )
-         ss << *i;
-   }
-   T result;
-   return ss >> result ? result : defValue;
-}

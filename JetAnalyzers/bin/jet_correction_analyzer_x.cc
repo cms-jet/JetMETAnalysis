@@ -6,11 +6,11 @@
 //            12/08/2011 Alexx Perloff  <aperloff@physics.tamu.edu>
 ///////////////////////////////////////////////////////////////////
 
+#include "JetMETAnalysis/JetAnalyzers/interface/Settings.h"
 #include "JetMETAnalysis/JetAnalyzers/interface/VectorWrapper.h"
 #include "JetMETAnalysis/JetAnalyzers/interface/VectorWrapper2D.h"
 #include "JetMETAnalysis/JetUtilities/interface/TProfileMDF.h"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
-#include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
 
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
@@ -18,7 +18,6 @@
 
 #include "TROOT.h"
 #include "TSystem.h"
-#include "TEnv.h"
 #include <TObjectTable.h>
 #include "TFile.h"
 #include "TTree.h"
@@ -52,6 +51,9 @@ using namespace std;
 
 /// get the bin number for a specific ptgen according to the vector of bin edges 
 int getBin(double x, const double boundaries[], int length);
+
+/// get the uppercase version of the algorithm name
+string getAlias(TString s);
 
 /// get the flavor name used in initializing the JetCorrectorParameters
 string get_flavor_name(int pdgid);
@@ -100,8 +102,7 @@ int main(int argc,char**argv)
 {
    gROOT->ProcessLine("#include<vector>");
    gSystem->Load("libFWCoreFWLite.so");
-   gEnv->SetValue("TFile.AsyncPrefetching", 1);
-
+  
    //
    // evaluate command-line / configuration file options
    // 
@@ -120,7 +121,7 @@ int main(int argc,char**argv)
    bool            useL5Cor          = cl.getValue<bool>         ("useL5Cor",          false);
    bool            doflavor          = cl.getValue<bool>         ("doflavor",          false);
    int             pdgid             = cl.getValue<int>          ("pdgid",                 0);
-   vector<double>  drmax             = cl.getVector<double>      ("drmax",                "");
+   double          drmax             = cl.getValue<double>       ("drmax",                 0);
    double          ptmin             = cl.getValue<double>       ("ptmin",                 0);
    double          ptgenmin          = cl.getValue<double>       ("ptgenmin",              0);
    double          ptrawmin          = cl.getValue<double>       ("ptrawmin",              0);
@@ -144,7 +145,6 @@ int main(int argc,char**argv)
    TString         DataPUReWeighting = cl.getValue<TString>      ("DataPUReWeighting",    "");
    bool            mpv               = cl.getValue<bool>         ("mpv",               false);
    TString         readRespVsPileup  = cl.getValue<TString>      ("readRespVsPileup",     "");
-   bool            debug             = cl.getValue<bool>         ("debug",             false);
 
    if (!cl.check()) return 0;
    cl.print();
@@ -152,16 +152,6 @@ int main(int argc,char**argv)
    TBenchmark* m_benchmark = new TBenchmark();
    m_benchmark->Reset();
    m_benchmark->Start("event");
-
-   //
-   // Do some additional check
-   //
-
-   // Check that the size of the drmax values matches that of the algs
-   if(drmax.size()>0 && algs.size()!=drmax.size()) {
-      cout << "ERROR::jet_correction_analyzer_x The size of the drmax vector must match the size of the algs vector" << endl;
-      return 0;
-   }
 
    //
    // Some useful quantities
@@ -198,21 +188,16 @@ int main(int argc,char**argv)
        LumiWeights_ = edm::LumiReWeighting(string(MCPUReWeighting),string(DataPUReWeighting),"pileup","pileup_jt400");
     }
 
-   if(!outputDir.IsNull() && !outputDir.EndsWith("/")) outputDir += "/";
-   TFile *outf = TFile::Open(outputDir+"Closure_"+
-                             JetInfo::ListToString(algs,TString("_"))+".root",
-                             "RECREATE");
-
    //
    // Loop over the algorithms
    //
    for(unsigned int a=0; a<algs.size(); a++)
    {
-      JetInfo jetInfo(algs[a]);
+      string alias = getAlias(algs[a]);
 
       TFile *inf = new TFile(inputFilename);
-      TDirectoryFile* odir = (TDirectoryFile*)outf->mkdir(algs[a]);
-      odir->cd();
+      if(!outputDir.IsNull() && !outputDir.EndsWith("/")) outputDir += "/";
+      TFile *outf = new TFile(outputDir+"Closure_"+algs[a]+".root","RECREATE");
   
       int j,k;
       unsigned char nref;
@@ -236,13 +221,12 @@ int main(int argc,char**argv)
       Long64_t npv(0);
       Long64_t evt(0);
       Long64_t run(0);
-      vector<TH2F*> RelRspVsRefPt;
-      //TH2F *RespVsPt_Bar;
-      //TH2F *RespVsPt_End;
-      //TH2F *RespVsPt_IEnd;
-      //TH2F *RespVsPt_OEnd;
-      //TH2F *RespVsPt_Fwd;
-      TH2F *RelRspVsJetEta[NPtBins];
+      TH2F *RespVsPt_Bar;
+      TH2F *RespVsPt_End;
+      TH2F *RespVsPt_IEnd;
+      TH2F *RespVsPt_OEnd;
+      TH2F *RespVsPt_Fwd;
+      TH2F *RespVsEta[NPtBins];
       TH3F *RespVsEtaVsPt;
       TH3F *ScaleVsEtaVsPt;
       TProfile *RelRspVsSumPt;
@@ -294,33 +278,33 @@ int main(int argc,char**argv)
 
       if(useL1Cor)
       {
-         L1JetPar = new JetCorrectorParameters(path + era + "_L1FastJet_"    + string(jetInfo.alias) + ".txt");
+         L1JetPar = new JetCorrectorParameters(path + era + "_L1FastJet_"    + alias + ".txt");
          vPar.push_back(*L1JetPar);
-         cout << "Using " << path << era << "_L1FastJet_" << string(jetInfo.alias) << ".txt" << endl;
+         cout << "Using " << path << era << "_L1FastJet_" << alias << ".txt" << endl;
       }
       if(useL2Cor)
       {
-         L2JetPar = new JetCorrectorParameters(path + era + "_L2Relative_"   + string(jetInfo.alias) + ".txt");
+         L2JetPar = new JetCorrectorParameters(path + era + "_L2Relative_"   + alias + ".txt");
          vPar.push_back(*L2JetPar);
-         cout << "Using " << path << era << "_L2Relative_" << string(jetInfo.alias) << ".txt" << endl;
+         cout << "Using " << path << era << "_L2Relative_" << alias << ".txt" << endl;
       }
       if(useL3Cor)
       {
-         L3JetPar = new JetCorrectorParameters(path + era + "_L3Absolute_"   + string(jetInfo.alias) + ".txt");
+         L3JetPar = new JetCorrectorParameters(path + era + "_L3Absolute_"   + alias + ".txt");
          vPar.push_back(*L3JetPar);
-         cout << "Using " << path << era << "_L3Absolute_" << string(jetInfo.alias) << ".txt" << endl;
+         cout << "Using " << path << era << "_L3Absolute_" << alias << ".txt" << endl;
       }
       if(useL2L3ResCor)
       {
-         ResJetPar = new JetCorrectorParameters(path + era + "_L2L3Residual_" + string(jetInfo.alias) + ".txt"); 
+         ResJetPar = new JetCorrectorParameters(path + era + "_L2L3Residual_" + alias + ".txt"); 
          vPar.push_back(*ResJetPar);
-         cout << "Using " << path << era << "_L2L3Residual_" << string(jetInfo.alias) << ".txt" << endl;
+         cout << "Using " << path << era << "_L2L3Residual_" << alias << ".txt" << endl;
       }
       if(useL5Cor)
       {
-         L5JetPar = new JetCorrectorParameters(path + era + "_L5Flavor_" + string(jetInfo.alias) + ".txt",get_flavor_name(pdgid)); 
+         L5JetPar = new JetCorrectorParameters(path + era + "_L5Flavor_" + alias + ".txt",get_flavor_name(pdgid)); 
          vPar.push_back(*L5JetPar);
-         cout << "Using " << path << era << "_L5Flavor_" << string(jetInfo.alias) << ".txt," << get_flavor_name(pdgid) << endl;
+         cout << "Using " << path << era << "_L5Flavor_" << alias << ".txt," << get_flavor_name(pdgid) << endl;
       }
       FactorizedJetCorrector *JetCorrector = new FactorizedJetCorrector(vPar);
 
@@ -359,24 +343,16 @@ int main(int argc,char**argv)
       //
       // book histograms
       //
-      for(int ieta=0; ieta<NETA_Coarse; ieta++) {
-         if(veta_coarse[ieta]<0) continue;
-         else {
-            TString hname = Form("RelRspVsRefPt_JetEta%sto%s",eta_boundaries_coarse[ieta],eta_boundaries_coarse[ieta+1]);
-            RelRspVsRefPt.push_back(new TH2F(hname,hname,NPtBins,vpt,NRespBins,RespLow,RespHigh));
-            RelRspVsRefPt.back()->Sumw2();
-         }
-      }
-      //RespVsPt_Bar = new TH2F("RespVsPt_Bar","RespVsPt_Bar",NPtBins,vpt,NRespBins,RespLow,RespHigh);
-      //RespVsPt_Bar->Sumw2(); 
-      //RespVsPt_End = new TH2F("RespVsPt_End","RespVsPt_End",NPtBins,vpt,NRespBins,RespLow,RespHigh);
-      //RespVsPt_End->Sumw2();
-      //RespVsPt_IEnd = new TH2F("RespVsPt_IEnd","RespVsPt_IEnd",NPtBins,vpt,NRespBins,RespLow,RespHigh);
-      //RespVsPt_IEnd->Sumw2();
-      //RespVsPt_OEnd = new TH2F("RespVsPt_OEnd","RespVsPt_OEnd",NPtBins,vpt,NRespBins,RespLow,RespHigh);
-      //RespVsPt_OEnd->Sumw2();
-      //RespVsPt_Fwd = new TH2F("RespVsPt_Fwd","RespVsPt_Fwd",NPtBins,vpt,NRespBins,RespLow,RespHigh);
-      //RespVsPt_Fwd->Sumw2();
+      RespVsPt_Bar = new TH2F("RespVsPt_Bar","RespVsPt_Bar",NPtBins,vpt,NRespBins,RespLow,RespHigh);
+      RespVsPt_Bar->Sumw2(); 
+      RespVsPt_End = new TH2F("RespVsPt_End","RespVsPt_End",NPtBins,vpt,NRespBins,RespLow,RespHigh);
+      RespVsPt_End->Sumw2();
+      RespVsPt_IEnd = new TH2F("RespVsPt_IEnd","RespVsPt_IEnd",NPtBins,vpt,NRespBins,RespLow,RespHigh);
+      RespVsPt_IEnd->Sumw2();
+      RespVsPt_OEnd = new TH2F("RespVsPt_OEnd","RespVsPt_OEnd",NPtBins,vpt,NRespBins,RespLow,RespHigh);
+      RespVsPt_OEnd->Sumw2();
+      RespVsPt_Fwd = new TH2F("RespVsPt_Fwd","RespVsPt_Fwd",NPtBins,vpt,NRespBins,RespLow,RespHigh);
+      RespVsPt_Fwd->Sumw2();
       RespVsPtProfile = new TProfile("RespVsPtProfile","RespVsPtProfile",NPtBins,vpt);
       RespVsPtProfile->Sumw2();
       RespVsPtProfile->SetErrorOption("s");
@@ -417,8 +393,8 @@ int main(int argc,char**argv)
       SolidAngleDist    = new TH1F("SolidAngleDist","SolidAngleDist",200, -2*TMath::Pi(),2*TMath::Pi());
       for(int i=0;i<NPtBins;i++)
       {
-         sprintf(name,"RelRspVsJetEta_RefPt%sto%s",Pt[i],Pt[i+1]);
-         RelRspVsJetEta[i] = new TH2F(name,name,NETA,veta,NRespBins,RespLow,RespHigh);
+         sprintf(name,"RespVsEta_RefPt%sto%s",Pt[i],Pt[i+1]);
+         RespVsEta[i] = new TH2F(name,name,NETA,veta,NRespBins,RespLow,RespHigh);
          sprintf(name,"RelContributions_RefPt%sto%s",Pt[i],Pt[i+1]);
          RelContributions[i] = new TH1F(name,name,1999,1,2000);
          sprintf(name,"ResolutionVsEta_RefPt%sto%s",Pt[i],Pt[i+1]);
@@ -466,7 +442,7 @@ int main(int argc,char**argv)
          }
          RespVsRho->SetDirectory(0);
       }
-      odir->cd();
+      outf->cd();
       OffVsRhoVsEta = new TProfile2D("OffVsRhoVsEta","OffVsRhoVsEta",26,0,26,NETA,veta);
       OffVsRhoVsEta->Sumw2();
       RhoVsOffETVsEta = new TProfile2D("RhoVsOffETVsEta","RhoVsOffETVsEta",100,0,50,NETA,veta);
@@ -545,7 +521,7 @@ int main(int argc,char**argv)
             float ptgen  = refpt[iref];
             if (ptgen<ptgenmin) continue;
             if (doflavor && abs(pdgid)!=123 && abs(refpdgid[iref])!=abs(pdgid)) continue;
-            else if (doflavor && abs(pdgid)==123 && (abs(refpdgid[iref])>2 || abs(refpdgid[iref])==0)) continue;
+            else if (doflavor && abs(pdgid)==123 && (abs(refpdgid[iref])>3 || abs(refpdgid[iref])==0)) continue;
             float eta    = jteta[iref];
             if (etamax>0 && TMath::Abs(eta)>etamax) continue;
             float pt     = jtpt[iref];
@@ -555,7 +531,7 @@ int main(int argc,char**argv)
                continue;
             }
             float dr     = refdrjt[iref];
-            if (drmax.size()>0 && dr > drmax[a]) continue;
+            if (drmax > 0 && dr > drmax) continue;
             JetCorrector->setJetPt(pt);
             JetCorrector->setJetEta(eta);
             int origIgnoreLevel = gErrorIgnoreLevel;
@@ -584,37 +560,27 @@ int main(int argc,char**argv)
                weight *= LumiWeight;
             }
 
-            //-4 to cut off the negative side of the detector
-            if(fabs(eta)<veta_coarse[NETA_Coarse]) {
-               if(debug && ievt>5400000) {
-                  cout << "fabs(eta)="<< fabs(eta) << endl;
-                  cout << "veta_coarse[NETA_Coarse]=" << veta_coarse[NETA_Coarse] << endl;
-                  cout << "getBin(fabs(eta),veta_coarse,NETA_Coarse)-4=" << getBin(fabs(eta),veta_coarse,NETA_Coarse)-(NETA_Coarse/2) << endl;
-               }
-               RelRspVsRefPt[getBin(fabs(eta),veta_coarse,NETA_Coarse)-(NETA_Coarse/2)]->Fill(ptgen,relrsp,weight);
+            if (fabs(eta)<=1.3)
+            {
+               RespVsPt_Bar->Fill(ptgen,relrsp,weight);
             }
-
-            //if (fabs(eta)<=1.3)
-            //{
-            //   RespVsPt_Bar->Fill(ptgen,relrsp,weight);
-            //}
-            //if ((fabs(eta)<=3.0) && (fabs(eta)>1.3))
-            //{
-            //   RespVsPt_End->Fill(ptgen,relrsp,weight);
-            //}
-            //if ((fabs(eta)<=2.5) && (fabs(eta)>1.3))
-            //{
-            //   RespVsPt_IEnd->Fill(ptgen,relrsp,weight);
-            //}
-            //if ((fabs(eta)<=3.0) && (fabs(eta)>2.5))
-            //{
-            //   RespVsPt_OEnd->Fill(ptgen,relrsp,weight);
-            //}
-            //if ((fabs(eta)<=5.0) && (fabs(eta)>3))
-            //{
-            //   RespVsPt_Fwd->Fill(ptgen,relrsp,weight); 
-            //}
-
+            if ((fabs(eta)<=3.0) && (fabs(eta)>1.3))
+            {
+               RespVsPt_End->Fill(ptgen,relrsp,weight);
+            }
+            if ((fabs(eta)<=2.5) && (fabs(eta)>1.3))
+            {
+               RespVsPt_IEnd->Fill(ptgen,relrsp,weight);
+            }
+            if ((fabs(eta)<=3.0) && (fabs(eta)>2.5))
+            {
+               RespVsPt_OEnd->Fill(ptgen,relrsp,weight);
+            }
+            if ((fabs(eta)<=5.0) && (fabs(eta)>3))
+            {
+               RespVsPt_Fwd->Fill(ptgen,relrsp,weight); 
+            }
+              
             if(HigherDist->FindBin(scale*pt) < HigherDist->FindBin(ptgen)) HigherDist->Fill(scale*pt,weight);
             if(MiddleDist->FindBin(scale*pt) == MiddleDist->FindBin(ptgen)) MiddleDist->Fill(scale*pt,weight);
             if(LowerDist->FindBin(scale*pt) > LowerDist->FindBin(ptgen)) LowerDist->Fill(scale*pt,weight);
@@ -628,7 +594,7 @@ int main(int argc,char**argv)
             k = getBin(eta,veta,NETA);
             if (j<NPtBins && j>=0 && k<NETA && k>=0)
             {
-               RelRspVsJetEta[j]->Fill(eta,relrsp,weight);
+               RespVsEta[j]->Fill(eta,relrsp,weight);
                RelContributions[j]->Fill(scale*pt,weight);
                if(readRespVsPileup.IsNull())
                { 
@@ -645,7 +611,7 @@ int main(int argc,char**argv)
                   coord[4] = sumLOOT(npus,iIT);
                   RespVsPileup->Fill(coord,relrsp);
                   
-                  if(!jetInfo.isHLT())
+                  if(!algs[a].Contains("HLT"))
                      RespVsRho->Fill(ptgen,eta,rho,relrsp);
                   else
                      RespVsRho->Fill(ptgen,eta,rho_hlt,relrsp);
@@ -654,7 +620,7 @@ int main(int argc,char**argv)
                   coord2[1] = sumEOOT(npus,iIT);
                   coord2[2] = (*npus)[iIT];
                   coord2[3] = sumLOOT(npus,iIT);
-                  if(!jetInfo.isHLT())
+                  if(!algs[a].Contains("HLT"))
                      RhoVsPileupVsEta->Fill(coord2,rho);
                   else
                      RhoVsPileupVsEta->Fill(coord2,rho_hlt);
@@ -810,21 +776,19 @@ int main(int argc,char**argv)
       cout << "Write " << "RespVsPileup_" << algs[a] << ".root" << " ... ";
       if(readRespVsPileup.IsNull())
       {
-         RespVsPileup->WriteToFile(outputDir+"RespVsPileup_"+jetInfo.alias+".root");
-         TFile tempout(outputDir+"RespVsPileup_"+jetInfo.alias+".root","UPDATE");
+         RespVsPileup->WriteToFile(outputDir+"RespVsPileup_"+alias+".root");
+         TFile tempout(outputDir+"RespVsPileup_"+alias+".root","UPDATE");
          tempout.cd();
          RespVsRho->Write();
          tempout.Close();
-         RhoVsPileupVsEta->WriteToFile(outputDir+"RhoVsPileupVsEta_"+jetInfo.alias+".root");
+         RhoVsPileupVsEta->WriteToFile(outputDir+"RhoVsPileupVsEta_"+alias+".root");
       }
+      cout << "DONE" << endl << "Write " << "Closure_" << algs[a] << ".root" << " ... ";
+      outf->cd();
+      outf->Write();
+      outf->Close();
       cout << "DONE" << endl;
    }//for(unsigned int a=0; a<algs.size(); a++)
-
-   cout << "Write " << "Closure.root" << " ... ";
-   outf->cd();
-   outf->Write();
-   cout << "DONE" << endl;
-   outf->Close();
 
    m_benchmark->Stop("event"); 
    cout << "jet_correction_analyzer_x" << endl << "\tCPU time = " << m_benchmark->GetCpuTime("event") << " s" << endl
@@ -855,17 +819,181 @@ int getBin(double x, const double boundaries[], int length)
 }
 
 //______________________________________________________________________________
+string getAlias(TString s)
+{
+   if (s=="ic5calo")
+      return "IC5Calo";
+   else if (s=="ic5pf")
+      return "IC5PF";
+   else if (s=="ak5calo")
+      return "AK5Calo";  
+   else if (s=="ak5calol1")
+      return "AK5Calol1";
+   else if (s=="ak5calol1off")
+      return "AK5Calol1off";
+   else if (s=="ak5calol1offl2l3")
+      return "AK5Calol1off";
+   else if (s=="ak7calo")
+      return "AK7Calo";
+   else if (s=="ak7calol1")
+      return "AK7Calol1";
+   else if (s=="ak7calol1off")
+      return "AK7Calol1off";
+   else if (s=="ak5caloHLT")
+      return "AK5CaloHLT";
+   else if (s=="ak5caloHLTl1")
+      return "AK5CaloHLTl1";
+   else if (s=="ak1pf")
+      return "AK1PF";
+   else if (s=="ak1pfl1")
+      return "AK1PFl1";
+   else if (s=="ak2pf")
+      return "AK2PF";
+   else if (s=="ak2pfl1")
+      return "AK2PFl1";
+   else if (s=="ak3pf")
+      return "AK3PF";
+   else if (s=="ak3pfl1")
+      return "AK3PFl1";
+   else if (s=="ak4pf")
+      return "AK4PF";
+   else if (s=="ak4pfl1")
+      return "AK4PFl1";
+   else if (s=="ak5pf")
+      return "AK5PF";
+   else if (s=="ak5pfl1")
+      return "AK5PFl1";
+   else if (s=="ak5pfl1l2l3")
+      return "AK5PFl1";
+   else if (s=="ak5pfl1off")
+      return "AK5PFl1off";
+   else if (s=="ak6pf")
+      return "AK6PF";
+   else if (s=="ak6pfl1")
+      return "AK6PFl1";
+   else if (s=="ak7pf")
+      return "AK7PF";
+   else if (s=="ak7pfl1")
+      return "AK7PFl1";
+   else if (s=="ak7pfl1off")
+      return "AK7PFl1off";
+   else if (s=="ak8pf")
+      return "AK8PF";
+   else if (s=="ak8pfl1")
+      return "AK8PFl1";
+   else if (s=="ak9pf")
+      return "AK9PF";
+   else if (s=="ak9pfl1")
+      return "AK9PFl1";
+   else if (s=="ak10pf")
+      return "AK10PF";
+   else if (s=="ak10pfl1")
+      return "AK10PFl1";
+   else if (s=="ak1pfchs")
+      return "AK1PFchs";
+   else if (s=="ak1pfchsl1")
+      return "AK1PFchsl1";
+   else if (s=="ak2pfchs")
+      return "AK2PFchs";
+   else if (s=="ak2pfchsl1")
+      return "AK2PFchsl1";
+   else if (s=="ak3pfchs")
+      return "AK3PFchs";
+   else if (s=="ak3pfchsl1")
+      return "AK3PFchsl1";
+   else if (s=="ak4pfchs")
+      return "AK4PFchs";
+   else if (s=="ak4pfchsl1")
+      return "AK4PFchsl1";
+   else if (s=="ak5pfchs")
+      return "AK5PFchs";
+   else if (s=="ak5pfchsl1")
+      return "AK5PFchsl1";
+   else if (s=="ak5pfchsl1l2l3")
+      return "AK5PFchsl1l2l3";
+   else if (s=="ak5pfchsl1off")
+      return "AK5PFchsl1off";
+   else if (s=="ak6pfchs")
+      return "AK6PFchs";
+   else if (s=="ak6pfchsl1")
+      return "AK6PFchsl1";
+   else if (s=="ak7pfchs")
+      return "AK7PFchs";
+   else if (s=="ak7pfchsl1")
+      return "AK7PFchsl1";
+   else if (s=="ak7pfchsl1off")
+      return "AK7PFchsl1off";
+   else if (s=="ak8pfchs")
+      return "AK8PFchs";
+   else if (s=="ak8pfchsl1")
+      return "AK8PFchsl1";
+   else if (s=="ak9pfchs")
+      return "AK9PFchs";
+   else if (s=="ak9pfchsl1")
+      return "AK9PFchsl1";
+   else if (s=="ak10pfchs")
+      return "AK10PFchs";
+   else if (s=="ak10pfchsl1")
+      return "AK10PFchsl1";
+   else if (s=="ak5pfHLT")
+      return "AK5PFHLT";
+  else if (s=="ak5pfHLTl1")
+      return "AK5PFHLTl1";
+   else if (s=="ak5pfchsHLT")
+      return "AK5PFchsHLT";
+   else if (s=="ak5pfchsHLTl1")
+      return "AK5PFchsHLTl1";
+   else if (s=="ak5jpt")
+      return "AK5JPT";
+   else if (s=="ak5jptl1")
+      return "AK5JPTl1";
+   else if (s=="ak5jptl1off")
+      return "AK5JPTl1off";
+   else if (s=="ak5jptl1l2l3")
+      return "AK5JPTl1";
+   else if (s=="ak5jptl1offl2l3")
+      return "AK5JPTl1off";
+   else if (s=="ak7jpt")
+      return "AK7JPT";
+   else if (s=="ak7jptl1")
+      return "AK7JPTl1";
+   else if (s=="ak7jptl1off")
+      return "AK7JPTl1off";
+   else if (s=="ak7jptl1l2l3")
+      return "AK7JPTl1";
+   else if (s=="ak7jptl1offl2l3")
+      return "AK7JPTl1off";
+   else if (s=="sc5calo")
+      return "SC5Calo";
+   else if (s=="sc5pf")
+      return "SC5PF";
+   else if (s=="sc7calo")
+      return "SC5Calo";
+   else if (s=="sc7pf")
+      return "SC5PF";
+   else if (s=="kt4calo")
+      return "KT4Calo";
+   else if (s=="kt4pf")
+      return "KT4PF";
+   else if (s=="kt6calo")
+      return "KT6Calo";
+   else if (s=="kt6pf")
+      return "KT6PF";
+   else
+      return "unknown";
+}
+
+//______________________________________________________________________________
 string get_flavor_name(int pdgid)
 {
    string result;
    int abspdgid = abs(pdgid);
-   if      (abspdgid==1 || abspdgid==2) result = "qJ";
-   else if (abspdgid==123)              result = "qJ"; 
-   else if (abspdgid==3)                result = "sJ";
-   else if (abspdgid==4)                result = "cJ";
-   else if (abspdgid==5)                result = "bJ";
-   else if (abspdgid==21)               result = "gJ";
-   else if (abspdgid==9999)             result = "aJ";
+   if      (abspdgid==1 || abspdgid==2 || abspdgid==3) result = "qJ";
+   else if (abspdgid==123)                             result = "qJ"; 
+   else if (abspdgid==4)                               result = "cJ";
+   else if (abspdgid==5)                               result = "bJ";
+   else if (abspdgid==21)                              result = "gJ";
+   else if (abspdgid==9999)                            result = "aJ";
    else {
       cout << "***ERROR***get_flavor_name::flavor for PDGID="<<pdgid<<" is not known"<<endl;
    } 

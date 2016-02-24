@@ -6,12 +6,6 @@
 //            06/07/2008 Philipp Schieferdecker <philipp.schieferdecker@cern.ch>
 ////////////////////////////////////////////////////////////////////////////////
 
-//Might want to switch to
-//https://github.com/cms-sw/cmssw/blob/6b16de370881dd8ef339d34811b3d1e176c02b80/PhysicsTools/JetMCAlgos/plugins/CandOneToOneDeltaRMatcher.cc
-//Though I think it will have problems with the CandViewMatchMap (AssociationMap not working)
-//See:
-//https://github.com/cms-sw/cmssw/blob/CMSSW_7_6_X/DataFormats/Common/interface/AssociationMap.h
-//https://github.com/cms-sw/cmssw/blob/6b16de370881dd8ef339d34811b3d1e176c02b80/DataFormats/Candidate/interface/CandMatchMap.h
 
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDProducer.h"
@@ -106,6 +100,7 @@ MatchRecToGen::MatchRecToGen(const edm::ParameterSet& iConfig)
 {
   produces<CandViewMatchMap>("rec2gen");
   produces<CandViewMatchMap>("gen2rec");
+	produces<CandViewMatchMap>("unmaprec");
 }
 
 
@@ -119,6 +114,7 @@ void MatchRecToGen::produce(edm::Event& iEvent,const edm::EventSetup& iSetup)
   unsigned int nRec(0);
   unsigned int nGen(0);
   unsigned int nMatched(0);
+  unsigned int nUnMatched(0);
 
   edm::Handle<CandidateView> rec_;
   edm::Handle<CandidateView> gen_;
@@ -146,11 +142,9 @@ void MatchRecToGen::produce(edm::Event& iEvent,const edm::EventSetup& iSetup)
   }
   
   // two association maps: rec2gen and gen2rec
-  // First check is a blank association map should be put into the event
-  // (i.e. there are either no rec or no gen jets and you can't get a
-  // refToBaseProd). Otherwise make and fill the map normally.
   auto_ptr<CandViewMatchMap> recToGenMap;
   auto_ptr<CandViewMatchMap> genToRecMap;
+  auto_ptr<CandViewMatchMap> unMatchreco;
   if(nRec==0 || nGen==0) {
      recToGenMap.reset(new CandViewMatchMap());
      genToRecMap.reset(new CandViewMatchMap());
@@ -176,34 +170,52 @@ void MatchRecToGen::produce(edm::Event& iEvent,const edm::EventSetup& iSetup)
       recToGenMap->insert(rec_->refAt(iRec),gen_->refAt(iGen));
       genToRecMap->insert(gen_->refAt(iGen),rec_->refAt(iRec));
       iRecSet.erase(itRec);
-      iGenSet.erase(itGen);
-    }
-    
-    ++it;
-  }
-  
-  iEvent.put(recToGenMap,"rec2gen");
-  iEvent.put(genToRecMap,"gen2rec");
-  
-  nRecTot_ += nRec;
-  nGenTot_ += nGen;
-  nMatchedTot_ += nMatched;
+			iGenSet.erase(itGen);
+		}
+
+		++it;
+	}
+
+	if(iRecSet.size()>0)
+	{
+		unMatchreco.reset(new CandViewMatchMap(
+					edm::makeRefToBaseProdFrom(rec_->refAt(0), iEvent),
+					edm::makeRefToBaseProdFrom(rec_->refAt(0), iEvent)));
+		for(unsigned i=0;i<nRec;i++)
+			if(iRecSet.find(i)!=iRecSet.end())
+			{
+				unMatchreco->insert(rec_->refAt(i),rec_->refAt(i));
+				nUnMatched++;
+			}
+	}
+
+	else{
+     unMatchreco.reset(new CandViewMatchMap());
+	}
+
+	iEvent.put(recToGenMap,"rec2gen");
+	iEvent.put(genToRecMap,"gen2rec");
+	iEvent.put(unMatchreco,"unmaprec");
+
+	nRecTot_ += nRec;
+	nGenTot_ += nGen;
+	nMatchedTot_ += nMatched;
 }
 
 
 //______________________________________________________________________________
 void MatchRecToGen::endJob()
 {
-  stringstream ss;
-  ss<<"nMatched = "<<nMatchedTot_<<"\n"
-    <<"nRec = "<<nRecTot_<<" "
-    <<"fRec = "<<100.*(nMatchedTot_/(double)nRecTot_)<<" %\n"
-    <<"nGen = "<<nGenTot_<<" "
-    <<"fGen = "<<100.*(nMatchedTot_/(double)nGenTot_)<<" %\n";
-  edm::LogPrint("Summary")
-    <<"++++++++++++++++++++++++++++++++++++++++++++++++++"
-    <<"\n"<<moduleName_<<"(MatchRecToGen) SUMMARY:\n"<<ss.str()
-    <<"++++++++++++++++++++++++++++++++++++++++++++++++++";
+	stringstream ss;
+	ss<<"nMatched = "<<nMatchedTot_<<"\n"
+		<<"nRec = "<<nRecTot_<<" "
+		<<"fRec = "<<100.*(nMatchedTot_/(double)nRecTot_)<<" %\n"
+		<<"nGen = "<<nGenTot_<<" "
+		<<"fGen = "<<100.*(nMatchedTot_/(double)nGenTot_)<<" %\n";
+	edm::LogPrint("Summary")
+		<<"++++++++++++++++++++++++++++++++++++++++++++++++++"
+		<<"\n"<<moduleName_<<"(MatchRecToGen) SUMMARY:\n"<<ss.str()
+		<<"++++++++++++++++++++++++++++++++++++++++++++++++++";
 }
 
 

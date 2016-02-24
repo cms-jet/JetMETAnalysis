@@ -1,7 +1,7 @@
 JetMETAnalysis
 ==============
 
-The code contained in this package is used for creating and analyzing the L2Relative and L3Absolute jet energy corrections (JEC). The code is used by the Jet Energy Resolution and Corrections (JERC) subgroup.
+The code contained in this package is used for creating and analyzing the L2Relative and L3Absolute jet energy corrections (JEC), based on high level trigger of CMS. The code is used by the JetMet trigger development subgroup.
 
 The JetAnalyzers subpackage relies upon the JetUtilities subpackage.
 

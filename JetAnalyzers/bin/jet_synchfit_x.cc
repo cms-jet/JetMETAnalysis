@@ -56,12 +56,10 @@ TGraph2DErrors * getGraph2D(int iEta, const TProfile3D * prof,
          nEvt += prof->GetBinEntries(Gbin);
          // avoid points with empty content or too small error
          if (prof   ->GetBinError  (iEta,irho,irefpt)  > 0.000001 &&
-             (fabs(prof->GetBinError(iEta,irho,irefpt)/prof->GetBinContent(iEta,irho,irefpt)))<0.3 &&
-             (fabs(prof->GetBinError(iEta,irho,irefpt)/prof->GetBinContent(iEta,irho,irefpt)))>0.05 &&
              profPt ->GetBinContent(iEta,irho,irefpt)  > 0 &&
-             profPt ->GetBinError  (iEta,irho,irefpt)  > 0.1 &&
+             profPt ->GetBinError  (iEta,irho,irefpt)  > 0.5 &&
              profRho->GetBinContent(iEta,irho,irefpt)  > 0 &&
-             profRho->GetBinError  (iEta,irho,irefpt)  > 0.1 ) {
+             profRho->GetBinError  (iEta,irho,irefpt)  > 0.5 ) {
             
             // get the relevant values
             double rho  = profRho->GetBinContent(iEta, irho, irefpt); 
@@ -142,29 +140,17 @@ bool getInputProfiles(TString inputFilename, TProfile3D *& prof,
 
 //===========================================================================
 // This method creates a new fit function and fits it to the graph
-TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, bool logPol, bool PUPPIFunc, int iEta, const TProfile3D * prof){
+TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, bool logPol, int iEta, const TProfile3D * prof){
    
    
    static double par0i = -0.5;
    static double par1i = 0.5;
    static double par2i = 0.1;
-   static double par3i = 0.0;
-   static double par4i = 1.0;
-   if(PUPPIFunc) {
-      par0i = 18;
-      par1i = -1.5;
-      par2i = -0.35;
-      par3i = 0.0;
-      par4i = 1.0;
-   }
-
    TF2* f4 = 0;
    TString function;
-   if(PUPPIFunc)
-      function = "[0] + ([1] * x) * (1 + [2] * log(y)) + (1/([3]*log( y ) + [4]))";
-   else if(logPol)
+   if(logPol)
       //Non-Taylor expanded version
-      function = "[0] + ([1] * x) * (1 + [2] * log(y))";
+      function = "[0] + ([1] * x ) *(1 + [2] * log(y))";
    else
       //Taylor expanded version
       function = "[0] + ([1] * (x-11)) *(1 + [2] * (log(y) -1.47))";
@@ -178,24 +164,12 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, bool logPol, bool PUPP
       f4 = new TF2("f4",function, 0,50,1,3000);
       //f4 = new TF2("f4",function, 5,50,10,3000);
 
-   if(PUPPIFunc) {
-      f4->SetParameter(0,par0i);
-      f4->SetParameter(1,par1i);
-      f4->SetParameter(2,par2i);
-      f4->SetParameter(3,par3i);
-      f4->SetParameter(4,par4i);
-      f4->SetParLimits(0,-50,50);
-      f4->SetParLimits(1,0,10);
-      f4->SetParLimits(2,-2,5);
-   }
-   else { 
-      f4->SetParameter(0,par0i);
-      f4->SetParameter(1,par1i);
-      f4->SetParameter(2,par2i);
-      f4->SetParLimits(0,-5,25);
-      f4->SetParLimits(1,0,10);
-      f4->SetParLimits(2,-2,5);
-   }
+   f4->SetParameter(0,par0i);
+   f4->SetParameter(1,par1i);
+   f4->SetParameter(2,par2i);
+   f4->SetParLimits(0,-5,25);
+   f4->SetParLimits(1,0,10);
+   f4->SetParLimits(2,-2,5);
 
    //if (graph->GetN()<500)
    //f4->FixParameter(2,0.05);
@@ -245,8 +219,7 @@ void createTxtFile(TString txtFilename, const vector<FitRes> & fitResults){
       // for each fit print this header ...
       outF<<std::setw(11)<<fitResults[l].etalowedge
           <<std::setw(11)<<fitResults[l].etaupedge
-         //<<std::setw(11)<<9
-          <<std::setw(11)<<(int)(fitResults[l].fit->GetNpar()+6)
+          <<std::setw(11)<<9
          //<<std::setw(12)<<fitResults[l].fit->GetYmin()<<std::setw(12)<<fitResults[l].fit->GetYmax()
          //<<std::setw(12)<<0<<std::setw(12)<<10
          //<<std::setw(12)<<fitResults[l].fit->GetXmin()<<std::setw(12)<<fitResults[l].fit->GetXmax();
@@ -256,13 +229,9 @@ void createTxtFile(TString txtFilename, const vector<FitRes> & fitResults){
       
       
       // ... followed by the parameters
-      for(int p=0; p<fitResults[l].fit->GetNpar(); p++) {
-         outF<<std::setw(13)<<fitResults[l].fit->GetParameter(p);
-      }
-      outF<<std::endl;
-      //outF<<std::setw(13)<<fitResults[l].fit->GetParameter(0)
-      //    <<std::setw(13)<<fitResults[l].fit->GetParameter(1)
-      //    <<std::setw(13)<<fitResults[l].fit->GetParameter(2)<<std::endl;
+      outF<<std::setw(13)<<fitResults[l].fit->GetParameter(0)
+          <<std::setw(13)<<fitResults[l].fit->GetParameter(1)
+          <<std::setw(13)<<fitResults[l].fit->GetParameter(2)<<std::endl;
       
    }//for fit results
    
@@ -342,7 +311,6 @@ int main(int argc,char**argv){
    bool           highPU     = cl.getValue<bool>    ("highPU",    false);
    bool           logPol     = cl.getValue<bool>    ("logPol",     true);
    bool           useNPU     = cl.getValue<bool>    ("useNPU",    false);
-   bool           PUPPIFunc  = cl.getValue<bool>    ("PUPPIFunc", false);
 
    if (!cl.check()) return 0;
    cl.print();
@@ -391,7 +359,7 @@ int main(int argc,char**argv){
       }
       
       // Do the fitting
-      TF2 * fitfunc = doGraphFitting(graph, highPU, logPol, PUPPIFunc, iEta, prof);
+      TF2 * fitfunc = doGraphFitting(graph, highPU, logPol, iEta, prof);
       cout << "Fitted function" << endl << endl;
       
       // Put this fit result in the vector fitResults

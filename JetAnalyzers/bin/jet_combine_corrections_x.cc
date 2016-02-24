@@ -12,7 +12,7 @@
 ///////////////////////////////////////////////////////////////////
 
 #include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
-#include "JetMETAnalysis/JetUtilities/interface/Style.h"
+#include "JetMETAnalysis/JetAnalyzers/interface/Style.h"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"

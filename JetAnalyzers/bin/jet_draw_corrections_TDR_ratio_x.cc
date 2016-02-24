@@ -8,7 +8,7 @@
 
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 #include "JetMETAnalysis/JetAnalyzers/interface/Settings.h"
-#include "JetMETAnalysis/JetUtilities/interface/Style.h"
+#include "JetMETAnalysis/JetAnalyzers/interface/Style.h"
 
 #include "TROOT.h"
 #include "TSystem.h"
@@ -69,8 +69,7 @@ int main(int argc,char**argv)
    string          filepath2    = cl.getValue<string>   ("filepath2");
    string          labelNum     = cl.getValue<string>   ("labelNum");
    string          labelDen     = cl.getValue<string>   ("labelDen");
-   string          algoNum      = cl.getValue<string>   ("algoNum");
-   string          algoDen      = cl.getValue<string>   ("algoDen");
+   string          algo         = cl.getValue<string>   ("algo");
    bool            doflavor     = cl.getValue<bool>     ("doflavor",             false);
    TString         outputDir    = cl.getValue<TString>  ("outputDir",         "images");
    vector<TString> outputFormat = cl.getVector<TString> ("outputFormat", ".png:::.eps");
@@ -144,29 +143,28 @@ int main(int argc,char**argv)
  
    //Create a pave indicating the algorithm name
    TString algNameLong;
-   if(TString(algoNum).Contains("ak"))        algNameLong += "Anti-kT";
-   if(TString(algoNum).Contains("1")&&!TString(algoNum).Contains("10")&&!TString(algoNum).Contains("l1")) algNameLong += " R=0.1";
-   else if(TString(algoNum).Contains("2"))    algNameLong += " R=0.2";
-   else if(TString(algoNum).Contains("3"))    algNameLong += " R=0.3";
-   else if(TString(algoNum).Contains("4"))    algNameLong += " R=0.4";
-   else if(TString(algoNum).Contains("5"))    algNameLong += " R=0.5";
-   else if(TString(algoNum).Contains("6"))    algNameLong += " R=0.6";
-   else if(TString(algoNum).Contains("7"))    algNameLong += " R=0.7";
-   else if(TString(algoNum).Contains("8"))    algNameLong += " R=0.8";
-   else if(TString(algoNum).Contains("9"))    algNameLong += " R=0.9";
-   else if(TString(algoNum).Contains("10"))   algNameLong += " R=1.0";
-   if(TString(algoNum).Contains("pfchs"))     algNameLong += ", PF+CHS";
-   else if(TString(algoNum).Contains("pf"))   algNameLong += ", PF";
-   else if(TString(algoNum).Contains("calo")) algNameLong += ", Calo";
-   else if(TString(algoNum).Contains("jpt"))  algNameLong += ", JPT";
-   else if(TString(algoNum).Contains("puppi"))  algNameLong += ", PUPPI";
+   if(TString(algo).Contains("ak"))        algNameLong += "Anti-kT";
+   if(TString(algo).Contains("1")&&!TString(algo).Contains("10")&&!TString(algo).Contains("l1")) algNameLong += " R=0.1";
+   else if(TString(algo).Contains("2"))    algNameLong += " R=0.2";
+   else if(TString(algo).Contains("3"))    algNameLong += " R=0.3";
+   else if(TString(algo).Contains("4"))    algNameLong += " R=0.4";
+   else if(TString(algo).Contains("5"))    algNameLong += " R=0.5";
+   else if(TString(algo).Contains("6"))    algNameLong += " R=0.6";
+   else if(TString(algo).Contains("7"))    algNameLong += " R=0.7";
+   else if(TString(algo).Contains("8"))    algNameLong += " R=0.8";
+   else if(TString(algo).Contains("9"))    algNameLong += " R=0.9";
+   else if(TString(algo).Contains("10"))   algNameLong += " R=1.0";
+   if(TString(algo).Contains("pfchs"))     algNameLong += ", PF+CHS";
+   else if(TString(algo).Contains("pf"))   algNameLong += ", PF";
+   else if(TString(algo).Contains("calo")) algNameLong += ", Calo";
+   else if(TString(algo).Contains("jpt"))  algNameLong += ", JPT";
  
    //
    // Open/create the output directory and file
    //
    if(!gSystem->OpenDirectory(outputDir)) gSystem->mkdir(outputDir);
-   TString ofname = outputDir+"/CorrectionTDRRatio_"+algoNum+".root";
-   if(doflavor) ofname = outputDir+"/CorrectionTDRRatio_"+algoNum+"_"+flavor1+"over"+flavor2+".root";
+   TString ofname = outputDir+"/CorrectionTDRRatio_"+algo+".root";
+   if(doflavor) ofname = outputDir+"/CorrectionTDRRatio_"+algo+"_"+flavor1+"over"+flavor2+".root";
    TFile* outf = new TFile(ofname,"RECREATE");
 
    //
@@ -190,14 +188,14 @@ int main(int argc,char**argv)
 
       sprintf(name,"CorrectionRatio_%d",i);
       TString ss(name);
-      ss+="_"+algoNum;
+      ss+="_"+algo;
       if (doflavor) ss += "_"+flavor1+"over"+flavor2;
       can[i] = new TCanvas(ss,ss,1200,800);
       ratioHist[i]->SetTitle(ss);
       ratioHist[i]->GetXaxis()->SetTitle("#eta");
       scanBins(CMEnergy, PtVals[i], ratioHist[i]);
       ratioHist[i]->GetYaxis()->SetTitle("Corr. Factor");
-      if(TString(algoNum).Contains("calo"))
+      if(TString(algo).Contains("calo"))
          ratioHist[i]->GetYaxis()->SetRangeUser(0.90,2.5);
       else
          ratioHist[i]->GetYaxis()->SetRangeUser(0.90,1.8);
@@ -234,7 +232,7 @@ int main(int argc,char**argv)
    // create overview canvas
    //
    TString ss("CorrectionRatio_Overview");
-   ss+="_"+algoNum;
+   ss+="_"+algo;
    if(doflavor) ss+="_"+flavor1+"over"+flavor2;
    
    TCanvas *ove = new TCanvas(ss,ss,2400,800);
@@ -295,7 +293,7 @@ int main(int argc,char**argv)
    // create overview canvas with all ratios on same plot
    //
    TString ss2("CorrectionRatio_Overview2");
-   ss2+="_"+algoNum;
+   ss2+="_"+algo;
    if(doflavor) ss2+="_"+flavor1+"over"+flavor2;
   // Create a legend for pt values
   TLegend * leg2 = new TLegend(0.3,0.7,0.8,0.9);
@@ -308,10 +306,9 @@ int main(int argc,char**argv)
    TCanvas *ove2 = new TCanvas(ss2,ss2,1200,800);
    for (int c=0;c<3;c++) {
       //Set marker colors and styles
-      if(!TString(algoNum).Contains("jpt"))
+      if(!TString(algo).Contains("jpt"))
          //ratioHist[c]->GetYaxis()->SetRangeUser(0.96,1.06);
-         //ratioHist[c]->GetYaxis()->SetRangeUser(0.90,3.0);
-         ratioHist[c]->GetYaxis()->SetRangeUser(0.80,1.5);
+         ratioHist[c]->GetYaxis()->SetRangeUser(0.90,3.0);
       else
          ratioHist[c]->GetYaxis()->SetRangeUser(0.90,1.06);
       ratioHist[c]->GetYaxis()->SetTitle("Correction Ratio");
@@ -501,26 +498,6 @@ TString getAlias(TString s)
       return "KT6Calo";
    else if (s=="kt6pf")
       return "KT6PF";
-   else if (s=="ak1puppi")
-      return "AK1PUPPI";
-   else if (s=="ak2puppi")
-      return "AK2PUPPI";
-   else if (s=="ak3puppi")
-      return "AK3PUPPI";
-   else if (s=="ak4puppi")
-      return "AK4PUPPI";
-   else if (s=="ak5puppi")
-      return "AK5PUPPI";
-   else if (s=="ak6puppi")
-      return "AK6PUPPI";
-   else if (s=="ak7puppi")
-      return "AK7PUPPI";
-   else if (s=="ak8puppi")
-      return "AK8PUPPI";
-   else if (s=="ak9puppi")
-      return "AK9PUPPI";
-   else if (s=="ak10puppi")
-      return "AK10PUPPI";
    else
       return "unknown";
 }
