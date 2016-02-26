@@ -5,8 +5,8 @@ import FWCore.ParameterSet.Config as cms
 #! DEFAULT JET PRESELECTION
 #!
 JetPtEta = cms.PSet( 
-    etaMin = cms.double(-5.5),
-    etaMax = cms.double(5.5),
+    etaMin = cms.double(-5.0),
+    etaMax = cms.double(5.0),
     ptMin = cms.double(1.0)
 )
 
@@ -14,8 +14,8 @@ JetPtEta = cms.PSet(
 #! DEFAULT REF PRESELECTION
 #!
 RefPtEta = cms.PSet(
-    etaMin = cms.double(-5.5),
-    etaMax = cms.double(5.5),
+    etaMin = cms.double(-5.0),
+    etaMax = cms.double(5.0),
     ptMin = cms.double(1.0)
 )
 
@@ -24,12 +24,12 @@ RefPtEta = cms.PSet(
 #!
 JetResponseParameters = cms.PSet(
     # record flavor information, consider both RefPt and JetPt
-    doComposition   = cms.bool(True),
+    doComposition   = cms.bool(False),
     doFlavor        = cms.bool(True),
     doRefPt         = cms.bool(True),
     doJetPt         = cms.bool(True),
     # MATCHING MODE: deltaR(ref,jet)
-    deltaRMax       = cms.double(0.25),
+    deltaRMax       = cms.double(99.9),
     # deltaR(ref,parton) IF doFlavor is True
     deltaRPartonMax = cms.double(0.25),
     # consider all matched references

@@ -4,53 +4,62 @@ import FWCore.ParameterSet.Config as cms
 ## filter final state partons (define globaly)
 ################################################################################
 
-partons = cms.EDProducer('PartonSelector',
-    src = cms.InputTag('genParticles'),
-    withLeptons = cms.bool(False),
-    skipFirstN = cms.uint32(0)
-)
+#partons = cms.EDProducer('PartonSelector',
+#    src = cms.InputTag('genParticles'),
+#    withLeptons = cms.bool(False)
+#)
 
 
 ################################################################################
 ## jet reconstruction
 ################################################################################
 from JetMETAnalysis.JetAnalyzers.JetReconstruction_cff import *
-from JetMETAnalysis.JetAnalyzers.TauReconstruction_cff import *
+#from JetMETAnalysis.JetAnalyzers.TauReconstruction_cff import *
 #from JetMETAnalysis.JetAnalyzers.JPTReconstruction_cff import *
 from JetMETAnalysis.JetAnalyzers.JetCorrection_cff     import *
-from RecoTauTag.TauTagTools.tauDecayModes_cfi          import *
-from CommonTools.PileupAlgos.Puppi_cff import *
+#from RecoTauTag.TauTagTools.tauDecayModes_cfi          import *
+#from Dummy.Puppi.Puppi_cff import *
 
-tauDiscriminatorDict = {
-    "ak5tauHPSlooseCombDBcorr"  : "hpsPFTauDiscriminationByLooseCombinedIsolationDBSumPtCorr3Hits",
-    "ak5tauHPSmediumCombDBcorr" : "hpsPFTauDiscriminationByMediumCombinedIsolationDBSumPtCorr3Hits",
-    "ak5tauHPStightCombDBcorr"  : "hpsPFTauDiscriminationByTightCombinedIsolationDBSumPtCorr3Hits",
-}
+#tauDiscriminatorDict = {
+#    "ak5tauHPSloose"            : "hpsPFTauDiscriminationByLooseIsolation",
+#    "ak5tauHPSmedium"           : "hpsPFTauDiscriminationByMediumIsolation",
+#    "ak5tauHPStight"            : "hpsPFTauDiscriminationByTightIsolation",
+#    "ak5tauHPSlooseDBcorr"      : "hpsPFTauDiscriminationByLooseIsolation",
+#    "ak5tauHPSmediumDBcorr"     : "hpsPFTauDiscriminationByMediumIsolation",
+#    "ak5tauHPStightDBcorr"      : "hpsPFTauDiscriminationByTightIsolation",
+#    "ak5tauHPSlooseCombDBcorr"  : "hpsPFTauDiscriminationByLooseIsolation",
+#    "ak5tauHPSmediumCombDBcorr" : "hpsPFTauDiscriminationByMediumIsolation",
+#    "ak5tauHPStightCombDBcorr"  : "hpsPFTauDiscriminationByTightIsolation",
+#    "ak5tauTaNCloose"           : "hpsTancTausDiscriminationByTancLoose",    
+#    "ak5tauTaNCmedium"          : "hpsTancTausDiscriminationByTancMedium",
+#    "ak5tauTaNCtight"           : "hpsTancTausDiscriminationByTancTight"
+#}
 #
-tauDecayModeDict = {
-    "All"                       : "*",
-    "OneProng0Pi0"              : "%i" % tauToOneProng0PiZero,
-    "OneProng1Pi0"              : "%i" % tauToOneProng1PiZero,
-    "OneProng2Pi0"              : "%i" % tauToOneProng2PiZero,
-    "ThreeProng0Pi0"            : "%i" % tauToThreeProng0PiZero
-}
+#tauDecayModeDict = {
+#    "All"                       : "*",
+#    "OneProng0Pi0"              : "%i" % tauToOneProng0PiZero,
+#    "OneProng1Pi0"              : "%i" % tauToOneProng1PiZero,
+#    "OneProng2Pi0"              : "%i" % tauToOneProng2PiZero,
+#    "ThreeProng0Pi0"            : "%i" % tauToThreeProng0PiZero
+#}
 #
-tauDiscriminators_and_DecayModes = {}
-for tauDiscriminator in tauDiscriminatorDict:
-    for tauDecayMode in tauDecayModeDict:
-        key = tauDiscriminator
-        if tauDecayModeDict[tauDecayMode] != "":
-            key += tauDecayMode
-        tauDiscriminators_and_DecayModes[key] = (tauDiscriminatorDict[tauDiscriminator], tauDecayModeDict[tauDecayMode])
+#tauDiscriminators_and_DecayModes = {}
+#for tauDiscriminator in tauDiscriminatorDict:
+#    for tauDecayMode in tauDecayModeDict:
+#        key = tauDiscriminator
+#        if tauDecayModeDict[tauDecayMode] != "":
+#            key += tauDecayMode
+#        tauDiscriminators_and_DecayModes[key] = (tauDiscriminatorDict[tauDiscriminator], tauDecayModeDict[tauDecayMode])
 
 stdGenJetsDict = {
 #	'ak3calo'       : 'ak3GenJets',
 #	'ak4calo'       : 'ak4GenJets',
-    'ak4calo'       : 'ak4GenJets',
-    'ak5calo'       : 'ak5GenJets',
+    'ak4calo'       : 'ak5GenJets',
+  'ak4caloHLT'    : 'ak4GenJets', #added 2014/06/27
 #	'ak6calo'       : 'ak6GenJets',
     'ak7calo'       : 'ak7GenJets',
 #	'ak8calo'       : 'ak8GenJets',
+ 	'ak8caloHLT'    : 'ak8GenJets',
 #	'ak9calo'       : 'ak9GenJets',
 #	'ak10calo'      : 'ak10GenJets',
     'kt4calo'       : 'kt4GenJets',
@@ -60,10 +69,12 @@ stdGenJetsDict = {
 	'ak2pf'         : 'ak2GenJets',
 	'ak3pf'         : 'ak3GenJets',
 	'ak4pf'         : 'ak4GenJets',
+  'ak4pfHLT'      : 'ak4GenJets', #added 2014/03/27
     'ak5pf'         : 'ak5GenJets',
 	'ak6pf'         : 'ak6GenJets',
     'ak7pf'         : 'ak7GenJets',
 	'ak8pf'         : 'ak8GenJets',
+	'ak8pfHLT'      : 'ak8GenJets',
 	'ak9pf'         : 'ak9GenJets',
 	'ak10pf'        : 'ak10GenJets',
     'kt4pf'         : 'kt4GenJets',
@@ -96,23 +107,24 @@ stdGenJetsDict = {
     'ak10puppi'     : 'ak10GenJets',
 #    'ak5jpt'        : 'ak5GenJets',
 #    'ak7jpt'        : 'ak7GenJets',
-    'ak5tauHPSall'  : 'tauGenJetsSelectorAllHadrons',
+#    'ak5tauHPSall'  : 'tauGenJetsSelectorAllHadrons',
 #    'ak5tauTaNCall' : 'tauGenJetsSelectorAllHadrons'
 }
-for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
-    if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
-        stdGenJetsDict[tauDiscriminator_and_DecayMode] = stdGenJetsDict["ak5tauHPSall"]
-    elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
-        stdGenJetsDict[tauDiscriminator_and_DecayMode] = stdGenJetsDict["ak5tauTaNCall"]
+#for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
+#    if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
+#        stdGenJetsDict[tauDiscriminator_and_DecayMode] = stdGenJetsDict["ak5tauHPSall"]
+#    elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
+#        stdGenJetsDict[tauDiscriminator_and_DecayMode] = stdGenJetsDict["ak5tauTaNCall"]
 
 genJetsDict = {
 #	'ak3calo'       : ('ak3GenJetsNoNu',               ak3GenJetsNoNu),
 #	'ak4calo'       : ('ak4GenJetsNoNu',               ak4GenJetsNoNu),
-    'ak4calo'       : ('ak4GenJetsNoNu',               ak4GenJetsNoNu), #chaned to NoNu from NoMuNoNu
-    'ak5calo'       : ('ak5GenJetsNoNu',               ak5GenJetsNoNu),
+    'ak4calo'       : ('ak5GenJetsNoNu',               ak5GenJetsNoNu), #chaned to NoNu from NoMuNoNu
+   'ak4caloHLT'    : ('ak4GenJetsNoNu',               ak4GenJetsNoNu),
 #	'ak6calo'       : ('ak6GenJetsNoNu',               ak6GenJetsNoNu),
     'ak7calo'       : ('ak7GenJetsNoNu',               ak7GenJetsNoNu),
 #	'ak8calo'       : ('ak8GenJetsNoNu',               ak8GenJetsNoNu),
+	'ak8caloHLT'    : ('ak8GenJetsNoNu',               ak8GenJetsNoNu),
 #	'ak9calo'       : ('ak9GenJetsNoNu',               ak9GenJetsNoNu),
 #	'ak10calo'      : ('ak10GenJetsNoNu',              ak10GenJetsNoNu),
     'kt4calo'       : ('kt4GenJetsNoNu',               kt4GenJetsNoNu),
@@ -122,10 +134,12 @@ genJetsDict = {
 	'ak2pf'         : ('ak2GenJetsNoNu',               ak2GenJetsNoNu),
 	'ak3pf'         : ('ak3GenJetsNoNu',               ak3GenJetsNoNu),
 	'ak4pf'         : ('ak4GenJetsNoNu',               ak4GenJetsNoNu),
+  'ak4pfHLT'      : ('ak4GenJetsNoNu',               ak4GenJetsNoNu),
     'ak5pf'         : ('ak5GenJetsNoNu',               ak5GenJetsNoNu),
 	'ak6pf'         : ('ak6GenJetsNoNu',               ak6GenJetsNoNu),
     'ak7pf'         : ('ak7GenJetsNoNu',               ak7GenJetsNoNu),
 	'ak8pf'         : ('ak8GenJetsNoNu',               ak8GenJetsNoNu),
+	'ak8pfHLT'      : ('ak8GenJetsNoNu',               ak8GenJetsNoNu),
 	'ak9pf'         : ('ak9GenJetsNoNu',               ak9GenJetsNoNu),
 	'ak10pf'        : ('ak10GenJetsNoNu',              ak10GenJetsNoNu),
     'kt4pf'         : ('kt4GenJetsNoNu',               kt4GenJetsNoNu),
@@ -158,24 +172,25 @@ genJetsDict = {
     'ak10puppi'     : ('ak10GenJetsNoNu',              ak10GenJetsNoNu),
 #    'ak5jpt'        : ('ak5GenJetsNoNu',               ak5GenJetsNoNu),
 #    'ak7jpt'        : ('ak7GenJetsNoNu',               ak7GenJetsNoNu),
-    'ak5tauHPSall'  : ('tauGenJetsSelectorAllHadrons', tauGenJetsSelectorAllHadrons),
+#    'ak5tauHPSall'  : ('tauGenJetsSelectorAllHadrons', tauGenJetsSelectorAllHadrons),
 #    'ak5tauTaNCall' : ('tauGenJetsSelectorAllHadrons', tauGenJetsSelectorAllHadrons)
 }    
-for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
-    if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
-        genJetsDict[tauDiscriminator_and_DecayMode] = genJetsDict["ak5tauHPSall"]
-    elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
-        genJetsDict[tauDiscriminator_and_DecayMode] = genJetsDict["ak5tauTaNCall"]
+#for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
+#    if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
+#        genJetsDict[tauDiscriminator_and_DecayMode] = genJetsDict["ak5tauHPSall"]
+#    elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
+#        genJetsDict[tauDiscriminator_and_DecayMode] = genJetsDict["ak5tauTaNCall"]
 
     
 stdRecJetsDict = {
 #    'ak3calo'       : 'ak3CaloJets',
 #    'ak4calo'       : 'ak4CaloJets',
     'ak4calo'       : 'ak4CaloJets',
-    'ak5calo'       : 'ak5CaloJets',
+    'ak4caloHLT'    : 'hltAK4CaloJets', #added 2014/06/27
 #	'ak6calo'       : 'ak6CaloJets',
     'ak7calo'       : 'ak7CaloJets',
 #	'ak8calo'       : 'ak8CaloJets',
+    'ak8caloHLT'    : 'hltAK8CaloJets',
 #	'ak9calo'       : 'ak9CaloJets',
 #	'ak10calo'      : 'ak10CaloJets',
     'kt4calo'       : 'kt4CaloJets',
@@ -185,10 +200,12 @@ stdRecJetsDict = {
     'ak2pf'         : 'ak2PFJets',
     'ak3pf'         : 'ak3PFJets',
     'ak4pf'         : 'ak4PFJets',
+    'ak4pfHLT'      : 'hltAK4PFJets', #added 2014/03/27
     'ak5pf'         : 'ak5PFJets',
 	'ak6pf'         : 'ak6PFJets',
     'ak7pf'         : 'ak7PFJets',
     'ak8pf'         : 'ak8PFJets',
+    'ak8pfHLT'      : 'hltAK8PFJets',
     'ak9pf'         : 'ak9PFJets',
 	'ak10pf'        : 'ak10PFJets',
     'kt4pf'         : 'kt4PFJets',
@@ -219,23 +236,24 @@ stdRecJetsDict = {
     'ak10puppi'     : 'ak10PUPPIJets',
 #    'ak5jpt'        : 'ak5JPTJets',
 #    'ak7jpt'        : 'ak7JPTJets',
-    'ak5tauHPSall'  : 'hpsPFTauProducer',
+#    'ak5tauHPSall'  : 'hpsPFTauProducer',
 #    'ak5tauTaNCall' : 'hpsTancTaus'
 }
-for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
-    if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
-        stdRecJetsDict[tauDiscriminator_and_DecayMode] = stdRecJetsDict["ak5tauHPSall"]
-    elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
-        stdRecJetsDict[tauDiscriminator_and_DecayMode] = stdRecJetsDict["ak5tauTaNCall"]
+#for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
+#    if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
+#        stdRecJetsDict[tauDiscriminator_and_DecayMode] = stdRecJetsDict["ak5tauHPSall"]
+#    elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
+#        stdRecJetsDict[tauDiscriminator_and_DecayMode] = stdRecJetsDict["ak5tauTaNCall"]
 
 recJetsDict = {
 #    'ak3calo'       : ('ak3CaloJets',        ak3CaloJets),
 #    'ak4calo'       : ('ak4CaloJets',        ak4CaloJets),
     'ak4calo'       : ('ak4CaloJets',        ak4CaloJets),
-    'ak5calo'       : ('ak5CaloJets',        ak5CaloJets),
+    'ak4caloHLT'    : ('ak4CaloHLTJets',     ak4CaloHLTJets), #added 2014/06/27
 #	'ak6calo'       : ('ak6CaloJets',        ak6CaloJets),
     'ak7calo'       : ('ak7CaloJets',        ak7CaloJets),
 #	'ak8calo'       : ('ak8CaloJets',        ak8CaloJets),
+    'ak8caloHLT'    : ('ak8CaloHLTJets',     ak8CaloHLTJets),
 #	'ak9calo'       : ('ak9CaloJets',        ak9CaloJets),
 #	'ak10calo'      : ('ak10CaloJets',       ak10CaloJets),
     'kt4calo'       : ('kt4CaloJets',        kt4CaloJets),
@@ -245,10 +263,12 @@ recJetsDict = {
     'ak2pf'         : ('ak2PFJets',          ak2PFJets),
     'ak3pf'         : ('ak3PFJets',          ak3PFJets),
     'ak4pf'         : ('ak4PFJets',          ak4PFJets),
+    'ak4pfHLT'      : ('ak4PFHLTJets',       ak4PFHLTJets), #added 2014/03/27
     'ak5pf'         : ('ak5PFJets',          ak5PFJets),
 	'ak6pf'         : ('ak6PFJets',          ak6PFJets),
     'ak7pf'         : ('ak7PFJets',          ak7PFJets),
 	'ak8pf'         : ('ak8PFJets',          ak8PFJets),
+    'ak8pfHLT'      : ('ak8PFHLTJets',       ak8PFHLTJets),
 	'ak9pf'         : ('ak9PFJets',          ak9PFJets),
 	'ak10pf'        : ('ak10PFJets',         ak10PFJets),
     'kt4pf'         : ('kt4PFJets',          kt4PFJets),
@@ -279,14 +299,14 @@ recJetsDict = {
     'ak10puppi'     : ('ak10PUPPIJets',      ak10PUPPIJets),
 #    'ak5jpt'        : ('ak5JPTJets',         ak5JPTJets),
 #    'ak7jpt'        : ('ak7JPTJets',         ak7JPTJets),
-    'ak5tauHPSall'  : ('hpsPFTauProducer',   hpsPFTauProducer),
+#    'ak5tauHPSall'  : ('hpsPFTauProducer',   hpsPFTauProducer),
 #    'ak5tauTaNCall' : ('hpsTancTaus',        hpsTancTaus)
 }
-for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
-    if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
-        recJetsDict[tauDiscriminator_and_DecayMode] = recJetsDict["ak5tauHPSall"]
-    elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
-        recJetsDict[tauDiscriminator_and_DecayMode] = recJetsDict["ak5tauTaNCall"]
+#for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
+#    if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
+#        recJetsDict[tauDiscriminator_and_DecayMode] = recJetsDict["ak5tauHPSall"]
+#    elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
+#        recJetsDict[tauDiscriminator_and_DecayMode] = recJetsDict["ak5tauTaNCall"]
 
 
 corrJetsDict = {
@@ -342,7 +362,6 @@ corrJetsDict = {
     'ak8puppil1'           : ('ak8PUPPIJetsL1Fast',       ak8PUPPIJetsL1Fast),
     'ak9puppil1'           : ('ak9PUPPIJetsL1Fast',       ak9PUPPIJetsL1Fast),
     'ak10puppil1'          : ('ak10PUPPIJetsL1Fast',      ak10PUPPIJetsL1Fast),
-    'ak5calol2l3'          : ('ak5CaloJetsL2L3',           ak5CaloJetsL2L3),
     'ak4calol2l3'          : ('ak4CaloJetsL2L3',           ak4CaloJetsL2L3),
     'ak7calol2l3'          : ('ak7CaloJetsL2L3',           ak7CaloJetsL2L3),
     'kt4calol2l3'          : ('kt4CaloJetsL2L3',           kt4CaloJetsL2L3),
@@ -350,7 +369,6 @@ corrJetsDict = {
     'ak5caloHLTl2l3'       : ('ak5CaloHLTJetsL2L3',        ak5CaloHLTJetsL2L3),
 #    'ak5jptl2l3'           : ('ak5JPTJetsL2L3',            ak5JPTJetsL2L3),
 #    'ak7jptl2l3'           : ('ak7JPTJetsL2L3',            ak7JPTJetsL2L3),
-    'ak4pfl2l3'            : ('ak4PFJetsL2L3',             ak4PFJetsL2L3),
     'ak5pfl2l3'            : ('ak5PFJetsL2L3',             ak5PFJetsL2L3),
     'ak7pfl2l3'            : ('ak7PFJetsL2L3',             ak7PFJetsL2L3),
     'kt4pfl2l3'            : ('kt4PFJetsL2L3',             kt4PFJetsL2L3),
@@ -381,16 +399,12 @@ corrJetsDict = {
 #	'ak7jptl1l2l3'         : ('ak5JPTJetsL1FastL2L3',      ak7JPTJetsL1FastL2L3),
 #    'ak5jptl1offl2l3'      : ('ak5JPTJetsL1L2L3',          ak5JPTJetsL1L2L3),
 #    'ak7jptl1offl2l3'      : ('ak7JPTJetsL1L2L3',          ak7JPTJetsL1L2L3),
-    'ak4pfl1l2l3'          : ('ak4PFJetsL1FastL2L3',       ak4PFJetsL1FastL2L3),
-    'ak8pfl1l2l3'          : ('ak8PFJetsL1FastL2L3',       ak8PFJetsL1FastL2L3),
     'ak5pfl1l2l3'          : ('ak5PFJetsL1FastL2L3',       ak5PFJetsL1FastL2L3),
     'ak5pfl1offl2l3'       : ('ak5PFJetsL1L2L3',           ak5PFJetsL1L2L3),
     'ak7pfl1l2l3'          : ('ak7PFJetsL1FastL2L3',       ak7PFJetsL1FastL2L3),
     'ak7pfl1offl2l3'       : ('ak7PFJetsL1L2L3',           ak7PFJetsL1L2L3),
     'kt4pfl1l2l3'          : ('kt4PFJetsL1FastL2L3',       kt4PFJetsL1FastL2L3),
     'kt6pfl1l2l3'          : ('kt6PFJetsL1FastL2L3',       kt6PFJetsL1FastL2L3),
-    'ak4pfchsl1l2l3'       : ('ak4PFchsJetsL1FastL2L3',    ak4PFchsJetsL1FastL2L3),
-    'ak8pfchsl1l2l3'       : ('ak8PFchsJetsL1FastL2L3',    ak8PFchsJetsL1FastL2L3),
     'ak5pfchsl1l2l3'       : ('ak5PFchsJetsL1FastL2L3',    ak5PFchsJetsL1FastL2L3),
     'ak5pfchsl1offl2l3'    : ('ak5PFchsJetsL1L2L3',        ak5PFchsJetsL1L2L3),
     'ak7pfchsl1l2l3'       : ('ak7PFchsJetsL1FastL2L3',    ak7PFchsJetsL1FastL2L3),
@@ -466,21 +480,21 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('puppi')]
         type          = 'PUPPI'
         alg_size_type = alg_size + 'puppi'
-    elif (alg_size_type_corr.find('tau') > 0) :
-        alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('tau')]
-        type          = 'TAU'
-        if "tauHPSall" in alg_size_type_corr:
-            alg_size_type = alg_size + 'tauHPSall'
-        elif "tauTaNCall" in alg_size_type_corr:
-            alg_size_type = alg_size + 'tauTaNCall'
-        else:
-            for tauDiscriminator in tauDiscriminatorDict:
-                if tauDiscriminator in alg_size_type_corr: 
-                    alg_size_type = tauDiscriminator
-            for tauDecayMode in tauDecayModeDict:
-                if tauDecayModeDict[tauDecayMode] != "" and \
-                   tauDecayMode in alg_size_type_corr:
-                    alg_size_type += tauDecayMode
+#    elif (alg_size_type_corr.find('tau') > 0) :
+#        alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('tau')]
+#        type          = 'TAU'
+#        if "tauHPSall" in alg_size_type_corr:
+#            alg_size_type = alg_size + 'tauHPSall'
+#        elif "tauTaNCall" in alg_size_type_corr:
+#            alg_size_type = alg_size + 'tauTaNCall'
+#        else:
+#            for tauDiscriminator in tauDiscriminatorDict:
+#                if tauDiscriminator in alg_size_type_corr: 
+#                    alg_size_type = tauDiscriminator
+#            for tauDecayMode in tauDecayModeDict:
+#                if tauDecayModeDict[tauDecayMode] != "" and \
+#                   tauDecayMode in alg_size_type_corr:
+#                    alg_size_type += tauDecayMode
                     
     elif (alg_size_type_corr.find('jpt') > 0) :
         alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('jpt')]
@@ -559,24 +573,24 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
 
     ## add pu density calculation
     if not correctl1 and not correctl1off:
-        if type == 'CaloHLT': #added 02/15/2012
-            process.kt6CaloJets = kt6CaloJets 
-            process.kt6CaloJets.doRhoFastjet = True
-            process.kt6CaloJets.Ghost_EtaMax = Defaults.kt6CaloJetParameters.Ghost_EtaMax.value()
-            process.kt6CaloJets.Rho_EtaMax   = Defaults.kt6CaloJetParameters.Rho_EtaMax
-            sequence = cms.Sequence(process.kt6CaloJets * sequence)
-        elif type == 'PFchsHLT':
+#        if type == 'CaloHLT': #added 02/15/2012
+#            process.kt6CaloJets = kt6CaloJets 
+#            process.kt6CaloJets.doRhoFastjet = True
+#            process.kt6CaloJets.Ghost_EtaMax = Defaults.kt6CaloJetParameters.Ghost_EtaMax.value()
+#            process.kt6CaloJets.Rho_EtaMax   = Defaults.kt6CaloJetParameters.Rho_EtaMax
+#            sequence = cms.Sequence(process.kt6CaloJets * sequence)
+        if type == 'PFchsHLT':
             process.kt6PFJets = kt6PFJets
             process.kt6PFJets.doRhoFastjet = True
             process.kt6PFJets.Ghost_EtaMax = Defaults.kt6PFJetParameters.Ghost_EtaMax.value()
             process.kt6PFJets.Rho_EtaMax   = Defaults.kt6PFJetParameters.Rho_EtaMax
             sequence = cms.Sequence(process.kt6PFJets * sequence)
-        elif type == 'PFHLT':
-            process.kt6PFJets = kt6PFJets
-            process.kt6PFJets.doRhoFastjet = True
-            process.kt6PFJets.Ghost_EtaMax = Defaults.kt6PFJetParameters.Ghost_EtaMax.value()
-            process.kt6PFJets.Rho_EtaMax   = Defaults.kt6PFJetParameters.Rho_EtaMax
-            sequence = cms.Sequence(process.kt6PFJets * sequence)
+#        elif type == 'PFHLT':
+#            process.kt6PFJets = kt6PFJets
+#            process.kt6PFJets.doRhoFastjet = True
+#            process.kt6PFJets.Ghost_EtaMax = Defaults.kt6PFJetParameters.Ghost_EtaMax.value()
+#            process.kt6PFJets.Rho_EtaMax   = Defaults.kt6PFJetParameters.Rho_EtaMax
+#            sequence = cms.Sequence(process.kt6PFJets * sequence)
     elif correctl1 and not correctl1off:  #modified 10/10/2011
         if type == 'CaloHLT': #added 02/15/2012
             process.kt6CaloJets = kt6CaloJets 
@@ -617,7 +631,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
     
     ## reconstruct jets
     if type == 'JPT':
-        process.load('Configuration.Geometry.GeometryIdeal_cff')
+        process.load('Configuration.StandardSequences.Geometry_cff')
         process.load('Configuration.StandardSequences.MagneticField_cff')
 #        process.load('JetMETAnalysis.JetAnalyzers.JPTReconstruction_cff')
 #        if   alg_size == 'ak5':
@@ -629,7 +643,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         if correctl1 or correctl2l3:
             jetPtEta.src = corrLabel
     elif reco:
-        process.load('Configuration.Geometry.GeometryIdeal_cff')
+        process.load('Configuration.StandardSequences.Geometry_cff')
         process.load('Configuration.StandardSequences.MagneticField_cff')
         (recLabel, recJets) = recJetsDict[alg_size_type]
         if correctl1 or correctl2l3:
@@ -639,76 +653,70 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
             jetPtEta.src = recLabel
         if correctl1:
             recJets.doAreaFastjet = True #Should this be on for L1Offset
-            recJets.Rho_EtaMax    = cms.double(4.4) # FIX LATER
-        recJets.jetPtMin = cms.double(3.0)
+            recJets.Rho_EtaMax    = cms.double(5.0) # FIX LATER
         setattr(process, recLabel, recJets)
         sequence = cms.Sequence(recJets * sequence)
-        if type == 'PUPPI':
-            process.load('CommonTools.PileupAlgos.Puppi_cff')
-            #puppi.candName = cms.InputTag("particleFlow")
-            sequence = cms.Sequence(puppi * sequence)
+#        if type == 'PUPPI':
+#            process.load('Dummy.Puppi.Puppi_cff')
+#            sequence = cms.Sequence(puppi * sequence)
         if type == 'Track':
             process.load('JetMETAnalysis.JetAnalyzers.TrackJetReconstruction_cff')
             sequence = cms.Sequence(trackJetSequence * sequence)
-        elif type == 'TAU':
-            from PhysicsTools.PatAlgos.tools.helpers import massSearchReplaceParam
-            from RecoTauTag.TauTagTools.PFTauSelector_cfi import pfTauSelector
-            #process.load("TrackingTools/TransientTrack/TransientTrackBuilder_cfi")
-            process.load("RecoTauTag/Configuration/RecoPFTauTag_cff")
-
-            tauRecoSequence = cms.Sequence(process.recoTauCommonSequence)
-            if "HPS" in alg_size_type:
-                tauRecoSequence += process.recoTauClassicHPSSequence
-            elif "TaNC" in alg_size_type:
-                tauRecoSequence += process.recoTauHPSTancSequence
-
-            (tauIsoDiscriminator, tauDecayMode) = tauDiscriminators_and_DecayModes[alg_size_type]
-
-            if not (("HPSall" in alg_size_type or "TaNCall" in alg_size_type) and tauDecayMode == ""):
-                tauDiscriminators = []
-                if "HPS" in alg_size_type:
-                    tauDiscriminators = [
-                        "hpsPFTauDiscriminationByLooseElectronRejection",
-                        "hpsPFTauDiscriminationByTightMuonRejection",
-                        "hpsPFTauDiscriminationByDecayModeFinding",
-                    ]
+#        elif type == 'TAU':
+#            from PhysicsTools.PatAlgos.tools.helpers import massSearchReplaceParam
+#            from RecoTauTag.TauTagTools.PFTauSelector_cfi import pfTauSelector
+#            #process.load("TrackingTools/TransientTrack/TransientTrackBuilder_cfi")
+#            process.load("RecoTauTag/Configuration/RecoPFTauTag_cff")
+#
+#            tauRecoSequence = cms.Sequence(process.recoTauCommonSequence)
+#            if "HPS" in alg_size_type:
+#                tauRecoSequence += process.recoTauClassicHPSSequence
+#            elif "TaNC" in alg_size_type:
+#                tauRecoSequence += process.recoTauHPSTancSequence
+#
+#            (tauIsoDiscriminator, tauDecayMode) = tauDiscriminators_and_DecayModes[alg_size_type]
+#
+#            if not (("HPSall" in alg_size_type or "TaNCall" in alg_size_type) and tauDecayMode == ""):
+#                tauDiscriminators = []
+#                if "HPS" in alg_size_type:
+#                    tauDiscriminators = [
+#                        "hpsPFTauDiscriminationByLooseElectronRejection",
+#                        "hpsPFTauDiscriminationByTightMuonRejection",
+#                        "hpsPFTauDiscriminationByDecayModeFinding",
+#                    ]
 #                elif "TaNC" in alg_size_type:
 #                    tauDiscriminators = [
 #                        "hpsTancTausDiscriminationByLooseElectronRejection",
 #                        "hpsTancTausDiscriminationByTightMuonRejection",
 #                        "hpsTancTausDiscriminationByDecayModeSelection"
 #                    ]
-                tauDiscriminators.append(tauIsoDiscriminator)
+#                tauDiscriminators.append(tauIsoDiscriminator)
 #                                
-                tauDiscriminatorConfigs = []
-                for tauDiscriminator in tauDiscriminators:
-                    tauDiscriminatorConfigs.append(
-                        cms.PSet(
-                            discriminator = cms.InputTag(tauDiscriminator),
-                            selectionCut = cms.double(0.5)
-                        )
-                    )
+#                tauDiscriminatorConfigs = []
+#                for tauDiscriminator in tauDiscriminators:
+#                    tauDiscriminatorConfigs.append(
+#                        cms.PSet(
+#                            discriminator = cms.InputTag(tauDiscriminator),
+#                            selectionCut = cms.double(0.5)
+#                        )
+#                    )
 #                
-                selTauModule = pfTauSelector.clone(
-                    src = cms.InputTag(recLabel),
-                    discriminators = cms.VPSet(tauDiscriminatorConfigs)
-                )
-		# merge OneProg1Pi0 and OneProng2Pi0
-                if (tauDecayMode == "OneProng1Pi0" or tauDecayMode == "OneProng2Pi0"):
-                    setattr(selTauModule, "cut", cms.string("decayMode() == 1 || decayMode() == 2"))
-		else:
-                     if tauDecayMode != "*":
-                          #setattr(selTauModule, "cut", cms.string("isDecayMode('%s')" % tauDecayMode))
-                          setattr(selTauModule, "cut", cms.string("decayMode() == %s" % tauDecayMode))
-                selTauModuleName = alg_size_type + "Selected"
-                setattr(process, selTauModuleName, selTauModule)
-                tauRecoSequence += getattr(process, selTauModuleName)
+#                selTauModule = pfTauSelector.clone(
+#                    src = cms.InputTag(recLabel),
+#                    discriminators = cms.VPSet(tauDiscriminatorConfigs)
+#                )
+#                if tauDecayMode != "*":
+#                    #setattr(selTauModule, "cut", cms.string("isDecayMode('%s')" % tauDecayMode))
+#                    setattr(selTauModule, "cut", cms.string("decayMode() == %s" % tauDecayMode))
+#                selTauModuleName = alg_size_type + "Selected"
+#                setattr(process, selTauModuleName, selTauModule)
+#                tauRecoSequence += getattr(process, selTauModuleName)
 #                        
 #                jetPtEta.src = cms.InputTag(selTauModuleName)
 #            
-            process.load("PhysicsTools.JetMCAlgos.TauGenJets_cfi")
+#            process.load("PhysicsTools.JetMCAlgos.TauGenJets_cfi")
 #
-            sequence = cms.Sequence(tauRecoSequence * process.tauGenJets * sequence)
+#            sequence = cms.Sequence(tauRecoSequence * process.tauGenJets * sequence)
 
     # reconstruct genjets
     if reco:
@@ -726,20 +734,20 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         refPtEta.src = genJets.label()
         
     ## filter / map partons only if flavor information is requested
-    if Defaults.JetResponseParameters.doFlavor.value() :
-        setattr(process, 'partons', partons)
-        if reco: #added 02/29/2012
-            jetsTag = cms.InputTag(genJetsDict[alg_size_type][0])
-        else:
-            jetsTag = cms.InputTag(stdGenJetsDict[alg_size_type])
-        genToParton = cms.EDProducer('JetPartonMatcher',
-            jets = jetsTag,
-            #jets = cms.InputTag(genJets.label()), #commented out on 02/29/2012 for line above.
-            coneSizeToAssociate = cms.double(0.3),
-            partons = cms.InputTag('partons')
-        )
-        setattr(process, alg_size_type + 'GenToParton', genToParton)
-        sequence = cms.Sequence(sequence * partons * genToParton)
+#    if Defaults.JetResponseParameters.doFlavor.value() :
+#        setattr(process, 'partons', partons)
+#        if reco: #added 02/29/2012
+#            jetsTag = cms.InputTag(genJetsDict[alg_size_type][0])
+#        else:
+#            jetsTag = cms.InputTag(stdGenJetsDict[alg_size_type])
+#        genToParton = cms.EDProducer('JetPartonMatcher',
+#            jets = jetsTag,
+#            #jets = cms.InputTag(genJets.label()), #commented out on 02/29/2012 for line above.
+#            coneSizeToAssociate = cms.double(0.3),
+#            partons = cms.InputTag('partons')
+#        )
+#        setattr(process, alg_size_type + 'GenToParton', genToParton)
+#        sequence = cms.Sequence(sequence * partons * genToParton)
         
     ## reference to jet matching
     jetToRef = cms.EDProducer('MatchRecToGen',
@@ -763,12 +771,13 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
     jra = cms.EDAnalyzer(jraAnalyzer,
                          Defaults.JetResponseParameters,
                          srcRefToJetMap    = cms.InputTag(jetToRef.label(), 'gen2rec'),
+                         srcJetUnMatch     = cms.InputTag(jetToRef.label(), 'unmaprec'),
                          srcRef            = cms.InputTag(refPtEta.label()),
                          jecLabel          = cms.string(''),
                          srcRhos           = cms.InputTag(''),
                          srcRho            = cms.InputTag(''),
                          srcRhoHLT         = cms.InputTag(''),
-                         srcVtx            = cms.InputTag('offlinePrimaryVertices'),
+                         srcVtx            = cms.InputTag('hltPixelVertices'),
 						 srcJetToUncorJetMap = cms.InputTag(jetToUncorJet.label(), 'rec2gen')
                         )
     if doProducer:
@@ -786,27 +795,29 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
 
     if type == 'CaloHLT':
         jra.srcRho = ak4CaloL1Fastjet.srcRho #added 02/15/2012
-        jra.srcRhoHLT = ak5CaloHLTL1Fastjet.srcRho
+#        jra.srcRhoHLT = ak5CaloHLTL1Fastjet.srcRho
+        jra.srcRhoHLT = cms.InputTag('hltFixedGridRhoFastjetAllCalo')
     elif type == 'Calo':
         jra.srcRho = ak4CaloL1Fastjet.srcRho #added 10/14/2011
     elif type == 'PFchs':
         process.kt6PFchsJetsRhos = kt6PFJets.clone(src = 'pfNoPileUpJME',
                                                    doFastJetNonUniform = cms.bool(True),
-                                                   puCenters = cms.vdouble(-5,-4,-3,-2,-1,0,1,2,3,4,5), 
+                                                   puCenters = cms.vdouble(5,-4,-3,-2,-1,0,1,2,3,4,5), 
                                                    puWidth = cms.double(.8),
                                                    nExclude = cms.uint32(2))
         sequence = cms.Sequence(process.kt6PFchsJetsRhos * sequence)
         jra.srcRhos = cms.InputTag("kt6PFchsJetsRhos", "rhos")
-        jra.srcRho = cms.InputTag("fixedGridRhoFastjetAll")#ak4PFchsL1Fastjet.srcRho #added 10/14/2011
+        jra.srcRho = ak4PFchsL1Fastjet.srcRho #added 10/14/2011
     elif type == 'PFHLT':
         jra.srcRho = ak4PFL1Fastjet.srcRho #added 02/15/2012
-        jra.srcRhoHLT = ak5PFHLTL1Fastjet.srcRho
+#        jra.srcRhoHLT = ak5PFHLTL1Fastjet.srcRho
+        jra.srcRhoHLT = cms.InputTag('hltFixedGridRhoFastjetAll')
     elif type == 'PFchsHLT':
         jra.srcRho = ak4PFchsL1Fastjet.srcRho #added 02/15/2012
         jra.srcRhoHLT = ak5PFchsHLTL1Fastjet.srcRho
     elif type == 'PF':
         process.kt6PFJetsRhos = kt6PFJets.clone(doFastJetNonUniform = cms.bool(True),
-                                                puCenters = cms.vdouble(-5,-4,-3,-2,-1,0,1,2,3,4,5),
+                                                puCenters = cms.vdouble(5,-4,-3,-2,-1,0,1,2,3,4,5),
                                                 puWidth = cms.double(.8), 
                                                 nExclude = cms.uint32(2))
         sequence = cms.Sequence(process.kt6PFJetsRhos * sequence)
@@ -814,19 +825,19 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         jra.srcRho = ak4PFL1Fastjet.srcRho #added 10/14/2011
     elif type == 'PUPPI':
         process.kt6PFJetsRhos = kt6PFJets.clone(doFastJetNonUniform = cms.bool(True),
-                                                puCenters = cms.vdouble(-5,-4,-3,-2,-1,0,1,2,3,4,5),
+                                                puCenters = cms.vdouble(5,-4,-3,-2,-1,0,1,2,3,4,5),
                                                 puWidth = cms.double(.8), nExclude = cms.uint32(2))
         sequence = cms.Sequence(process.kt6PFJetsRhos * sequence)
         jra.srcRhos = cms.InputTag("kt6PFJetsRhos", "rhos")
-        jra.srcRho = cms.InputTag("fixedGridRhoFastjetAll")#ak4PFchsL1Fastjet.srcRho
+        jra.srcRho = ak5PFchsL1Fastjet.srcRho
     elif type == 'JPT':
         jra.srcRho = ak4CaloL1Fastjet.srcRho
 
     if correctl1 or correctl2l3:
         jra.jecLabel = corrJets.correctors[0]
 
-    if Defaults.JetResponseParameters.doFlavor.value():
-		jra.srcRefToPartonMap = cms.InputTag(genToParton.label())
+#    if Defaults.JetResponseParameters.doFlavor.value():
+#		jra.srcRefToPartonMap = cms.InputTag(genToParton.label())
 
     setattr(process,alg_size_type_corr,jra)
     sequence = cms.Sequence(sequence * jra)

@@ -23,7 +23,7 @@
 #include <TF1.h>
 #include <TText.h>
 #include <TLine.h>
-#include <TROOT.h>
+
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -49,6 +49,7 @@ string get_range(const ObjectLoader<TGraphErrors>& gl,
         bool  addFixedVars=true,string refpt="");
 string get_legend_label_from_alg(const string& alg);
 string get_legend_label_from_input(const string& input);
+string get_legend_label_from_input_and_alg(const string& input,const string& alg);
 void   set_graph_style(TGraphErrors* g,unsigned int ngraph,bool nocolor,
         const vector<unsigned int>& vcolors,
         const vector<unsigned int>& vmarkers,
@@ -108,9 +109,9 @@ int main(int argc,char** argv)
     bool           leginplot = cl.getValue<bool>   ("leginplot",           true);
 
     bool           drawlegend= cl.getValue<bool>   ("drawlegend",          true);
-    double         legx      = cl.getValue <double>("legx",                0.55);
+    double         legx      = cl.getValue <double>("legx",                0.35);
     double         legy      = cl.getValue <double>("legy",                0.9);
-    double         legw      = cl.getValue <double>("legw",                0.35);
+    double         legw      = cl.getValue <double>("legw",                0.55);
 
     string         xtitle    = cl.getValue<string> ("xtitle",                "");
     string         ytitle    = cl.getValue<string> ("ytitle",                "");
@@ -134,7 +135,7 @@ int main(int argc,char** argv)
     string         prefix    = cl.getValue<string> ("prefix",                "");
     string         suffix    = cl.getValue<string> ("suffix",                "");
     string         opath     = cl.getValue<string> ("opath",                 "");
-    vector<string> formats   = cl.getVector<string>("formats",            "pdf");
+    vector<string> formats   = cl.getVector<string>("formats",            "png");
     bool           batch     = cl.getValue<bool>   ("batch",               true);
     bool           latex     = cl.getValue<bool>   ("latex",              false);
     bool           latexcndf = cl.getValue<bool>   ("latexcndf",           true);
@@ -156,8 +157,15 @@ int main(int argc,char** argv)
     cl.print();
 
     // sanity check
-    if ((inputs.size()>1&&algs.size()>1)||
-            (algs.size()>1&&variables.size()>1)||
+    /*  if ((inputs.size()>1&&algs.size()>1)||
+        (algs.size()>1&&variables.size()>1)||
+        (inputs.size()>1&&variables.size()>1)) {
+        cout<<"Provide more than one value only for one of inputs/algs/variables!"
+        <<endl;
+        return 0;
+        }*/
+
+    if ((algs.size()>1&&variables.size()>1)||
             (inputs.size()>1&&variables.size()>1)) {
         cout<<"Provide more than one value only for one of inputs/algs/variables!"
             <<endl;
@@ -200,7 +208,7 @@ int main(int argc,char** argv)
     }
 
     // determine legend labels
-    if (algs.size()>1) {
+    if (algs.size()>1 && inputs.size()<1) {
         if (leglabels.size()>0) {
             if (leglabels.size()!=algs.size()) {
                 cout<<"ERROR: leglabels / algs mismatch!"<<endl;
@@ -212,7 +220,7 @@ int main(int argc,char** argv)
                 leglabels.push_back(get_legend_label_from_alg(algs[ialg]));
         }
     }
-    else if (inputs.size()>1) {
+    else if (inputs.size()>1 && algs.size()<1) {
         if (leglabels.size()>0) {
             if (leglabels.size()!=inputs.size()) {
                 cout<<"ERROR: leglabels / inputs mismatch!"<<endl;
@@ -232,7 +240,10 @@ int main(int argc,char** argv)
         }
     }
     else {
-        leglabels.push_back(get_legend_label_from_alg(algs[0]));
+        for (unsigned int iinput=0;iinput<inputs.size();iinput++){
+            for (unsigned int ialg=0;ialg<algs.size();ialg++)
+                leglabels.push_back(get_legend_label_from_input_and_alg(inputs[iinput],algs[ialg]));
+        }
     }
 
     TMultiGraph*          mg(0);
@@ -302,8 +313,9 @@ int main(int argc,char** argv)
 
                     //cout<<"indices back: "<<indices.back()<<endl;
 
-                    int   ilabel=(inputs.size()>1) ? 
-                        iinput : (algs.size()>1) ? 
+                    int   ilabel= (inputs.size()>1 && algs.size()>1) ?
+                        (iinput*algs.size()+ialg) : (inputs.size()>1 && algs.size()<1) ? 
+                        iinput : (algs.size()>1 && inputs.size()<1) ? 
                         ialg   : (variables.size()>1) ? 
                         ivar   : (indices.size()>0) ? indices.back() : 0;
 
@@ -436,27 +448,6 @@ int main(int argc,char** argv)
         leg->SetFillColor(10);
         leg->SetBorderSize(0);
         if (drawlegend) leg->Draw();
-
-        TLatex *beautify1 = new TLatex(0.25,0.86,"2015, 13TeV");
-        TLatex *beautify2 = new TLatex(0.25,0.81,"CMS");
-        TLatex *beautify3 = new TLatex(0.25,0.76,"Simulation");
-
-        beautify1->SetNDC();
-        beautify2->SetNDC();
-        beautify3->SetNDC();
-
-        beautify1->SetTextFont(22);
-        beautify2->SetTextFont(62);
-        beautify3->SetTextFont(52);
-
-        beautify1->SetTextSize(0.04);
-        beautify2->SetTextSize(0.04);
-        beautify3->SetTextSize(0.04);
-
-        beautify1->Draw("same");
-        beautify2->Draw("same");
-        beautify3->Draw("same");
-
         if (drawrange) draw_range(ranges.front(),residual);
         if (tdrautobins) tdrlabels.push_back(ranges.front());
         draw_labels(tdrlabels,leginplot,tdrautobins);
@@ -506,7 +497,7 @@ int main(int argc,char** argv)
             if (tdrautobins) tdrlabels.pop_back();
             set_axis_titles(graphs[i]->GetHistogram(),quantity,ymin,ymax,xtitle,ytitle,refpt);
 
-            if (algs.size()>1||inputs.size()>1) {
+            if (algs.size()>1 || inputs.size()>1) {
                 TLatex tex;
                 tex.SetNDC();
                 tex.SetTextFont(42);
@@ -994,7 +985,6 @@ string get_range(const ObjectLoader<TGraphErrors>& gl,
             if (varname=="RelLepPt") { varname = "p_{T}^{l}/p_{T}^{jet}"; unit =""; }
             if (varname=="ThreshPt") { varname = "p_{T,raw}^{3rd}", unit = " GeV"; 
                 threshold = true; }
-            if (varname=="TrueNPU")   { varname = "TrueNPU";    unit =     ""; }
 
                 if (threshold) ssrange<<varname<<" < "<<varmax<<unit<<"    ";
                 else ssrange<<varmin<<" < "<<varname<<" < "<<varmax<<unit<<"    ";
@@ -1003,6 +993,46 @@ string get_range(const ObjectLoader<TGraphErrors>& gl,
     return ssrange.str();
 }
 
+//______________________________________________________________________________
+string get_legend_label_from_input_and_alg(const string& input,const string& alg)
+{
+    string label;
+    string tmp1(input);
+    size_t pos=tmp1.find(':');
+    if (pos!=string::npos) {
+        label = tmp1.substr(pos+1);
+    }
+    else {
+        pos=tmp1.find_last_of('/');
+        if (pos!=string::npos) tmp1=tmp1.substr(pos+1);
+        pos=tmp1.find(".root");
+        if (pos!=string::npos) tmp1=tmp1.substr(0,pos);
+        pos=tmp1.find('_');
+        label=tmp1.substr(0,pos);
+    }
+
+    string tmp2(alg);
+    if      (alg.find("kt")==0) { label += "k_{T}, R=";      tmp2 = tmp2.substr(2); }
+    else if (alg.find("sc")==0) { label += "SISCone, R=";    tmp2 = tmp2.substr(2); }
+    else if (alg.find("ic")==0) { label += "ItCone, R=";     tmp2 = tmp2.substr(2); }
+    else if (alg.find("mc")==0) { label += "MidCone, R=";    tmp2 = tmp2.substr(2); }
+    else if (alg.find("ca")==0) { label += "Cam/Aachen, R="; tmp2 = tmp2.substr(2); }
+    else if (alg.find("ak")==0) { label += "Anti k_{T}, R="; tmp2 = tmp2.substr(2); }
+    else if (alg.find("gk")==0) { label += "Gen k_{T}, R=";  tmp2 = tmp2.substr(2); }
+    else return alg;
+
+    string reco[10] = { "gen", "caloHLT", "pfchsHLT", "pfHLTNoPU", "pfHLT", "calo", "pfchs", "pf", "trk", "jpt" };
+    string RECO[10] = { "(Gen)","(CaloHLT)","(PFlowNPHLT)","(PFlowHLTNoPU)","(PFlowHLT)","(Calo)","(PFlowNP)","(PFlow)", "(Tracks)", "(JPT)" };
+
+    pos=string::npos; int ireco=-1;
+    while (pos==string::npos&&ireco<8) { pos = tmp2.find(reco[++ireco]); }
+    if (pos==string::npos) return alg;
+    double jet_size; stringstream ss1; ss1<<tmp2.substr(0,pos); ss1>>jet_size;
+    jet_size/=10.0;  stringstream ss2; ss2<<jet_size;
+    label += ss2.str() + " " + RECO[ireco];
+
+    return label;
+}
 
 //______________________________________________________________________________
 string get_legend_label_from_alg(const string& alg)
@@ -1089,7 +1119,7 @@ void set_graph_style(TGraphErrors* g, unsigned int ngraph,bool nocolor,
     Float_t msize (1.5);
 
     if (ngraph<vcolors.size())  color   = vcolors[ngraph];
-    //  if (ngraph<vmarkers.size()) markers = vmarkers[ngraph];
+    //if (ngraph<vmarkers.size()) markers = vmarkers[ngraph];
     if (ngraph<vsizes.size())   msize   = vsizes[ngraph];
 
     if (nocolor) color = kBlack;
@@ -1106,7 +1136,7 @@ void set_graph_style(TGraphErrors* g, unsigned int ngraph,bool nocolor,
         f->SetLineColor(color);
         f->SetLineStyle(line);
         if (ngraph<vlstyles.size()) f->SetLineStyle(vlstyles[ngraph]);
-        f->SetLineWidth(0);
+        f->SetLineWidth(3);
         if (ngraph<vlsizes.size()) f->SetLineWidth((Width_t)vlsizes[ngraph]);
     }
 
