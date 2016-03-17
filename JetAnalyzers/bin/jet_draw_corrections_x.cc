@@ -15,6 +15,7 @@
 #include "JetMETAnalysis/JetUtilities/interface/Style.h"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 #include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
+#include "JetMETAnalysis/JetUtilities/interface/Variogram.hh"
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
 
@@ -71,7 +72,7 @@ TCanvas * getCorrectionVsPtComparisonCanvasTDR(vector<TString>& algs, vector<pai
 
 TCanvas * getCorrectionMap(TString algo, FactorizedJetCorrector * jetCorr, TString suffix, double CMEnergy);
 
-TCanvas * drawATLASresponse(TString algo, FactorizedJetCorrector * jetCorr, TString suffix);
+TCanvas * draw_response(TString algo, FactorizedJetCorrector * jetCorr, TString suffix, bool doATLAS=false);
 
 vector<Int_t> getColors();
 
@@ -220,11 +221,18 @@ void analyzeAlgo(TString algo, CommandLine & cl){
   ovp->Write();
 
   // get the canvas of response vs pt in the ATLAS style, write and save to file
-  TCanvas * oATLAS = drawATLASresponse(algo, jetCorr, suffix);
+  TCanvas * oATLAS = draw_response(algo, jetCorr, suffix, true);
   for(unsigned int of=0; of<outputFormat.size(); of++) {
      oATLAS->SaveAs(outputDir+string(oATLAS->GetName())+outputFormat[of]);
   }
   oATLAS->Write();
+
+  // get the canvas of response vs pt in the CMS style, write and save to file
+  TCanvas * oCMS = draw_response(algo, jetCorr, suffix, false);
+  for(unsigned int of=0; of<outputFormat.size(); of++) {
+     oCMS->SaveAs(outputDir+string(oCMS->GetName())+outputFormat[of]);
+  }
+  oCMS->Write();
 
 }//analyzeAlgo
 
@@ -909,34 +917,35 @@ TCanvas * getCorrectionVsPtComparisonCanvasTDR(vector<TString>& algs, vector<pai
 //---------------------------------------------------------------------
 TCanvas * getCorrectionMap(TString algo, FactorizedJetCorrector * jetCorr,
                            TString suffix, double CMEnergy) {
+   //gStyle->SetOptTitle(0);
+   //gStyle->SetOptStat(0);
+
+   TString hstr = "CorrMap";
+   TH2D * cc = new TH2D(hstr,hstr,NPtBins,vpt,NETA,veta);
 
    TString ss("CorrectionMap_Overview_TDR");
    ss += suffix;
+   TH1D* frame = new TH1D();
+   frame->GetXaxis()->SetLimits(1,10000);
+   frame->GetXaxis()->SetTitle("p_{T}^{raw}");
+   frame->GetYaxis()->SetRangeUser(cc->GetYaxis()->GetXmin(),cc->GetYaxis()->GetXmax());
+   frame->GetYaxis()->SetTitle("#eta");
+   TCanvas* ove = tdrCanvas(ss,frame,14,0,true);
+   ove->cd(0);
+   ove->SetLogx();
+   ove->SetLeftMargin(ove->GetLeftMargin()*0.75);
+   ove->SetRightMargin(ove->GetRightMargin()*2.5);
+   frame->GetYaxis()->SetTitleOffset(0.8);
+
+/*
    TCanvas *ove = new TCanvas(ss,ss,900,900);
    ove->cd();
    ove->SetLogx();
-
    ove->SetLeftMargin(0.145089);
    ove->SetRightMargin(0.132812);
    ove->SetTopMargin(0.0860092);
    ove->SetBottomMargin(0.178899);
-
-   gStyle->SetOptTitle(0);
-   gStyle->SetOptStat(0);
-
-   //Create a pave indicating the algorithm name
-   TString algNameLong = JetInfo::get_legend_title(algo);
-
-   TPaveText * pave = new TPaveText(0.295,0.93,0.519,0.99,"NDC tr");
-   pave->AddText(algNameLong);
-   pave->SetFillColor(0);
-   pave->SetShadowColor(0);
-   pave->SetTextFont(42);
-   pave->SetTextSize(0.05);
-
-   TString hstr = "CorrMap";
-
-   TH2D * cc = new TH2D(hstr,hstr,NPtBins,vpt,NETA,veta);
+*/
 
    // loop over all pads
    for (unsigned int b = 0; b < NETA; b++){
@@ -970,8 +979,6 @@ TCanvas * getCorrectionMap(TString algo, FactorizedJetCorrector * jetCorr,
 
   }//for loop
 
-   //pave->Draw("same");
-
    cc->GetYaxis()->SetTitle("#eta");
    cc->GetXaxis()->SetRangeUser(1,10000);
    cc->GetXaxis()->SetTitle("p_{T}^{raw}");
@@ -987,11 +994,54 @@ TCanvas * getCorrectionMap(TString algo, FactorizedJetCorrector * jetCorr,
    ove->Update();
    cc->SetContour(20);
    gStyle->SetPalette(55);
-   cc->Draw("colz");
-   //leg->Draw("same");
-   pave->Draw("same");
-   //CMS_lumi(ove,14,11);
-   //cmsPrelim();
+   tdrDraw(cc,"colz",kNone,kNone,kNone,kNone);
+   fixOverlay();
+   //cc->Draw("colz");
+
+   // Draw a subpad with a semi-variogram
+   map<string,double> *variogram_params = new map<string,double>();
+   Variogram v(cc);
+   v.dist_to_vector_from_squareform(false);
+   int tolerance = 1;
+   vector<int> lags(30);
+   int val = 0;
+   for(unsigned int i=0; i<lags.size(); i++, val+=tolerance*1) {
+      lags[i] = val;
+   }
+   v.getSemivariogram(lags,1,true);
+   TCanvas* subcan = v.plotSemivariogram(lags,1,"spherical:6",true,variogram_params);
+   ove->cd();
+   TPad *subpad = new TPad("subpad", "subpad", 0.69, 0.18, 0.85, 0.34);
+   subpad->SetBottomMargin(0);
+   subpad->SetTopMargin(0);
+   subpad->SetLeftMargin(0);
+   subpad->SetRightMargin(0);
+   //subpad->SetFillColor(kRed);
+   subpad->SetFillStyle(1001);
+   //subpad->SetFillStyle(4000);
+   gStyle->SetPalette(55);
+   subpad->Draw("same");
+   subpad->cd();
+   subcan->DrawClonePad();
+
+   ove->cd();
+   //Create a legend indicating the algorithm name
+   TString algNameLong = JetInfo::get_legend_title(algo);
+   TLegend* ll = tdrLeg(0.63,0.87,0.87,0.90);
+   ll->SetTextFont(42);
+   ll->SetTextSize(0.020);
+   ll->SetHeader(algNameLong);
+   ll->Draw("same");
+
+   TLegend* l = tdrLeg(0.63,0.73,0.87,0.87);
+   l->SetTextFont(42);
+   l->SetTextSize(0.020);
+   l->SetHeader("Variogram Parameters:");
+   l->AddEntry((TObject*)0,"Model = Spherical","");
+   l->AddEntry((TObject*)0,Form("%s = %.3f",variogram_params->find("Smp. Var.")->first.c_str(),variogram_params->find("Smp. Var.")->second),"");
+   l->AddEntry((TObject*)0,Form("%s = %.3f",variogram_params->find("a (model)")->first.c_str(),variogram_params->find("a (model)")->second),"");
+   l->AddEntry((TObject*)0,Form("%s = %.3f",variogram_params->find("sill (model)")->first.c_str(),variogram_params->find("sill (model)")->second),"");
+   l->Draw("same");
 
    // return the canvas
    return ove;
@@ -999,7 +1049,7 @@ TCanvas * getCorrectionMap(TString algo, FactorizedJetCorrector * jetCorr,
 }//getCorrectionMap()
 
 //---------------------------------------------------------------------
-TCanvas * drawATLASresponse(TString algo, FactorizedJetCorrector * jetCorr, TString suffix) {
+TCanvas * draw_response(TString algo, FactorizedJetCorrector * jetCorr, TString suffix, bool doATLAS) {
   if (!_jec) {
     _jec = jetCorr;
   }
@@ -1008,24 +1058,32 @@ TCanvas * drawATLASresponse(TString algo, FactorizedJetCorrector * jetCorr, TStr
     _jecpt = new TF1("jecpt",fJECPt,0,4000,3);
   }
 
-  double ergs[] = {30, 60, 110, 400, 2000};
-  const int ne = sizeof(ergs)/sizeof(ergs[0]);
+  // doATLAS:
+  // If true, these values represent energies
+  // If false, these values represent pt
+  double vars[] = {30, 60, 110, 400, 2000};
+  const int nvar = sizeof(vars)/sizeof(vars[0]);
   const int neta = 48;//52;
   const int jeta = TMath::Pi()*0.5*0.5;
   const int mu = 0;
 
-  TGraph *gs[ne];
-  for (int ie = 0; ie != ne; ++ie) {
+  TGraph *gs[nvar];
+  for (int ivar = 0; ivar != nvar; ++ivar) {
 
-    double energy = ergs[ie];
+    double independent_variable = vars[ivar];
 
-    TGraph *g = new TGraph(0); gs[ie] = g;
+    TGraph *g = new TGraph(0); gs[ivar] = g;
     for (int ieta = 0; ieta != neta; ++ieta) {
       
       double eta = (ieta+0.5)*0.1;
-      double pt = energy / cosh(eta);
-      if (pt > 10.) {
-        double jes = getResp(_jecpt, pt, eta, jeta, mu);
+      double dependent_variable;
+      if(doATLAS) dependent_variable = independent_variable / cosh(eta);
+      else dependent_variable = independent_variable * cosh(eta);
+      if ((doATLAS && dependent_variable > 10. && independent_variable < 4000.) ||
+          (independent_variable > 10. && dependent_variable < 4000.)) {
+        double jes;
+        if(doATLAS) jes = getResp(_jecpt, dependent_variable, eta, jeta, mu);
+        else jes = getResp(_jecpt, independent_variable, eta, jeta, mu);
         int n = g->GetN();
         g->SetPoint(n, eta, jes);
       }
@@ -1035,36 +1093,43 @@ TCanvas * drawATLASresponse(TString algo, FactorizedJetCorrector * jetCorr, TStr
   // Draw results
   //TCanvas *c1 = new TCanvas("c1","c1",600,600);
   //TCanvas *c1 = new TCanvas("c1","c1",800,600); // ATLAS shape
-  TH1D *h = new TH1D("h",";Jet |#eta|;Jet response at PF scale",40,0,4.8);
+  TH1D *h;
+  if(doATLAS) h = new TH1D("h",";Jet |#eta|;Jet response at PF scale",40,0,4.8);
+  else h = new TH1D("h",";Jet |#eta|;Simulated jet response",40,0,4.8);
   h->SetMaximum(1.25);
   h->SetMinimum(0.5);
   //h->Draw("AXIS");
-  TString ss("ATLASresponse");
+  TString ss;
+  if(doATLAS) ss+="ATLASresponse";
+  else ss+="CMSresponse";
   ss += suffix;
-  TCanvas *c1 = tdrCanvas(ss.Data(),h,2,0);
+  TCanvas *c1 = tdrCanvas(ss.Data(),h,2,0,doATLAS ? kRectangular : kSquare);
 
   TLegend *leg1 = tdrLeg(0.25,0.25,0.55,0.30);
   TLegend *leg2 = tdrLeg(0.25,0.20,0.55,0.25);
   TLegend *leg3 = tdrLeg(0.25,0.15,0.55,0.20);
   TLegend *leg4 = tdrLeg(0.55,0.25,0.85,0.30);
   TLegend *leg5 = tdrLeg(0.55,0.20,0.85,0.25);
-  TLegend *legs[ne] = {leg1, leg2, leg3, leg4, leg5};
+  TLegend *legs[nvar] = {leg1, leg2, leg3, leg4, leg5};
 
   int colors[] = {kGreen+2, kBlack, kOrange+1, kBlue, kRed+1};
   int markers[] = {kFullCircle, kOpenCircle, kFullSquare, kOpenSquare,
        kFullTriangleUp};
 
-  for (int ie = 0; ie != ne; ++ie) {
+  for (int ivar = 0; ivar != nvar; ++ivar) {
     
-    TGraph *g = gs[ie];
-    g->SetMarkerColor(colors[ie]);
-    g->SetMarkerStyle(markers[ie]);
+    TGraph *g = gs[ivar];
+    g->SetMarkerColor(colors[ivar]);
+    g->SetMarkerStyle(markers[ivar]);
     g->Draw("SAMEP");
 
     //TLegend *leg = (ie<3 ? leg1 : leg2);
-    TLegend *leg = legs[ie];
-    leg->SetTextColor(colors[ie]);
-    leg->AddEntry(g, Form("E = %1.0f GeV",ergs[ie]), "P");
+    TLegend *leg = legs[ivar];
+    leg->SetTextColor(colors[ivar]);
+    TString var_name;
+    if(doATLAS) var_name = "E";
+    else var_name = "p_{T}";
+    leg->AddEntry(g, Form("%s = %1.0f GeV",var_name.Data(),vars[ivar]), "P");
   }
 
 
