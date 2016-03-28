@@ -646,13 +646,15 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
    //=========================================================
 
    // GENERAL HISTOS, no cuts.
-   histograms["g_nj"]        ->Fill(tpu->nref,tnopu->nref);              // njet distributions
-   histograms["g_npv"]       ->Fill(tpu->npv,tnopu->npv);                // npv dist.
-   histograms["g_rho"]       ->Fill(tpu->rho,tnopu->rho);                // rho dist
-   histograms["g_pthat"]     ->Fill(tpu->pthat,tnopu->pthat);           // pthat distributions
-   histograms["g_deltaNpv"]  ->Fill(tpu->npv,tpu->npv - tnopu->npv);     // Does the number of NPV change?
-   histograms["m_deltaPthat"]->Fill(tpu->pthat,tpu->pthat-tnopu->pthat); // pthat sanity check
-   
+   if(!reduceHistograms) {
+      histograms["g_nj"]        ->Fill(tpu->nref,tnopu->nref);              // njet distributions
+      histograms["g_npv"]       ->Fill(tpu->npv,tnopu->npv);                // npv dist.
+      histograms["g_rho"]       ->Fill(tpu->rho,tnopu->rho);                // rho dist
+      histograms["g_pthat"]     ->Fill(tpu->pthat,tnopu->pthat);           // pthat distributions
+      histograms["g_deltaNpv"]  ->Fill(tpu->npv,tpu->npv - tnopu->npv);     // Does the number of NPV change?
+      histograms["m_deltaPthat"]->Fill(tpu->pthat,tpu->pthat-tnopu->pthat); // pthat sanity check
+   }
+
    if (tnopu->npv!=1) {
       noPUNpvGTOneEventCounter++;
       if(noPUNpvGTOneEventCounter==0) {
