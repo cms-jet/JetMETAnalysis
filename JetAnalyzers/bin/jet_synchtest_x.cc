@@ -645,70 +645,14 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
    //              FILLING OF HISTOS START HERE
    //=========================================================
 
-  // GENERAL HISTOS, no cuts.
-  histograms["g_nj"]        ->Fill(tpu->nref,tnopu->nref);              // njet distributions
-  histograms["g_npv"]       ->Fill(tpu->npv,tnopu->npv);                // npv dist.
-  histograms["g_rho"]       ->Fill(tpu->rho,tnopu->rho);                // rho dist
-  histograms["g_pthat"]     ->Fill(tpu->pthat,tnopu->pthat);           // pthat distributions
-  histograms["g_deltaNpv"]  ->Fill(tpu->npv,tpu->npv - tnopu->npv);     // Does the number of NPV change?
-  histograms["m_deltaPthat"]->Fill(tpu->pthat,tpu->pthat-tnopu->pthat); // pthat sanity check
-
-  if (tnopu->npv!=1) {
-    noPUNpvGTOneEventCounter++;
-    if(noPUNpvGTOneEventCounter==0) {
-       cout << "\tWARNING::The no PU sample has more than 1 PV." << endl
-            << "\tSome events will be skipped (including this one)." << endl;
-    }
-    return false;
-  }
-
-  int iIT        = tpu->itIndex();
-  int inpv       = JetInfo::getBinIndex(tpu->npv,NBinsNpvRhoNpu,npvRhoNpuBinWidth);
-  int inpv_low   = inpv*npvRhoNpuBinWidth;
-  int inpv_high  = inpv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
-  int irho       = JetInfo::getBinIndex(tpu->rho,NBinsNpvRhoNpu,npvRhoNpuBinWidth);
-  int irho_low   = irho*npvRhoNpuBinWidth;
-  int irho_high  = irho*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
-  int itnpu      = JetInfo::getBinIndex(tpu->tnpus->at(iIT),NBinsNpvRhoNpu,npvRhoNpuBinWidth);
-  int itnpu_low  = itnpu*npvRhoNpuBinWidth;
-  int itnpu_high = itnpu*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
-  int inpu       = JetInfo::getBinIndex(tpu->npus->at(iIT),NBinsNpvRhoNpu,npvRhoNpuBinWidth);
-  int inpu_low   = inpu*npvRhoNpuBinWidth;
-  int inpu_high  = inpu*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
-  TString hname = "";
-    
-  //
-  // Applying JEC from textfile
-  //
-  vector<double> tpu_jtpt_raw;
-  if (JetCorrector) {
-    for (int j1 = 0; j1 < tpu->nref; j1++) {
-      JetCorrector->setJetEta(tpu->jteta->at(j1));
-      JetCorrector->setJetPt(tpu->jtpt->at(j1));
-      JetCorrector->setJetA(tpu->jtarea->at(j1));
-      JetCorrector->setRho(tpu->rho);
-      double correction = JetCorrector->getCorrection();
-      //cout <<correction<<" "<<tpu->jtpt->at(j1);
-      tpu_jtpt_raw.push_back(tpu->jtpt->at(j1));
-      tpu->jtpt->at(j1) *= correction;
-      //cout <<" "<<tpu->jtpt->at(j1)<<endl;
-    }
-  }
-
-  double avg_jtpt_all       = 0;
-  double avg_jtpt_matched   = 0;
-  double avg_jtpt_unmatched = 0;
-
    // GENERAL HISTOS, no cuts.
-   if(!reduceHistograms) {
-      histograms["g_nj"]        ->Fill(tpu->nref,tnopu->nref);              // njet distributions
-      histograms["g_npv"]       ->Fill(tpu->npv,tnopu->npv);                // npv dist.
-      histograms["g_rho"]       ->Fill(tpu->rho,tnopu->rho);                // rho dist
-      histograms["g_pthat"]     ->Fill(tpu->pthat,tnopu->pthat);           // pthat distributions
-      histograms["g_deltaNpv"]  ->Fill(tpu->npv,tpu->npv - tnopu->npv);     // Does the number of NPV change?
-      histograms["m_deltaPthat"]->Fill(tpu->pthat,tpu->pthat-tnopu->pthat); // pthat sanity check
-   }
-
+   histograms["g_nj"]        ->Fill(tpu->nref,tnopu->nref);              // njet distributions
+   histograms["g_npv"]       ->Fill(tpu->npv,tnopu->npv);                // npv dist.
+   histograms["g_rho"]       ->Fill(tpu->rho,tnopu->rho);                // rho dist
+   histograms["g_pthat"]     ->Fill(tpu->pthat,tnopu->pthat);           // pthat distributions
+   histograms["g_deltaNpv"]  ->Fill(tpu->npv,tpu->npv - tnopu->npv);     // Does the number of NPV change?
+   histograms["m_deltaPthat"]->Fill(tpu->pthat,tpu->pthat-tnopu->pthat); // pthat sanity check
+   
    if (tnopu->npv!=1) {
       noPUNpvGTOneEventCounter++;
       if(noPUNpvGTOneEventCounter==0) {
@@ -717,7 +661,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
       }
       return false;
    }
-
+   
    int iIT        = tpu->itIndex();
    int inpv       = JetInfo::getBinIndex(tpu->npv,NBinsNpvRhoNpu,npvRhoNpuBinWidth);
    int inpv_low   = inpv*npvRhoNpuBinWidth;
@@ -732,25 +676,25 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
    int inpu_low   = inpu*npvRhoNpuBinWidth;
    int inpu_high  = inpu*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
    TString hname = "";
-    
+   
    //
    // Applying JEC from textfile
    //
    vector<double> tpu_jtpt_raw;
    if (JetCorrector) {
-     for (int j1 = 0; j1 < tpu->nref; j1++) {
-       JetCorrector->setJetEta(tpu->jteta->at(j1));
-       JetCorrector->setJetPt(tpu->jtpt->at(j1));
-       JetCorrector->setJetA(tpu->jtarea->at(j1));
-       JetCorrector->setRho(tpu->rho);
-       double correction = JetCorrector->getCorrection();
-       //cout <<correction<<" "<<tpu->jtpt->at(j1);
-       tpu_jtpt_raw.push_back(tpu->jtpt->at(j1));
-       tpu->jtpt->at(j1) *= correction;
-       //cout <<" "<<tpu->jtpt->at(j1)<<endl;
-     }
+      for (int j1 = 0; j1 < tpu->nref; j1++) {
+         JetCorrector->setJetEta(tpu->jteta->at(j1));
+         JetCorrector->setJetPt(tpu->jtpt->at(j1));
+         JetCorrector->setJetA(tpu->jtarea->at(j1));
+         JetCorrector->setRho(tpu->rho);
+         double correction = JetCorrector->getCorrection();
+         //cout <<correction<<" "<<tpu->jtpt->at(j1);
+         tpu_jtpt_raw.push_back(tpu->jtpt->at(j1));
+         tpu->jtpt->at(j1) *= correction;
+         //cout <<" "<<tpu->jtpt->at(j1)<<endl;
+      }
    }
-
+   
    if(!reduceHistograms) {
       double avg_jtpt_all       = 0;
       double avg_jtpt_matched   = 0;
