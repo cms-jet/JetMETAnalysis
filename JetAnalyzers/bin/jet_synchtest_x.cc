@@ -640,7 +640,7 @@ void MatchEventsAndJets::FillJetMap() {
 }//FillJetMap
 
 //______________________________________________________________________________
-bool MatchEventsAndJets::FillHistograms() {
+bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
    //=========================================================
    //              FILLING OF HISTOS START HERE
    //=========================================================
@@ -697,168 +697,87 @@ bool MatchEventsAndJets::FillHistograms() {
      }
    }
 
-   double avg_jtpt_all       = 0;
-   double avg_jtpt_matched   = 0;
-   double avg_jtpt_unmatched = 0;
-
-   // fill unmatch jets for PU sample
-   for (int j1 = 0; j1 < tpu->nref; j1++){
-
-      // matching recon-jet with gen-jet
-      bool ismatchRG = tpu->refdrjt->at(j1)<getMaxDeltaR(algo1);
-
-      histograms["m_njet_pt_pu"]->Fill(tpu->jtpt->at(j1));
-      if(tpu->refpt->at(j1)>10){
-        histograms["m_njet_pthigh_pu"]->Fill(tpu->jtpt->at(j1));
-      }
-
-      avg_jtpt_all += tpu->jtpt->at(j1);
-
-      // if j1 is matched in this sample
-      bool ismatch =  jetMap.find(j1) != jetMap.end();
-
-      if (ismatch) avg_jtpt_matched   += tpu->jtpt->at(j1);
-      else     avg_jtpt_unmatched += tpu->jtpt->at(j1);
-
-      if (fabs(tpu->jteta->at(j1))<1.3) {
-         histograms["m_frac_nj_pt_b_match_pu"]   ->Fill(tpu->jtpt->at(j1),ismatch);
-         histograms["m_frac_nj_pt_b_match_RG_pu"]->Fill(tpu->jtpt->at(j1),ismatchRG);
-         if (tpu->npv<=10) {
-            histograms["m_frac_nj_pt_b_match_pu_npv10"]   ->Fill(tpu->jtpt->at(j1),ismatch);
-            histograms["m_frac_nj_pt_b_match_RG_pu_npv10"]->Fill(tpu->jtpt->at(j1),ismatchRG);
-         }
-         else if (tpu->npv<=20) {
-            histograms["m_frac_nj_pt_b_match_pu_npv20"]   ->Fill(tpu->jtpt->at(j1),ismatch);
-            histograms["m_frac_nj_pt_b_match_RG_pu_npv20"]->Fill(tpu->jtpt->at(j1),ismatchRG);
-         }
-         else if (tpu->npv<=30) {
-            histograms["m_frac_nj_pt_b_match_pu_npv30"]   ->Fill(tpu->jtpt->at(j1),ismatch);
-            histograms["m_frac_nj_pt_b_match_RG_pu_npv30"]->Fill(tpu->jtpt->at(j1),ismatchRG);
-         } 
-         else {
-            histograms["m_frac_nj_pt_b_match_pu_npvO"]   ->Fill(tpu->jtpt->at(j1),ismatch);
-            histograms["m_frac_nj_pt_b_match_RG_pu_npvO"]->Fill(tpu->jtpt->at(j1),ismatchRG);
-         }
-      }
-      else if (fabs(tpu->jteta->at(j1))<3) {
-         histograms["m_frac_nj_pt_e_match_pu"]   ->Fill(tpu->jtpt->at(j1),ismatch);
-         histograms["m_frac_nj_pt_e_match_RG_pu"]->Fill(tpu->jtpt->at(j1),ismatchRG);
-      }
-      else {
-         histograms["m_frac_nj_pt_f_match_pu"]   ->Fill(tpu->jtpt->at(j1),ismatch);
-         histograms["m_frac_nj_pt_f_match_RG_pu"]->Fill(tpu->jtpt->at(j1),ismatchRG);
-      }
-      if (!ismatch) {
-         hname = Form("m_njet_pt_npv%i_%i_unmatch",inpv*npvRhoNpuBinWidth,inpv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
-         histograms[hname]->Fill(tpu->jtpt->at(j1),+1);
-         hname = Form("m_njet_etaVspt_npv%i_%i_unmatch",inpv*npvRhoNpuBinWidth,inpv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
-         dynamic_cast<TProfile2D*>(histograms[hname])->Fill(tpu->jteta->at(j1), tpu->jtpt->at(j1),+1);
-      }
-   }
-
-   if (tpu->nref>0)               avg_jtpt_all        /= (double) tpu->nref;     else avg_jtpt_all = 0;
-   if (jetMap.size()>0)           avg_jtpt_matched    /= (double) jetMap.size(); else avg_jtpt_matched = 0;
-   if (tpu->nref-jetMap.size()>0) avg_jtpt_unmatched  /= (double) (tpu->nref - jetMap.size()); else avg_jtpt_unmatched = 0;
-
-   histograms["m_all_nj_npv"]      ->Fill(tpu->npv,tpu->nref);
-   histograms["m_matched_nj_npv"]  ->Fill(tpu->npv, jetMap.size());
-   histograms["m_unmatched_nj_npv"]->Fill(tpu->npv, tpu->nref-jetMap.size());
-
-   histograms["m_all_jtpt_npv"]      ->Fill(tpu->npv, avg_jtpt_all);
-   histograms["m_matched_jtpt_npv"]  ->Fill(tpu->npv, avg_jtpt_matched);
-   histograms["m_unmatched_jtpt_npv"]->Fill(tpu->npv, avg_jtpt_unmatched);
-
-   // fill unmatch jets for NOPU sample
-   for (int j1 = 0; j1 < tnopu->nref; j1++) {
-
-      histograms["m_njet_pt_nopu"]->Fill(tnopu->jtpt->at(j1));
-      if(tnopu->refpt->at(j1)>10){
-         histograms["m_njet_pthigh_nopu"]->Fill(tnopu->jtpt->at(j1));
-      }
-
-      bool ismatchRG = tnopu->refdrjt->at(j1)<getMaxDeltaR(algo2);
-
-   if(!reduceHistograms) {   
+   if(!reduceHistograms) {
       double avg_jtpt_all       = 0;
       double avg_jtpt_matched   = 0;
       double avg_jtpt_unmatched = 0;
       
       // fill unmatch jets for PU sample
       for (int j1 = 0; j1 < tpu->nref; j1++){
-         
+
          // matching recon-jet with gen-jet
-         bool ismatchRG = tpu->refdrjt[j1]<getMaxDeltaR(algo1);
-         
-         histograms["m_njet_pt_pu"]->Fill(tpu->jtpt[j1]);
-         if(tpu->refpt[j1]>10){
-            histograms["m_njet_pthigh_pu"]->Fill(tpu->jtpt[j1]);
+         bool ismatchRG = tpu->refdrjt->at(j1)<getMaxDeltaR(algo1);
+
+         histograms["m_njet_pt_pu"]->Fill(tpu->jtpt->at(j1));
+         if(tpu->refpt->at(j1)>10){
+            histograms["m_njet_pthigh_pu"]->Fill(tpu->jtpt->at(j1));
          }
-         
-         avg_jtpt_all += tpu->jtpt[j1];
-         
+
+         avg_jtpt_all += tpu->jtpt->at(j1);
+
          // if j1 is matched in this sample
          bool ismatch =  jetMap.find(j1) != jetMap.end();
-         
-         if (ismatch) avg_jtpt_matched   += tpu->jtpt[j1];
-         else     avg_jtpt_unmatched += tpu->jtpt[j1];
-         
-         if (fabs(tpu->jteta[j1])<1.3) {
-            histograms["m_frac_nj_pt_b_match_pu"]   ->Fill(tpu->jtpt[j1],ismatch);
-            histograms["m_frac_nj_pt_b_match_RG_pu"]->Fill(tpu->jtpt[j1],ismatchRG);
+
+         if (ismatch) avg_jtpt_matched   += tpu->jtpt->at(j1);
+         else     avg_jtpt_unmatched += tpu->jtpt->at(j1);
+
+         if (fabs(tpu->jteta->at(j1))<1.3) {
+            histograms["m_frac_nj_pt_b_match_pu"]   ->Fill(tpu->jtpt->at(j1),ismatch);
+            histograms["m_frac_nj_pt_b_match_RG_pu"]->Fill(tpu->jtpt->at(j1),ismatchRG);
             if (tpu->npv<=10) {
-               histograms["m_frac_nj_pt_b_match_pu_npv10"]   ->Fill(tpu->jtpt[j1],ismatch);
-               histograms["m_frac_nj_pt_b_match_RG_pu_npv10"]->Fill(tpu->jtpt[j1],ismatchRG);
+               histograms["m_frac_nj_pt_b_match_pu_npv10"]   ->Fill(tpu->jtpt->at(j1),ismatch);
+               histograms["m_frac_nj_pt_b_match_RG_pu_npv10"]->Fill(tpu->jtpt->at(j1),ismatchRG);
             }
             else if (tpu->npv<=20) {
-               histograms["m_frac_nj_pt_b_match_pu_npv20"]   ->Fill(tpu->jtpt[j1],ismatch);
-               histograms["m_frac_nj_pt_b_match_RG_pu_npv20"]->Fill(tpu->jtpt[j1],ismatchRG);
+               histograms["m_frac_nj_pt_b_match_pu_npv20"]   ->Fill(tpu->jtpt->at(j1),ismatch);
+               histograms["m_frac_nj_pt_b_match_RG_pu_npv20"]->Fill(tpu->jtpt->at(j1),ismatchRG);
             }
             else if (tpu->npv<=30) {
-               histograms["m_frac_nj_pt_b_match_pu_npv30"]   ->Fill(tpu->jtpt[j1],ismatch);
-               histograms["m_frac_nj_pt_b_match_RG_pu_npv30"]->Fill(tpu->jtpt[j1],ismatchRG);
-            }
+               histograms["m_frac_nj_pt_b_match_pu_npv30"]   ->Fill(tpu->jtpt->at(j1),ismatch);
+               histograms["m_frac_nj_pt_b_match_RG_pu_npv30"]->Fill(tpu->jtpt->at(j1),ismatchRG);
+            } 
             else {
-               histograms["m_frac_nj_pt_b_match_pu_npvO"]   ->Fill(tpu->jtpt[j1],ismatch);
-               histograms["m_frac_nj_pt_b_match_RG_pu_npvO"]->Fill(tpu->jtpt[j1],ismatchRG);
+               histograms["m_frac_nj_pt_b_match_pu_npvO"]   ->Fill(tpu->jtpt->at(j1),ismatch);
+               histograms["m_frac_nj_pt_b_match_RG_pu_npvO"]->Fill(tpu->jtpt->at(j1),ismatchRG);
             }
          }
-         else if (fabs(tpu->jteta[j1])<3) {
-            histograms["m_frac_nj_pt_e_match_pu"]   ->Fill(tpu->jtpt[j1],ismatch);
-            histograms["m_frac_nj_pt_e_match_RG_pu"]->Fill(tpu->jtpt[j1],ismatchRG);
+         else if (fabs(tpu->jteta->at(j1))<3) {
+            histograms["m_frac_nj_pt_e_match_pu"]   ->Fill(tpu->jtpt->at(j1),ismatch);
+            histograms["m_frac_nj_pt_e_match_RG_pu"]->Fill(tpu->jtpt->at(j1),ismatchRG);
          }
          else {
-            histograms["m_frac_nj_pt_f_match_pu"]   ->Fill(tpu->jtpt[j1],ismatch);
-            histograms["m_frac_nj_pt_f_match_RG_pu"]->Fill(tpu->jtpt[j1],ismatchRG);
+            histograms["m_frac_nj_pt_f_match_pu"]   ->Fill(tpu->jtpt->at(j1),ismatch);
+            histograms["m_frac_nj_pt_f_match_RG_pu"]->Fill(tpu->jtpt->at(j1),ismatchRG);
          }
          if (!ismatch) {
             hname = Form("m_njet_pt_npv%i_%i_unmatch",inpv*npvRhoNpuBinWidth,inpv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
-            histograms[hname]->Fill(tpu->jtpt[j1],+1);
+            histograms[hname]->Fill(tpu->jtpt->at(j1),+1);
             hname = Form("m_njet_etaVspt_npv%i_%i_unmatch",inpv*npvRhoNpuBinWidth,inpv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
-            dynamic_cast<TProfile2D*>(histograms[hname])->Fill(tpu->jteta[j1], tpu->jtpt[j1],+1);
+            dynamic_cast<TProfile2D*>(histograms[hname])->Fill(tpu->jteta->at(j1), tpu->jtpt->at(j1),+1);
          }
       }
-      
+
       if (tpu->nref>0)               avg_jtpt_all        /= (double) tpu->nref;     else avg_jtpt_all = 0;
       if (jetMap.size()>0)           avg_jtpt_matched    /= (double) jetMap.size(); else avg_jtpt_matched = 0;
       if (tpu->nref-jetMap.size()>0) avg_jtpt_unmatched  /= (double) (tpu->nref - jetMap.size()); else avg_jtpt_unmatched = 0;
-      
+
       histograms["m_all_nj_npv"]      ->Fill(tpu->npv,tpu->nref);
       histograms["m_matched_nj_npv"]  ->Fill(tpu->npv, jetMap.size());
       histograms["m_unmatched_nj_npv"]->Fill(tpu->npv, tpu->nref-jetMap.size());
-      
+
       histograms["m_all_jtpt_npv"]      ->Fill(tpu->npv, avg_jtpt_all);
       histograms["m_matched_jtpt_npv"]  ->Fill(tpu->npv, avg_jtpt_matched);
       histograms["m_unmatched_jtpt_npv"]->Fill(tpu->npv, avg_jtpt_unmatched);
-      
+
       // fill unmatch jets for NOPU sample
       for (int j1 = 0; j1 < tnopu->nref; j1++) {
-         
-         histograms["m_njet_pt_nopu"]->Fill(tnopu->jtpt[j1]);
-         if(tnopu->refpt[j1]>10){
-            histograms["m_njet_pthigh_nopu"]->Fill(tnopu->jtpt[j1]);
+
+         histograms["m_njet_pt_nopu"]->Fill(tnopu->jtpt->at(j1));
+         if(tnopu->refpt->at(j1)>10){
+            histograms["m_njet_pthigh_nopu"]->Fill(tnopu->jtpt->at(j1));
          }
-         
-         bool ismatchRG = tnopu->refdrjt[j1]<getMaxDeltaR(algo2);
+
+         bool ismatchRG = tnopu->refdrjt->at(j1)<getMaxDeltaR(algo2);
          
          // if j1 is matched in this sample. More complicated b/c I need
          //  to search the value of the map, not the key.
@@ -870,7 +789,7 @@ bool MatchEventsAndJets::FillHistograms() {
             }
          }
          
-         if (fabs(tnopu->jteta[j1])<1.3) {
+         if (fabs(tnopu->jteta->at(j1))<1.3) {
             histograms["m_frac_nj_pt_b_match_nopu"]   ->Fill(tnopu->jtpt->at(j1),ismatch);
             histograms["m_frac_nj_pt_b_match_RG_nopu"]->Fill(tnopu->jtpt->at(j1),ismatchRG);
             if (tpu->npv<=10)
@@ -972,8 +891,8 @@ bool MatchEventsAndJets::FillHistograms() {
 
     if(!reduceHistograms) {
        //NPV+Rho
-       dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsN_RVsJetPt"])  ->Fill(tpu->jteta[jpu],(tpu->rho+tpu->npv)/2.,tpu->refpt[jpu],offsetOA);
-       dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsN_RVsJetPt"])     ->Fill(tpu->jteta[jpu],(tpu->rho+tpu->npv)/2,tpu->refpt[jpu],tpu->jtpt[jpu]);
+       dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsN_RVsJetPt"])  ->Fill(tpu->jteta->at(jpu),(tpu->rho+tpu->npv)/2.,tpu->refpt->at(jpu),offsetOA);
+       dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsN_RVsJetPt"])     ->Fill(tpu->jteta->at(jpu),(tpu->rho+tpu->npv)/2,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
        histograms["p_areaVsrefpt"]->Fill(tpu->refpt->at(jpu),areaDiff);
        if (tpu->refpt->at(jpu)>1000)
          histograms["p_areaVsoffset_1000"]->Fill(offset,areaDiff);
