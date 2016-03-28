@@ -31,6 +31,7 @@
 </lcgdict>
 <!--
 <ioread sourceClass = "JRAEvent" version="[1-]" targetClass="JRAEvent" source="" target="fChain">
+<<<<<<< HEAD
 <![CDATA[ fChain=0;
 ]]>
 </ioread>
@@ -39,3 +40,13 @@
 ]]>
 </ioread>
 -->
+=======
+<![CDATA[ square_=0;
+]]>
+</ioread>
+<ioread sourceClass = "JRAEvent" version="[1-]" targetClass="JRAEvent" source="" target="fCurrent">
+<![CDATA[ square_=0;
+]]>
+</ioread>
+-->
+>>>>>>> d3b6fa9d9b83471728fa2ab1f6718d6a7b130424
