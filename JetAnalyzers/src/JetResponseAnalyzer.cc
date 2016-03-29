@@ -384,6 +384,9 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
            ++npv_;
            refdzvtx_[nref_] = 0;//fabs(vtxIter->z()-);
         }
+        else {
+           refdzvtx_[nref_] = -9999;
+        }
      }
      //npv_ = vtx->size();
   }
