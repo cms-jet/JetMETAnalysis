@@ -5,6 +5,7 @@
 //
 //            07/04/2008 Kostas Kousouris       <kkousour@fnal.gov>
 //                       Philipp Schieferdecker <philipp.schieferdecker@cern.ch>
+//            12/08/2011 Alexx Perloff          <alexx.stephen.perloff@cern.ch>
 ////////////////////////////////////////////////////////////////////////////////
 
 
@@ -46,6 +47,7 @@
 #include <vector>
 #include <sstream>
 #include <cmath>
+#include <thread>
 
 
 using namespace std;
@@ -55,7 +57,8 @@ using namespace std;
 // class definition
 ////////////////////////////////////////////////////////////////////////////////
 
-class JetResponseAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>
+//class JetResponseAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>
+class JetResponseAnalyzer : public edm::stream::EDAnalyzer<>
 {
 public:
   // construction/destruction
@@ -64,9 +67,10 @@ public:
 
 private:
   // member functions
-  void beginJob();
+  void setupTree();
+  //void beginJob();
   void analyze(const edm::Event& iEvent,const edm::EventSetup& iSetup);
-  void endJob(){;}
+  //void endJob(){;}
 
 private:
   // member data
@@ -230,7 +234,9 @@ JetResponseAnalyzer::JetResponseAnalyzer(const edm::ParameterSet& iConfig)
   //if (isTauJet_)   cout<<"These are TauJets   ("<<moduleLabel_<<")"<<endl;
 
   //must state that we are using the TFileService
-  usesResource("TFileService");
+  //usesResource("TFileService");
+  setupTree();
+  cout << "This is the thread id: " << std::this_thread::get_id() << endl;
 }
 
 
@@ -246,7 +252,8 @@ JetResponseAnalyzer::~JetResponseAnalyzer()
 ////////////////////////////////////////////////////////////////////////////////
 
 //______________________________________________________________________________
-void JetResponseAnalyzer::beginJob()
+//void JetResponseAnalyzer::beginJob()
+void JetResponseAnalyzer::setupTree()
 {
   edm::Service<TFileService> fs;
   if (!fs) throw edm::Exception(edm::errors::Configuration,

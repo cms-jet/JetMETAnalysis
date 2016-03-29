@@ -6,7 +6,7 @@
 #include "TLatex.h"
 #include "TPaveText.h"
 
-#include "JetMETAnalysis/JetUtilities/interface/JRANtuple.h"
+#include "JetMETAnalysis/JetUtilities/interface/JRAEvent.h"
 #include "JetMETAnalysis/JetUtilities/interface/Style.h"
 
 #include <iostream>
@@ -71,7 +71,7 @@ void cmsPrelim(double intLUMI=0) {
   latex.DrawLatex(0.493,0.793,"|#eta| < 1.3");
 }
 
-void setTreeBranches(TTree * t, JRANtuple * ev) {
+void setTreeBranches(TTree * t, JRAEvent * ev) {
 
   t->SetBranchAddress("npus", &ev->npus);
   t->SetBranchAddress("tnpus", &ev->tnpus);
