@@ -147,7 +147,7 @@ public :
    int itIndex();
    double sumEOOT();
    double sumLOOT();
-   bool CheckValue(ROOT::TTreeReaderValueBase* value);
+   bool CheckValue(ROOT::Internal::TTreeReaderValueBase* value);
 };
 
 // this is our new product, it is simply a 

@@ -357,7 +357,7 @@ double JRAEvent::sumLOOT() {
 }
 
 //______________________________________________________________________________
-bool JRAEvent::CheckValue(ROOT::TTreeReaderValueBase* value) {
+bool JRAEvent::CheckValue(ROOT::Internal::TTreeReaderValueBase* value) {
    if (value->GetSetupStatus() < 0) {
       std::cerr << "Error " << value->GetSetupStatus()
                 << "setting up reader for " << value->GetBranchName() << '\n';
