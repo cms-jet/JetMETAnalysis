@@ -114,19 +114,19 @@ public:
   bool contains(const vector<string>& collection,const string& element);
   
   /// check the amount of IT pileup and see if it is in the specified range
-  bool it_pileup(int itlow, int ithigh, const vector<int>& npus);
+  bool it_pileup(int itlow, int ithigh, vector<int>* npus);
   
   /// check the amount of OOT pileup before nad after the event and see if it is in the specified range
   bool oot_pileup(int earlyootlow, int earlyoothigh, int lateootlow, int lateoothigh,
-                  const vector<int>& npus);
+                  vector<int>* npus);
   
   /// check the sum of the OOT pileup before and after the event and see if it is in the specified range
-  bool total_oot_pileup(int totalootlow, int totaloothigh, const vector<int>& npus);
+  bool total_oot_pileup(int totalootlow, int totaloothigh, vector<int>* npus);
   
   /// combines the booleans from the IT, OOT, and TotalOOT functions into one boolean
   bool pileup_cut(int itlow, int ithigh, int earlyootlow, int earlyoothigh, 
                   int lateootlow, int lateoothigh, int totalootlow, int totaloothigh, 
-                  const vector<int>& npus);
+                  vector<int>* npus);
 
 private:
   /// member functions
