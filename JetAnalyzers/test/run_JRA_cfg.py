@@ -5,7 +5,7 @@ import FWCore.ParameterSet.Config as cms
 #!
 # Conditions source options: GT, SQLite, DB
 conditionsSource = "GT"
-era = "Fall15_25nsV1_MC"
+era = "Spring16_25nsV1_MC"
 doProducer = False
 process = cms.Process("JRA")
 if doProducer:
@@ -46,7 +46,7 @@ for k, v in algsizetype.iteritems():
 #! CONDITIONS (DELIVERING JEC BY DEFAULT!)
 #!
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff")
-process.GlobalTag.globaltag = cms.string('74X_mcRun2_asymptotic_v2')
+process.GlobalTag.globaltag = cms.string('80X_mcRun2_asymptotic_v5_2016PixDynIneff')
 
 if conditionsSource != "GT":
     if conditionsSource == "DB":
@@ -66,14 +66,14 @@ if conditionsSource != "GT":
 #!
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1000))
 
-########################################
-# QCD_PY8_RunIIFall15DR76_Asympt_25ns #
-########################################
-process.load("JetMETAnalysis.JetAnalyzers.QCD_PY8_RunIIFall15DR76_Asympt_25ns_cff")
-#############################################
-# QCD_PY8_RunIIFall15DR76_AsymptNoPU_25ns #
-#############################################
-#process.load("JetMETAnalysis.JetAnalyzers.QCD_PY8_RunIIFall15DR76_AsymptNoPU_25ns_cff")
+#######
+# QCD #
+#######
+process.load("JetMETAnalysis.JetAnalyzers.QCD_PY8_RunIISpring16DR80_PUFlat0to50_cff")
+##############
+# QCD (NoPU) #
+##############
+#process.load("JetMETAnalysis.JetAnalyzers.QCD_PY8_RunIISpring16DR80_NoPU_cff")
 
 qcdFiles = cms.untracked.vstring(
 	'root://cmsxrootd.fnal.gov//store/mc/RunIIFall15DR76/QCD_Pt-15to7000_TuneCUETP8M1_Flat_13TeV_pythia8/AODSIM/PU25nsData2015v1_magnetOn_76X_mcRun2_asymptotic_v12-v1/20000/022F2CE9-6FA3-E511-BA9D-D4AE5269DC07.root',
