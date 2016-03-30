@@ -769,20 +769,22 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
                          srcRho            = cms.InputTag(''),
                          srcRhoHLT         = cms.InputTag(''),
                          srcVtx            = cms.InputTag('offlinePrimaryVertices'),
-						 srcJetToUncorJetMap = cms.InputTag(jetToUncorJet.label(), 'rec2gen')
+                         srcJetToUncorJetMap = cms.InputTag(jetToUncorJet.label(), 'rec2gen'),
+                         srcPFCandidates   = cms.InputTag('')
                         )
     if doProducer:
         jraAnalyzer = 'JetResponseAnalyzerProducer'
         jra = cms.EDProducer(jraAnalyzer,
-                     Defaults.JetResponseParameters,
-                     srcRefToJetMap    = cms.InputTag(jetToRef.label(), 'gen2rec'),
-                     srcRef            = cms.InputTag(refPtEta.label()),
-                     jecLabel          = cms.string(''),
-                     srcRho            = cms.InputTag(''),
-                     srcRhoHLT         = cms.InputTag(''),
-                     srcVtx            = cms.InputTag('offlinePrimaryVertices'),
-                     srcJetToUncorJetMap = cms.InputTag(jetToUncorJet.label(), 'rec2gen')
-                     )
+                             Defaults.JetResponseParameters,
+                             srcRefToJetMap    = cms.InputTag(jetToRef.label(), 'gen2rec'),
+                             srcRef            = cms.InputTag(refPtEta.label()),
+                             jecLabel          = cms.string(''),
+                             srcRho            = cms.InputTag(''),
+                             srcRhoHLT         = cms.InputTag(''),
+                             srcVtx            = cms.InputTag('offlinePrimaryVertices'),
+                             srcJetToUncorJetMap = cms.InputTag(jetToUncorJet.label(), 'rec2gen'),
+                             srcPFCandidates   = cms.InputTag('')
+                             )
 
     if type == 'CaloHLT':
         jra.srcRho = ak4CaloL1Fastjet.srcRho #added 02/15/2012
@@ -798,6 +800,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         sequence = cms.Sequence(process.kt6PFchsJetsRhos * sequence)
         jra.srcRhos = cms.InputTag("kt6PFchsJetsRhos", "rhos")
         jra.srcRho = cms.InputTag("fixedGridRhoFastjetAll")#ak4PFchsL1Fastjet.srcRho #added 10/14/2011
+        jra.srcPFCandidates = cms.InputTag('pfNoPileUpJME')
     elif type == 'PFHLT':
         jra.srcRho = ak4PFL1Fastjet.srcRho #added 02/15/2012
         jra.srcRhoHLT = ak5PFHLTL1Fastjet.srcRho
@@ -812,6 +815,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         sequence = cms.Sequence(process.kt6PFJetsRhos * sequence)
         jra.srcRhos = cms.InputTag("kt6PFJetsRhos", "rhos")
         jra.srcRho = ak4PFL1Fastjet.srcRho #added 10/14/2011
+        jra.srcPFCandidates = cms.InputTag('particleFlow')
     elif type == 'PUPPI':
         process.kt6PFJetsRhos = kt6PFJets.clone(doFastJetNonUniform = cms.bool(True),
                                                 puCenters = cms.vdouble(-5,-4,-3,-2,-1,0,1,2,3,4,5),
@@ -819,11 +823,12 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         sequence = cms.Sequence(process.kt6PFJetsRhos * sequence)
         jra.srcRhos = cms.InputTag("kt6PFJetsRhos", "rhos")
         jra.srcRho = cms.InputTag("fixedGridRhoFastjetAll")#ak4PFchsL1Fastjet.srcRho
+        jra.srcPFCandidates = cms.InputTag('puppi')
     elif type == 'JPT':
         jra.srcRho = ak4CaloL1Fastjet.srcRho
 
     if correctl1 or correctl2l3:
-        jra.jecLabel = corrJets.correctors[0]
+        jra.jecLabel = corrJets.correctors[0].replace("Corrector","")
 
     if Defaults.JetResponseParameters.doFlavor.value():
 		jra.srcRefToPartonMap = cms.InputTag(genToParton.label())
