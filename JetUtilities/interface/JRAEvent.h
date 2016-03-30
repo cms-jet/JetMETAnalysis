@@ -28,6 +28,8 @@ using std::pair;
 
 class JRAEvent {
 public :
+   enum Flavor{all=0, h, e, mu, gamma, h0, h_HF, egamma_HF, chs, numFlavors, X}; //X=undefined
+
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
    Int_t           fCurrent; //!current Tree number in a TChain
 
@@ -80,6 +82,13 @@ public :
    vector<Float_t>* jthfhf;
    vector<Float_t>* jthfef;
    vector<Float_t>* refdzvtx;
+   vector<Float_t>* pfcand_px;
+   vector<Float_t>* pfcand_py;
+   vector<Float_t>* pfcand_pt;
+   vector<Float_t>* pfcand_eta;
+   vector<Float_t>* pfcand_phi;
+   vector<Float_t>* pfcand_e;
+   vector<Flavor>*  pfcand_id;
 
    // List of branches
    TBranch        *b_npus;   //!
@@ -130,6 +139,13 @@ public :
    TBranch        *b_jthfhf;   //!
    TBranch        *b_jthfef;   //!
    TBranch        *b_refdzvtx;   //!
+   TBranch        *b_pfcand_px;   //!
+   TBranch        *b_pfcand_py;   //!
+   TBranch        *b_pfcand_pt;   //!
+   TBranch        *b_pfcand_eta;   //!
+   TBranch        *b_pfcand_phi;   //!
+   TBranch        *b_pfcand_e;   //!
+   TBranch        *b_pfcand_id;   //!
 
    JRAEvent(TTree *tree=0, bool newTree = false);
    virtual ~JRAEvent();

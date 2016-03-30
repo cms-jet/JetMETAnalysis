@@ -13,6 +13,7 @@
 <use   name="DataFormats/TauReco"/>
 <use   name="DataFormats/Math"/>
 <use   name="DataFormats/HepMCCandidate"/>
+<use   name="DataFormats/ParticleFlowCandidate"/>
 <use   name="DataFormats/Common"/>
 <use   name="SimDataFormats/GeneratorProducts"/>
 <use   name="SimDataFormats/JetMatching"/>

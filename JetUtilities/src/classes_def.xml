@@ -2,7 +2,9 @@
 <!--
   <class name="JRAEvent"/>
 -->
-  <class name="JRAEvent" ClassVersion="21">
+  <class name="JRAEvent" ClassVersion="23">
+	<version ClassVersion="23" checksum="1172937648"/>
+    <version ClassVersion="22" checksum="2597219173"/>
     <version ClassVersion="21" checksum="1204962669"/>
     <version ClassVersion="20" checksum="2348789620"/>
 	  <version ClassVersion="19" checksum="1808589907"/>
@@ -20,6 +22,9 @@
   <class name="std::vector<JRAEvent>"/>
   <class name="edm::Wrapper<JRAEvent>"/>
   <class name="edm::Wrapper<std::vector<JRAEvent> >"/>
+  <class name="std::vector<JRAEvent::Flavor>"/>
+  <class name="edm::Wrapper<JRAEvent::Flavor>"/>
+  <class name="edm::Wrapper<std::vector<JRAEvent::Flavor> >"/>
   <class name="TProfileMDF" ClassVersion="1">
 	<version ClassVersion="1" checksum="329505606"/>
   </class>

@@ -87,7 +87,7 @@ qcdFiles = cms.untracked.vstring(
 #! SERVICES
 #!
 process.load('FWCore.MessageLogger.MessageLogger_cfi')
-process.MessageLogger.cerr.FwkReport.reportEvery = 10
+process.MessageLogger.cerr.FwkReport.reportEvery = 100
 process.options = cms.untracked.PSet( wantSummary = cms.untracked.bool(True))
 if doProducer:
     process.add_(cms.Service("Tracer"))

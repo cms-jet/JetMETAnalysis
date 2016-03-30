@@ -106,6 +106,13 @@ void JRAEvent::MakeTree(TTree *tree)
    fChain->Branch("jthfhf", "vector<Float_t>", &jthfhf);
    fChain->Branch("jthfef", "vector<Float_t>", &jthfef);
    fChain->Branch("refdzvtx", "vector<Float_t>", &refdzvtx);
+   fChain->Branch("pfcand_px", "vector<Float_t>", &pfcand_px);
+   fChain->Branch("pfcand_py", "vector<Float_t>", &pfcand_py);
+   fChain->Branch("pfcand_pt", "vector<Float_t>", &pfcand_pt);
+   fChain->Branch("pfcand_eta", "vector<Float_t>", &pfcand_eta);
+   fChain->Branch("pfcand_phi", "vector<Float_t>", &pfcand_phi);
+   fChain->Branch("pfcand_e", "vector<Float_t>", &pfcand_e);
+   fChain->Branch("pfcand_id", "vector<Flavor>", &pfcand_id);
    Notify();
 }
 
@@ -176,6 +183,13 @@ void JRAEvent::Init(TTree *tree)
    fChain->SetBranchAddress("jthfhf", &jthfhf, &b_jthfhf);
    fChain->SetBranchAddress("jthfef", &jthfef, &b_jthfef);
    fChain->SetBranchAddress("refdzvtx", &refdzvtx, &b_refdzvtx);
+   fChain->SetBranchAddress("pfcand_px", &pfcand_px, &b_pfcand_px);
+   fChain->SetBranchAddress("pfcand_py", &pfcand_py, &b_pfcand_py);
+   fChain->SetBranchAddress("pfcand_pt", &pfcand_pt, &b_pfcand_pt);
+   fChain->SetBranchAddress("pfcand_eta", &pfcand_eta, &b_pfcand_eta);
+   fChain->SetBranchAddress("pfcand_phi", &pfcand_phi, &b_pfcand_phi);
+   fChain->SetBranchAddress("pfcand_e", &pfcand_e, &b_pfcand_e);
+   fChain->SetBranchAddress("pfcand_id", &pfcand_id, &b_pfcand_id);
    Notify();
 }
 
@@ -245,6 +259,13 @@ void JRAEvent::MakeVectors()
    jthfhf                  = new vector<float>;
    jthfef                  = new vector<float>;
    refdzvtx                = new vector<float>;
+   pfcand_px               = new vector<float>;
+   pfcand_py               = new vector<float>;
+   pfcand_pt               = new vector<float>;
+   pfcand_eta              = new vector<float>;
+   pfcand_phi              = new vector<float>;
+   pfcand_e                = new vector<float>;
+   pfcand_id               = new vector<Flavor>;
 }
 
 void JRAEvent::clear()
@@ -286,6 +307,13 @@ void JRAEvent::clear()
    jthfhf->clear();
    jthfef->clear();
    refdzvtx->clear();
+   pfcand_px->clear();
+   pfcand_py->clear();
+   pfcand_pt->clear();
+   pfcand_eta->clear();
+   pfcand_phi->clear();
+   pfcand_e->clear();
+   pfcand_id->clear();
 }
 
 void JRAEvent::Loop()

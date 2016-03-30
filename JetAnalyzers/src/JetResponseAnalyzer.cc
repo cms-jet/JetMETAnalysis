@@ -10,6 +10,7 @@
 
 
 #include "JetMETAnalysis/JetUtilities/interface/GenJetLeptonFinder.h"
+#include "JetMETAnalysis/JetUtilities/interface/JRAEvent.h"
 
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDAnalyzer.h"
@@ -23,6 +24,7 @@
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Candidate/interface/CandidateFwd.h"
 #include "DataFormats/Candidate/interface/CandMatchMap.h"
+#include "DataFormats/ParticleFlowCandidate/interface/PFCandidate.h"
 #include "DataFormats/JetReco/interface/JPTJet.h"
 #include "DataFormats/JetReco/interface/CaloJet.h"
 #include "DataFormats/JetReco/interface/PFJet.h"
@@ -52,13 +54,14 @@
 
 using namespace std;
 
+typedef edm::View<reco::PFCandidate> PFCandidateView;
 
 ////////////////////////////////////////////////////////////////////////////////
 // class definition
 ////////////////////////////////////////////////////////////////////////////////
 
-//class JetResponseAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>
-class JetResponseAnalyzer : public edm::stream::EDAnalyzer<>
+class JetResponseAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>
+//class JetResponseAnalyzer : public edm::stream::EDAnalyzer<>
 {
 public:
   // construction/destruction
@@ -67,10 +70,12 @@ public:
 
 private:
   // member functions
-  void setupTree();
-  //void beginJob();
+  //void setupTree();
+  void beginJob();
   void analyze(const edm::Event& iEvent,const edm::EventSetup& iSetup);
-  //void endJob(){;}
+  void endJob(){;}
+
+  JRAEvent::Flavor getFlavor(reco::PFCandidate::ParticleType id);
 
 private:
   // member data
@@ -86,6 +91,9 @@ private:
   edm::EDGetTokenT<reco::VertexCollection> srcVtx_;
   edm::EDGetTokenT<GenEventInfoProduct> srcGenInfo_;
   edm::EDGetTokenT<vector<PileupSummaryInfo> > srcPileupInfo_;
+  //edm::EDGetTokenT<vector<reco::PFCandidate> > srcPFCandidates_;
+  edm::EDGetTokenT<PFCandidateView> srcPFCandidates_;
+  edm::EDGetTokenT<std::vector<edm::FwdPtr<reco::PFCandidate> > > srcPFCandidatesAsFwdPtr_;
 
   std::string   jecLabel_;
   
@@ -94,6 +102,7 @@ private:
   bool          doJetPt_;
   bool          doRefPt_;
   bool          doHLT_;
+  bool          saveCandidates_;
   unsigned int  nRefMax_;
 
   double        deltaRMax_;
@@ -166,7 +175,14 @@ private:
   Float_t       jthfef_[100];
 
   Float_t       refdzvtx_[100];
-  
+
+  vector<Float_t>          pfcand_px_;
+  vector<Float_t>          pfcand_py_;
+  vector<Float_t>          pfcand_pt_;
+  vector<Float_t>          pfcand_eta_;
+  vector<Float_t>          pfcand_phi_;
+  vector<Float_t>          pfcand_e_;
+  vector<JRAEvent::Flavor> pfcand_id_;
 };
 
 
@@ -176,22 +192,26 @@ private:
 
 //______________________________________________________________________________
 JetResponseAnalyzer::JetResponseAnalyzer(const edm::ParameterSet& iConfig)
-  : moduleLabel_        (iConfig.getParameter<std::string>            ("@module_label"))
-  , srcRef_             (consumes<reco::CandidateView>(iConfig.getParameter<edm::InputTag>                ("srcRef")))
-  , srcJetToUncorJetMap_(consumes<reco::CandViewMatchMap>(iConfig.getParameter<edm::InputTag>("srcJetToUncorJetMap")))
-  , srcRefToJetMap_     (consumes<reco::CandViewMatchMap>(iConfig.getParameter<edm::InputTag>     ("srcRefToJetMap")))
-  , srcRhos_            (consumes<vector<double> >(iConfig.getParameter<edm::InputTag>                   ("srcRhos")))
-  , srcRho_             (consumes<double>(iConfig.getParameter<edm::InputTag>                             ("srcRho")))
-  , srcRhoHLT_          (consumes<double>(iConfig.getParameter<edm::InputTag>                          ("srcRhoHLT")))
-  , srcVtx_             (consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>             ("srcVtx")))
-  , srcGenInfo_         (consumes<GenEventInfoProduct>(edm::InputTag("generator"))                                   )
-  , srcPileupInfo_      (consumes<vector<PileupSummaryInfo> >(edm::InputTag("addPileupInfo"))                        )
+  : moduleLabel_            (iConfig.getParameter<std::string>            ("@module_label"))
+  , srcRef_                 (consumes<reco::CandidateView>(iConfig.getParameter<edm::InputTag>                ("srcRef")))
+  , srcJetToUncorJetMap_    (consumes<reco::CandViewMatchMap>(iConfig.getParameter<edm::InputTag>("srcJetToUncorJetMap")))
+  , srcRefToJetMap_         (consumes<reco::CandViewMatchMap>(iConfig.getParameter<edm::InputTag>     ("srcRefToJetMap")))
+  , srcRhos_                (consumes<vector<double> >(iConfig.getParameter<edm::InputTag>                   ("srcRhos")))
+  , srcRho_                 (consumes<double>(iConfig.getParameter<edm::InputTag>                             ("srcRho")))
+  , srcRhoHLT_              (consumes<double>(iConfig.getParameter<edm::InputTag>                          ("srcRhoHLT")))
+  , srcVtx_                 (consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>             ("srcVtx")))
+  , srcGenInfo_             (consumes<GenEventInfoProduct>(edm::InputTag("generator"))                                   )
+  , srcPileupInfo_          (consumes<vector<PileupSummaryInfo> >(edm::InputTag("addPileupInfo"))                        )
+  //, srcPFCandidates_      (consumes<vector<reco::PFCandidate> >(iConfig.getParameter<edm::InputTag>("srcPFCandidates")))
+  , srcPFCandidates_        (consumes<PFCandidateView>(iConfig.getParameter<edm::InputTag>("srcPFCandidates")))
+  , srcPFCandidatesAsFwdPtr_(consumes<std::vector<edm::FwdPtr<reco::PFCandidate> > >(iConfig.getParameter<edm::InputTag>("srcPFCandidates")))
   , jecLabel_      (iConfig.getParameter<std::string>                 ("jecLabel"))
   , doComposition_ (iConfig.getParameter<bool>                   ("doComposition"))
   , doFlavor_      (iConfig.getParameter<bool>                        ("doFlavor"))
   , doJetPt_       (iConfig.getParameter<bool>                         ("doJetPt"))
   , doRefPt_       (iConfig.getParameter<bool>                         ("doRefPt"))
   , doHLT_         (iConfig.getParameter<bool>                           ("doHLT"))
+  , saveCandidates_(iConfig.getParameter<bool>                  ("saveCandidates"))
   , nRefMax_       (iConfig.getParameter<unsigned int>                 ("nRefMax"))
   , deltaRMax_(0.0)
   , deltaPhiMin_(3.141)
@@ -234,9 +254,9 @@ JetResponseAnalyzer::JetResponseAnalyzer(const edm::ParameterSet& iConfig)
   //if (isTauJet_)   cout<<"These are TauJets   ("<<moduleLabel_<<")"<<endl;
 
   //must state that we are using the TFileService
-  //usesResource("TFileService");
-  setupTree();
-  cout << "This is the thread id: " << std::this_thread::get_id() << endl;
+  usesResource("TFileService");
+  //setupTree();
+  //cout << "This is the thread id: " << std::this_thread::get_id() << endl;
 }
 
 
@@ -252,8 +272,8 @@ JetResponseAnalyzer::~JetResponseAnalyzer()
 ////////////////////////////////////////////////////////////////////////////////
 
 //______________________________________________________________________________
-//void JetResponseAnalyzer::beginJob()
-void JetResponseAnalyzer::setupTree()
+void JetResponseAnalyzer::beginJob()
+//void JetResponseAnalyzer::setupTree()
 {
   edm::Service<TFileService> fs;
   if (!fs) throw edm::Exception(edm::errors::Configuration,
@@ -319,6 +339,14 @@ void JetResponseAnalyzer::setupTree()
       tree_->Branch("jtmuf",  jtmuf_,  "jtmuf[nref]/F");
       tree_->Branch("jthfhf", jthfhf_, "jthfhf[nref]/F");
       tree_->Branch("jthfef", jthfef_, "jthfef[nref]/F");
+
+      tree_->Branch("pfcand_px", "vector<Float_t>", &pfcand_px_);
+      tree_->Branch("pfcand_py", "vector<Float_t>", &pfcand_py_);
+      tree_->Branch("pfcand_pt", "vector<Float_t>", &pfcand_pt_);
+      tree_->Branch("pfcand_eta", "vector<Float_t>", &pfcand_eta_);
+      tree_->Branch("pfcand_phi", "vector<Float_t>", &pfcand_phi_);
+      tree_->Branch("pfcand_e", "vector<Float_t>", &pfcand_e_);
+      tree_->Branch("pfcand_id", "vector<JRAEvent::Flavor>", &pfcand_id_);
     }
   }
 
@@ -343,6 +371,10 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
   edm::Handle<double>                            rho;
   edm::Handle<double>                            rho_hlt;
   edm::Handle<reco::VertexCollection>            vtx;
+  //edm::Handle<vector<reco::PFCandidate> >        pfCandidates;
+  edm::Handle<PFCandidateView>                   pfCandidates;
+  edm::Handle<std::vector<edm::FwdPtr<reco::PFCandidate> > >  pfCandidatesAsFwdPtr;
+
 
   // Jet CORRECTOR
   //std::cout<<" Before JetCorrector defined, jecLabel_ = "<<jecLabel_<<std::endl;
@@ -379,8 +411,6 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
      }
   }
 
-  //refdrjt_[nref_]  =reco::deltaR(jet->eta(),jet->phi(),ref->eta(),ref->phi());
-  //if (abs(muIter->innerTrack()->dz(vtxHandle->at(0).position()))<muPrim_dzMax && muIter->dB()<muPrim_dBMax) 
   //NPV INFORMATION
   npv_ = 0;
 
@@ -391,11 +421,7 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
            ++npv_;
            refdzvtx_[nref_] = 0;//fabs(vtxIter->z()-);
         }
-        else {
-           refdzvtx_[nref_] = -9999;
-        }
      }
-     //npv_ = vtx->size();
   }
  
   //EVENT INFORMATION
@@ -663,6 +689,53 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
         
     }
      
+    // PFCANDIDATE INFORMATION
+    //Dual handle idea from https://github.com/aperloff/cmssw/blob/CMSSW_7_6_X/RecoJets/JetProducers/plugins/VirtualJetProducer.cc
+    //Random-Cone algo from https://github.com/cihar29/OffsetAnalysis/blob/master/run_offset.py
+    //                  and https://github.com/cihar29/OffsetAnalysis/blob/master/plugins/OffsetAnalysis.cc
+    pfcand_px_.clear();
+    pfcand_py_.clear();
+    pfcand_pt_.clear();
+    pfcand_eta_.clear();
+    pfcand_phi_.clear();
+    pfcand_e_.clear();
+    pfcand_id_.clear();
+
+    if (saveCandidates_ && isPFJet_) {
+        bool isView = iEvent.getByToken(srcPFCandidates_, pfCandidates);
+        if ( isView ) {
+            for (auto i_pf=pfCandidates->begin(); i_pf != pfCandidates->end(); ++i_pf) {
+                auto i_pfc = (i_pf);
+                JRAEvent::Flavor pf_id = getFlavor( i_pfc->particleId() );
+                if (pf_id == JRAEvent::X) continue;
+                pfcand_px_.push_back(i_pfc->px());
+                pfcand_py_.push_back(i_pfc->py());
+                pfcand_pt_.push_back(i_pfc->pt());
+                pfcand_eta_.push_back(i_pfc->eta());
+                pfcand_phi_.push_back(i_pfc->phi());
+                pfcand_e_.push_back(i_pfc->energy());
+                pfcand_id_.push_back(pf_id);
+            }
+        }
+        else {
+            bool isPF = iEvent.getByToken(srcPFCandidatesAsFwdPtr_, pfCandidatesAsFwdPtr);
+            if ( isPF ) {
+                for (auto i_pf=pfCandidatesAsFwdPtr->begin(); i_pf != pfCandidatesAsFwdPtr->end(); ++i_pf) {
+                    auto i_pfc = (*i_pf);
+                    JRAEvent::Flavor pf_id = getFlavor( i_pfc->particleId() );
+                    if (pf_id == JRAEvent::X) continue;
+                    pfcand_px_.push_back(i_pfc->px());
+                    pfcand_py_.push_back(i_pfc->py());
+                    pfcand_pt_.push_back(i_pfc->pt());
+                    pfcand_eta_.push_back(i_pfc->eta());
+                    pfcand_phi_.push_back(i_pfc->phi());
+                    pfcand_e_.push_back(i_pfc->energy());
+                    pfcand_id_.push_back(pf_id);
+                }
+            }
+        }
+    }
+
      nref_++;
   }
   
@@ -671,6 +744,25 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
   return;
 }
 
+//______________________________________________________________________________
+JRAEvent::Flavor JetResponseAnalyzer::getFlavor(reco::PFCandidate::ParticleType id) {
+    if (id == reco::PFCandidate::h)
+        return JRAEvent::h;
+    else if (id == reco::PFCandidate::e)
+        return JRAEvent::e;
+    else if (id == reco::PFCandidate::mu)
+        return JRAEvent::mu;
+    else if (id == reco::PFCandidate::gamma)
+        return JRAEvent::gamma;
+    else if (id == reco::PFCandidate::h0)
+        return JRAEvent::h0;
+    else if (id == reco::PFCandidate::h_HF)
+        return JRAEvent::h_HF;
+    else if (id == reco::PFCandidate::egamma_HF)
+        return JRAEvent::egamma_HF;
+    else
+        return JRAEvent::X;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // define JetEfficiencyAnalyzer as a plugin
