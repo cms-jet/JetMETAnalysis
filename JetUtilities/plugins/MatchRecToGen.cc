@@ -34,7 +34,6 @@
 #include <iomanip>
 #include <memory>
 #include <set>
-#include <atomic>
 
 using namespace std;
 using namespace edm;
@@ -57,38 +56,29 @@ struct MatchLtComp
   }
 };
 
-//______________________________________________________________________________
-struct Count { 
-   Count(edm::ParameterSet const& iConfig):moduleName_(iConfig.getParameter<string>("@module_label")),
-                                           nRecTot_(0), nGenTot_(0), nMatchedTot_(0) {}
-   atomic<string>  moduleName_;
-   //Using mutable since we want to update the value.
-   mutable atomic<unsigned int> nRecTot_;
-   mutable atomic<unsigned int> nGenTot_;
-   mutable atomic<unsigned int> nMatchedTot_;
-};
 
 //______________________________________________________________________________
-class MatchRecToGen : public edm::stream::EDProducer<edm::GlobalCache<Count>>
+class MatchRecToGen : public edm::EDProducer
 {
 public:
   // construction/destruction
-  MatchRecToGen(const edm::ParameterSet& iConfig, Count const*);
+  MatchRecToGen(const edm::ParameterSet& iConfig);
   ~MatchRecToGen() {;}
   
   // member functions
-   static std::unique_ptr<Count> initializeGlobalCache(edm::ParameterSet const& iConfig) {
-       return std::unique_ptr<Count>(new Count(iConfig));
-   }
-  void produce(edm::Event& iEvent,const edm::EventSetup& iSetup) override;
-  static void globalEndJob(Count const* iCount);
+  void produce(edm::Event& iEvent,const edm::EventSetup& iSetup);
+  void endJob();
 
 private:
   // member data
   edm::EDGetTokenT<CandidateView> srcRec_;
   edm::EDGetTokenT<CandidateView> srcGen_;
 
-  ;
+  std::string  moduleName_;
+
+  unsigned int nRecTot_;
+  unsigned int nGenTot_;
+  unsigned int nMatchedTot_;
 
   // typdefs
   typedef set<unsigned int>                                       IndexSet_t;
@@ -106,9 +96,13 @@ private:
 ////////////////////////////////////////////////////////////////////////////////
 
 //______________________________________________________________________________
-MatchRecToGen::MatchRecToGen(const edm::ParameterSet& iConfig, Count const*)
+MatchRecToGen::MatchRecToGen(const edm::ParameterSet& iConfig)
   : srcRec_(consumes<CandidateView>(iConfig.getParameter<edm::InputTag>("srcRec")))
   , srcGen_(consumes<CandidateView>(iConfig.getParameter<edm::InputTag>("srcGen")))
+  , moduleName_(iConfig.getParameter<string>("@module_label"))
+  , nRecTot_(0)
+  , nGenTot_(0)
+  , nMatchedTot_(0)
 {
   produces<CandViewMatchMap>("rec2gen");
   produces<CandViewMatchMap>("gen2rec");
@@ -191,25 +185,24 @@ void MatchRecToGen::produce(edm::Event& iEvent,const edm::EventSetup& iSetup)
   iEvent.put(recToGenMap,"rec2gen");
   iEvent.put(genToRecMap,"gen2rec");
   
-  //This can safely be updated from multiple Streams because we are using an std::atomic
-  globalCache()->nRecTot_     += nRec;
-  globalCache()->nGenTot_     += nGen;
-  globalCache()->nMatchedTot_ += nMatched;
+  nRecTot_ += nRec;
+  nGenTot_ += nGen;
+  nMatchedTot_ += nMatched;
 }
 
 
 //______________________________________________________________________________
-void MatchRecToGen::globalEndJob(Count const* iCount)
+void MatchRecToGen::endJob()
 {
   stringstream ss;
-  ss<<"nMatched = "<<iCount->nMatchedTot_<<"\n"
-    <<"nRec = "<<iCount->nRecTot_<<" "
-    <<"fRec = "<<100.*(iCount->nMatchedTot_/(double)iCount->nRecTot_)<<" %\n"
-    <<"nGen = "<<iCount->nGenTot_<<" "
-    <<"fGen = "<<100.*(iCount->nMatchedTot_/(double)iCount->nGenTot_)<<" %\n";
+  ss<<"nMatched = "<<nMatchedTot_<<"\n"
+    <<"nRec = "<<nRecTot_<<" "
+    <<"fRec = "<<100.*(nMatchedTot_/(double)nRecTot_)<<" %\n"
+    <<"nGen = "<<nGenTot_<<" "
+    <<"fGen = "<<100.*(nMatchedTot_/(double)nGenTot_)<<" %\n";
   edm::LogPrint("Summary")
     <<"++++++++++++++++++++++++++++++++++++++++++++++++++"
-    <<"\n"<<(string)iCount->moduleName_<<"(MatchRecToGen) SUMMARY:\n"<<ss.str()
+    <<"\n"<<moduleName_<<"(MatchRecToGen) SUMMARY:\n"<<ss.str()
     <<"++++++++++++++++++++++++++++++++++++++++++++++++++";
 }
 
