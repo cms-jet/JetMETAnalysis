@@ -161,13 +161,13 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, bool logPol, bool PUPP
    TF2* f4 = 0;
    TString function;
    if(PUPPIFunc)
-      function = "[0] + ([1] * x) * (1 + [2] * log(y)) + (1/([3]*log( y ) + [4]))";
+      function = "[0]+([1]*x)*(1+[2]*log(y))+(1/([3]*log(y)+[4]))";
    else if(logPol)
       //Non-Taylor expanded version
-      function = "[0] + ([1] * x) * (1 + [2] * log(y))";
+      function = "[0]+([1]*x)*(1+[2]*log(y))";
    else
       //Taylor expanded version
-      function = "[0] + ([1] * (x-11)) *(1 + [2] * (log(y) -1.47))";
+      function = "[0]+([1]*(x-11))*(1+[2]*(log(y)-1.47))";
 
    cout << "\t(par01,par1i,par2i):  (" << par0i << "," << par1i << "," << par2i << ")" << endl;
 

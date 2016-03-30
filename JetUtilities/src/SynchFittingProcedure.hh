@@ -63,12 +63,19 @@ TCanvas * getCanvasFromFittingProcedure(TString cname , TProfile2D * prof, TStri
 
    const unsigned int NPARS = 4;
 
-   cout<<"\t Fitting profile named "<<prof->GetName()<<endl;
-
    // Create the canvas and all it's histos
    TCanvas * c = new TCanvas(cname,cname,1600,400);
    c->cd();
    c->Divide(NPARS,1);
+
+
+   if(!prof) {
+      cout << "WARNING::getCanvasFromFittingProcedure histogram prof was not set." << endl
+           << "Returning blank histogram." << endl;
+      return c;
+   }
+   cout<<"\t Fitting profile named "<<prof->GetName()<<endl;
+
    TH1 * aux[NPARS];
    for (unsigned int h=0;h<NPARS;h++){
       TString hname = cname + Form("_Par%i",h);
@@ -1519,13 +1526,20 @@ TCanvas * getCanvasIntegral(TString cname, TString algo, TString title, vector<T
    leg->SetFillColor(0);
    leg->SetBorderSize(0);
 
-   vector<TH1*> hh(prof.size(),(TH1*)0);
-  
+   //vector<TH1*> hh(prof.size(),(TH1*)0);
+   vector<TH1*> hh;
    for (unsigned int j=0;j<prof.size();j++){
       TString hname = cname;
       hname += Form("_%i",j);
-      hh[j] = getIntegralHistoFromHisto(hname, title, prof[j]);
-      setHistoColor(hh[j],colNpv[j]);
+      //hh[j] = getIntegralHistoFromHisto(hname, title, prof[j]);
+      hh.push_back(getIntegralHistoFromHisto(hname, title, prof[j]));
+      if(hh.back())
+         setHistoColor(hh[j],colNpv[j]);
+   }
+   if(!hh[0]) {
+      cout << "WARNING::getCanvasIntegral histogram hh[0] was not set by getIntegralHistoFromHisto." << endl
+           << "Returning blank canvas." << endl;
+      return c;
    }
 
    for (unsigned int j=0;j<hh.size();j++) {
@@ -1554,7 +1568,11 @@ TCanvas * getCanvasIntegral(TString cname, TString algo, TString title, vector<T
 TH1 * getIntegralHistoFromHisto(TString cname, TString title,TProfile *off_in){
 
    // make an empty copy to fill and return
-   TH1 * histo = off_in->ProjectionX(cname);
+   TH1 * histo = 0;
+   if(off_in)
+      histo = off_in->ProjectionX(cname);
+   else
+      return histo;
    histo->Reset();
    //histo->Clear();
    histo->GetYaxis()->SetTitle(title);
@@ -1593,13 +1611,20 @@ TCanvas * getCanvasAverage(TString cname, TString algo, TString title, vector<TP
    leg->SetFillColor(0);
    leg->SetBorderSize(0);
 
-   vector<TH1*> hh(prof.size(),(TH1*)0);
-  
+   //vector<TH1*> hh(prof.size(),(TH1*)0);  
+   vector<TH1*> hh;  
    for (unsigned int j=0;j<prof.size();j++){
       TString hname = cname;
       hname += Form("_%i",j);
-      hh[j] = getAverageHistoFromHisto(hname, title, prof[j]);
-      setHistoColor(hh[j],colNpv[j]);
+      //hh[j] = getAverageHistoFromHisto(hname, title, prof[j]);
+      hh.push_back(getAverageHistoFromHisto(hname, title, prof[j]));
+      if(hh.back())
+         setHistoColor(hh[j],colNpv[j]);
+   }
+   if(!hh[0]) {
+      cout << "WARNING::getCanvasAverage histogram hh[0] was not set by getAverageHistoFromHisto." << endl
+           << "Returning blank canvas." << endl;
+      return c;
    }
    for (unsigned int j=0;j<hh.size();j++) {
       if(j==0) {
@@ -1626,7 +1651,12 @@ TCanvas * getCanvasAverage(TString cname, TString algo, TString title, vector<TP
 TH1 * getAverageHistoFromHisto(TString cname, TString title,TProfile *off_in){
 
    // make an empty copy to fill and return
-   TH1 * histo = off_in->ProjectionX(cname);
+   TH1 * histo = 0;
+   if(off_in)
+      histo = off_in->ProjectionX(cname);
+   else
+      return histo;
+
    histo->Reset();
    //histo->Clear();
    histo->GetYaxis()->SetTitle(title);
