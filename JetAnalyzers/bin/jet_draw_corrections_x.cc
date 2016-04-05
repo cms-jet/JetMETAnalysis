@@ -1103,7 +1103,7 @@ TCanvas * draw_response(TString algo, FactorizedJetCorrector * jetCorr, TString 
   if(doATLAS) ss+="ATLASresponse";
   else ss+="CMSresponse";
   ss += suffix;
-  TCanvas *c1 = tdrCanvas(ss.Data(),h,2,0,doATLAS ? kRectangular : kSquare);
+  TCanvas *c1 = tdrCanvas(ss.Data(),h,14,0,doATLAS ? kRectangular : kSquare);
 
   TLegend *leg1 = tdrLeg(0.25,0.25,0.55,0.30);
   TLegend *leg2 = tdrLeg(0.25,0.20,0.55,0.25);
