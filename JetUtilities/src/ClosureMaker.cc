@@ -473,9 +473,9 @@ void ClosureMaker::makeCanvases() {
 		}
 		frame->GetXaxis()->SetMoreLogLabels();
 		frame->GetXaxis()->SetNoExponent();
-		//frame->GetYaxis()->SetRangeUser(0.95,1.05);
+		frame->GetYaxis()->SetRangeUser(0.95,1.05);
 		//frame->GetYaxis()->SetRangeUser(0.35,1.35);
-        frame->GetYaxis()->SetRangeUser(0.00,1.3);
+        //frame->GetYaxis()->SetRangeUser(0.00,1.3);
 		frame->GetXaxis()->SetTitle(getVariableAxisTitleString(var).c_str());
 		frame->GetYaxis()->SetTitle("Response");
 		canvases_legends.push_back(make_pair(tdrCanvas(name,frame,14,11,true),

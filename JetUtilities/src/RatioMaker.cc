@@ -307,9 +307,15 @@ void RatioMaker::makeRatio(const VARIABLES::Variable ivar, bool multiBin) {
 			pave.back()->AddText(detector_regions_eta[ibin]);
 		}
 		else if(var == VARIABLES::jteta) {
-			pave.back()->AddText(Form("%g < %s < %g GeV",hl_1.minimum(0,ibin),
-			                     getVariableAxisTitleString(VARIABLES::refpt,false).c_str(),
-			                     hl_1.maximum(0,ibin)));
+            if (!multiBin) {
+               pave.back()->AddText(Form("%g < %s < %g GeV",hl_1.minimum(0,ibin),
+                                         getVariableAxisTitleString(VARIABLES::refpt,false).c_str(),
+                                         hl_1.maximum(0,ibin)));
+            }
+            else {
+               pave.back()->AddText(Form("%s > %g GeV",getVariableAxisTitleString(VARIABLES::refpt,false).c_str(),
+                                       hl_1.minimum(0,ibin)));
+            }
 		}
 
 		//

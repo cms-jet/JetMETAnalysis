@@ -770,7 +770,8 @@ void L2Creator::writeTextFileForCurrentAlgorithm() {
       	TF1* frelcor = (TF1*)grelcor->GetListOfFunctions()->Last();
       	if(frelcor!=0) {
       		if(ieta==0 || (ieta==1 && delphes))
-      			fout<<"{1 JetEta 1 JetPt max(0.0001,"<<frelcor->GetExpFormula()<<") Correction L2Relative}"<<endl;
+               fout<<"{1 JetEta 1 JetPt max(0.0001,"<<frelcor->GetTitle()<<") Correction L2Relative}"<<endl;
+               //fout<<"{1 JetEta 1 JetPt max(0.0001,"<<frelcor->GetExpFormula()<<") Correction L2Relative}"<<endl;
       		double  etamin  = hl_jetpt.minimum(0,ieta);
       		double  etamax  = hl_jetpt.maximum(0,ieta);
       		double  ptmin = grelcor->GetX()[0];
