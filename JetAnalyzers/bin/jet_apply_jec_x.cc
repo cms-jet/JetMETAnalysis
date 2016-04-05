@@ -10,6 +10,7 @@
 
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 #include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
+#include "JetMETAnalysis/JetUtilities/interface/JRAEvent.h"
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 
@@ -174,41 +175,23 @@ int main(int argc,char**argv)
     if (debug) cout << "DONE" << endl;
     itree->SetBranchStatus("jtpt",1);
     itree->SetBranchStatus("jte", 1);
-    
-    unsigned char nref;
-    float         jtpt[100];
-    float         jteta[100];
-    float         jte[100];
-    float         rho;
-    float         rho_hlt;
-    Long64_t      npv;
-    float         jtarea[100];
-    vector<int>* npus = new vector<int>;
-    itree->SetBranchAddress("nref",&nref);
-    itree->SetBranchAddress("jtpt", jtpt);
-    itree->SetBranchAddress("jte", jte);
-    itree->SetBranchAddress("jteta",jteta);
-    itree->SetBranchAddress("npus",&npus);
-    itree->SetBranchAddress("rho",&rho);
-    itree->SetBranchAddress("rho_hlt",&rho_hlt);
-    itree->SetBranchAddress("npv",&npv);
-    itree->SetBranchAddress("jtarea",jtarea);
-    TBranch* b_jtpt=otree->Branch("jtpt",jtpt,"jtpt[nref]/F");
-    TBranch* b_jte =otree->Branch("jte", jte, "jte[nref]/F");
-    
+    JRAEvent* JRAEvt = new JRAEvent(itree,85);
+    TBranch* b_jtpt=otree->Branch("jtpt", "vector<Float_t>", &JRAEvt->jtpt);
+    TBranch* b_jte =otree->Branch("jte", "vector<Float_t>", &JRAEvt->jte);
+
     if (debug) cout << "Starting event loop ... " << endl;
     int nevt = (debug) ? 10000 : itree->GetEntries();
     for (int ievt=0;ievt<nevt;ievt++) {
        if (ievt % 100000 == 0)
           cout<<ievt<<endl;
        itree->GetEntry(ievt);
-       for (unsigned int ijt=0;ijt<nref;ijt++) {
-          corrector->setJetPt(jtpt[ijt]);
-          corrector->setJetE(jte[ijt]);
-          corrector->setJetEta(jteta[ijt]);
+       for (unsigned int ijt=0;ijt<JRAEvt->nref;ijt++) {
+          corrector->setJetPt(JRAEvt->jtpt->at(ijt));
+          corrector->setJetE(JRAEvt->jte->at(ijt));
+          corrector->setJetEta(JRAEvt->jteta->at(ijt));
           if (TString(JetInfo::get_correction_levels(levels,L1FastJet)).Contains("L1FastJet")) {
-             if (jtarea[ijt]!=0)
-                corrector->setJetA(jtarea[ijt]);
+             if (JRAEvt->jtarea->at(ijt)!=0)
+                corrector->setJetA(JRAEvt->jtarea->at(ijt));
              else if (jetInfo.coneSize>0)
                 corrector->setJetA(TMath::Pi()*TMath::Power(jetInfo.coneSize/10.0,2));
              else {
@@ -217,14 +200,14 @@ int main(int argc,char**argv)
              }
 
              if (jetInfo.isHLT())
-                corrector->setRho(rho_hlt);
+                corrector->setRho(JRAEvt->rho_hlt);
              else
-                corrector->setRho(rho);
+                corrector->setRho(JRAEvt->rho);
           }
-          if(!L1FastJet) corrector->setNPV(npv);
+          if(!L1FastJet) corrector->setNPV(JRAEvt->npv);
           float jec=corrector->getCorrection();
-          jtpt[ijt]*=jec;
-          jte[ijt] *=jec;
+          JRAEvt->jtpt->at(ijt)*=jec;
+          JRAEvt->jte->at(ijt) *=jec;
        }
        b_jtpt->Fill();
        b_jte ->Fill();

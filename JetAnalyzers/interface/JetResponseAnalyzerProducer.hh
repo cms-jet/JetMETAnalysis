@@ -6,6 +6,10 @@
 //                    01/28/2013 Alexx Perloff       <aperloff@physics.tamu.edu>
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef JETRESPONSEANALYZERPRODUCER_HH
+#define JETRESPONSEANALYZERPRODUCER_HH
+
+
 #include "JetMETAnalysis/JetUtilities/interface/GenJetLeptonFinder.h"
 #include "JetMETAnalysis/JetUtilities/interface/JRAEvent.h"
 
@@ -73,7 +77,7 @@ private:
   //void analyze(const edm::Event& iEvent,const edm::EventSetup& iSetup);
   void produce(edm::Event& iEvent,const edm::EventSetup& iSetup);
   void endEvent();
-  void endJob(){;}
+  void endJob() {;}
 
 private:
   // member data
@@ -112,3 +116,5 @@ private:
 
    auto_ptr<JRAEvent> JRAEvt_;
 };
+
+#endif

@@ -8,6 +8,7 @@
 
 
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
+#include "JetMETAnalysis/JetUtilities/interface/JRAEvent.h"
 #include "JetMETAnalysis/JetUtilities/interface/RootStyle.h"
 
 #include <TApplication.h>
@@ -132,16 +133,12 @@ int main(int argc,char**argv)
       
       cout<<alg<<" ... "<<flush;      
 
-      unsigned char nref(0);
-      float refpt[100];
-      float refeta[100];
-      float refphi[100];
-      float refdrjt[100];
-      tree->SetBranchAddress("nref",     &nref);
-      tree->SetBranchAddress("refpt",    refpt);
-      tree->SetBranchAddress("refeta",  refeta);
-      tree->SetBranchAddress("refphi",  refphi);
-      tree->SetBranchAddress("refdrjt",refdrjt);
+      JRAEvent* JRAEvt = new JRAEvent(tree,85);
+      tree->SetBranchStatus("*",0);
+      vector<string> branch_names = {"nref","refpt","refeta","refphi","refdrjt"};
+      for(auto n : branch_names) {
+         tree->SetBranchStatus(n.c_str(),1);
+      }
 
       if (ifile==0) {
 	hPtAll.push_back(new TH1F*[drcuts.size()]);
@@ -175,15 +172,15 @@ int main(int argc,char**argv)
       unsigned int nevt = (unsigned int)tree->GetEntries();
       for (unsigned int ievt=0;ievt<nevt;ievt++) {
 	tree->GetEntry(ievt);
-	for (unsigned int iref=0;iref<nref;iref++) {
+	for (unsigned int iref=0;iref<JRAEvt->nref;iref++) {
 	  for (unsigned int idr=0;idr<drcuts.size();idr++) {
-	    hPtAll[ialg][idr] ->Fill(refpt[iref], weight);
-	    hEtaAll[ialg][idr]->Fill(refeta[iref],weight);
-	    hPhiAll[ialg][idr]->Fill(refphi[iref],weight);
-	    if (refdrjt[iref]<drcuts[idr]) {
-	      hPtSel[ialg][idr] ->Fill(refpt[iref], weight);
-	      hEtaSel[ialg][idr]->Fill(refeta[iref],weight);
-	      hPhiSel[ialg][idr]->Fill(refphi[iref],weight);
+	    hPtAll[ialg][idr] ->Fill(JRAEvt->refpt->at(iref), weight);
+	    hEtaAll[ialg][idr]->Fill(JRAEvt->refeta->at(iref),weight);
+	    hPhiAll[ialg][idr]->Fill(JRAEvt->refphi->at(iref),weight);
+	    if (JRAEvt->refdrjt->at(iref)<drcuts[idr]) {
+	      hPtSel[ialg][idr] ->Fill(JRAEvt->refpt->at(iref), weight);
+	      hEtaSel[ialg][idr]->Fill(JRAEvt->refeta->at(iref),weight);
+	      hPhiSel[ialg][idr]->Fill(JRAEvt->refphi->at(iref),weight);
 	    }
 	  }
 	}

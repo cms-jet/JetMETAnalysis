@@ -19,6 +19,7 @@
 
 
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
+#include "JetMETAnalysis/JetUtilities/interface/JRAEvent.h"
 #include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
 
 #include <TROOT.h>
@@ -289,70 +290,57 @@ int main(int argc,char**argv)
     //
     // setup the tree for reading
     //
-    unsigned char nref;
     float weight(1.0);
     float flavorWeight(1.0);
-    float rho;
-    int   refpdgid[100];
-    float refpt[100];
-    float refeta[100];
-    float refphi[100];
-    //float refy[100];
-    float jtpt[100];
-    float jteta[100];
-    float jtphi[100];
-    float jty[100];
-    float refdrjt[100];
-    float refdphijt[100];
-    vector<int>* bxns = new vector<int>;
-    vector<int>* npus = new vector<int>;
-    vector<float>* tnpus = new vector<float>;
-    
-    tree->SetBranchAddress("nref",   &nref);
-    if (doflavor) {
-       flavorDefinition.ToUpper();
-       if(flavorDefinition.CompareTo("ALGO")==0)
-          tree->SetBranchAddress("refpdgid_algorithmicDef",refpdgid);
-       else if(flavorDefinition.CompareTo("PHYS")==0)
-          tree->SetBranchAddress("refpdgid_physicsDef",refpdgid);
-       else
-          tree->SetBranchAddress("refpdgid",refpdgid);
+    JRAEvent* JRAEvt = new JRAEvent(tree,85);
+    tree->SetBranchStatus("*",0);
+    vector<string> branch_names = {"nref","weight","rho","refpdgid","refpt",
+                                   "refeta","refphi","jtpt","jteta","jtphi",
+                                   "jty","refdxjt","bxns","npus","tnpus"};
+    for(auto n : branch_names) {
+        if(n=="refpdgid") {
+            if(!doflavor) continue;
+            else if(doflavor) {
+                flavorDefinition.ToUpper();
+                if(flavorDefinition.CompareTo("ALGO")==0)
+                    n = "refpdgid_algorithmicDef";
+                else if(flavorDefinition.CompareTo("PHYS")==0)
+                    n = "refpdgid_physicsDef";
+            }
+        }
+        if(n=="weight") {
+            if (xsection>0.0) { weight = xsection/tree->GetEntries(); useweight = false; }
+            if (useweight) {
+                if (0==tree->GetBranch(n.c_str()))
+                    cout<<"branch 'weight' not found, events will NOT be weighted!"<<endl;
+                else
+                    tree->SetBranchStatus(n.c_str(),1);
+            }
+            continue;
+        }
+        if(n=="refdxjt") {
+            if(dobalance){
+                if (0==tree->GetBranch("refdphijt")) {
+                    cout<<"dobalance, but no branch 'refdphijt' in tree, skip!"<<endl;
+                    continue;
+                }
+                else {
+                    n="refdphijt";
+                }
+            }
+            else {
+                if (0==tree->GetBranch("refdrjt")) {
+                    cout<<"!dobalance, but no branch 'refdrjt' in tree, skip!"<<endl;
+                    continue;
+                }
+                else {
+                    n="refdrjt";
+                }
+            }
+        }
+
+        tree->SetBranchStatus(n.c_str(),1);
     }
-    tree->SetBranchAddress("rho",   &rho);
-    tree->SetBranchAddress("refpt",   refpt);
-    tree->SetBranchAddress("refeta",  refeta);
-    tree->SetBranchAddress("refphi",  refphi);
-    //tree->SetBranchAddress("refy",    refy);
-    tree->SetBranchAddress("jtpt",    jtpt);
-    tree->SetBranchAddress("jteta",   jteta);
-    tree->SetBranchAddress("jtphi",   jtphi);
-    tree->SetBranchAddress("jty",     jty);
-    tree->SetBranchAddress("bxns",    &bxns);
-    tree->SetBranchAddress("npus",    &npus);
-    tree->SetBranchAddress("tnpus",   &tnpus);
-    if (xsection>0.0) { weight = xsection/tree->GetEntries(); useweight = false; }
-    if (useweight) {
-      if (0==tree->GetBranch("weight"))
-        cout<<"branch 'weight' not found, events will NOT be weighted!"<<endl;
-      else
-        tree->SetBranchAddress("weight",&weight);
-    }
-    
-    if (dobalance) {
-      if (0==tree->GetBranch("refdphijt")) {
-        cout<<"dobalance, but no branch 'refdphijt' in tree, skip!"<<endl;
-        continue;
-      }
-      else tree->SetBranchAddress("refdphijt",refdphijt);
-    }
-    else {
-      if (0==tree->GetBranch("refdrjt")) {
-        cout<<"!dobalance, but no branch 'refdrjt' in tree, skip!"<<endl;
-        continue;
-      }
-      else tree->SetBranchAddress("refdrjt",refdrjt);
-    }
-    
     
     //
     // create directory in output file and book histograms
@@ -1313,7 +1301,7 @@ int main(int argc,char**argv)
     cout<<"tree entries: "<<tree->GetEntries()<<" elist: "<<el->GetN()<<endl;
     
     tree->GetEntry( el->GetEntry(0) );         
-    int itInd = itIndex(bxns);
+    int itInd = itIndex(JRAEvt->bxns);
 
     unsigned int nevt = (unsigned) el->GetN();
     for (unsigned int ievt=0;ievt<nevt;ievt++)
@@ -1323,53 +1311,64 @@ int main(int argc,char**argv)
         const Long64_t ientry = el->GetEntry(ievt);
         tree->GetEntry(ientry);
 
-        float mu = tnpus->at(itInd);
+        float mu = JRAEvt->tnpus->at(itInd);
 
-        if (nrefmax>0) nref = std::min((int)nref,nrefmax);
-        for (unsigned char iref=0;iref<nref;iref++) {
-          if(ievt%10000==0 && iref<nref-1)
+        if (nrefmax>0) JRAEvt->nref = std::min((int)JRAEvt->nref,nrefmax);
+        for (unsigned char iref=0;iref<JRAEvt->nref;iref++) {
+          if(ievt%10000==0 && iref<JRAEvt->nref-1)
             cout << ".";
-          else if(ievt%10000==0 && iref==nref-1)
+          else if(ievt%10000==0 && iref==JRAEvt->nref-1)
             cout << ". DONE" << endl;
    
-          if (( dobalance&&refdphijt[iref]<dphimin)||
-              (!dobalance&&refdrjt[iref]>drmax_alg)) {
+          if (( dobalance&&JRAEvt->refdphijt->at(iref)<dphimin)||
+              (!dobalance&&JRAEvt->refdrjt->at(iref)>drmax_alg)) {
             if(verbose) cout << "WARNING::Failed refdrjt or refdphijt cut!" << endl;
             continue;
           }
         
-          if (jtpt[iref]<jtptmin) {
+          if (JRAEvt->jtpt->at(iref)<jtptmin) {
             if(verbose) cout << "WARNING::jtpt[" << iref << "]<" << jtptmin << endl;
             continue;
           }
 
           if (!pileup_cut(itlow,ithigh,earlyootlow,earlyoothigh,lateootlow,lateoothigh,
-                          totalootlow,totaloothigh,npus,bxns)) {
+                          totalootlow,totaloothigh,JRAEvt->npus,JRAEvt->bxns)) {
             if(verbose) cout << "WARNING::Failed pileup cut!" << endl;
             continue;
           }
 
           float eta    =
-            (binseta.size()&&binseta.front()>=0.)?std::abs(jteta[iref]):jteta[iref];
+            (binseta.size()&&binseta.front()>=0.)?std::abs(JRAEvt->jteta->at(iref)):JRAEvt->jteta->at(iref);
           float y      =
-            (binsy.size()&&binsy.front()>=0.)?std::abs(jty[iref]):jty[iref];
-          float pt     = jtpt[iref];
-          float pdgid  = refpdgid[iref];
-
-          float absrsp = jtpt[iref]-refpt[iref];
-          float relrsp = jtpt[iref]/refpt[iref];
-          float etarsp = jteta[iref]-refeta[iref];
-          float phirsp = fmod(jtphi[iref]-refphi[iref]+3*M_PI,2*M_PI)-M_PI;
+            (binsy.size()&&binsy.front()>=0.)?std::abs(JRAEvt->jty->at(iref)):JRAEvt->jty->at(iref);
+          float pt     = JRAEvt->jtpt->at(iref);
+          float refpt  = JRAEvt->refpt->at(iref);
+          float phi    = JRAEvt->jtphi->at(iref);
+          float pdgid(0);
+          if(doflavor) {
+            flavorDefinition.ToUpper();
+            if(flavorDefinition.CompareTo("ALGO")==0)
+               pdgid = JRAEvt->refpdgid_algorithmicDef->at(iref);
+            else if(flavorDefinition.CompareTo("PHYS")==0)
+               pdgid = JRAEvt->refpdgid_physicsDef->at(iref);
+            else
+               pdgid = JRAEvt->refpdgid->at(iref);
+          }
+          float absrsp = pt-refpt;
+          float relrsp = pt/refpt;
+          float etarsp = JRAEvt->jteta->at(iref)-JRAEvt->refeta->at(iref);
+          float phirsp = fmod(JRAEvt->jtphi->at(iref)-JRAEvt->refphi->at(iref)+3*M_PI,2*M_PI)-M_PI;
 
           //
           // retrieve the correct weight
           //
+          if(useweight) weight = JRAEvt->weight;
           if (!(xsection>0.0) && !useweight) weight = 1.0;
           if(!weightfile.IsNull())
           {
-             if(!doflavor && log10(refpt[iref])<3)
+             if(!doflavor && log10(refpt)<3)
              {
-                weight = weightHist->GetBinContent(weightHist->FindBin(log10(refpt[iref])));
+                weight = weightHist->GetBinContent(weightHist->FindBin(log10(refpt)));
              }
              else if(doflavor)
              {
@@ -1386,7 +1385,7 @@ int main(int argc,char**argv)
           else
              flavorWeight = weight;
           if(!MCPUReWeighting.IsNull() && !DataPUReWeighting.IsNull()) {
-             double LumiWeight = LumiWeights_.weight((*tnpus)[itIndex(bxns)]);
+             double LumiWeight = LumiWeights_.weight(JRAEvt->tnpus->at(itIndex(JRAEvt->bxns)));
              //if (ievt<10)
              //   cout << "LumiWeight = " << LumiWeight << "\tweight (before) = "<< weight;
              weight *= LumiWeight;
@@ -1397,230 +1396,230 @@ int main(int argc,char**argv)
 
           if (eta>=etabarrelmin&&eta<=etabarrelmax) {
             if (dorefpt) {
-               fill_histo(refpt[iref],weight,refpt[iref],binspt,refPtVsRefPtBarrel);
-               fill_histo(jtpt [iref],weight,refpt[iref],binspt,jetPtVsRefPtBarrel);
+               fill_histo(refpt,weight,refpt,binspt,refPtVsRefPtBarrel);
+               fill_histo(pt,weight,refpt,binspt,jetPtVsRefPtBarrel);
               if (doflavor) {
-                fill_histo(refpdgid[iref],refpt[iref],flavorWeight,
-                           refpt[iref],binspt,refPtVsRefPtBarrel,noabsflavors);
-                fill_histo(refpdgid[iref],jtpt [iref],flavorWeight,
-                           refpt[iref],binspt,jetPtVsRefPtBarrel,noabsflavors);
+                fill_histo(pdgid,refpt,flavorWeight,
+                           refpt,binspt,refPtVsRefPtBarrel,noabsflavors);
+                fill_histo(pdgid,pt,flavorWeight,
+                           refpt,binspt,jetPtVsRefPtBarrel,noabsflavors);
               }
             }
             if (dorelrsp&&dorefpt) {
-               fill_histo(relrsp,weight,refpt[iref],binspt,relRspVsRefPtBarrel);
-              if (doflavor) fill_histo(refpdgid[iref],relrsp,flavorWeight,
-                                       refpt[iref],binspt,relRspVsRefPtBarrel,
+               fill_histo(relrsp,weight,refpt,binspt,relRspVsRefPtBarrel);
+              if (doflavor) fill_histo(pdgid,relrsp,flavorWeight,
+                                       refpt,binspt,relRspVsRefPtBarrel,
                                        noabsflavors);
             }
             if (doabsrsp&&dorefpt) {
-               fill_histo(absrsp,weight,refpt[iref],binspt,absRspVsRefPtBarrel);
-              if (doflavor) fill_histo(refpdgid[iref],absrsp,flavorWeight,
-                                       refpt[iref],binspt,absRspVsRefPtBarrel,
+               fill_histo(absrsp,weight,refpt,binspt,absRspVsRefPtBarrel);
+              if (doflavor) fill_histo(pdgid,absrsp,flavorWeight,
+                                       refpt,binspt,absRspVsRefPtBarrel,
                                        noabsflavors);
             }
           }
           if ((eta>=etaiendcapmin&&eta<etabarrelmin)||(eta>etabarrelmax&&eta<=etaiendcapmax)) {
             if (dorefpt) {
-               fill_histo(refpt[iref],weight,refpt[iref],binspt,refPtVsRefPtInnerEndcap);
-               fill_histo(jtpt [iref],weight,refpt[iref],binspt,jetPtVsRefPtInnerEndcap);
+               fill_histo(refpt,weight,refpt,binspt,refPtVsRefPtInnerEndcap);
+               fill_histo(pt,weight,refpt,binspt,jetPtVsRefPtInnerEndcap);
               if (doflavor) {
-                fill_histo(refpdgid[iref],refpt[iref],flavorWeight,
-                           refpt[iref],binspt,refPtVsRefPtInnerEndcap,noabsflavors);
-                fill_histo(refpdgid[iref],jtpt [iref],flavorWeight,
-                           refpt[iref],binspt,jetPtVsRefPtInnerEndcap,noabsflavors);
+                fill_histo(pdgid,refpt,flavorWeight,
+                           refpt,binspt,refPtVsRefPtInnerEndcap,noabsflavors);
+                fill_histo(pdgid,pt,flavorWeight,
+                           refpt,binspt,jetPtVsRefPtInnerEndcap,noabsflavors);
               }
             }
             if (dorelrsp&&dorefpt) {
-               fill_histo(relrsp,weight,refpt[iref],binspt,relRspVsRefPtInnerEndcap);
-              if (doflavor) fill_histo(refpdgid[iref],relrsp,flavorWeight,
-                                       refpt[iref],binspt,relRspVsRefPtInnerEndcap,
+               fill_histo(relrsp,weight,refpt,binspt,relRspVsRefPtInnerEndcap);
+              if (doflavor) fill_histo(pdgid,relrsp,flavorWeight,
+                                       refpt,binspt,relRspVsRefPtInnerEndcap,
                                        noabsflavors);
             }
           }
 
           if ((eta>=etaoendcapmin&&eta<etaiendcapmin)||(eta>etaiendcapmax&&eta<=etaoendcapmax)) {
             if (dorefpt) {
-               fill_histo(refpt[iref],weight,refpt[iref],binspt,refPtVsRefPtOuterEndcap);
-               fill_histo(jtpt [iref],weight,refpt[iref],binspt,jetPtVsRefPtOuterEndcap);
+               fill_histo(refpt,weight,refpt,binspt,refPtVsRefPtOuterEndcap);
+               fill_histo(pt,weight,refpt,binspt,jetPtVsRefPtOuterEndcap);
               if (doflavor) {
-                fill_histo(refpdgid[iref],refpt[iref],flavorWeight,
-                           refpt[iref],binspt,refPtVsRefPtOuterEndcap,noabsflavors);
-                fill_histo(refpdgid[iref],jtpt [iref],flavorWeight,
-                           refpt[iref],binspt,jetPtVsRefPtOuterEndcap,noabsflavors);
+                fill_histo(pdgid,refpt,flavorWeight,
+                           refpt,binspt,refPtVsRefPtOuterEndcap,noabsflavors);
+                fill_histo(pdgid,pt,flavorWeight,
+                           refpt,binspt,jetPtVsRefPtOuterEndcap,noabsflavors);
               }
             }
             if (dorelrsp&&dorefpt) {
-               fill_histo(relrsp,weight,refpt[iref],binspt,relRspVsRefPtOuterEndcap);
-              if (doflavor) fill_histo(refpdgid[iref],relrsp,flavorWeight,
-                                       refpt[iref],binspt,relRspVsRefPtOuterEndcap,
+               fill_histo(relrsp,weight,refpt,binspt,relRspVsRefPtOuterEndcap);
+              if (doflavor) fill_histo(pdgid,relrsp,flavorWeight,
+                                       refpt,binspt,relRspVsRefPtOuterEndcap,
                                        noabsflavors);
             }
           }
           if ((eta>=etaforwardmin&&eta<etaoendcapmin)||(eta>etaoendcapmax&&eta<=etaforwardmax)) {
             if (dorefpt) {
-               fill_histo(refpt[iref],weight,refpt[iref],binspt,refPtVsRefPtForward);
-               fill_histo(jtpt [iref],weight,refpt[iref],binspt,jetPtVsRefPtForward);
+               fill_histo(refpt,weight,refpt,binspt,refPtVsRefPtForward);
+               fill_histo(pt,weight,refpt,binspt,jetPtVsRefPtForward);
               if (doflavor) {
-                fill_histo(refpdgid[iref],refpt[iref],flavorWeight,
-                           refpt[iref],binspt,refPtVsRefPtForward,noabsflavors);
-                fill_histo(refpdgid[iref],jtpt [iref],flavorWeight,
-                           refpt[iref],binspt,jetPtVsRefPtForward,noabsflavors);
+                fill_histo(pdgid,refpt,flavorWeight,
+                           refpt,binspt,refPtVsRefPtForward,noabsflavors);
+                fill_histo(pdgid,pt,flavorWeight,
+                           refpt,binspt,jetPtVsRefPtForward,noabsflavors);
               }
             }
             if (dorelrsp&&dorefpt) {
-               fill_histo(relrsp,weight,refpt[iref],binspt,relRspVsRefPtForward);
-              if (doflavor) fill_histo(refpdgid[iref],relrsp,flavorWeight,
-                                       refpt[iref],binspt,relRspVsRefPtForward,
+               fill_histo(relrsp,weight,refpt,binspt,relRspVsRefPtForward);
+              if (doflavor) fill_histo(pdgid,relrsp,flavorWeight,
+                                       refpt,binspt,relRspVsRefPtForward,
                                        noabsflavors);
             }
           }
 
           if (dojetpt) {
-            fill_histo(jtpt[iref],weight,jtpt[iref], binspt,jetPtVsJetPt);
+            fill_histo(pt,weight,pt, binspt,jetPtVsJetPt);
             if (doflavor)
-              fill_histo(refpdgid[iref],jtpt[iref],flavorWeight,
-                         jtpt[iref],binspt,jetPtVsJetPt,noabsflavors);
+              fill_histo(pdgid,pt,flavorWeight,
+                         pt,binspt,jetPtVsJetPt,noabsflavors);
           }
           if (dorefpt) {
-            fill_histo(refpt[iref],weight,refpt[iref],binspt,refPtVsRefPt);
-            fill_histo(jtpt [iref],weight,refpt[iref],binspt,jetPtVsRefPt);
+            fill_histo(refpt,weight,refpt,binspt,refPtVsRefPt);
+            fill_histo(pt,weight,refpt,binspt,jetPtVsRefPt);
             if (doflavor) {
-              fill_histo(refpdgid[iref],refpt[iref],flavorWeight,
-                         refpt[iref],binspt,refPtVsRefPt,noabsflavors);
-              fill_histo(refpdgid[iref],jtpt[iref],flavorWeight,
-                         refpt[iref],binspt,jetPtVsRefPt,noabsflavors);
+              fill_histo(pdgid,refpt,flavorWeight,
+                         refpt,binspt,refPtVsRefPt,noabsflavors);
+              fill_histo(pdgid,pt,flavorWeight,
+                         refpt,binspt,jetPtVsRefPt,noabsflavors);
             }
           }
 	
           fill_histo(eta,weight,eta,binseta,jetEtaVsJetEta);
-          if (doflavor) fill_histo(refpdgid[iref],eta,flavorWeight,
+          if (doflavor) fill_histo(pdgid,eta,flavorWeight,
                                    eta,binseta,jetEtaVsJetEta,noabsflavors);
 	
-          fill_histo(jtphi[iref],weight,jtphi[iref],binsphi,jetPhiVsJetPhi);
-          if (doflavor) fill_histo(refpdgid[iref],jtphi[iref],flavorWeight,
-                                   jtphi[iref],binsphi,jetPhiVsJetPhi,
+          fill_histo(phi,weight,phi,binsphi,jetPhiVsJetPhi);
+          if (doflavor) fill_histo(pdgid,phi,flavorWeight,
+                                   phi,binsphi,jetPhiVsJetPhi,
                                    noabsflavors);
  
-          fill_histo(jty[iref],weight,jty[iref],binsy,jetYVsJetY);
-          if (doflavor) fill_histo(refpdgid[iref],jty[iref],flavorWeight,
-                                   jty[iref],binsy,jetYVsJetY,noabsflavors);
+          fill_histo(y,weight,y,binsy,jetYVsJetY);
+          if (doflavor) fill_histo(pdgid,y,flavorWeight,
+                                   y,binsy,jetYVsJetY,noabsflavors);
 
           if (dojetpt) {
-            fill_histo(jtpt[iref],weight,eta,jtpt[iref],binseta,binspt,jetPtVsJetEtaJetPt);
-            if (domu)  fill_histo(jtpt[iref], weight, eta, mu,  jtpt[iref], binseta, binsmu,  binspt, jetPtVsJetEtaMuJetPt);
-            if (dorho) fill_histo(jtpt[iref], weight, eta, rho, jtpt[iref], binseta, binsrho, binspt, jetPtVsJetEtaRhoJetPt);
+            fill_histo(pt,weight,eta,pt,binseta,binspt,jetPtVsJetEtaJetPt);
+            if (domu)  fill_histo(pt, weight, eta, mu,  pt, binseta, binsmu,  binspt, jetPtVsJetEtaMuJetPt);
+            if (dorho) fill_histo(pt, weight, eta, JRAEvt->rho, pt, binseta, binsrho, binspt, jetPtVsJetEtaRhoJetPt);
 
-            fill_histo(jtpt[iref],weight,y,jtpt[iref],
+            fill_histo(pt,weight,y,pt,
                        binsy,binspt,jetPtVsJetYJetPt);
 
             if (doflavor) {
-              fill_histo(refpdgid[iref],jtpt[iref],flavorWeight,
-                         eta,jtpt[iref],binseta,binspt,jetPtVsJetEtaJetPt,
+              fill_histo(pdgid,pt,flavorWeight,
+                         eta,pt,binseta,binspt,jetPtVsJetEtaJetPt,
                          noabsflavors);
-              if (domu)  fill_histo(refpdgid[iref],jtpt[iref], flavorWeight, eta, mu,  jtpt[iref], binseta, binsmu,  binspt, jetPtVsJetEtaMuJetPt,  noabsflavors);
-              if (dorho) fill_histo(refpdgid[iref],jtpt[iref], flavorWeight, eta, rho, jtpt[iref], binseta, binsrho, binspt, jetPtVsJetEtaRhoJetPt, noabsflavors);
+              if (domu)  fill_histo(pdgid,pt, flavorWeight, eta, mu,  pt, binseta, binsmu,  binspt, jetPtVsJetEtaMuJetPt,  noabsflavors);
+              if (dorho) fill_histo(pdgid,pt, flavorWeight, eta, JRAEvt->rho, pt, binseta, binsrho, binspt, jetPtVsJetEtaRhoJetPt, noabsflavors);
 
-              fill_histo(refpdgid[iref],jtpt[iref],flavorWeight,
-                         y,jtpt[iref],binsy,binspt,jetPtVsJetYJetPt,
+              fill_histo(pdgid,pt,flavorWeight,
+                         y,pt,binsy,binspt,jetPtVsJetYJetPt,
                          noabsflavors);
             }
           }
 
           if (dorefpt) {
-            fill_histo(refpt[iref],weight,eta,refpt[iref],binseta,binspt,refPtVsJetEtaRefPt);
-            if (domu)  fill_histo(refpt[iref], weight, eta, mu,  refpt[iref], binseta, binsmu,  binspt, refPtVsJetEtaMuRefPt);
-            if (dorho) fill_histo(refpt[iref], weight, eta, rho, refpt[iref], binseta, binsrho, binspt, refPtVsJetEtaRhoRefPt);
+            fill_histo(refpt,weight,eta,refpt,binseta,binspt,refPtVsJetEtaRefPt);
+            if (domu)  fill_histo(refpt, weight, eta, mu,  refpt, binseta, binsmu,  binspt, refPtVsJetEtaMuRefPt);
+            if (dorho) fill_histo(refpt, weight, eta, JRAEvt->rho, refpt, binseta, binsrho, binspt, refPtVsJetEtaRhoRefPt);
 
-            fill_histo(jtpt [iref],weight,eta,refpt[iref],binseta,binspt,jetPtVsJetEtaRefPt);
-            if (domu)  fill_histo(jtpt[iref], weight, eta, mu,  refpt[iref], binseta, binsmu,  binspt, jetPtVsJetEtaMuRefPt);
-            if (dorho) fill_histo(jtpt[iref], weight, eta, rho, refpt[iref], binseta, binsrho, binspt, jetPtVsJetEtaRhoRefPt);
+            fill_histo(pt,weight,eta,refpt,binseta,binspt,jetPtVsJetEtaRefPt);
+            if (domu)  fill_histo(pt, weight, eta, mu,  refpt, binseta, binsmu,  binspt, jetPtVsJetEtaMuRefPt);
+            if (dorho) fill_histo(pt, weight, eta, JRAEvt->rho, refpt, binseta, binsrho, binspt, jetPtVsJetEtaRhoRefPt);
 
-            fill_histo(refpt[iref],weight,y,refpt[iref],
+            fill_histo(refpt,weight,y,refpt,
                        binsy,binspt,refPtVsJetYRefPt);
-            fill_histo(jtpt [iref],weight,y,refpt[iref],
+            fill_histo(pt,weight,y,refpt,
                        binsy,binspt,jetPtVsJetYRefPt);
             if (doflavor) {
-              fill_histo(refpdgid[iref],refpt[iref],flavorWeight,
-                         eta,refpt[iref],binseta,binspt,refPtVsJetEtaRefPt,
+              fill_histo(pdgid,refpt,flavorWeight,
+                         eta,refpt,binseta,binspt,refPtVsJetEtaRefPt,
                          noabsflavors);
-              if (domu)  fill_histo(refpdgid[iref], refpt[iref], flavorWeight, eta, mu,  refpt[iref], binseta, binsmu,  binspt, refPtVsJetEtaMuRefPt,  noabsflavors);
-              if (dorho) fill_histo(refpdgid[iref], refpt[iref], flavorWeight, eta, rho, refpt[iref], binseta, binsrho, binspt, refPtVsJetEtaRhoRefPt, noabsflavors);
+              if (domu)  fill_histo(pdgid, refpt, flavorWeight, eta, mu,  refpt, binseta, binsmu,  binspt, refPtVsJetEtaMuRefPt,  noabsflavors);
+              if (dorho) fill_histo(pdgid, refpt, flavorWeight, eta, JRAEvt->rho, refpt, binseta, binsrho, binspt, refPtVsJetEtaRhoRefPt, noabsflavors);
 
-              fill_histo(refpdgid[iref],jtpt[iref],flavorWeight,
-                         eta,refpt[iref],binseta,binspt,jetPtVsJetEtaRefPt,
+              fill_histo(pdgid,pt,flavorWeight,
+                         eta,refpt,binseta,binspt,jetPtVsJetEtaRefPt,
                          noabsflavors);
-              if (domu)  fill_histo(refpdgid[iref], jtpt[iref], flavorWeight, eta, mu,  refpt[iref], binseta, binsmu,  binspt, jetPtVsJetEtaMuRefPt,  noabsflavors);
-              if (dorho) fill_histo(refpdgid[iref], jtpt[iref], flavorWeight, eta, rho, refpt[iref], binseta, binsrho, binspt, jetPtVsJetEtaRhoRefPt, noabsflavors);
+              if (domu)  fill_histo(pdgid, pt, flavorWeight, eta, mu,  refpt, binseta, binsmu,  binspt, jetPtVsJetEtaMuRefPt,  noabsflavors);
+              if (dorho) fill_histo(pdgid, pt, flavorWeight, eta, JRAEvt->rho, refpt, binseta, binsrho, binspt, jetPtVsJetEtaRhoRefPt, noabsflavors);
 
-              fill_histo(refpdgid[iref],refpt[iref],flavorWeight,
-                         y,refpt[iref],binsy,binspt,refPtVsJetYRefPt,
+              fill_histo(pdgid,refpt,flavorWeight,
+                         y,refpt,binsy,binspt,refPtVsJetYRefPt,
                          noabsflavors);
-              fill_histo(refpdgid[iref],jtpt[iref],flavorWeight,
-                         y,refpt[iref],binsy,binspt,jetPtVsJetYRefPt,
+              fill_histo(pdgid,pt,flavorWeight,
+                         y,refpt,binsy,binspt,jetPtVsJetYRefPt,
                          noabsflavors);
             }
           }
 	
           if (dorelrsp) {
             if (dojetpt) {
-              fill_histo(relrsp,weight,jtpt[iref],binspt,relRspVsJetPt);
-              if (doflavor) fill_histo(refpdgid[iref],relrsp,flavorWeight,
-                                       jtpt[iref], binspt,relRspVsJetPt,
+              fill_histo(relrsp,weight,pt,binspt,relRspVsJetPt);
+              if (doflavor) fill_histo(pdgid,relrsp,flavorWeight,
+                                       pt, binspt,relRspVsJetPt,
                                        noabsflavors);
             }
             if (dorefpt) {
-              fill_histo(relrsp,weight,refpt[iref],binspt,relRspVsRefPt);
-              if (doflavor) fill_histo(refpdgid[iref],relrsp,flavorWeight,
-                                       refpt[iref],binspt,relRspVsRefPt,
+              fill_histo(relrsp,weight,refpt,binspt,relRspVsRefPt);
+              if (doflavor) fill_histo(pdgid,relrsp,flavorWeight,
+                                       refpt,binspt,relRspVsRefPt,
                                        noabsflavors);
             }
 
             fill_histo(relrsp,weight,eta,binseta,relRspVsJetEta);
-            if (doflavor) fill_histo(refpdgid[iref],relrsp,flavorWeight,
+            if (doflavor) fill_histo(pdgid,relrsp,flavorWeight,
                                      eta,binseta,relRspVsJetEta,
                                      noabsflavors);
 	  
-            fill_histo(relrsp,weight,jtphi[iref],binsphi,relRspVsJetPhi);
-            if (doflavor) fill_histo(refpdgid[iref],relrsp,flavorWeight,
-                                     jtphi[iref],binsphi,relRspVsJetPhi,
+            fill_histo(relrsp,weight,phi,binsphi,relRspVsJetPhi);
+            if (doflavor) fill_histo(pdgid,relrsp,flavorWeight,
+                                     phi,binsphi,relRspVsJetPhi,
                                      noabsflavors);
 	  
-            fill_histo(relrsp,weight,jty[iref],binsy,relRspVsJetY);
-            if (doflavor) fill_histo(refpdgid[iref],relrsp,flavorWeight,
-                                     jty[iref],binsy,relRspVsJetY,
+            fill_histo(relrsp,weight,y,binsy,relRspVsJetY);
+            if (doflavor) fill_histo(pdgid,relrsp,flavorWeight,
+                                     y,binsy,relRspVsJetY,
                                      noabsflavors);
 	  
             if (dojetpt) {
-              fill_histo(relrsp,weight,eta,jtpt[iref],binseta,binspt,relRspVsJetEtaJetPt);
-              if (domu)  fill_histo(relrsp, weight, eta, mu,  jtpt[iref], binseta, binsmu,  binspt, relRspVsJetEtaMuJetPt);
-              if (dorho) fill_histo(relrsp, weight, eta, rho, jtpt[iref], binseta, binsrho, binspt, relRspVsJetEtaRhoJetPt);
+              fill_histo(relrsp,weight,eta,pt,binseta,binspt,relRspVsJetEtaJetPt);
+              if (domu)  fill_histo(relrsp, weight, eta, mu,  pt, binseta, binsmu,  binspt, relRspVsJetEtaMuJetPt);
+              if (dorho) fill_histo(relrsp, weight, eta, JRAEvt->rho, pt, binseta, binsrho, binspt, relRspVsJetEtaRhoJetPt);
 
-              fill_histo(relrsp,weight,y,jtpt[iref],
+              fill_histo(relrsp,weight,y,pt,
                          binsy,binspt,relRspVsJetYJetPt);
               if (doflavor) {
-                fill_histo(refpdgid[iref],relrsp,flavorWeight,eta,jtpt[iref],
+                fill_histo(pdgid,relrsp,flavorWeight,eta,pt,
                            binseta,binspt,relRspVsJetEtaJetPt,noabsflavors);
-                if (domu)  fill_histo(refpdgid[iref],relrsp, flavorWeight, eta, mu,  jtpt[iref], binseta, binsmu,  binspt, relRspVsJetEtaMuJetPt,  noabsflavors);
-                if (dorho) fill_histo(refpdgid[iref],relrsp, flavorWeight, eta, rho, jtpt[iref], binseta, binsrho, binspt, relRspVsJetEtaRhoJetPt, noabsflavors);
+                if (domu)  fill_histo(pdgid,relrsp, flavorWeight, eta, mu,  pt, binseta, binsmu,  binspt, relRspVsJetEtaMuJetPt,  noabsflavors);
+                if (dorho) fill_histo(pdgid,relrsp, flavorWeight, eta, JRAEvt->rho, pt, binseta, binsrho, binspt, relRspVsJetEtaRhoJetPt, noabsflavors);
 
-                fill_histo(refpdgid[iref],relrsp,flavorWeight,y,jtpt[iref],
+                fill_histo(pdgid,relrsp,flavorWeight,y,pt,
                            binsy,binspt,relRspVsJetYJetPt,noabsflavors);
               }
             }
             if (dorefpt) {
-              fill_histo(relrsp,weight,eta,refpt[iref],binseta,binspt,relRspVsJetEtaRefPt);
-              if (domu)  fill_histo(relrsp, weight, eta, mu,  refpt[iref], binseta, binsmu,  binspt, relRspVsJetEtaMuRefPt);
-              if (dorho) fill_histo(relrsp, weight, eta, rho, refpt[iref], binseta, binsrho, binspt, relRspVsJetEtaRhoRefPt);
+              fill_histo(relrsp,weight,eta,refpt,binseta,binspt,relRspVsJetEtaRefPt);
+              if (domu)  fill_histo(relrsp, weight, eta, mu,  refpt, binseta, binsmu,  binspt, relRspVsJetEtaMuRefPt);
+              if (dorho) fill_histo(relrsp, weight, eta, JRAEvt->rho, refpt, binseta, binsrho, binspt, relRspVsJetEtaRhoRefPt);
 
-              fill_histo(relrsp,weight,y,refpt[iref],
+              fill_histo(relrsp,weight,y,refpt,
                          binsy,binspt,relRspVsJetYRefPt);
               if (doflavor) {
-                fill_histo(refpdgid[iref],relrsp,flavorWeight,eta,refpt[iref],
+                fill_histo(pdgid,relrsp,flavorWeight,eta,refpt,
                            binseta,binspt,relRspVsJetEtaRefPt,noabsflavors);
-                if (domu)  fill_histo(refpdgid[iref],relrsp, flavorWeight, eta, mu,  refpt[iref], binseta, binsmu,  binspt, relRspVsJetEtaMuRefPt,  noabsflavors);
-                if (dorho) fill_histo(refpdgid[iref],relrsp, flavorWeight, eta, rho, refpt[iref], binseta, binsrho, binspt, relRspVsJetEtaRhoRefPt, noabsflavors);
+                if (domu)  fill_histo(pdgid,relrsp, flavorWeight, eta, mu,  refpt, binseta, binsmu,  binspt, relRspVsJetEtaMuRefPt,  noabsflavors);
+                if (dorho) fill_histo(pdgid,relrsp, flavorWeight, eta, JRAEvt->rho, refpt, binseta, binsrho, binspt, relRspVsJetEtaRhoRefPt, noabsflavors);
 
-                fill_histo(refpdgid[iref],relrsp,flavorWeight,y,refpt[iref],
+                fill_histo(pdgid,relrsp,flavorWeight,y,refpt,
                            binsy,binspt,relRspVsJetYRefPt,noabsflavors);
               }
             }
@@ -1628,54 +1627,54 @@ int main(int argc,char**argv)
 	
           if (doabsrsp) {
             if (dojetpt) {
-              fill_histo(absrsp,weight,jtpt[iref], binspt,absRspVsJetPt);
-              if (doflavor) fill_histo(refpdgid[iref],absrsp,flavorWeight,
-                                       jtpt[iref],binspt,absRspVsJetPt,
+              fill_histo(absrsp,weight,pt, binspt,absRspVsJetPt);
+              if (doflavor) fill_histo(pdgid,absrsp,flavorWeight,
+                                       pt,binspt,absRspVsJetPt,
                                        noabsflavors);
             }
             if (dorefpt) {
-              fill_histo(absrsp,weight,refpt[iref],binspt,absRspVsRefPt);
-              if (doflavor) fill_histo(refpdgid[iref],absrsp,flavorWeight,
-                                       refpt[iref],binspt,absRspVsRefPt,
+              fill_histo(absrsp,weight,refpt,binspt,absRspVsRefPt);
+              if (doflavor) fill_histo(pdgid,absrsp,flavorWeight,
+                                       refpt,binspt,absRspVsRefPt,
                                        noabsflavors);
             }
 	  
             fill_histo(absrsp,weight,eta,binseta,absRspVsJetEta);
-            if (doflavor) fill_histo(refpdgid[iref],absrsp,flavorWeight,
+            if (doflavor) fill_histo(pdgid,absrsp,flavorWeight,
                                      eta,binseta,absRspVsJetEta,
                                      noabsflavors);
 
-            fill_histo(absrsp,weight,jtphi[iref],binsphi,absRspVsJetPhi);
-            if (doflavor) fill_histo(refpdgid[iref],absrsp,flavorWeight,
-                                     jtphi[iref],binsphi,absRspVsJetPhi,
+            fill_histo(absrsp,weight,phi,binsphi,absRspVsJetPhi);
+            if (doflavor) fill_histo(pdgid,absrsp,flavorWeight,
+                                     phi,binsphi,absRspVsJetPhi,
                                      noabsflavors);
 	  
-            fill_histo(absrsp,weight,jty[iref],binsy,absRspVsJetY);
-            if (doflavor) fill_histo(refpdgid[iref],absrsp,flavorWeight,
-                                     jty[iref],binsy,absRspVsJetY,
+            fill_histo(absrsp,weight,y,binsy,absRspVsJetY);
+            if (doflavor) fill_histo(pdgid,absrsp,flavorWeight,
+                                     y,binsy,absRspVsJetY,
                                      noabsflavors);
 	  
             if (dojetpt) {
-              fill_histo(absrsp,weight,eta,jtpt[iref],
+              fill_histo(absrsp,weight,eta,pt,
                          binseta,binspt,absRspVsJetEtaJetPt);
-              fill_histo(absrsp,weight,y,jtpt[iref],
+              fill_histo(absrsp,weight,y,pt,
                          binsy,binspt,absRspVsJetYJetPt);
               if (doflavor) {
-                fill_histo(refpdgid[iref],absrsp,flavorWeight,eta,jtpt[iref],
+                fill_histo(pdgid,absrsp,flavorWeight,eta,pt,
                            binseta,binspt,absRspVsJetEtaJetPt,noabsflavors);
-                fill_histo(refpdgid[iref],absrsp,flavorWeight,y,jtpt[iref],
+                fill_histo(pdgid,absrsp,flavorWeight,y,pt,
                            binsy,binspt,absRspVsJetYJetPt,noabsflavors);
               }
             }
             if (dorefpt) {
-              fill_histo(absrsp,weight,eta,refpt[iref],
+              fill_histo(absrsp,weight,eta,refpt,
                          binseta,binspt,absRspVsJetEtaRefPt);
-              fill_histo(absrsp,weight,y,refpt[iref],
+              fill_histo(absrsp,weight,y,refpt,
                          binsy,binspt,absRspVsJetYRefPt);
               if (doflavor) {
-                fill_histo(refpdgid[iref],absrsp,flavorWeight,eta,refpt[iref],
+                fill_histo(pdgid,absrsp,flavorWeight,eta,refpt,
                            binseta,binspt,absRspVsJetEtaRefPt,noabsflavors);
-                fill_histo(refpdgid[iref],absrsp,flavorWeight,y,refpt[iref],
+                fill_histo(pdgid,absrsp,flavorWeight,y,refpt,
                            binsy,binspt,absRspVsJetYRefPt,noabsflavors);
               }
             }
@@ -1683,41 +1682,41 @@ int main(int argc,char**argv)
 	
           if (doetarsp) {
             if (dojetpt) {
-              fill_histo(etarsp,weight,jtpt[iref], binspt,etaRspVsJetPt);
-              if (doflavor) fill_histo(refpdgid[iref],etarsp,flavorWeight,
-                                       jtpt[iref],binspt,etaRspVsJetPt,
+              fill_histo(etarsp,weight,pt, binspt,etaRspVsJetPt);
+              if (doflavor) fill_histo(pdgid,etarsp,flavorWeight,
+                                       pt,binspt,etaRspVsJetPt,
                                        noabsflavors);
             }
             if (dorefpt) {
-              fill_histo(etarsp,weight,refpt[iref],binspt,etaRspVsRefPt);
-              if (doflavor) fill_histo(refpdgid[iref],etarsp,flavorWeight,
-                                       refpt[iref],binspt,etaRspVsRefPt,
+              fill_histo(etarsp,weight,refpt,binspt,etaRspVsRefPt);
+              if (doflavor) fill_histo(pdgid,etarsp,flavorWeight,
+                                       refpt,binspt,etaRspVsRefPt,
                                        noabsflavors);
             }
 	  
             fill_histo(etarsp,weight,eta,binseta,etaRspVsJetEta);
-            if (doflavor) fill_histo(refpdgid[iref],etarsp,flavorWeight,
+            if (doflavor) fill_histo(pdgid,etarsp,flavorWeight,
                                      eta,binseta,etaRspVsJetEta,
                                      noabsflavors);
 	  
-            fill_histo(etarsp,weight,jtphi[iref],binsphi,etaRspVsJetPhi);
-            if (doflavor) fill_histo(refpdgid[iref],etarsp,flavorWeight,
-                                     jtphi[iref],binsphi,etaRspVsJetPhi,
+            fill_histo(etarsp,weight,phi,binsphi,etaRspVsJetPhi);
+            if (doflavor) fill_histo(pdgid,etarsp,flavorWeight,
+                                     phi,binsphi,etaRspVsJetPhi,
                                      noabsflavors);
 	  
             if (dojetpt) {
-              fill_histo(etarsp,weight,eta,jtpt[iref],
+              fill_histo(etarsp,weight,eta,pt,
                          binseta,binspt,etaRspVsJetEtaJetPt);
-              if (doflavor) fill_histo(refpdgid[iref],etarsp,flavorWeight,
-                                       eta,jtpt[iref],
+              if (doflavor) fill_histo(pdgid,etarsp,flavorWeight,
+                                       eta,pt,
                                        binseta,binspt,etaRspVsJetEtaJetPt,
                                        noabsflavors);
             }
             if (dorefpt) {
-              fill_histo(etarsp,weight,eta,refpt[iref],
+              fill_histo(etarsp,weight,eta,refpt,
                          binseta,binspt,etaRspVsJetEtaRefPt);
-              if (doflavor) fill_histo(refpdgid[iref],etarsp,flavorWeight,
-                                       eta,refpt[iref],
+              if (doflavor) fill_histo(pdgid,etarsp,flavorWeight,
+                                       eta,refpt,
                                        binseta,binspt,etaRspVsJetEtaRefPt,
                                        noabsflavors);
             }
@@ -1725,41 +1724,41 @@ int main(int argc,char**argv)
 	
           if (dophirsp) {
             if (dojetpt) {
-              fill_histo(phirsp,weight,jtpt[iref], binspt,phiRspVsJetPt);
-              if (doflavor) fill_histo(refpdgid[iref],phirsp,flavorWeight,
-                                       jtpt[iref],binspt,phiRspVsJetPt,
+              fill_histo(phirsp,weight,pt, binspt,phiRspVsJetPt);
+              if (doflavor) fill_histo(pdgid,phirsp,flavorWeight,
+                                       pt,binspt,phiRspVsJetPt,
                                        noabsflavors);
             }
             if (dorefpt) {
-              fill_histo(phirsp,weight,refpt[iref],binspt,phiRspVsRefPt);
-              if (doflavor) fill_histo(refpdgid[iref],phirsp,flavorWeight,
-                                       refpt[iref],binspt,phiRspVsRefPt,
+              fill_histo(phirsp,weight,refpt,binspt,phiRspVsRefPt);
+              if (doflavor) fill_histo(pdgid,phirsp,flavorWeight,
+                                       refpt,binspt,phiRspVsRefPt,
                                        noabsflavors);
             }
 	  
             fill_histo(phirsp,weight,eta,binseta,phiRspVsJetEta);
-            if (doflavor) fill_histo(refpdgid[iref],phirsp,flavorWeight,
+            if (doflavor) fill_histo(pdgid,phirsp,flavorWeight,
                                      eta,binseta,phiRspVsJetEta,
                                      noabsflavors);
 	  
-            fill_histo(phirsp,weight,jtphi[iref],binsphi,phiRspVsJetPhi);
-            if (doflavor) fill_histo(refpdgid[iref],phirsp,flavorWeight,
-                                     jtphi[iref],binsphi,phiRspVsJetPhi,
+            fill_histo(phirsp,weight,phi,binsphi,phiRspVsJetPhi);
+            if (doflavor) fill_histo(pdgid,phirsp,flavorWeight,
+                                     phi,binsphi,phiRspVsJetPhi,
                                      noabsflavors);
 	  
             if (dojetpt) {
-              fill_histo(phirsp,weight,eta,jtpt[iref],
+              fill_histo(phirsp,weight,eta,pt,
                          binseta,binspt,phiRspVsJetEtaJetPt);
-              if (doflavor) fill_histo(refpdgid[iref],phirsp,flavorWeight,
-                                       eta,jtpt[iref],
+              if (doflavor) fill_histo(pdgid,phirsp,flavorWeight,
+                                       eta,pt,
                                        binseta,binspt,phiRspVsJetEtaJetPt,
                                        noabsflavors);
             }
             if (dorefpt) {
-              fill_histo(phirsp,weight,eta,refpt[iref],
+              fill_histo(phirsp,weight,eta,refpt,
                          binseta,binspt,phiRspVsJetEtaRefPt);
-              if (doflavor) fill_histo(refpdgid[iref],phirsp,flavorWeight,
-                                       eta,refpt[iref],
+              if (doflavor) fill_histo(pdgid,phirsp,flavorWeight,
+                                       eta,refpt,
                                        binseta,binspt,phiRspVsJetEtaRefPt,
                                        noabsflavors);
             }

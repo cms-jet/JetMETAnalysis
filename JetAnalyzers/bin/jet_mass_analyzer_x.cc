@@ -8,6 +8,7 @@
 
 
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
+#include "JetMETAnalysis/JetUtilities/interface/JRAEvent.h"
 
 #include <TROOT.h>
 #include <TFile.h>
@@ -146,41 +147,24 @@ int main(int argc,char**argv)
     //
     // setup the tree for reading
     //
-    unsigned char nref;
     float weight(1.0);
-    int   refpdgid[100];
-    float refe[100];
-    float refpt[100];
-    float refeta[100];
-    float refphi[100];
-    float jte[100];
-    float jtpt[100];
-    float jteta[100];
-    float jtphi[100];
-    float refdrjt[100];
-    
-    tree->SetBranchAddress("nref",   &nref);
-    //if (doflavor) tree->SetBranchAddress("refpdgid",refpdgid); // doflavor?
-    tree->SetBranchAddress("refpdgid",refpdgid);
-    tree->SetBranchAddress("refe",    refe);
-    tree->SetBranchAddress("refpt",   refpt);
-    tree->SetBranchAddress("refeta",  refeta);
-    tree->SetBranchAddress("refphi",  refphi);
-    tree->SetBranchAddress("jte",    jte);
-    tree->SetBranchAddress("jtpt",    jtpt);
-    tree->SetBranchAddress("jteta",   jteta);
-    tree->SetBranchAddress("jtphi",   jtphi);
-    tree->SetBranchAddress("refdrjt",refdrjt);
-    
-    
-    if (xsection>0.0) { weight = xsection/tree->GetEntries(); useweight = false; }
-    if (useweight) {
-      if (0==tree->GetBranch("weight"))
-	cout<<"branch 'weight' not found, events will NOT be weighted!"<<endl;
-      else
-	tree->SetBranchAddress("weight",&weight);
+    JRAEvent* JRAEvt = new JRAEvent(tree,85);
+    tree->SetBranchStatus("*",0);
+    vector<string> branch_names = {"nref","weight","refpdgid","refe","refpt","refeta",
+                                   "refphi","jte","jtpt","jteta","jtphi","refdrjt"};
+    for(auto n : branch_names) {
+      if(n=="weight") {
+        if (xsection>0.0) { weight = xsection/tree->GetEntries(); useweight = false; }
+        if (useweight) {
+            if (0==tree->GetBranch(n.c_str()))
+                cout<<"branch 'weight' not found, events will NOT be weighted!"<<endl;
+            else
+                tree->SetBranchStatus(n.c_str(),1);
+        }
+        continue;
+      }
+      tree->SetBranchStatus(n.c_str(),1);
     }
-    
     
     //
     // create directory in output file and book histograms
@@ -207,22 +191,23 @@ int main(int argc,char**argv)
     unsigned nevt = (unsigned)tree->GetEntries();
     for (unsigned ievt=0;ievt<nevt;ievt++) {
       tree->GetEntry(ievt);
+      if(useweight) weight = JRAEvt->weight;
 
       for (unsigned ileg=0;ileg<legs.size();ileg++) {
 	vector<int> ilegs = legs[ileg];
 	vector<TLorentzVector> refs;
 	vector<TLorentzVector> jets;
-	for (unsigned char iref=0;iref<nref;iref++) {
-	  if (refdrjt[iref]>drmax_alg) continue;
-	  if (jtpt[iref]<jtptmin) continue;
-	  int id = refpdgid[iref];
+	for (unsigned char iref=0;iref<JRAEvt->nref;iref++) {
+	  if (JRAEvt->refdrjt->at(iref)>drmax_alg) continue;
+	  if (JRAEvt->jtpt->at(iref)<jtptmin) continue;
+	  int id = JRAEvt->refpdgid->at(iref);
 	  vector<int>::iterator itid = find(ilegs.begin(),ilegs.end(),id);
 	  if (itid!=ilegs.end()) {
 	    TLorentzVector ref;
-	    ref.SetPtEtaPhiE(refpt[iref],refeta[iref],refphi[iref],refe[iref]);
+	    ref.SetPtEtaPhiE(JRAEvt->refpt->at(iref),JRAEvt->refeta->at(iref),JRAEvt->refphi->at(iref),JRAEvt->refe->at(iref));
 	    refs.push_back(ref);
 	    TLorentzVector jet;
-	    jet.SetPtEtaPhiE(jtpt[iref],jteta[iref],jtphi[iref],jte[iref]);
+	    jet.SetPtEtaPhiE(JRAEvt->jtpt->at(iref),JRAEvt->jteta->at(iref),JRAEvt->jtphi->at(iref),JRAEvt->jte->at(iref));
 	    jets.push_back(jet);
 	    ilegs.erase(itid);
 	  }

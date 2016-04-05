@@ -1,9 +1,10 @@
-//////////////////////////////////////////////////////////
-// This class has been automatically generated on
-// Thu Jan 16 15:35:42 2014 by ROOT version 5.32/00
-// from TTree t/t
-// found on file: /home/aperloff/fdata/JRA_outfiles_53X_20140109_pbs/JRA/JRA.root
-//////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//
+// JetResponseAnalyzer
+// -------------------
+//
+//            12/28/2013 Alexx Perloff          <alexx.stephen.perloff@cern.ch>
+////////////////////////////////////////////////////////////////////////////////
 
 #ifndef JetUtilities_JRAEvent_h
 #define JetUtilities_JRAEvent_h
@@ -16,15 +17,20 @@
 #include "TTreeReaderArray.h"
 
 // Header file for the classes stored in the TTree if any.
+#include <iostream>
 #include <vector>
 #include <string>
 #include <utility>
+#include <bitset>
 
 // Fixed size dimensions of array or collections stored in the TTree if any.
 
+using std::cout;
+using std::endl;
 using std::string;
 using std::vector;
 using std::pair;
+using std::bitset;
 
 class JRAEvent {
 public :
@@ -32,6 +38,17 @@ public :
 
    TTree          *fChain;   //!pointer to the analyzed TTree or TChain
    Int_t           fCurrent; //!current Tree number in a TChain
+
+   // Configuration flags
+   // Bit 0: useFlags
+   // Bit 1: doHLT_
+   // Bit 2: doFlavor_
+   // Bit 3: doBalancing_
+   // Bit 4: doComposition_
+   // Bit 5: isCaloJet_
+   // Bit 6: isPFJet_
+   // Bit 7: saveCandidates_
+   bitset<8> flags;   //!
 
    // Declaration of leaf types
    vector<int>*     npus;
@@ -63,8 +80,8 @@ public :
    vector<Float_t>* refeta;
    vector<Float_t>* refphi;
    vector<Float_t>* refy;
-   vector<Float_t>* refdrjt;
    vector<Float_t>* refdphijt;
+   vector<Float_t>* refdrjt;
    vector<Float_t>* refarea;
    vector<Float_t>* jte;
    vector<Float_t>* jtpt;
@@ -73,15 +90,14 @@ public :
    vector<Float_t>* jty;
    vector<Float_t>* jtjec;
    vector<Float_t>* jtarea;
+   vector<Float_t>* jtemf;
    vector<Float_t>* jtchf;
    vector<Float_t>* jtnhf;
    vector<Float_t>* jtnef;
    vector<Float_t>* jtcef;
-   vector<Float_t>* jtemf;
    vector<Float_t>* jtmuf;
    vector<Float_t>* jthfhf;
    vector<Float_t>* jthfef;
-   vector<Float_t>* refdzvtx;
    vector<Float_t>* pfcand_px;
    vector<Float_t>* pfcand_py;
    vector<Float_t>* pfcand_pt;
@@ -89,6 +105,7 @@ public :
    vector<Float_t>* pfcand_phi;
    vector<Float_t>* pfcand_e;
    vector<Flavor>*  pfcand_id;
+   vector<Float_t>* refdzvtx;
 
    // List of branches
    TBranch        *b_npus;   //!
@@ -120,8 +137,8 @@ public :
    TBranch        *b_refeta;   //!
    TBranch        *b_refphi;   //!
    TBranch        *b_refy;   //!
-   TBranch        *b_refdrjt;   //!
    TBranch        *b_refdphijt;   //!
+   TBranch        *b_refdrjt;   //!
    TBranch        *b_refarea;   //!
    TBranch        *b_jte;   //!
    TBranch        *b_jtpt;   //!
@@ -130,15 +147,14 @@ public :
    TBranch        *b_jty;   //!
    TBranch        *b_jtjec;   //!
    TBranch        *b_jtarea;   //!
+   TBranch        *b_jtemf;   //!
    TBranch        *b_jtchf;   //!
    TBranch        *b_jtnhf;   //!
    TBranch        *b_jtnef;   //!
    TBranch        *b_jtcef;   //!
-   TBranch        *b_jtemf;   //!
    TBranch        *b_jtmuf;   //!
    TBranch        *b_jthfhf;   //!
    TBranch        *b_jthfef;   //!
-   TBranch        *b_refdzvtx;   //!
    TBranch        *b_pfcand_px;   //!
    TBranch        *b_pfcand_py;   //!
    TBranch        *b_pfcand_pt;   //!
@@ -146,8 +162,9 @@ public :
    TBranch        *b_pfcand_phi;   //!
    TBranch        *b_pfcand_e;   //!
    TBranch        *b_pfcand_id;   //!
+   TBranch        *b_refdzvtx;   //!
 
-   JRAEvent(TTree *tree=0, bool newTree = false);
+   JRAEvent(TTree *tree = 0, bitset<8> b = 0);
    virtual ~JRAEvent();
    virtual Int_t    Cut(Long64_t entry);
    virtual Int_t    GetEntry(Long64_t entry);
@@ -159,11 +176,10 @@ public :
    virtual void     MakeTree(TTree *tree);
    virtual void     MakeVectors();
    virtual void     clear();
-
-   int itIndex();
-   double sumEOOT();
-   double sumLOOT();
-   bool CheckValue(ROOT::Internal::TTreeReaderValueBase* value);
+   int              itIndex();
+   double           sumEOOT();
+   double           sumLOOT();
+   bool             CheckValue(ROOT::Internal::TTreeReaderValueBase* value);
 };
 
 // this is our new product, it is simply a 

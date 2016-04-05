@@ -11,6 +11,7 @@
 #include "JetMETAnalysis/JetUtilities/interface/TProfileMDF.h"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 #include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
+#include "JetMETAnalysis/JetUtilities/interface/JRAEvent.h"
 
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
@@ -195,7 +196,7 @@ int main(int argc,char**argv)
    }
     edm::LumiReWeighting LumiWeights_;
     if(!MCPUReWeighting.IsNull() && !DataPUReWeighting.IsNull()) {
-       LumiWeights_ = edm::LumiReWeighting(string(MCPUReWeighting),string(DataPUReWeighting),"pileup","pileup_jt400");
+       LumiWeights_ = edm::LumiReWeighting(string(MCPUReWeighting),string(DataPUReWeighting),"pileup","pileup");
     }
 
    if(!outputDir.IsNull() && !outputDir.EndsWith("/")) outputDir += "/";
@@ -215,33 +216,9 @@ int main(int argc,char**argv)
       odir->cd();
   
       int j,k;
-      unsigned char nref;
       char name[1024];
-      //char title[1024];
-      float refpt[100];
-      float refeta[100];
-      float refphi[100];
-      float jtpt[100];
-      float jteta[100];
-      float jtphi[100];
-      float refdrjt[100];
-      //float refdphijt[100];
-      int   refpdgid[100];
-      vector<int>* bxns = new vector<int>;
-      vector<int>* npus = new vector<int>;
-      vector<float>* tnpus = new vector<float>;
-      vector<float>* sumpt_lowpt = new vector<float>;
-      float rho(0.0);
-      float rho_hlt(0.0);
-      Long64_t npv(0);
-      Long64_t evt(0);
-      Long64_t run(0);
+
       vector<TH2F*> RelRspVsRefPt;
-      //TH2F *RespVsPt_Bar;
-      //TH2F *RespVsPt_End;
-      //TH2F *RespVsPt_IEnd;
-      //TH2F *RespVsPt_OEnd;
-      //TH2F *RespVsPt_Fwd;
       TH2F *RelRspVsJetEta[NPtBins];
       TH3F *RespVsEtaVsPt;
       TH3F *ScaleVsEtaVsPt;
@@ -337,24 +314,17 @@ int main(int argc,char**argv)
       }
 
       TTree *tree = (TTree*)idir->Get("t");
-      tree->SetBranchAddress("nref",        &nref);
-      tree->SetBranchAddress("refpt",       refpt);
-      tree->SetBranchAddress("refeta",      refeta);
-      tree->SetBranchAddress("refphi",      refphi);
-      tree->SetBranchAddress("jtpt",        jtpt);
-      tree->SetBranchAddress("jteta",       jteta);
-      tree->SetBranchAddress("jtphi",       jtphi);
-      tree->SetBranchAddress("bxns",        &bxns);
-      tree->SetBranchAddress("npus",        &npus);
-      tree->SetBranchAddress("tnpus",       &tnpus);
-      tree->SetBranchAddress("sumpt_lowpt", &sumpt_lowpt);
-      tree->SetBranchAddress("refdrjt",     refdrjt);
-      if (doflavor) tree->SetBranchAddress("refpdgid",refpdgid);
-      tree->SetBranchAddress("npv",&npv);
-      tree->SetBranchAddress("evt",&evt);
-      tree->SetBranchAddress("run",&run);
-      tree->SetBranchAddress("rho",&rho);
-      if(0!=tree->GetBranch("rho_hlt")) tree->SetBranchAddress("rho_hlt",  &rho_hlt);
+      if (0==tree) { cout<<"no tree found."<<endl; continue; }
+      JRAEvent* JRAEvt = new JRAEvent(tree,85);
+      tree->SetBranchStatus("*",0);
+      vector<string> branch_names = {"nref","refpt","refeta","jtpt","jteta","jtphi",
+                                     "bxns","npus","tnpus","sumpt_lowpt","refdrjt",
+                                     "refpdgid","npv","rho","rho_hlt"};
+      for(auto n : branch_names) {
+         if(!doflavor && n=="refpdgid") continue;
+         if(n=="rho_hlt" && 0==tree->GetBranch("rho_hlt")) continue;
+         tree->SetBranchStatus(n.c_str(),1);
+      }
 
       //
       // book histograms
@@ -367,16 +337,6 @@ int main(int argc,char**argv)
             RelRspVsRefPt.back()->Sumw2();
          }
       }
-      //RespVsPt_Bar = new TH2F("RespVsPt_Bar","RespVsPt_Bar",NPtBins,vpt,NRespBins,RespLow,RespHigh);
-      //RespVsPt_Bar->Sumw2(); 
-      //RespVsPt_End = new TH2F("RespVsPt_End","RespVsPt_End",NPtBins,vpt,NRespBins,RespLow,RespHigh);
-      //RespVsPt_End->Sumw2();
-      //RespVsPt_IEnd = new TH2F("RespVsPt_IEnd","RespVsPt_IEnd",NPtBins,vpt,NRespBins,RespLow,RespHigh);
-      //RespVsPt_IEnd->Sumw2();
-      //RespVsPt_OEnd = new TH2F("RespVsPt_OEnd","RespVsPt_OEnd",NPtBins,vpt,NRespBins,RespLow,RespHigh);
-      //RespVsPt_OEnd->Sumw2();
-      //RespVsPt_Fwd = new TH2F("RespVsPt_Fwd","RespVsPt_Fwd",NPtBins,vpt,NRespBins,RespLow,RespHigh);
-      //RespVsPt_Fwd->Sumw2();
       RespVsPtProfile = new TProfile("RespVsPtProfile","RespVsPtProfile",NPtBins,vpt);
       RespVsPtProfile->Sumw2();
       RespVsPtProfile->SetErrorOption("s");
@@ -520,41 +480,43 @@ int main(int argc,char**argv)
             cout<<ievt<<endl;
          tree->GetEntry(ievt);
 
-         int iIT = itIndex(bxns);
-         int npu = sumEOOT(npus,iIT)+(*npus)[iIT]+sumLOOT(npus,iIT);
-         int eootnpu = (int)sumEOOT(npus,iIT);
-         int itnpu = (*npus)[iIT];
-         int lootnpu = (int)sumLOOT(npus,iIT);
-         double sumpt = (*sumpt_lowpt)[1];
+         int iIT = itIndex(JRAEvt->bxns);
+         int npu = sumEOOT(JRAEvt->npus,iIT)+JRAEvt->npus->at(iIT)+sumLOOT(JRAEvt->npus,iIT);
+         int eootnpu = (int)sumEOOT(JRAEvt->npus,iIT);
+         int itnpu = JRAEvt->npus->at(iIT);
+         int lootnpu = (int)sumLOOT(JRAEvt->npus,iIT);
+         double sumpt = JRAEvt->sumpt_lowpt->at(1);
          if (printnpu) cout<<" ievt = "<<ievt<<"\tnpu = "<<npu<<endl;
          if (npu<min_npu) min_npu = npu;
 
          if (!pileup_cut(itlow,ithigh,earlyootlow,earlyoothigh,lateootlow,lateoothigh,
-                         totalootlow,totaloothigh,totallow,totalhigh,npus,bxns)) {
+                         totalootlow,totaloothigh,totallow,totalhigh,JRAEvt->npus,JRAEvt->bxns)) {
             cout << "WARNING::Failed the pileup cut." << endl << "Skipping this event." << endl;
             continue;
          }
-         if (dphimin>0 && abs(jtphi[0]-jtphi[1])<dphimin) continue;
+         if (dphimin>0 && abs(JRAEvt->jtphi->at(0)-JRAEvt->jtphi->at(1))<dphimin) continue;
 
-         rhoVsRhoHLT->Fill(rho_hlt,rho);
-         npvVsRhoHLT->Fill(rho_hlt,npv);
+         rhoVsRhoHLT->Fill(JRAEvt->rho_hlt,JRAEvt->rho);
+         npvVsRhoHLT->Fill(JRAEvt->rho_hlt,JRAEvt->npv);
 
-         if(nrefmax>0 && nref>nrefmax) nref = nrefmax;
-         for (unsigned char iref=0;iref<nref;iref++) 
+         if(nrefmax>0 && JRAEvt->nref>nrefmax) JRAEvt->nref = nrefmax;
+         for (unsigned char iref=0;iref<JRAEvt->nref;iref++) 
          {
-            float ptgen  = refpt[iref];
+            float rho = JRAEvt->rho;
+            float rho_hlt = (0!=tree->GetBranch("rho_hlt")) ? JRAEvt->rho_hlt : 0;
+            float ptgen  = JRAEvt->refpt->at(iref);
             if (ptgen<ptgenmin) continue;
-            if (doflavor && abs(pdgid)!=123 && abs(refpdgid[iref])!=abs(pdgid)) continue;
-            else if (doflavor && abs(pdgid)==123 && (abs(refpdgid[iref])>2 || abs(refpdgid[iref])==0)) continue;
-            float eta    = jteta[iref];
+            if (doflavor && abs(pdgid)!=123 && abs(JRAEvt->refpdgid->at(iref))!=abs(pdgid)) continue;
+            else if (doflavor && abs(pdgid)==123 && (abs(JRAEvt->refpdgid->at(iref))>2 || abs(JRAEvt->refpdgid->at(iref))==0)) continue;
+            float eta    = JRAEvt->jteta->at(iref);
             if (etamax>0 && TMath::Abs(eta)>etamax) continue;
-            float pt     = jtpt[iref];
+            float pt     = JRAEvt->jtpt->at(iref);
             if (pt > 14000) 
             {
                cout << "WARNING::pt>14000 GeV (pt = " << pt << " GeV)." << endl << "Skipping this jet." << endl;
                continue;
             }
-            float dr     = refdrjt[iref];
+            float dr     = JRAEvt->refdrjt->at(iref);
             if (drmax.size()>0 && dr > drmax[a]) continue;
             JetCorrector->setJetPt(pt);
             JetCorrector->setJetEta(eta);
@@ -574,13 +536,13 @@ int main(int argc,char**argv)
             if (scale < 0) continue;
             if (pt<ptrawmin) continue;
             if ((pt*scale)<ptmin) continue;
-            float relrsp = scale*jtpt[iref]/refpt[iref];
+            float relrsp = scale*JRAEvt->jtpt->at(iref)/JRAEvt->refpt->at(iref);
             float theta  = 2.0*atan(exp(-eta));
             double weight = 1.0;
 
             if(weightHist!=0) weight = weightHist->GetBinContent(weightHist->FindBin(log10(ptgen)));
             if(!MCPUReWeighting.IsNull() && !DataPUReWeighting.IsNull()) {
-               double LumiWeight = LumiWeights_.weight((*tnpus)[iIT]);
+               double LumiWeight = LumiWeights_.weight(JRAEvt->tnpus->at(iIT));
                weight *= LumiWeight;
             }
 
@@ -622,7 +584,7 @@ int main(int argc,char**argv)
             RespVsEtaVsPtProfile->Fill(ptgen,eta,relrsp,weight);
             RespVsPtProfile->Fill(ptgen,relrsp,weight);
             EtaVsPt->Fill(eta, log10(pt*scale),weight);
-            TPUDistribution->Fill((*tnpus)[iIT],weight);
+            TPUDistribution->Fill(JRAEvt->tnpus->at(iIT),weight);
 
             j = getBin(ptgen,vpt,NPtBins);
             k = getBin(eta,veta,NETA);
@@ -640,9 +602,9 @@ int main(int argc,char**argv)
                   else
                      coord[2] = rho_hlt;
                   */
-                  coord[2] = sumEOOT(npus,iIT);
-                  coord[3] = (*npus)[iIT];
-                  coord[4] = sumLOOT(npus,iIT);
+                  coord[2] = sumEOOT(JRAEvt->npus,iIT);
+                  coord[3] = JRAEvt->npus->at(iIT);
+                  coord[4] = sumLOOT(JRAEvt->npus,iIT);
                   RespVsPileup->Fill(coord,relrsp);
                   
                   if(!jetInfo.isHLT())
@@ -651,9 +613,9 @@ int main(int argc,char**argv)
                      RespVsRho->Fill(ptgen,eta,rho_hlt,relrsp);
 
                   coord2[0] = eta;
-                  coord2[1] = sumEOOT(npus,iIT);
-                  coord2[2] = (*npus)[iIT];
-                  coord2[3] = sumLOOT(npus,iIT);
+                  coord2[1] = sumEOOT(JRAEvt->npus,iIT);
+                  coord2[2] = JRAEvt->npus->at(iIT);
+                  coord2[3] = sumLOOT(JRAEvt->npus,iIT);
                   if(!jetInfo.isHLT())
                      RhoVsPileupVsEta->Fill(coord2,rho);
                   else
@@ -670,19 +632,19 @@ int main(int argc,char**argv)
                      coord[2] = rho_hlt;
                   */
                   coord[2] = 5;
-                  coord[3] = (*npus)[iIT];
-                  coord[4] = sumLOOT(npus,iIT);
+                  coord[3] = JRAEvt->npus->at(iIT);
+                  coord[4] = sumLOOT(JRAEvt->npus,iIT);
                   double resp_EOOT = RespVsPileup->GetBinContent(RespVsPileup->FindBin(coord));
                   double eresp_EOOT = RespVsPileup->GetBinError(RespVsPileup->FindBin(coord));
 
-                  coord[2] = sumEOOT(npus,iIT);
+                  coord[2] = sumEOOT(JRAEvt->npus,iIT);
                   coord[3] = 5;
-                  coord[4] = sumLOOT(npus,iIT);
+                  coord[4] = sumLOOT(JRAEvt->npus,iIT);
                   double resp_IT   = RespVsPileup->GetBinContent(RespVsPileup->FindBin(coord));
                   double eresp_IT = RespVsPileup->GetBinError(RespVsPileup->FindBin(coord));
 
-                  coord[2] = sumEOOT(npus,iIT);
-                  coord[3] = (*npus)[iIT];
+                  coord[2] = sumEOOT(JRAEvt->npus,iIT);
+                  coord[3] = JRAEvt->npus->at(iIT);
                   coord[4] = 5;
                   double resp_LOOT = RespVsPileup->GetBinContent(RespVsPileup->FindBin(coord));
                   double eresp_LOOT = RespVsPileup->GetBinError(RespVsPileup->FindBin(coord));
@@ -759,7 +721,7 @@ int main(int argc,char**argv)
                if(itnpu>=vpileup[spd*2] && itnpu<=vpileup[(spd*2)+1])
                   SumPtDistributions[spd]->Fill(sumpt);
             }
-            RefEtaDistribution->Fill(refeta[iref]);
+            RefEtaDistribution->Fill(JRAEvt->refeta->at(iref));
             EtaDistribution->Fill(eta);
             iEtaDistribution->Fill(eta);
             //

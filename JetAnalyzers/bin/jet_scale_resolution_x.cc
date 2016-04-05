@@ -137,25 +137,25 @@ int main(int argc,char**argv)
       itree->SetBranchStatus("jte", 1);
     
       // create dijet branches in output tree
-      Float_t  ojtpt[100];
-      Float_t  ojte[100];
+      vector<Float_t>*  ojtpt = new vector<float>;
+      vector<Float_t>*  ojte = new vector<float>;
 
-      TBranch* b_jtpt=otree->Branch("jtpt",ojtpt,"jtpt[nref]/F");
-      TBranch* b_jte =otree->Branch("jte", ojte, "jte[nref]/F");
+      TBranch* b_jtpt=otree->Branch("jtpt", "vector<Float_t>", &ojtpt);
+      TBranch* b_jte =otree->Branch("jte", "vector<Float_t>", &ojte);
 
       // setup input branches needed
 
-      UChar_t  nref;
-      Float_t  refpt[100];
-      Float_t  jtpt[100];
-      Float_t  jteta[100];
-      Float_t  jte[100];
+      UChar_t           nref;
+      vector<Float_t>*  refpt;
+      vector<Float_t>*  jtpt;
+      vector<Float_t>*  jteta;
+      vector<Float_t>*  jte;
 
       itree->SetBranchAddress("nref", &nref);
-      itree->SetBranchAddress("refpt", refpt);
-      itree->SetBranchAddress("jtpt",  jtpt);
-      itree->SetBranchAddress("jteta", jteta);
-      itree->SetBranchAddress("jte", jte);
+      itree->SetBranchAddress("refpt", &refpt);
+      itree->SetBranchAddress("jtpt",  &jtpt);
+      itree->SetBranchAddress("jteta", &jteta);
+      itree->SetBranchAddress("jte", &jte);
     
       unsigned nevt= static_cast<unsigned>(itree->GetEntries());
       
@@ -167,18 +167,18 @@ int main(int argc,char**argv)
 	  float scale   = 1.0;
 
 	  map<string,TF2*>::const_iterator itmm = 
-	    mapEtaToFnc.find(get_etabin(etabins,jteta[ijt]));
+	    mapEtaToFnc.find(get_etabin(etabins,jteta->at(ijt)));
 	  if (itmm!=mapEtaToFnc.end()) 
-	    scale = itmm->second->Eval(jtpt[ijt],jteta[ijt]);
+	    scale = itmm->second->Eval(jtpt->at(ijt),jteta->at(ijt));
 	  else {
 	      cout<<"Error; scaling 1. - evt: "<<ievt<<" ijt: "<<(int)ijt
-		  <<" eta: "<<jteta[ijt]<<endl;
+		  <<" eta: "<<jteta->at(ijt)<<endl;
 	  }
 
-	  float deltapt = (jtpt[ijt]-refpt[ijt])*scale;
-	  float ptscale = std::max( (float)0.0 , (jtpt[ijt]+deltapt)/jtpt[ijt] );
-	  ojtpt[ijt]    = jtpt[ijt]*ptscale;
-	  ojte[ijt]     = jte[ijt]*ptscale;
+	  float deltapt = (jtpt->at(ijt)-refpt->at(ijt))*scale;
+	  float ptscale = std::max( (float)0.0 , (jtpt->at(ijt)+deltapt)/jtpt->at(ijt) );
+	  ojtpt->push_back(jtpt->at(ijt)*ptscale);
+	  ojte ->push_back(jte->at(ijt)*ptscale);
 
 	} //ijt
 

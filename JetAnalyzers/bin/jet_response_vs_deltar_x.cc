@@ -120,15 +120,15 @@ int main(int argc,char**argv)
       cout<<alg<<" ... "<<flush;      
 
       unsigned char nref(0);
-      float refpt[100];
-      float refeta[100];
-      float refdrjt[100];
-      float jtpt[100];
-      tree->SetBranchAddress("nref",     &nref);
-      tree->SetBranchAddress("refpt",    refpt);
-      tree->SetBranchAddress("refeta",  refeta);
-      tree->SetBranchAddress("refdrjt",refdrjt);
-      tree->SetBranchAddress("jtpt",      jtpt);
+      vector<Float_t>* refpt;
+      vector<Float_t>* refeta;
+      vector<Float_t>* refdrjt;
+      vector<Float_t>* jtpt;
+      tree->SetBranchAddress("nref",      &nref);
+      tree->SetBranchAddress("refpt",    &refpt);
+      tree->SetBranchAddress("refeta",  &refeta);
+      tree->SetBranchAddress("refdrjt",&refdrjt);
+      tree->SetBranchAddress("jtpt",      &jtpt);
       
       if (ifile==0) {
 	hRspVsDeltaR.push_back(new TH1F*[nbinsdr]);
@@ -147,12 +147,12 @@ int main(int argc,char**argv)
       for (unsigned int ievt=0;ievt<nevt;ievt++) {
 	tree->GetEntry(ievt);
 	for (unsigned int iref=0;iref<nref;iref++) {
-	  if (refpt[iref]<ptmin||refpt[iref]>ptmax) continue;
-	  if (refeta[iref]<etamin||refeta[iref]>etamax) continue;
+	  if (refpt->at(iref)<ptmin||refpt->at(iref)>ptmax) continue;
+	  if (refeta->at(iref)<etamin||refeta->at(iref)>etamax) continue;
 	  for (int idr=0;idr<nbinsdr;idr++) {
 	    double drcut = drmin+idr*(drmax-drmin)/(nbinsdr-1);
-	    if (refdrjt[iref]>drcut) continue;
-	    hRspVsDeltaR[ialg][idr]->Fill(jtpt[iref]/refpt[iref],weight);
+	    if (refdrjt->at(iref)>drcut) continue;
+	    hRspVsDeltaR[ialg][idr]->Fill(jtpt->at(iref)/refpt->at(iref),weight);
 	  }
 	}
       }

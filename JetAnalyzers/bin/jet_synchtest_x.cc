@@ -230,10 +230,10 @@ map<evtid, pair<Long64_t, Long64_t>, evtid> MatchEventsAndJets::fillMap(bool noP
 //______________________________________________________________________________
 void MatchEventsAndJets::GetNtuples(TString treeName) {
    fpu->cd(algo1);
-   tpu   = new JRAEvent((TTree*) fpu->Get(algo1+"/"+treeName));
+   tpu   = new JRAEvent((TTree*) fpu->Get(algo1+"/"+treeName),85);
 
    fnopu->cd(algo2);
-   tnopu = new JRAEvent((TTree*) fnopu->Get(algo2+"/"+treeName));
+   tnopu = new JRAEvent((TTree*) fnopu->Get(algo2+"/"+treeName),85);
 }
 
 //______________________________________________________________________________
