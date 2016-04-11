@@ -208,11 +208,17 @@ map<evtid, pair<Long64_t, Long64_t>, evtid> MatchEventsAndJets::fillMap(bool noP
    cout << "\ttreename: "<<treeName<< endl;
    cout <<"\tprogress:" << endl;
 
+   Long64_t no_ref_events = 0;
    Long64_t nentries = t->fChain->GetEntriesFast();
    for (Long64_t jentry=0; jentry<nentries;jentry++) {
       Long64_t ientry = t->LoadTree(jentry);
       if (ientry < 0) break;
       t->GetEntry(ientry);
+
+      if(t->refpt->size()==0) {
+         no_ref_events++;
+         continue;
+      }
 
       if(mapTree.find(evtid(t->run, lumi, t->evt, t->refpt->at(0), runDep))!=mapTree.end()) {
          cout << "\tWARNING::This evtid already exists in the map." << endl;
@@ -222,18 +228,25 @@ map<evtid, pair<Long64_t, Long64_t>, evtid> MatchEventsAndJets::fillMap(bool noP
       loadbar2(jentry+1,nentries,50,"\t\t");
    }
 
-   cout << endl << "\tRead " << mapTree.size() << " unique signatures" << endl << endl;
+   cout << endl << "\tRead " << mapTree.size() << " unique signatures" << endl;
+   if(no_ref_events>0) {
+      cout << "\tWARNING::There were " << no_ref_events << " events which don't contain any ref jets" << endl
+           << "\t\tThese events were be skipped" << endl << endl;
+   }
    t->fChain->SetBranchStatus("*",1);
    return mapTree;
 }
 
 //______________________________________________________________________________
 void MatchEventsAndJets::GetNtuples(TString treeName) {
+   int algo1_bit_number = (algo1JetInfo.jetType.Contains("calo",TString::kIgnoreCase)) ? 53 : 85;
+   int algo2_bit_number = (algo2JetInfo.jetType.Contains("calo",TString::kIgnoreCase)) ? 53 : 85;
+
    fpu->cd(algo1);
-   tpu   = new JRAEvent((TTree*) fpu->Get(algo1+"/"+treeName),85);
+   tpu   = new JRAEvent((TTree*) fpu->Get(algo1+"/"+treeName),algo1_bit_number);
 
    fnopu->cd(algo2);
-   tnopu = new JRAEvent((TTree*) fnopu->Get(algo2+"/"+treeName),85);
+   tnopu = new JRAEvent((TTree*) fnopu->Get(algo2+"/"+treeName),algo2_bit_number);
 }
 
 //______________________________________________________________________________
@@ -847,13 +860,20 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
     double PUEff      = 0.020*(tpu->sumEOOT())+0.975*(tpu->npus->at(iIT))+0.005*(tpu->sumLOOT()); // effective pu
     double GenSumPtOA    = (0.020*(tpu->sumpt_lowpt->at(0))+0.975*(tpu->sumpt_lowpt->at(1))+0.005*(tpu->sumpt_lowpt->at(2)))/tpu->jtarea->at(jpu);
     //nef,cef,muf,nhf,hfhf,hfef,chf
-    double offset_PFcat[NPFcat] = {tpu->jtpt->at(jpu)*tpu->jtnef->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtnef->at(jnopu),
-                                   tpu->jtpt->at(jpu)*tpu->jtcef->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtcef->at(jnopu),
-                                   tpu->jtpt->at(jpu)*tpu->jtmuf->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtmuf->at(jnopu),
-                                   tpu->jtpt->at(jpu)*tpu->jtnhf->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtnhf->at(jnopu),
-                                   tpu->jtpt->at(jpu)*tpu->jthfhf->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jthfhf->at(jnopu),
-                                   tpu->jtpt->at(jpu)*tpu->jthfef->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jthfef->at(jnopu),
-                                   tpu->jtpt->at(jpu)*tpu->jtchf->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtchf->at(jnopu)};
+    vector<double> offset_PFcat;
+    //double offset_PFcat[NPFcat];
+    if(!algo1JetInfo.jetType.Contains("calo",TString::kIgnoreCase) && !algo2JetInfo.jetType.Contains("calo",TString::kIgnoreCase)) {
+       offset_PFcat = vector<double>{tpu->jtpt->at(jpu)*tpu->jtnef->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtnef->at(jnopu),
+                                     tpu->jtpt->at(jpu)*tpu->jtcef->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtcef->at(jnopu),
+                                     tpu->jtpt->at(jpu)*tpu->jtmuf->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtmuf->at(jnopu),
+                                     tpu->jtpt->at(jpu)*tpu->jtnhf->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtnhf->at(jnopu),
+                                     tpu->jtpt->at(jpu)*tpu->jthfhf->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jthfhf->at(jnopu),
+                                     tpu->jtpt->at(jpu)*tpu->jthfef->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jthfef->at(jnopu),
+                                     tpu->jtpt->at(jpu)*tpu->jtchf->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtchf->at(jnopu)};
+    }
+    else {
+      offset_PFcat = vector<double>{0,0,0,0,0,0,0};
+    }
     double offsetOA      = offset / tpu->jtarea->at(jpu);
     double offsetOrefpt  = offset / tpu->refpt->at(jpu);
 
