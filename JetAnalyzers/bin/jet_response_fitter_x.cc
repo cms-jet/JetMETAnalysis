@@ -10,6 +10,7 @@
 
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 #include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
+#include "JetMETAnalysis/JetAnalyzers/interface/fitCrystalBall.h"
 
 #include <TROOT.h>
 #include <TSystem.h>
@@ -17,26 +18,27 @@
 #include <TKey.h>
 #include <TH1F.h>
 #include <TF1.h>
-#include <TVirtualFitter.h>
-#include <TMath.h>
-#include <TSpectrum.h>
+#include <TTree.h>
+#include "TVirtualFitter.h"
+#include "TMath.h"
+#include "TSpectrum.h"
+#include "TRandom3.h"
+#include "TCanvas.h"
 
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
-#include <cmath>
+#include <math.h>
+#include <map>
 #include <algorithm>
 
 using namespace std;
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // define local functions
 ////////////////////////////////////////////////////////////////////////////////
-
-
 /// default fit with gaussian in niter iteration of mean
 void fit_gaussian(TH1F*& hrsp,
                   const double nsigma,
@@ -84,29 +86,35 @@ int main(int argc,char**argv)
   CommandLine cl;
   if (!cl.parse(argc,argv)) return 0;
   
-  string         input   = cl.getValue<string> ("input");
-  string         output  = cl.getValue<string> ("output",        "");
-  double         nsigma  = cl.getValue<double> ("nsigma",       1.5);
-  float          jtptmin = cl.getValue<float>  ("jtptmin",      1.0);
-  int            niter   = cl.getValue<int>    ("niter",          3);
-  int            ndfmin  = cl.getValue<int>    ("ndfmin",         5);
-  vector<string> algs    = cl.getVector<string>("algs",          "");
-  int            verbose = cl.getValue<int>    ("verbose",        0);
-  int            fittype = cl.getValue<int>    ("fittype",        0);
-  bool           doAbsRsp= cl.getValue<bool>   ("doAbsRsp",    true);
-  bool           doRelRsp= cl.getValue<bool>   ("doRelRsp",    true);
-  bool           doEtaRsp= cl.getValue<bool>   ("doEtaRsp",   false);
-  bool           doPhiRsp= cl.getValue<bool>   ("doPhiRsp",   false);
-  bool           doFlavor= cl.getValue<bool>   ("doFlavor",   false);
-  
+  string         input          = cl.getValue<string> ("input");
+  string         output         = cl.getValue<string> ("output",        "");
+  double         nsigma         = cl.getValue<double> ("nsigma",       1.5);
+  float          jtptmin        = cl.getValue<float>  ("jtptmin",      1.0);
+  int            niter          = cl.getValue<int>    ("niter",          3);
+  int            ndfmin         = cl.getValue<int>    ("ndfmin",         5);
+  vector<string> algs           = cl.getVector<string>("algs",          "");
+  int            verbose        = cl.getValue<int>    ("verbose",        0);
+  int            fittype        = cl.getValue<int>    ("fittype",        0);
+  bool           doAbsRsp       = cl.getValue<bool>   ("doAbsRsp",   false);
+  bool           doRelRsp       = cl.getValue<bool>   ("doRelRsp",    true);
+  bool           doEtaRsp       = cl.getValue<bool>   ("doEtaRsp",   false);
+  bool           doPhiRsp       = cl.getValue<bool>   ("doPhiRsp",   false);
+  bool           doFlavor       = cl.getValue<bool>   ("doFlavor",   false);
+  string         histName       = cl.getValue<string> ("histName"       "");
+  int            polDeg         = cl.getValue<int>    ("polDeg",         7);
+  bool           normalized     = cl.getValue<bool>   ("normalized", false); // normalized histogram to 1 
+  string         fitDir         = cl.getValue<string> ("fitDir",        ""); // save CB fit directories
+
   if (!cl.check()) return 0;
   cl.print();
   
-  if (fittype<0 || fittype>1) {
-    cout<<"ERROR: fittype not known, choose 0 for GAUSS, 1 for DSCB";return 0;
+  if      (fittype==0) cout<<"*** Fitting with distributions w/ GAUSS"<<endl;
+  else if (fittype==1) cout<<"*** Fitting response distributions w/ DSCB"<<endl; 
+  else if (fittype==2) cout<<"*** Fitting response distributions w/ CalpasVeelken CristalBall"<<endl; 
+  else {
+    cout<<"ERROR: unknow fittype, choose 0 for GAUSS, 1 for DSCB, 2 for CalpasVeelken CristalBall";
+    return 0;
   }
-  else if (0==fittype) cout<<"*** Fitting with distributions w/ GAUSS"<<endl;
-  else cout<<"*** Fitting response distributions w/ DSCB"<<endl; 
 
   //
   // construct output file name from input file name if none given
@@ -116,7 +124,6 @@ int main(int argc,char**argv)
     output=input.substr(0,pos)+"_f.root";
     cout<<"*** write output to "<<output<<endl;
   }
-  
 
   //
   // open input file and loop over input directories (=algorithms)
@@ -124,7 +131,7 @@ int main(int argc,char**argv)
   TFile* ifile = new TFile(input.c_str(),"READ");
   if (!ifile->IsOpen()) { cout<<"Can't open "<<input<<endl; return 0; }
 
-  TFile* ofile = new TFile(output.c_str(),"UPDATE");
+  TFile* ofile = new TFile(output.c_str(),"RECREATE");
   if (!ofile->IsOpen()) { cout<<"Can't create "<<output<<endl; return 0; }
 
   TIter nextDir(ifile->GetListOfKeys());
@@ -138,21 +145,14 @@ int main(int argc,char**argv)
     
     if (algs.size()>0&&!contains(algs,alg)) continue;
 
-    if (0!=ofile->Get(idir->GetName())) {
-      cout<<"directory '"<<alg<<"' exists already in "<<output<<", skip!"<<endl;
-      continue;
-    }
-
     TDirectoryFile* odir = (TDirectoryFile*)ofile->mkdir(idir->GetName());
     odir->cd();
     
     cout<<alg<<" ... "<<endl;
-    
 
     //
     // loop over response histogram and fit them with the selected func (iteratively)
     //
-
     TIter nextHist(idir->GetListOfKeys());
     TKey* histKey(0);
     while ((histKey=(TKey*)nextHist())) {
@@ -193,44 +193,47 @@ int main(int argc,char**argv)
         continue;
       }
 
-      //if(verbose>0) cout << "Attempting to fit " << histname << " ... " << endl;
-
-      //if (histname.find("RelRsp")>5&&histname.find("AbsRsp")!=0) {
-      //  hrsp->Write();
-      //  continue;
-      //}
-      
-      if (hrsp->Integral()>0.0) {
+      //
+      // write all the histogram used later for tau calibration study
+      //
+      if( fittype==2 && (histname.find("RelRsp_JetEta")==string::npos || histname.find("_RefPt")==string::npos) ) {
+	hrsp->Write(); 
+	continue; 
+      }
+  
+      //
+      // start fit process
+      //
+      if (hrsp->Integral()>0) {
         int fitstatus(0);
-        if (0==fittype) fit_gaussian(hrsp,nsigma,jtptmin,niter,verbose);
-        else fitstatus = fit_dscb(hrsp,nsigma,jtptmin,niter,alg,verbose);
+        if      (fittype==0) fit_gaussian(hrsp,nsigma,jtptmin,niter,verbose);
+        else if (fittype==1) fitstatus = fit_dscb(hrsp,nsigma,jtptmin,niter,alg,verbose);
+	else 		     fitCrystalBall(hrsp, alg, histName, polDeg, normalized, fitDir);        
 
         TF1* fitfnc = (TF1*) hrsp->GetListOfFunctions()->Last();
-        if (0!=fitfnc && 0==fitstatus) fitfnc->ResetBit(TF1::kNotDraw);
 
-        if (verbose>0&&0!=fitfnc) 
-          cout<<"histo: "<<hrsp->GetName()<<"-> fnc: "<<fitfnc->GetName()<<endl;
+        if (fitfnc!=0 && fitstatus==0) fitfnc->ResetBit(TF1::kNotDraw);
 
-        if (0!=fitfnc&&fitfnc->GetNDF()<ndfmin) {
-          if (verbose>0) cout<<"NDOF("<<fitfnc->GetName()<<")="
-                             <<fitfnc->GetNDF()
-                             <<" FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
+        if (verbose>0 && fitfnc!=0) cout<<"histo: "<<hrsp->GetName()<<"-> fnc: "<<fitfnc->GetName()<<endl;
+
+        if (fittype!=2 && fitfnc!=0 && fitfnc->GetNDF()<ndfmin) {
+          if (verbose>0) cout<<"NDOF("<<fitfnc->GetName()<<")=" <<fitfnc->GetNDF() <<" FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
           hrsp->GetListOfFunctions()->Delete();
         }
       }
       else {
-        if (verbose>0)
-          cout<<"NOT ENOUGH ENTRIES FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
+        if (verbose>0) cout<<"NOT ENOUGH ENTRIES FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
       }
-      hrsp->Write();
-    }
+
+      if(fittype!=2) hrsp->Write();
+    } // while nextHist loop
 
     cout<<"response fits for *"+alg+"* completed ..."<<flush;
     odir->Write();
     odir->DeleteAll();
     delete odir;
     cout<<" and saved!\n"<<endl;
-  }
+  } // while nextDir loop
   
   
   //
@@ -245,7 +248,6 @@ int main(int argc,char**argv)
   delete ifile;
   cout<<" DONE."<<endl;
   
-  
   return 0;
 }
 
@@ -256,11 +258,11 @@ int main(int argc,char**argv)
 
 //______________________________________________________________________________
 int fit_dscb(TH1F*& hrsp,
-             const double nsigma,
-             const double jtptmin,
-             const int niter,
-             const string alg,
-             const int verbose)
+    const double nsigma,
+    const double jtptmin,
+    const int niter,
+    const string alg,
+    const int verbose)
 {
   if (0==hrsp) {
     cout<<"ERROR: Empty pointer to fit_dscb()"<<endl;return -1;
@@ -290,24 +292,24 @@ int fit_dscb(TH1F*& hrsp,
     if (histname.find("AbsRsp")==0)
       rspMax = jtptmin-ptRefMax;
   }
-  
+
   vector<double> vv; //Added by Alexx
   double fitrange_min(0.0);
   if (alg.find("pf")!=string::npos) fitrange_min = std::max(rspMax,0.3);
   else if (alg.find("PF")!=string::npos) fitrange_min = std::max(rspMax,0.3);
   else {
-     double first_nonzero_bin = 0.0;
-     for(int ibin=1; ibin<=hrsp->GetNbinsX();ibin++) {
-        if(first_nonzero_bin==0 && hrsp->GetBinContent(ibin)!=0) {
-           first_nonzero_bin = hrsp->GetBinCenter(ibin);
-           break;
-        }
-     }
-     vv.push_back(rspMax);
-     vv.push_back(hrsp->GetXaxis()->GetXmin());
-     vv.push_back(0.2);
-     vv.push_back(first_nonzero_bin);
-     fitrange_min = *std::max_element(vv.begin(),vv.end());
+    double first_nonzero_bin = 0.0;
+    for(int ibin=1; ibin<=hrsp->GetNbinsX();ibin++) {
+      if(first_nonzero_bin==0 && hrsp->GetBinContent(ibin)!=0) {
+	first_nonzero_bin = hrsp->GetBinCenter(ibin);
+	break;
+      }
+    }
+    vv.push_back(rspMax);
+    vv.push_back(hrsp->GetXaxis()->GetXmin());
+    vv.push_back(0.2);
+    vv.push_back(first_nonzero_bin);
+    fitrange_min = *std::max_element(vv.begin(),vv.end());
   }
   //else fitrange_min = std::max(rspMax,0.2);
   double fitrange_max = 1.7;
@@ -321,7 +323,7 @@ int fit_dscb(TH1F*& hrsp,
   adjust_fitrange(hrsp,fitrange_min,fitrange_max);
   //guesstimate_fitrange(hrsp,fitrange_min,fitrange_max,alg);
 
-  
+
   TF1* fdscb = new TF1("fdscb",fnc_dscb,fitrange_min,fitrange_max,7);
 
   // set the std values
@@ -357,22 +359,22 @@ int fit_dscb(TH1F*& hrsp,
     fdscb->SetParLimits(6,0.,100.);//25.);
 
     if(hrsp->GetEntries()==0) {
-       if(verbose>0)
-         cout << "Warning in <Fit>: Fit data is empty" << endl
-              << "hrsp->GetName(): " << hrsp->GetName() << endl;
-       return -1;
+      if(verbose>0)
+	cout << "Warning in <Fit>: Fit data is empty" << endl
+	  << "hrsp->GetName(): " << hrsp->GetName() << endl;
+      return -1;
     }
     else {
-       fitstatus = hrsp->Fit(fdscb,"RQB0+");
+      fitstatus = hrsp->Fit(fdscb,"RQB0+");
     }
-    
+
     if (0==fitstatus) i=999;
 
     delete fdscb;
     fdscb = hrsp->GetFunction("fdscb");
 
     if (0==fdscb) return -1;
-      
+
     norm  = fdscb->GetParameter(0);
     aone  = fdscb->GetParameter(3);
     pone  = fdscb->GetParameter(4);
@@ -390,7 +392,7 @@ int fit_dscb(TH1F*& hrsp,
 
   if (0!=fitstatus){
     cout<<"fit_fdscb() to "<<hrsp->GetName()
-    	<<" failed. Fitstatus: "<<fitstatus<<endl;
+      <<" failed. Fitstatus: "<<fitstatus<<endl;
     hrsp->GetFunction("fdscb")->Delete();
   }
 
@@ -410,7 +412,7 @@ double fnc_dscb(double*xx,double*pp)
   double p1  = pp[4];
   double a2  = pp[5];
   double p2  = pp[6];
-  
+
   double u   = (x-mu)/sig;
   double A1  = TMath::Power(p1/TMath::Abs(a1),p1)*TMath::Exp(-a1*a1/2);
   double A2  = TMath::Power(p2/TMath::Abs(a2),p2)*TMath::Exp(-a2*a2/2);
@@ -424,18 +426,17 @@ double fnc_dscb(double*xx,double*pp)
   return result;
 }
 
-
 //______________________________________________________________________________
 void fit_gaussian(TH1F*& hrsp,
-                  const double nsigma,
-                  const double jtptmin,
-                  const int niter,
-                  const int verbose)
+    const double nsigma,
+    const double jtptmin,
+    const int niter,
+    const int verbose)
 {
   if (0==hrsp) {
     cout<<"ERROR: Empty pointer to fit_gaussian()"<<endl;return;
   }
-  
+
   string histname = hrsp->GetName();
   double mean     = hrsp->GetMean();
   double rms      = hrsp->GetRMS();
@@ -484,31 +485,31 @@ void fit_gaussian(TH1F*& hrsp,
     fitfnc->SetParameter(1,peak);
     fitfnc->SetParameter(2,sigma);
     if(hrsp->GetEntries()==0) {
-       if(verbose>0)
-         cout << "Warning in <Fit>: Fit data is empty" << endl
-              << "hrsp->GetName(): " << hrsp->GetName() << endl;
-       return;
+      if(verbose>0)
+	cout << "Warning in <Fit>: Fit data is empty" << endl
+	  << "hrsp->GetName(): " << hrsp->GetName() << endl;
+      return;
     }
     else {
-       fitstatus = hrsp->Fit(fitfnc,"RQ0");
+      fitstatus = hrsp->Fit(fitfnc,"RQ0");
     }
     delete fitfnc;
     fitfnc = hrsp->GetFunction("fgaus");
     //fitfnc->ResetBit(TF1::kNotDraw);
     if (fitfnc) {
-       norm  = fitfnc->GetParameter(0);
-       peak  = fitfnc->GetParameter(1);
-       sigma = fitfnc->GetParameter(2);
+      norm  = fitfnc->GetParameter(0);
+      peak  = fitfnc->GetParameter(1);
+      sigma = fitfnc->GetParameter(2);
     }
   }
   if(hrsp->GetFunction("fgaus")==0)
-    {
-      cout << "No function recorded in histogram " << hrsp->GetName() << endl;
-    }
+  {
+    cout << "No function recorded in histogram " << hrsp->GetName() << endl;
+  }
   if (0!=fitstatus){
     cout<<"fit_gaussian() to "<<hrsp->GetName()
-        <<" failed. Fitstatus: "<<fitstatus
-        <<" - FNC deleted."<<endl;
+      <<" failed. Fitstatus: "<<fitstatus
+      <<" - FNC deleted."<<endl;
     hrsp->GetListOfFunctions()->Delete();
   }
 }
