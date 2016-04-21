@@ -76,14 +76,14 @@ private:
   TString               output, outputDir, l2calofit, l2pffit;
   vector<string>        formats, algs;
   bool                  l2l3, mpv, delphes;
-  int                   maxFitIter;
+  int                   maxFitIter, cbPar;
   TFile*                ofile;
   TFile*                ifile;
   TFile*                l3file;
   TDirectoryFile*       l3dir;
   TDirectoryFile*       odir;
   TGraphErrors*         gl3rsp;
-  TF1* 			            fl3rsp;
+  TF1* 			fl3rsp;
   JetInfo*              ji;
   ObjectLoader<TH1F>    hl_rsp;
   ObjectLoader<TH1F>    hl_refpt;
