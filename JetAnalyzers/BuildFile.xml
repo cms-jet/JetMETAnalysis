@@ -23,9 +23,9 @@
 <use   name="rootcore"/>
 <use   name="rootMinuit"/>
 <use   name="rootspectrum"/>
-<flags   EDM_PLUGIN="1"/>
 <!--
+<flags   EDM_PLUGIN="1"/>
+-->
 <export>
   <lib   name="1"/>
 </export>
--->
