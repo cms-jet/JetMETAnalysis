@@ -19,11 +19,11 @@
 #include <TH1F.h>
 #include <TF1.h>
 #include <TTree.h>
-#include "TVirtualFitter.h"
-#include "TMath.h"
-#include "TSpectrum.h"
-#include "TRandom3.h"
-#include "TCanvas.h"
+#include <TVirtualFitter.h>
+#include <TMath.h>
+#include <TSpectrum.h>
+#include <TRandom3.h>
+#include <TCanvas.h>
 
 #include <iostream>
 #include <fstream>
@@ -131,7 +131,7 @@ int main(int argc,char**argv)
   TFile* ifile = new TFile(input.c_str(),"READ");
   if (!ifile->IsOpen()) { cout<<"Can't open "<<input<<endl; return 0; }
 
-  TFile* ofile = new TFile(output.c_str(),"RECREATE");
+  TFile* ofile = new TFile(output.c_str(),"UPDATE");
   if (!ofile->IsOpen()) { cout<<"Can't create "<<output<<endl; return 0; }
 
   TIter nextDir(ifile->GetListOfKeys());
@@ -200,29 +200,36 @@ int main(int argc,char**argv)
 	hrsp->Write(); 
 	continue; 
       }
-  
+
+      //if(verbose>0) cout << "Attempting to fit " << histname << " ... " << endl;
+      //
+      //if (histname.find("RelRsp")>5&&histname.find("AbsRsp")!=0) {
+      //  hrsp->Write();
+      //  continue;
+      //}
+
       //
       // start fit process
       //
       if (hrsp->Integral()>0) {
-        int fitstatus(0);
-        if      (fittype==0) fit_gaussian(hrsp,nsigma,jtptmin,niter,verbose);
-        else if (fittype==1) fitstatus = fit_dscb(hrsp,nsigma,jtptmin,niter,alg,verbose);
+	int fitstatus(0);
+	if      (fittype==0) fit_gaussian(hrsp,nsigma,jtptmin,niter,verbose);
+	else if (fittype==1) fitstatus = fit_dscb(hrsp,nsigma,jtptmin,niter,alg,verbose);
 	else 		     fitCrystalBall(hrsp, alg, histName, polDeg, normalized, fitDir);        
 
-        TF1* fitfnc = (TF1*) hrsp->GetListOfFunctions()->Last();
+	TF1* fitfnc = (TF1*) hrsp->GetListOfFunctions()->Last();
 
-        if (fitfnc!=0 && fitstatus==0) fitfnc->ResetBit(TF1::kNotDraw);
+	if (fitfnc!=0 && fitstatus==0) fitfnc->ResetBit(TF1::kNotDraw);
 
-        if (verbose>0 && fitfnc!=0) cout<<"histo: "<<hrsp->GetName()<<"-> fnc: "<<fitfnc->GetName()<<endl;
+	if (verbose>0 && fitfnc!=0) cout<<"histo: "<<hrsp->GetName()<<"-> fnc: "<<fitfnc->GetName()<<endl;
 
-        if (fittype!=2 && fitfnc!=0 && fitfnc->GetNDF()<ndfmin) {
-          if (verbose>0) cout<<"NDOF("<<fitfnc->GetName()<<")=" <<fitfnc->GetNDF() <<" FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
-          hrsp->GetListOfFunctions()->Delete();
-        }
+	if (fittype!=2 && fitfnc!=0 && fitfnc->GetNDF()<ndfmin) {
+	  if (verbose>0) cout<<"NDOF("<<fitfnc->GetName()<<")=" <<fitfnc->GetNDF() <<" FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
+	  hrsp->GetListOfFunctions()->Delete();
+	}
       }
       else {
-        if (verbose>0) cout<<"NOT ENOUGH ENTRIES FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
+	if (verbose>0) cout<<"NOT ENOUGH ENTRIES FOR "<<alg<<"::"<<hrsp->GetName()<<endl;
       }
 
       if(fittype!=2) hrsp->Write();
@@ -234,8 +241,8 @@ int main(int argc,char**argv)
     delete odir;
     cout<<" and saved!\n"<<endl;
   } // while nextDir loop
-  
-  
+
+
   //
   // update the input file
   //
@@ -247,7 +254,7 @@ int main(int argc,char**argv)
   ifile->Close();
   delete ifile;
   cout<<" DONE."<<endl;
-  
+
   return 0;
 }
 
