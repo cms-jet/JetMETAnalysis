@@ -1,11 +1,5 @@
 // This class libraries
 #include "JetMETAnalysis/JetUtilities/interface/L2Creator.hh"
-#include "JetMETAnalysis/JetAnalyzers/interface/crystalBallRes.h"
-
-#include <algorithm>
-#include <math.h>
-#include "TMath.h"
-
 
 using namespace std;
 
@@ -890,8 +884,8 @@ void L2Creator::writeTextFileForCurrentAlgorithm() {
     TF1* frelcor = (TF1*)grelcor->GetListOfFunctions()->Last();
     if(frelcor!=0) {
       if(ieta==0 || (ieta==1 && delphes)){
-        if(cbPar==17) fout<<"{1 JetEta 1 JetPt max(-1.,"<<frelcor->GetExpFormula()<<") Correction L3Absolute}"<<endl;
-	else          fout<<"{1 JetEta 1 JetPt max(0.0001,"<<frelcor->GetExpFormula()<<") Correction L3Absolute}"<<endl;
+        if(cbPar==17) fout<<"{1 JetEta 1 JetPt max(-1.,"<<frelcor->GetTitle()<<") Correction L3Absolute}"<<endl;
+	else          fout<<"{1 JetEta 1 JetPt max(0.0001,"<<frelcor->GetTitle()<<") Correction L3Absolute}"<<endl;
 	}
       double  etamin  = hl_jetpt.minimum(0,ieta);
       double  etamax  = hl_jetpt.maximum(0,ieta);

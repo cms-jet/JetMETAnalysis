@@ -14,6 +14,7 @@
 #include "JetMETAnalysis/JetUtilities/interface/ObjectLoader.h"
 #include "JetMETAnalysis/JetUtilities/interface/RootStyle.h"
 #include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
+#include "JetMETAnalysis/JetUtilities/interface/crystalBallRes.h"
 
 #include "TApplication.h"
 #include "TFile.h"
@@ -30,6 +31,7 @@
 #include "TLatex.h"
 #include "TError.h"
 #include "TSpectrum.h"
+#include "TMath.h"
 
 #include <iostream>
 #include <iomanip>
@@ -38,6 +40,8 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <math.h>
+#include <algorithm>
 #include <locale>
 
 using namespace std;
