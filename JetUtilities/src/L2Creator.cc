@@ -75,8 +75,8 @@ void L2Creator::resetForNextAlgorithm() {
 void L2Creator::openOutputFile() {
   ofile = TFile::Open(output,"RECREATE");
   if (!ofile->IsOpen()) {
-  	cout<<"Can't create "<<output<<endl;
-  	assert(ofile->IsOpen());
+    cout<<"Can't create "<<output<<endl;
+    assert(ofile->IsOpen());
   }
 }
 
@@ -84,8 +84,8 @@ void L2Creator::openOutputFile() {
 void L2Creator::openInputFile() {
   ifile = TFile::Open(input.c_str(),"READ");
   if (!ifile->IsOpen()) {
-  	cout<<"Can't open "<<input<<endl;
-  	assert(ifile->IsOpen());
+    cout<<"Can't open "<<input<<endl;
+    assert(ifile->IsOpen());
   }
 }
 
@@ -122,7 +122,7 @@ void L2Creator::loopOverAlgorithms() {
     if (strcmp(dirKey->GetClassName(),"TDirectoryFile")!=0) continue;
     TDirectoryFile* idir = (TDirectoryFile*)dirKey->ReadObj();
     string alg(idir->GetName()); if (!contains(algs,alg)) continue;
-    
+
     algIndex++;
     cout << alg << " ... " << endl;
 
@@ -152,14 +152,14 @@ void L2Creator::loopOverAlgorithms() {
     //
     odir = (TDirectoryFile*)ofile->mkdir(alg.c_str());
     odir->cd();
-     
+
     //
     // Load the input histograms from jra.root or jra_f.root (or other name if reset by user)
     //
     hl_rsp.load_objects(idir,"RelRsp:JetEta:RefPt");     
     hl_refpt.load_objects(idir,"RefPt:JetEta:RefPt");
     hl_jetpt.load_objects(idir,"JetPt:JetEta:RefPt");
-     
+
     //
     // Absolute response/correction as a function of pT for each eta bin
     // Needed for both L2 only corrections and L2L3 corrections
@@ -167,18 +167,18 @@ void L2Creator::loopOverAlgorithms() {
     loopOverEtaBins();
 
     if(!l2l3) {
-	    //
-    	// Relative (L2) response/correction as a function of pT for each eta bin
-     	// Needed for L2 only corrections, but not the L2L3 corrections
-     	//
-     	doRelCorFits();
- 	  }
+      //
+      // Relative (L2) response/correction as a function of pT for each eta bin
+      // Needed for L2 only corrections, but not the L2L3 corrections
+      //
+      doRelCorFits();
+    }
 
     //
     // write the L2 correction text file for the current algorithm
     //
     writeTextFileForCurrentAlgorithm();
-     
+
     cout<<alg<<" is DONE."<<endl;
   }
 }
@@ -268,17 +268,17 @@ void L2Creator::loopOverEtaBins() {
 	  }
 	  // mean Gaus
 	  else if(cbPar==1||cbPar==11||cbPar==14) {
-            if	   (cbPar==1  && vintegral[0]<0.25*sumIntG) epeak = max(0.15, frsp->GetParError(cbPar));
-            else if(cbPar==11 && vintegral[1]<0.25*sumIntG) epeak = max(0.15, frsp->GetParError(cbPar));
-            else if(cbPar==14 && vintegral[2]<0.25*sumIntG) epeak = max(0.15, frsp->GetParError(cbPar));
+	    if	   (cbPar==1  && vintegral[0]<0.25*sumIntG) epeak = max(0.15, frsp->GetParError(cbPar));
+	    else if(cbPar==11 && vintegral[1]<0.25*sumIntG) epeak = max(0.15, frsp->GetParError(cbPar));
+	    else if(cbPar==14 && vintegral[2]<0.25*sumIntG) epeak = max(0.15, frsp->GetParError(cbPar));
 	    else epeak = max(0.1, frsp->GetParError(cbPar));
 	  }
 	  // sigma Gaus
 	  else if(cbPar==2||cbPar==9||cbPar==12||cbPar==15) {
-            if	   (cbPar==2  && vintegral[0]<0.25*sumIntG) epeak = max(0.15, frsp->GetParError(cbPar));
-            else if(cbPar==9  && vintegral[0]<0.25*sumIntG) epeak = max(0.15, frsp->GetParError(cbPar));
-            else if(cbPar==12 && vintegral[1]<0.25*sumIntG) epeak = max(0.15, frsp->GetParError(cbPar));
-            else if(cbPar==15 && vintegral[2]<0.25*sumIntG) epeak = max(0.15, frsp->GetParError(cbPar));
+	    if	   (cbPar==2  && vintegral[0]<0.25*sumIntG) epeak = max(0.15, frsp->GetParError(cbPar));
+	    else if(cbPar==9  && vintegral[0]<0.25*sumIntG) epeak = max(0.15, frsp->GetParError(cbPar));
+	    else if(cbPar==12 && vintegral[1]<0.25*sumIntG) epeak = max(0.15, frsp->GetParError(cbPar));
+	    else if(cbPar==15 && vintegral[2]<0.25*sumIntG) epeak = max(0.15, frsp->GetParError(cbPar));
 	    else epeak = max(0.1, frsp->GetParError(cbPar));
 	  }
 	  //slope exp
@@ -884,9 +884,9 @@ void L2Creator::writeTextFileForCurrentAlgorithm() {
     TF1* frelcor = (TF1*)grelcor->GetListOfFunctions()->Last();
     if(frelcor!=0) {
       if(ieta==0 || (ieta==1 && delphes)){
-        if(cbPar==17) fout<<"{1 JetEta 1 JetPt max(-1.,"<<frelcor->GetTitle()<<") Correction L3Absolute}"<<endl;
+	if(cbPar==17) fout<<"{1 JetEta 1 JetPt max(-1.,"<<frelcor->GetTitle()<<") Correction L3Absolute}"<<endl;
 	else          fout<<"{1 JetEta 1 JetPt max(0.0001,"<<frelcor->GetTitle()<<") Correction L3Absolute}"<<endl;
-	}
+      }
       double  etamin  = hl_jetpt.minimum(0,ieta);
       double  etamax  = hl_jetpt.maximum(0,ieta);
       double  ptmin = grelcor->GetX()[0];
