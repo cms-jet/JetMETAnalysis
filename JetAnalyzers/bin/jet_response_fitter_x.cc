@@ -145,9 +145,14 @@ int main(int argc,char**argv)
     
     if (algs.size()>0&&!contains(algs,alg)) continue;
 
+    if (0!=ofile->Get(idir->GetName())) {
+      cout<<"directory '"<<alg<<"' exists already in "<<output<<", skip!"<<endl;
+      continue;
+    }
+
     TDirectoryFile* odir = (TDirectoryFile*)ofile->mkdir(idir->GetName());
     odir->cd();
-    
+
     cout<<alg<<" ... "<<endl;
 
     //
@@ -157,7 +162,7 @@ int main(int argc,char**argv)
     TKey* histKey(0);
     while ((histKey=(TKey*)nextHist())) {
       if (strcmp(histKey->GetClassName(),"TH1F")!=0) continue;
-      
+
       TH1F* hrsp = (TH1F*)histKey->ReadObj();
       string histname(hrsp->GetName());
 
