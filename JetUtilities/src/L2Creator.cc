@@ -219,10 +219,6 @@ void L2Creator::loopOverEtaBins() {
     //std::cout << "hrspName = " << hrsp->GetName() << ": frsp = " << frsp << std::endl;
     TH1F* hrefpt  = hl_refpt.object(indices);
     TH1F* hjetpt  = hl_jetpt.object(indices);
-    cout<<"\nhrsp name: "<<hrsp->GetName()<<endl;
-    cout<<"graph name: "<<vabscor_eta.back()->GetName()<<endl;
-    cout<<"hjetptname: "<<hjetpt->GetName()<<endl;
-    cout<<"hrefptname: "<<hrefpt->GetName()<<endl;
 
     assert(hrefpt->GetEntries()>0&&hjetpt->GetEntries()>0);
 
