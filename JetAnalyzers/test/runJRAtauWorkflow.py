@@ -1,526 +1,532 @@
 #!/usr/bin/env python
 
-#from TauAnalysis.TauIdEfficiency.tools.buildConfigFilesTauIdEffAnalysis import buildConfigFile_hadd
+from variable import *
+from function import *
 
 import os
 import re
 
-version = 'v1_2enRecoveryCBa'
-era = 'TauJec11V1'
 
-#inputFilePath = '/data2/veelken/CMSSW_4_2_x/JRAtauNtuples/Ztautau/v1_2enRecovery/' \
-#               + 'user/v/veelken/CMSSW_4_2_x/JRAtauNtuples/Ztautau/v1_2enRecovery'
-inputFilePath  = '/hdfs/cms/store/user/calpas/DYJetsToLL_M-50_13TeV-madgraph-pythia8/DYJetsToLL_M-50_13TeV-madgraph-pythia8_TransferFunc_v1/a683f4f5fc0a3cbafdd5a17e17e4babe/'
 
-#outputFilePath = '/data1/veelken/tmp/JRAtau/%s' % version
-outputFilePath = '/home/calpas/TransferFunction/CMSSW_7_2_5/src/JetMETAnalysis/JetAnalyzers/test/JRAtau/%s' % version
+#--------------------------------------------------------------------------------
+#
+# create cristalBall fit directories
+#
+outputFilePath = '%s/src/JetMETAnalysis/JetAnalyzers/test/JRAtau/%s' % (os.environ['CMSSW_BASE'], version)
 
-samplesToAnalyze = [
-    'Ztautau'
-]
+fitDirPol1  = outputFilePath+"/plots/pol1/"
+fitDirPol7  = outputFilePath+"/plots/pol7/"
+cuts  = ["pass", "failed"]
+for cut in cuts:
+  for alg in algorithms:
+    outputPlotPath = fitDirPol1+'%s/crystalBallFit/%s/' % (alg, cut)
+    if not os.path.exists(outputPlotPath):
+      os.makedirs(outputPlotPath)
+    outputPlotPath = fitDirPol7+'%s/crystalBallFit/%s/' % (alg, cut)
+    if not os.path.exists(outputPlotPath):
+      os.makedirs(outputPlotPath)
 
-algorithms = [
-  'ak5tauHPSlooseCombDBcorrAll',
-  'ak5tauHPSlooseCombDBcorrOneProng0Pi0',
-  'ak5tauHPSlooseCombDBcorrOneProng1Pi0',
-  'ak5tauHPSlooseCombDBcorrOneProng2Pi0',
-  'ak5tauHPSlooseCombDBcorrThreeProng0Pi0',
-  'ak5tauHPSmediumCombDBcorrAll',
-  'ak5tauHPSmediumCombDBcorrOneProng0Pi0',
-  'ak5tauHPSmediumCombDBcorrOneProng1Pi0',
-  'ak5tauHPSmediumCombDBcorrOneProng2Pi0',
-  'ak5tauHPSmediumCombDBcorrThreeProng0Pi0',
-  'ak5tauHPStightCombDBcorrAll',
-  'ak5tauHPStightCombDBcorrOneProng0Pi0',
-  'ak5tauHPStightCombDBcorrOneProng1Pi0',
-  'ak5tauHPStightCombDBcorrOneProng2Pi0',
-  'ak5tauHPStightCombDBcorrThreeProng0Pi0',
-]
-
-execDir = "%s/bin/%s/" % (os.environ['CMSSW_BASE'], os.environ['SCRAM_ARCH'])
-
-executable_jrAnalyzer     = execDir + 'jet_response_analyzer_x'
-executable_fitResponse    = execDir + 'jet_response_fitter_x'
-executable_fitResolution  = execDir + 'jet_response_and_resolution_x'
-executable_fitL3param     = execDir + 'jet_l3_correction_x'
-executable_fitL2param     = execDir + 'jet_l2_correction_x'
-executable_applyL2L3param = execDir + 'jet_apply_jec_x'
-executable_showGraphs     = execDir + 'jet_inspect_graphs_x'
-executable_showHistos     = execDir + 'jet_inspect_histos_x'
-executable_showProfiles   = execDir + 'jet_inspect_profiles_x'
-executable_hadd           = 'hadd -f'
-executable_shell          = '/bin/csh'
-executable_python         = 'python'
-
-# define function used for fitting tau-jet response:
-#   0 = Gaussian
-#   1 = Crystall-Ball function
-fitOption = 1
-
-jecTextFilePath = os.getcwd()
-
-if not os.path.exists(outputFilePath):
-    os.mkdir(outputFilePath)
-
-outputFilePath_plots = os.path.join(outputFilePath, "plots")
-if not os.path.exists(outputFilePath_plots):
-    os.mkdir(outputFilePath_plots)
+    alg+="l2" # l2 correction
+    outputPlotPath = fitDirPol1+'%s/crystalBallFit/%s/' % (alg, cut)
+    if not os.path.exists(outputPlotPath):
+      os.makedirs(outputPlotPath)
+    outputPlotPath = fitDirPol7+'%s/crystalBallFit/%s/' % (alg, cut)
+    if not os.path.exists(outputPlotPath):
+      os.makedirs(outputPlotPath)
+#--------------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------------
 #
 # build shell script for running 'hadd' in order to "harvest" histograms
-# produced by FWLiteZllRecoilCorrectionAnalyzer macro
 #
-fileNames_hadd = {}
+ntupleFileNames = []
+for inputFilePath in inputFilePaths:
+    ntupleFileNames.extend([ os.path.join(inputFilePath, file) for file in os.listdir(inputFilePath) ])
 
-ntupleFileNames = os.listdir(inputFilePath)
-#print(ntupleFileNames)
-
-ntupleFile_regex = r"ntupleJRAtau_(?P<sample>\w*)_(?P<gridJob>\d*)_(?P<gridTry>\d*)_(?P<gridId>[a-zA-Z0-9]*).root"
+ntupleFile_regex = r"[a-zA-Z0-9_/:.]*ntupleJRAtau_(?P<sample>[a-zA-Z0-9]*)_(?P<gridJob>\d*)_(?P<gridTry>\d*)_(?P<gridId>[a-zA-Z0-9]*).root"
 ntupleFile_matcher = re.compile(ntupleFile_regex)
+#--------------------------------------------------------------------------------
 
-####################
-def buildConfigFile_hadd(haddCommand, shellFileName_full, inputFileNames, outputFileName_full):
-
-    """Build shell script to run 'hadd' command in order to add all histograms
-       in files specified by inputFileNames argument and write the sum to file outputFileName"""
-
-    shellFile = open(shellFileName_full, "w")
-    shellFile.write("#!/bin/csh -f\n")
-    shellFile.write("\n")
-    # CV: delete output file in case it exists 
-    shellFile.write("rm -f %s\n" % outputFileName_full)
-    shellFile.write("\n")
-    haddCommandLine = "%s %s" % (haddCommand, outputFileName_full)
-    for inputFileName in inputFileNames:
-        haddCommandLine += " %s" % inputFileName
-    shellFile.write("%s\n" % haddCommandLine)
-    shellFile.close()
-
-    logFileName_full = shellFileName_full.replace('.csh', '.log')
-
-    retVal = {}
-    retVal['shellFileName']  = shellFileName_full
-    retVal['outputFileName'] = outputFileName_full
-    retVal['logFileName']    = logFileName_full
-
-    return retVal
-####################
-
-
+#--------------------------------------------------------------------------------
+#
+# add all samples files
+#
+haddInputFileNames = []
 for sampleToAnalyze in samplesToAnalyze:
-    haddInputFileNames = []
+    nbOfSample = []
     for ntupleFileName in ntupleFileNames:
         if ntupleFile_matcher.match(ntupleFileName) and \
-           ntupleFile_matcher.match(ntupleFileName).group('sample') == sampleToAnalyze:
-            haddInputFileNames.append(os.path.join(inputFilePath, ntupleFileName))
+          ntupleFile_matcher.match(ntupleFileName).group('sample') == sampleToAnalyze:
+            haddInputFileNames.append(ntupleFileName)
+	    nbOfSample.append(ntupleFileName)
+    print "sample = %s: found %i input files." % (sampleToAnalyze, len(nbOfSample))
+print "found %i input files." % (len(haddInputFileNames))
 
-    print "sample = %s: found %i input files." % (sampleToAnalyze, len(haddInputFileNames))
+haddShellFileName  = os.path.join(outputFilePath, 'harvestJRAtauNtuples.csh')
+haddOutputFileName = os.path.join(outputFilePath, 'ntupleJRAtau_all.root') # copy where you can
+retVal_hadd = buildConfigFile_hadd(executable_hadd, haddShellFileName, haddInputFileNames, haddOutputFileName)
 
-    haddShellFileName  = os.path.join(outputFilePath, 'harvestJRAtauNtuples_%s.csh' % sampleToAnalyze)
-    haddOutputFileName = os.path.join(inputFilePath, 'ntupleJRAtau_%s_all.root' % sampleToAnalyze)
-
-    retVal_hadd = \
-      buildConfigFile_hadd(executable_hadd, haddShellFileName, haddInputFileNames, haddOutputFileName)
-
-    fileNames_hadd[sampleToAnalyze] = {}
-    fileNames_hadd[sampleToAnalyze]['shellFileName']  = haddShellFileName
-    fileNames_hadd[sampleToAnalyze]['inputFileNames'] = haddInputFileNames
-    fileNames_hadd[sampleToAnalyze]['outputFileName'] = haddOutputFileName
-    fileNames_hadd[sampleToAnalyze]['logFileName']    = retVal_hadd['logFileName']
-#--------------------------------------------------------------------------------
-
-def make_MakeFile_vstring(list_of_strings):
-    retVal = ""
-    for i, string_i in enumerate(list_of_strings):
-        if i > 0:
-            retVal += " "
-        retVal += string_i
-    return retVal
-
-#--------------------------------------------------------------------------------
-#
-# initialize command-line parameters for analyzing "plain" ROOT Ntuples for uncalibrated tau-jets
-# and filling tau-jet response and resolution histograms
-#
-fileNames_and_options_jrAnalyzer = {}
-
-ptBinning = [
-    20., 22.5, 25., 27.5, 30., 35., 40., 45., 50., 60., 80., 120., 200.
-]
-
-etaBinning = [
-    -2.5, -2.3, -2.1, -1.9, -1.7, -1.5, -1.3, -1.1, -0.9, -0.7, -0.5, -0.3, -0.1,
-    +0.1, +0.3, +0.5, +0.7, +0.9, +1.1, +1.3, +1.5, +1.7, +1.9, +2.1, +2.3, +2.5
-]
-    
-def make_MakeFile_vdouble(list_of_doubles):
-    retVal = ""
-    for i, double_i in enumerate(list_of_doubles):
-        if i > 0:
-            retVal += " "
-        retVal += "%2.1f" % double_i
-    return retVal
-
-def make_jrAnalyzer_config(configFileName):
-    configFile = open(configFileName, "w")
-    configFile.write("drmax = 0.3\n")
-    configFile.write("etabarrelmin = -1.3\n")
-    configFile.write("etabarrelmax =  1.3\n")
-    configFile.write("binspt = %s\n" % make_MakeFile_vdouble(ptBinning))
-    configFile.write("binseta = %s\n" % make_MakeFile_vdouble(etaBinning))
-    configFile.close()
-
-for sampleToAnalyze in samplesToAnalyze:
-    fileNames_and_options_jrAnalyzer[sampleToAnalyze] = {}    
-    fileNames_and_options_jrAnalyzer[sampleToAnalyze]['inputFileNames'] = \
-      [ fileNames_hadd[sampleToAnalyze]['outputFileName'] ]
-    fileNames_and_options_jrAnalyzer[sampleToAnalyze]['outputFileName'] = \
-      os.path.join(outputFilePath, "histogramsJRAtau_%s.root" % sampleToAnalyze)
-    fileNames_and_options_jrAnalyzer[sampleToAnalyze]['configFileName'] = \
-      os.path.join(outputFilePath, "jet_response_analyzer_%s.cfg" % sampleToAnalyze)
-    make_jrAnalyzer_config(fileNames_and_options_jrAnalyzer[sampleToAnalyze]['configFileName'])
-    fileNames_and_options_jrAnalyzer[sampleToAnalyze]['logFileName']    = \
-      os.path.join(outputFilePath, "jet_response_analyzer_%s.log" % sampleToAnalyze)
-    fileNames_and_options_jrAnalyzer[sampleToAnalyze]['commandLine']    = \
-      '%s -input %s -output %s -algs %s' % \
-        (fileNames_and_options_jrAnalyzer[sampleToAnalyze]['configFileName'],
-         make_MakeFile_vstring(fileNames_and_options_jrAnalyzer[sampleToAnalyze]['inputFileNames']),
-         fileNames_and_options_jrAnalyzer[sampleToAnalyze]['outputFileName'],
-         "".join([ "%s:0.3 " % algorithm for algorithm in algorithms ]))
+fileNames_hadd = {}
+fileNames_hadd['shellFileName']  = haddShellFileName
+fileNames_hadd['inputFileNames'] = haddInputFileNames
+fileNames_hadd['outputFileName'] = haddOutputFileName
+fileNames_hadd['logFileName']    = retVal_hadd['logFileName']
 #--------------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------------
 #
-# initialize command-line parameters for fitting jet response for uncalibrated tau-jets
+# jet response for uncalibrated tau-jets
 #
-fileNames_and_options_fitResponse_uncalibrated = {}
-
-for sampleToAnalyze in samplesToAnalyze:
-    fileNames_and_options_fitResponse_uncalibrated[sampleToAnalyze] = {}
-    fileNames_and_options_fitResponse_uncalibrated[sampleToAnalyze]['inputFileNames'] = \
-      [ fileNames_and_options_jrAnalyzer[sampleToAnalyze]['outputFileName'] ]
-    fileNames_and_options_fitResponse_uncalibrated[sampleToAnalyze]['outputFileName'] = \
-      os.path.join(outputFilePath, "responseJRAtau_%s.root" % sampleToAnalyze) 
-    fileNames_and_options_fitResponse_uncalibrated[sampleToAnalyze]['logFileName']    = \
-      os.path.join(outputFilePath, "jet_response_fitter_%s.log" % sampleToAnalyze)
-    fileNames_and_options_fitResponse_uncalibrated[sampleToAnalyze]['commandLine']    = \
-      '-input %s -output %s -algs %s -fittype %i' % \
-        (make_MakeFile_vstring(fileNames_and_options_fitResponse_uncalibrated[sampleToAnalyze]['inputFileNames']),
-         fileNames_and_options_fitResponse_uncalibrated[sampleToAnalyze]['outputFileName'],
-         make_MakeFile_vstring(algorithms),
-         fitOption)
+fileNames_and_options_jrAnalyzer = {}    
+fileNames_and_options_jrAnalyzer['inputFileNames'] = [fileNames_hadd['outputFileName']]
+fileNames_and_options_jrAnalyzer['outputFileName'] = os.path.join(outputFilePath, "jet_response_analyzer_uncalibrated.root")
+fileNames_and_options_jrAnalyzer['configFileName'] = os.path.join(outputFilePath, "jet_response_analyzer_uncalibrated.cfg")
+make_jrAnalyzer_config(fileNames_and_options_jrAnalyzer['configFileName'])
+fileNames_and_options_jrAnalyzer['logFileName']    = os.path.join(outputFilePath, "jet_response_analyzer_uncalibrated.log")
+fileNames_and_options_jrAnalyzer['commandLine']    = '%s -input %s -output %s -algs %s -nbinsrelrsp 250' % \
+    (fileNames_and_options_jrAnalyzer['configFileName'],
+     make_MakeFile_vstring(fileNames_and_options_jrAnalyzer['inputFileNames']),
+     fileNames_and_options_jrAnalyzer['outputFileName'],
+     "".join([ "%s:0.3 " % algorithm for algorithm in algorithms ])
+    )
 #--------------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------------
 #
-# initialize command-line parameters for determining L2 and L3 correction parameters
+# round 1.1: fit jet response for uncalibrated tau-jets
 #
-fileNames_and_options_fitL3param = {}
+fileNames_and_options_fitResponse_uncalibrated = {} 
+haddFitHists = []
+for histName in histNames:
+	fileNames_and_options_fitResponse_uncalibrated[histName] = {} 
+	fileNames_and_options_fitResponse_uncalibrated[histName]['inputFileNames'] = [fileNames_and_options_jrAnalyzer['outputFileName']]
+	fileNames_and_options_fitResponse_uncalibrated[histName]['outputFileName'] = os.path.join(outputFilePath, "responseJRAtau_%s_uncalibrated.root" % (histName))
+	haddFitHists.append(fileNames_and_options_fitResponse_uncalibrated[histName]['outputFileName']) 
+	fileNames_and_options_fitResponse_uncalibrated[histName]['logFileName']    = os.path.join(outputFilePath, "responseJRAtau_%s_uncalibrated.log" %histName)
+	fileNames_and_options_fitResponse_uncalibrated[histName]['commandLine']    = '-input %s -output %s -algs %s -fittype %i -histName %s -isItCalibrated uncalibrated -pol1 false -normalized true -fitDirPol7 %s' % \
+    	(make_MakeFile_vstring(fileNames_and_options_fitResponse_uncalibrated[histName]['inputFileNames']),
+     	 fileNames_and_options_fitResponse_uncalibrated[histName]['outputFileName'],
+     	 make_MakeFile_vstring(algorithms),
+     	 fitOption,
+     	 histName,
+	 fitDirPol7
+     	)
+#--------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------
+#
+# round 1.2: add the uncalibrated fit histograms
+#
+haddShellFitHistName  = os.path.join(outputFilePath, 'harvestFitHist_uncalibrated.csh')
+haddOutputFitHistName = os.path.join(outputFilePath, 'fitHists_uncalibrated.root') 
+
+retFitHist_hadd = buildConfigFile_hadd(executable_haddFitHists, haddShellFitHistName, haddFitHists, haddOutputFitHistName)
+
+fitHists_hadd_uncalibrated = {}
+fitHists_hadd_uncalibrated['shellFileName']  = haddShellFitHistName
+fitHists_hadd_uncalibrated['inputFileNames'] = haddFitHists
+fitHists_hadd_uncalibrated['outputFileName'] = haddOutputFitHistName
+fitHists_hadd_uncalibrated['logFileName']    = retFitHist_hadd['logFileName']
+#--------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------
+#
+# round 2.1: fit jet response for uncalibrated tau-jets 
+# Fixed the CB parameters determined above and use pol1 instead of pol7
+#
+fileNames_and_options_fitResponse_uncalibrated_pol1 = {} 
+haddFitHists_pol1 = []
+for histName in histNames:
+	fileNames_and_options_fitResponse_uncalibrated_pol1[histName] = {} 
+	fileNames_and_options_fitResponse_uncalibrated_pol1[histName]['inputFileNames'] = [fitHists_hadd_uncalibrated['outputFileName']]
+	fileNames_and_options_fitResponse_uncalibrated_pol1[histName]['outputFileName'] = os.path.join(outputFilePath, "responseJRAtau_%s_uncalibrated_pol1.root" % (histName))
+	haddFitHists_pol1.append(fileNames_and_options_fitResponse_uncalibrated_pol1[histName]['outputFileName']) 
+	fileNames_and_options_fitResponse_uncalibrated_pol1[histName]['logFileName']    = os.path.join(outputFilePath, "responseJRAtau_%s_uncalibrated_plo1.log" %histName)
+	fileNames_and_options_fitResponse_uncalibrated_pol1[histName]['commandLine']    = '-input %s -output %s -algs %s -fittype %i -histName %s -isItCalibrated uncalibrated -pol1 true -normalized true -fitDirPol1 %s' % \
+    	(make_MakeFile_vstring(fileNames_and_options_fitResponse_uncalibrated_pol1[histName]['inputFileNames']),
+     	 fileNames_and_options_fitResponse_uncalibrated_pol1[histName]['outputFileName'],
+     	 make_MakeFile_vstring(algorithms),
+     	 fitOption,
+     	 histName,
+	 fitDirPol1
+     	)
+#--------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------
+#
+# round 2.2: add the uncalibrated fit histograms
+#
+haddShellFitHistName_pol1  = os.path.join(outputFilePath, 'harvestFitHist_uncalibrated_pol1.csh')
+haddOutputFitHistName_pol1 = os.path.join(outputFilePath, 'fitHists_uncalibrated_pol1.root') 
+
+retFitHist_hadd_pol1 = buildConfigFile_hadd(executable_haddFitHists, haddShellFitHistName_pol1, haddFitHists_pol1, haddOutputFitHistName_pol1)
+
+fitHists_hadd_uncalibrated_pol1 = {}
+fitHists_hadd_uncalibrated_pol1['shellFileName']  = haddShellFitHistName_pol1
+fitHists_hadd_uncalibrated_pol1['inputFileNames'] = haddFitHists_pol1
+fitHists_hadd_uncalibrated_pol1['outputFileName'] = haddOutputFitHistName_pol1
+fitHists_hadd_uncalibrated_pol1['logFileName']    = retFitHist_hadd_pol1['logFileName']
+#--------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------
+#
+# determining L2L3 correction and fit them
+#
 fileNames_and_options_fitL2param = {}
-
-for sampleToAnalyze in samplesToAnalyze:
-    fileNames_and_options_fitL3param[sampleToAnalyze] = {}
-    fileNames_and_options_fitL3param[sampleToAnalyze]['inputFileNames'] = \
-      [ fileNames_and_options_fitResponse_uncalibrated[sampleToAnalyze]['outputFileName'] ]
-    fileNames_and_options_fitL3param[sampleToAnalyze]['outputFileName'] = \
-      os.path.join(outputFilePath, "fitL3param_%s.root" % sampleToAnalyze)
-    fileNames_and_options_fitL3param[sampleToAnalyze]['logFileName']    = \
-      os.path.join(outputFilePath, "fitL3param_%s.log" % sampleToAnalyze)
-    fileNames_and_options_fitL3param[sampleToAnalyze]['commandLine']    = \
-      '-input %s -output %s -era %s -algs %s -formats png -batch true' % \
-        (make_MakeFile_vstring(fileNames_and_options_fitL3param[sampleToAnalyze]['inputFileNames']),
-         fileNames_and_options_fitL3param[sampleToAnalyze]['outputFileName'],
-         era,
-         make_MakeFile_vstring(algorithms))
-    
-    fileNames_and_options_fitL2param[sampleToAnalyze] = {}
-    fileNames_and_options_fitL2param[sampleToAnalyze]['inputFileNames'] = \
-      [ fileNames_and_options_fitResponse_uncalibrated[sampleToAnalyze]['outputFileName'],
-        fileNames_and_options_fitL3param[sampleToAnalyze]['outputFileName'] ]
-    fileNames_and_options_fitL2param[sampleToAnalyze]['outputFileName'] = \
-      os.path.join(outputFilePath, "fitL2param_%s.root" % sampleToAnalyze)
-    fileNames_and_options_fitL2param[sampleToAnalyze]['logFileName']    = \
-      os.path.join(outputFilePath, "fitL2param_%s.log" % sampleToAnalyze)
-    fileNames_and_options_fitL2param[sampleToAnalyze]['commandLine']    = \
-      '-input %s -l3input %s -output %s -era %s -algs %s -formats png -batch true' % \
-        (fileNames_and_options_fitResponse_uncalibrated[sampleToAnalyze]['outputFileName'],
-         fileNames_and_options_fitL3param[sampleToAnalyze]['outputFileName'],
-         fileNames_and_options_fitL2param[sampleToAnalyze]['outputFileName'],
-         era,
-         make_MakeFile_vstring(algorithms))
+fileNames_and_options_fitL2param['inputFileNames'] = [fitHists_hadd_uncalibrated_pol1['outputFileName']]
+fileNames_and_options_fitL2param['outputFileName'] = os.path.join(outputFilePath, "fitL2param.root")
+fileNames_and_options_fitL2param['logFileName']    = os.path.join(outputFilePath, "fitL2param.log")
+fileNames_and_options_fitL2param['commandLine']    = \
+  '-input %s -output %s -era %s -algs %s -formats png -batch true -l2l3 true -fitDirPol7 %s' % \
+    (make_MakeFile_vstring(fileNames_and_options_fitL2param['inputFileNames']),
+     fileNames_and_options_fitL2param['outputFileName'],
+     era,
+     make_MakeFile_vstring(algorithms),
+     fitDirPol7
+    )
 #--------------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------------
 #
-# initialize command-line parameters for applying L2/L3 correction parameters
-# and producing new "plain" ROOT Ntuples for calibrated tau-jets
+# apply L2/L3 correction (determined above) to the original tree 
 #
 fileNames_and_options_applyL2L3param = {}
-
-for sampleToAnalyze in samplesToAnalyze:
-    fileNames_and_options_applyL2L3param[sampleToAnalyze] = {}
-    fileNames_and_options_applyL2L3param[sampleToAnalyze]['inputFileNames'] = \
-      [ fileNames_and_options_jrAnalyzer[sampleToAnalyze]['outputFileName'],
-        fileNames_and_options_fitL3param[sampleToAnalyze]['outputFileName'],
-        fileNames_and_options_fitL2param[sampleToAnalyze]['outputFileName'] ]
-    fileNames_and_options_applyL2L3param[sampleToAnalyze]['outputFileName'] = \
-      os.path.join(outputFilePath, "applyL2L3param_%s.root" % sampleToAnalyze)
-    fileNames_and_options_applyL2L3param[sampleToAnalyze]['logFileName']    = \
-      os.path.join(outputFilePath, "applyL2L3param_%s.log" % sampleToAnalyze)
-    fileNames_and_options_applyL2L3param[sampleToAnalyze]['commandLine']    = \
-      '-input %s -output %s -era %s -algs %s -jecpath %s -levels 2 3' % \
-        (fileNames_hadd[sampleToAnalyze]['outputFileName'],
-         fileNames_and_options_applyL2L3param[sampleToAnalyze]['outputFileName'],
-         era,
-         make_MakeFile_vstring(algorithms),
-         jecTextFilePath)
+fileNames_and_options_applyL2L3param['inputFileNames'] = [ fileNames_and_options_jrAnalyzer['outputFileName'],
+							   fileNames_and_options_fitL2param['outputFileName'] ]
+fileNames_and_options_applyL2L3param['outputFileName'] = os.path.join(outputFilePath, "applyL2L3param.root")
+fileNames_and_options_applyL2L3param['logFileName']    = os.path.join(outputFilePath, "applyL2L3param.log")
+fileNames_and_options_applyL2L3param['commandLine']    = '-input %s -output %s -era %s -algs %s -jecpath %s -levels 2 -saveitree false' % \
+    (fileNames_hadd['outputFileName'],
+     fileNames_and_options_applyL2L3param['outputFileName'],
+     era,
+     make_MakeFile_vstring(algorithms),
+     jecTextFilePath)
 #--------------------------------------------------------------------------------    
 
 #--------------------------------------------------------------------------------
 #
-# initialize command-line parameters for analyzing "plain" ROOT Ntuples for calibrated tau-jets
-# and filling tau-jet response and resolution histograms
+# jet response for calibrated tau-jets
 #
-fileNames_and_options_jrAnalyzer_calibrated = {}
+fileNames_and_options_jrAnalyzer_calibrated = {}    
+fileNames_and_options_jrAnalyzer_calibrated['inputFileNames'] = [fileNames_and_options_applyL2L3param['outputFileName']] 
+fileNames_and_options_jrAnalyzer_calibrated['outputFileName'] = os.path.join(outputFilePath, "jet_response_analyzer_calibrated.root")
+fileNames_and_options_jrAnalyzer_calibrated['configFileName'] = os.path.join(outputFilePath, "jet_response_analyzer_calibrated.cfg")
+make_jrAnalyzer_config(fileNames_and_options_jrAnalyzer_calibrated['configFileName'])
+fileNames_and_options_jrAnalyzer_calibrated['logFileName']    = os.path.join(outputFilePath, "jet_response_analyzer_calibrated.log")
+fileNames_and_options_jrAnalyzer_calibrated['commandLine']    = '%s -input %s -output %s -algs %s -nbinsrelrsp 250' % \
+    (fileNames_and_options_jrAnalyzer_calibrated['configFileName'],
+     make_MakeFile_vstring(fileNames_and_options_jrAnalyzer_calibrated['inputFileNames']),
+     fileNames_and_options_jrAnalyzer_calibrated['outputFileName'],
+     make_MakeFile_vstring([ "".join([ algorithm, suffix]) for algorithm in algorithms for suffix in ["l2"] ]))
+#--------------------------------------------------------------------------------
 
-for sampleToAnalyze in samplesToAnalyze:
-    fileNames_and_options_jrAnalyzer_calibrated[sampleToAnalyze] = {}    
-    fileNames_and_options_jrAnalyzer_calibrated[sampleToAnalyze]['inputFileNames'] = \
-      [ fileNames_and_options_applyL2L3param[sampleToAnalyze]['outputFileName'] ]
-    fileNames_and_options_jrAnalyzer_calibrated[sampleToAnalyze]['outputFileName'] = \
-      os.path.join(outputFilePath, "histogramsJRAtau_%s_calibrated.root" % sampleToAnalyze)
-    fileNames_and_options_jrAnalyzer_calibrated[sampleToAnalyze]['configFileName'] = \
-      os.path.join(outputFilePath, "jet_response_analyzer_%s_calibrated.cfg" % sampleToAnalyze)
-    make_jrAnalyzer_config(fileNames_and_options_jrAnalyzer_calibrated[sampleToAnalyze]['configFileName'])
-    fileNames_and_options_jrAnalyzer_calibrated[sampleToAnalyze]['logFileName']    = \
-      os.path.join(outputFilePath, "jet_response_analyzer_%s_calibrated.log" % sampleToAnalyze)
-    fileNames_and_options_jrAnalyzer_calibrated[sampleToAnalyze]['commandLine']    = \
-      '%s -input %s -output %s -algs %s' % \
-        (fileNames_and_options_jrAnalyzer_calibrated[sampleToAnalyze]['configFileName'],
-         make_MakeFile_vstring(fileNames_and_options_jrAnalyzer_calibrated[sampleToAnalyze]['inputFileNames']),
-         fileNames_and_options_jrAnalyzer_calibrated[sampleToAnalyze]['outputFileName'],
-         make_MakeFile_vstring([ "".join([ algorithm, suffix]) for algorithm in algorithms for suffix in [ "", "l2l3"] ]))
+
+#--------------------------------------------------------------------------------
+#
+# fit jet response for calibrated tau-jets
+#
+fileNames_and_options_fitResponse_calibrated = {} 
+haddFitHists_calibrated = [] 
+for histName in histNames:
+	fileNames_and_options_fitResponse_calibrated[histName] = {} 
+	fileNames_and_options_fitResponse_calibrated[histName]['inputFileNames'] = [fileNames_and_options_jrAnalyzer_calibrated['outputFileName']]
+	fileNames_and_options_fitResponse_calibrated[histName]['outputFileName'] = os.path.join(outputFilePath, "responseJRAtau_%s_calibrated.root" % (histName))
+	haddFitHists_calibrated.append(fileNames_and_options_fitResponse_calibrated[histName]['outputFileName']) 
+	fileNames_and_options_fitResponse_calibrated[histName]['logFileName']    = os.path.join(outputFilePath, "responseJRAtau_%s_calibrated.log" %histName)
+	fileNames_and_options_fitResponse_calibrated[histName]['commandLine']    = '-input %s -output %s -algs %s -fittype %i -histName %s -isItCalibrated calibrated  -pol1 false -normalized true -fitDirPol7 %s' % \
+    	(make_MakeFile_vstring(fileNames_and_options_fitResponse_calibrated[histName]['inputFileNames']),
+     	fileNames_and_options_fitResponse_calibrated[histName]['outputFileName'],
+	#make_MakeFile_vstring([ "".join([ algorithm, suffix]) for algorithm in algorithms for suffix in [ "", "l2"] ]),
+	make_MakeFile_vstring([ "".join([ algorithm, suffix]) for algorithm in algorithms for suffix in [ "l2"] ]), # now fit only the calibrate
+     	fitOption,
+     	histName,
+	fitDirPol7
+     	)
 #--------------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------------
 #
-# initialize command-line parameters for fitting jet response and resolution
-# for calibrated as well as uncalibrated tau-jets
+# add the calibrated fit histograms
 #
-fileNames_and_options_fitResponse_calibrated = {}
+haddShellFitHistName_calibrated  = os.path.join(outputFilePath, 'harvestFitHist_calibrated.csh')
+haddOutputFitHistName_calibrated = os.path.join(outputFilePath, 'fitHists_calibrated.root') 
 
+retFitHist_hadd_calibrated = buildConfigFile_hadd(executable_haddFitHists, haddShellFitHistName_calibrated, haddFitHists_calibrated, haddOutputFitHistName_calibrated)
+
+fitHists_hadd_calibrated = {}
+fitHists_hadd_calibrated['shellFileName']  = haddShellFitHistName_calibrated
+fitHists_hadd_calibrated['inputFileNames'] = haddFitHists_calibrated
+fitHists_hadd_calibrated['outputFileName'] = haddOutputFitHistName_calibrated
+fitHists_hadd_calibrated['logFileName']    = retFitHist_hadd_calibrated['logFileName']
+#--------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------
+#
+# add the uncalibrated and calibrated fit histograms for the next step
+#
+haddShellFitHistName_all  = os.path.join(outputFilePath, 'harvestFitHist_all.csh')
+haddOutputFitHistName_all = os.path.join(outputFilePath, 'fitHists_all.root') 
+haddFitHists_all = [ fitHists_hadd_uncalibrated['outputFileName'], fitHists_hadd_calibrated['outputFileName']] 
+retFitHist_hadd_all = buildConfigFile_hadd(executable_haddFitHists, haddShellFitHistName_all, haddFitHists_all, haddOutputFitHistName_all)
+fitHists_hadd_all = {}
+fitHists_hadd_all['shellFileName']  = haddShellFitHistName_all
+fitHists_hadd_all['inputFileNames'] = haddFitHists_all
+fitHists_hadd_all['outputFileName'] = haddOutputFitHistName_all
+fitHists_hadd_all['logFileName']    = retFitHist_hadd_all['logFileName']
+#--------------------------------------------------------------------------------
+
+
+#--------------------------------------------------------------------------------
+#
+# jet response and resolution graphs 
 fileNames_and_options_fitResolution = {}
-
-for sampleToAnalyze in samplesToAnalyze:
-    fileNames_and_options_fitResponse_calibrated[sampleToAnalyze] = {}
-    fileNames_and_options_fitResponse_calibrated[sampleToAnalyze]['inputFileNames'] = \
-      [ fileNames_and_options_jrAnalyzer_calibrated[sampleToAnalyze]['outputFileName'] ]
-    fileNames_and_options_fitResponse_calibrated[sampleToAnalyze]['outputFileName'] = \
-      os.path.join(outputFilePath, "responseJRAtau_%s_calibrated.root" % sampleToAnalyze) 
-    fileNames_and_options_fitResponse_calibrated[sampleToAnalyze]['logFileName']    = \
-      os.path.join(outputFilePath, "jet_response_fitter_%s_calibrated.log" % sampleToAnalyze)
-    fileNames_and_options_fitResponse_calibrated[sampleToAnalyze]['commandLine']    = \
-      '-input %s -output %s -algs %s -fittype %i' % \
-        (make_MakeFile_vstring(fileNames_and_options_fitResponse_calibrated[sampleToAnalyze]['inputFileNames']),
-         fileNames_and_options_fitResponse_calibrated[sampleToAnalyze]['outputFileName'],
-         make_MakeFile_vstring([ "".join([ algorithm, suffix]) for algorithm in algorithms for suffix in [ "", "l2l3"] ]),
-         fitOption)
-
-    fileNames_and_options_fitResolution[sampleToAnalyze] = {}
-    fileNames_and_options_fitResolution[sampleToAnalyze]['inputFileNames'] = \
-      [ fileNames_and_options_fitResponse_calibrated[sampleToAnalyze]['outputFileName'] ]
-    fileNames_and_options_fitResolution[sampleToAnalyze]['outputFileName'] = \
-      os.path.join(outputFilePath, "resolutionJRAtau_%s.root" % sampleToAnalyze)
-    fileNames_and_options_fitResolution[sampleToAnalyze]['logFileName']    = \
-      os.path.join(outputFilePath, "jet_resolution_fitter_%s.log" % sampleToAnalyze)
-    fileNames_and_options_fitResolution[sampleToAnalyze]['commandLine']    = \
-      '-input %s -output %s -algs %s -dorelrsp true -doetarsp true -docbfits true' % \
-        (make_MakeFile_vstring(fileNames_and_options_fitResolution[sampleToAnalyze]['inputFileNames']),
-         fileNames_and_options_fitResolution[sampleToAnalyze]['outputFileName'],
-         make_MakeFile_vstring([ "".join([ algorithm, suffix]) for algorithm in algorithms for suffix in [ "", "l2l3"] ]))
+fileNames_and_options_fitResolution['inputFileNames'] = [fitHists_hadd_all['outputFileName']] 
+fileNames_and_options_fitResolution['outputFileName'] = os.path.join(outputFilePath, "resolutionJRAtau.root")
+fileNames_and_options_fitResolution['logFileName']    = os.path.join(outputFilePath, "resolutionJRAtau.log")
+fileNames_and_options_fitResolution['commandLine']    = '-input %s -output %s -algs %s -dorelrsp true' % \
+    (make_MakeFile_vstring(fileNames_and_options_fitResolution['inputFileNames']),
+     fileNames_and_options_fitResolution['outputFileName'],
+     make_MakeFile_vstring([ "".join([ algorithm, suffix]) for algorithm in algorithms for suffix in [ "", "l2"] ]))
 #--------------------------------------------------------------------------------
+
 
 #--------------------------------------------------------------------------------
 #
-# initialize command-line parameters for making jet response plots for  calibrated tau-jets
-# plus resolution plots for calibrated compared to uncalibrated tau-jets
+# hist:  response calibrated vs uncalibrated
+# graph: resolution calibrated vs uncalibrated
 #
 fileNames_and_options_showHistos = {}
 fileNames_and_options_showGraphs = {}
 
-for sampleToAnalyze in samplesToAnalyze:
-
-    fileNames_and_options_showHistos[sampleToAnalyze] = {}
-    fileNames_and_options_showGraphs[sampleToAnalyze] = {}
-
-    for algorithm in algorithms:
-
-        outputFilePath_plots_algorithm = os.path.join(outputFilePath_plots, algorithm)
-        if not os.path.exists(outputFilePath_plots_algorithm):
-            os.mkdir(outputFilePath_plots_algorithm)
+for algorithm in algorithms:
+    outputFilePath_plots_algorithm = outputFilePath+"/plots/%s/tauRelRsp/" %(algorithm)
+    if not os.path.exists(outputFilePath_plots_algorithm):
+        os.mkdir(outputFilePath_plots_algorithm)
         
-        fileNames_and_options_showHistos[sampleToAnalyze][algorithm] = {}
-        for refVariable in [ "RefPt", "JetEta" ]:
-            fileNames_and_options_showHistos[sampleToAnalyze][algorithm][refVariable] = {}
-            fileNames_and_options_showHistos[sampleToAnalyze][algorithm][refVariable]['inputFileNames'] = \
-              [ fileNames_and_options_fitResponse_calibrated[sampleToAnalyze]['outputFileName'] ]
-            fileNames_and_options_showHistos[sampleToAnalyze][algorithm][refVariable]['outputFileName'] = \
-              "make_jet_inspect_histos_target_%s_%s_%s_calibrated" % (sampleToAnalyze, algorithm, refVariable)
-            fileNames_and_options_showHistos[sampleToAnalyze][algorithm][refVariable]['logFileName']    = \
-              os.path.join(outputFilePath, "jet_inspect_histos_%s_%s_%s_calibrated.log" % (sampleToAnalyze, algorithm, refVariable))
-            fileNames_and_options_showHistos[sampleToAnalyze][algorithm][refVariable]['commandLine']    = \
-              '-inputs %s -algs %s -variables RelRsp:%s %s -formats png -batch true -opath %s' % \
-                (make_MakeFile_vstring(fileNames_and_options_showHistos[sampleToAnalyze][algorithm][refVariable]['inputFileNames']),
-                 make_MakeFile_vstring([ "".join([ algorithm, suffix]) for suffix in [ "", "l2l3"] ]),
-                 refVariable,
-                 "-norm true -npercanvas 1",
-                 outputFilePath_plots_algorithm)
-    
-        fileNames_and_options_showGraphs[sampleToAnalyze][algorithm] = {}
-        for refVariable in [ "RefPt", "JetEta" ]:
-            fileNames_and_options_showGraphs[sampleToAnalyze][algorithm][refVariable] = {}
-            fileNames_and_options_showGraphs[sampleToAnalyze][algorithm][refVariable]['inputFileNames'] = \
-              [ fileNames_and_options_fitResolution[sampleToAnalyze]['outputFileName'] ]
-            fileNames_and_options_showGraphs[sampleToAnalyze][algorithm][refVariable]['outputFileName'] = \
-              "make_jet_inspect_graphs_%s_%s_%s_target" % (sampleToAnalyze, algorithm, refVariable)
-            fileNames_and_options_showGraphs[sampleToAnalyze][algorithm][refVariable]['logFileName']    = \
-              os.path.join(outputFilePath, "jet_inspect_graphs_%s_%s_%s.log" % (sampleToAnalyze, algorithm, refVariable))
-            fileNames_and_options_showGraphs[sampleToAnalyze][algorithm][refVariable]['commandLine']    = \
-              '-inputs %s -algs %s -variables RelRspVs%s %s -formats png -batch true -opath %s' % \
-                (make_MakeFile_vstring(fileNames_and_options_showGraphs[sampleToAnalyze][algorithm][refVariable]['inputFileNames']),
-                 make_MakeFile_vstring([ "".join([ algorithm, suffix]) for suffix in [ "", "l2l3"] ]),
-                 refVariable,
-                 "-ymin 0.5 -ymax 1.5 -legx 0.20 -legy 0.35 -legw 0.60",
-                 outputFilePath_plots_algorithm)
+    fileNames_and_options_showHistos[algorithm] = {}
+    fileNames_and_options_showHistos[algorithm]['inputFileNames'] = [ fitHists_hadd_all['outputFileName'] ]
+    fileNames_and_options_showHistos[algorithm]['outputFileName'] = "make_jet_inspect_histos_target_%s_calibrated" % (algorithm)
+    fileNames_and_options_showHistos[algorithm]['logFileName']    = \
+       os.path.join(outputFilePath, "jet_inspect_histos_%s_calibrated.log" % (algorithm))
+    fileNames_and_options_showHistos[algorithm]['commandLine']    = \
+       '-inputs %s -algs %s -variables RelRsp:JetEta:RefPt %s -formats png -batch true -opath %s -colors 1 4 -peak false' % \
+       (make_MakeFile_vstring(fileNames_and_options_showHistos[algorithm]['inputFileNames']),
+        make_MakeFile_vstring([ "".join([ algorithm, suffix]) for suffix in [ "", "l2"] ]),
+        "-norm true -npercanvas 1",
+        outputFilePath_plots_algorithm)
+
+
+    fileNames_and_options_showGraphs[algorithm] = {}
+    for refVariable in [ "RefPt", "JetEta" ]:
+    #for refVariable in [ "JetEta:RefPt" ]:
+        fileNames_and_options_showGraphs[algorithm][refVariable] = {}
+        fileNames_and_options_showGraphs[algorithm][refVariable]['inputFileNames'] = [ fileNames_and_options_fitResolution['outputFileName'] ]
+        fileNames_and_options_showGraphs[algorithm][refVariable]['outputFileName'] = "make_jet_inspect_graphs_%s_%s_target" % (algorithm, refVariable)
+        fileNames_and_options_showGraphs[algorithm][refVariable]['logFileName']    = \
+          os.path.join(outputFilePath, "jet_inspect_graphs_%s_%s.log" % (algorithm, refVariable))
+	if (refVariable == "RefPt"):
+          fileNames_and_options_showGraphs[algorithm][refVariable]['commandLine']    = \
+            '-inputs %s -algs %s -variables RelRspVs%s %s -formats png -batch true -opath %s -colors 1 4 -logx true' % \
+              (make_MakeFile_vstring(fileNames_and_options_showGraphs[algorithm][refVariable]['inputFileNames']),
+               make_MakeFile_vstring([ "".join([ algorithm, suffix]) for suffix in [ "", "l2"] ]),
+               refVariable,
+               "-ymin 0.5 -ymax 1.5 -legx 0.20 -legy 0.35 -legw 0.60",
+               outputFilePath_plots_algorithm)
+	else:
+          fileNames_and_options_showGraphs[algorithm][refVariable]['commandLine']    = \
+            '-inputs %s -algs %s -variables RelRspVs%s %s -formats png -batch true -opath %s -colors 1 4' % \
+              (make_MakeFile_vstring(fileNames_and_options_showGraphs[algorithm][refVariable]['inputFileNames']),
+               make_MakeFile_vstring([ "".join([ algorithm, suffix]) for suffix in [ "", "l2"] ]),
+               refVariable,
+               "-ymin 0.5 -ymax 1.5 -legx 0.20 -legy 0.35 -legw 0.60",
+               outputFilePath_plots_algorithm)
 #--------------------------------------------------------------------------------
 
-# done building config files and initializing command-line parameters, now build Makefile...
-makeFileName = "Makefile_runJRAtauworkflow_%s" % version
+
+#--------------------------------------------------------------------------------
+#
+# build Makefile...
+#
+makeFileName = "Makefile_runJRAtauworkflow_l2_%s" % version
 makeFile = open(makeFileName, "w")
 makeFile.write("\n")
 outputFileNames_runJRAtauworkflow = []
-for sampleName in samplesToAnalyze:
+outputFileNames_runJRAtauworkflow.extend([
+    fileNames_hadd['outputFileName'],
+    fileNames_and_options_jrAnalyzer['outputFileName'],
+    fitHists_hadd_uncalibrated['outputFileName'],
+    fileNames_and_options_fitL2param['outputFileName'],
+    fileNames_and_options_applyL2L3param['outputFileName'],
+    fileNames_and_options_jrAnalyzer_calibrated['outputFileName'],
+    fitHists_hadd_calibrated['outputFileName'],
+    fitHists_hadd_all['outputFileName'],
+    fileNames_and_options_fitResolution['outputFileName']
+])
+
+for histName in histNames:
+        outputFileNames_runJRAtauworkflow.extend([
+	    fileNames_and_options_fitResponse_uncalibrated[histName]['outputFileName'],   
+	    fileNames_and_options_fitResponse_calibrated[histName]['outputFileName']   
+        ])
+
+for algorithm in algorithms:
     outputFileNames_runJRAtauworkflow.extend([
-        fileNames_and_options_jrAnalyzer[sampleName]['outputFileName'],
-        fileNames_and_options_fitResponse_uncalibrated[sampleName]['outputFileName'],
-        fileNames_and_options_fitL3param[sampleName]['outputFileName'],
-        fileNames_and_options_fitL2param[sampleName]['outputFileName'],
-        fileNames_and_options_applyL2L3param[sampleName]['outputFileName'],
-        fileNames_and_options_jrAnalyzer_calibrated[sampleName]['outputFileName'],
-        fileNames_and_options_fitResponse_calibrated[sampleName]['outputFileName'],
-        fileNames_and_options_fitResolution[sampleName]['outputFileName']
+      fileNames_and_options_showHistos[algorithm]['outputFileName'],
     ])
-    for algorithm in algorithms:
-        for refVariable in [ "RefPt", "JetEta" ]:
-            outputFileNames_runJRAtauworkflow.extend([
-                fileNames_and_options_showHistos[sampleName][algorithm][refVariable]['outputFileName'],
-                fileNames_and_options_showGraphs[sampleName][algorithm][refVariable]['outputFileName']
-            ])
+    for refVariable in [ "RefPt", "JetEta" ]:
+        outputFileNames_runJRAtauworkflow.extend([
+           fileNames_and_options_showGraphs[algorithm][refVariable]['outputFileName']
+        ])
+
+
 makeFile.write("all: %s\n" % make_MakeFile_vstring(outputFileNames_runJRAtauworkflow))
 makeFile.write("\techo 'Finished running JRAtau Workflow.'\n")
 makeFile.write("\n")
-for sampleName in samplesToAnalyze:
-    if len(fileNames_hadd[sampleName]['inputFileNames']) > 0:
+
+# add the ntuple
+if len(fileNames_hadd['inputFileNames']) > 0:
+    makeFile.write("%s: %s\n" %
+      (fileNames_hadd['outputFileName'],
+       make_MakeFile_vstring(fileNames_hadd['inputFileNames'])))
+    makeFile.write("\t%s %s &> %s\n" %
+      (executable_shell,
+       fileNames_hadd['shellFileName'],
+       fileNames_hadd['logFileName']))
+makeFile.write("\n")
+
+# response
+makeFile.write("%s: %s\n" %
+  (fileNames_and_options_jrAnalyzer['outputFileName'],
+   make_MakeFile_vstring(fileNames_and_options_jrAnalyzer['inputFileNames'])))    
+makeFile.write("\t%s %s &> %s\n" %
+  (executable_jrAnalyzer,
+   fileNames_and_options_jrAnalyzer['commandLine'],
+   fileNames_and_options_jrAnalyzer['logFileName']))
+makeFile.write("\n")
+
+# fit uncalibrated
+for histName in histNames:
+	makeFile.write("%s: %s\n" %
+  	(fileNames_and_options_fitResponse_uncalibrated[histName]['outputFileName'],
+   	make_MakeFile_vstring(fileNames_and_options_fitResponse_uncalibrated[histName]['inputFileNames'])))    
+	makeFile.write("\t%s %s &> %s\n" %
+  	(executable_fitResponse,
+   	fileNames_and_options_fitResponse_uncalibrated[histName]['commandLine'],
+   	fileNames_and_options_fitResponse_uncalibrated[histName]['logFileName']))
+	makeFile.write("\n")
+
+# add the fit uncalibrated hist
+if len(fitHists_hadd_uncalibrated['inputFileNames']) > 0:
+    makeFile.write("%s: %s\n" %
+      (fitHists_hadd_uncalibrated['outputFileName'],
+       make_MakeFile_vstring(fitHists_hadd_uncalibrated['inputFileNames'])))
+    makeFile.write("\t%s %s &> %s\n" %
+      (executable_shell,
+       fitHists_hadd_uncalibrated['shellFileName'],
+       fitHists_hadd_uncalibrated['logFileName']))
+makeFile.write("\n")
+
+# determine l2l3
+makeFile.write("%s: %s\n" %
+  (fileNames_and_options_fitL2param['outputFileName'],
+   make_MakeFile_vstring(fileNames_and_options_fitL2param['inputFileNames'])))    
+makeFile.write("\t%s %s &> %s\n" %
+  (executable_fitL2param,
+   fileNames_and_options_fitL2param['commandLine'],
+   fileNames_and_options_fitL2param['logFileName']))
+makeFile.write("\n")
+
+# apply l2l3
+makeFile.write("%s: %s\n" %
+  (fileNames_and_options_applyL2L3param['outputFileName'],
+   make_MakeFile_vstring(fileNames_and_options_applyL2L3param['inputFileNames'])))    
+makeFile.write("\t%s %s &> %s\n" %
+  (executable_applyL2L3param,
+   fileNames_and_options_applyL2L3param['commandLine'],
+   fileNames_and_options_applyL2L3param['logFileName']))
+makeFile.write("\n")
+
+# calibrated response
+makeFile.write("%s: %s\n" %
+  (fileNames_and_options_jrAnalyzer_calibrated['outputFileName'],
+   make_MakeFile_vstring(fileNames_and_options_jrAnalyzer_calibrated['inputFileNames'])))    
+makeFile.write("\t%s %s &> %s\n" %
+  (executable_jrAnalyzer,
+   fileNames_and_options_jrAnalyzer_calibrated['commandLine'],
+   fileNames_and_options_jrAnalyzer_calibrated['logFileName']))    
+makeFile.write("\n")
+
+# fit calibrated response
+for histName in histNames:
+	makeFile.write("%s: %s\n" %
+  	(fileNames_and_options_fitResponse_calibrated[histName]['outputFileName'],
+   	make_MakeFile_vstring(fileNames_and_options_fitResponse_calibrated[histName]['inputFileNames'])))    
+	makeFile.write("\t%s %s &> %s\n" %
+  	(executable_fitResponse,
+   	fileNames_and_options_fitResponse_calibrated[histName]['commandLine'],
+   	fileNames_and_options_fitResponse_calibrated[histName]['logFileName']))
+	makeFile.write("\n")
+
+# add the calibrated fit hist
+if len(fitHists_hadd_calibrated['inputFileNames']) > 0:
+    makeFile.write("%s: %s\n" %
+      (fitHists_hadd_calibrated['outputFileName'],
+       make_MakeFile_vstring(fitHists_hadd_calibrated['inputFileNames'])))
+    makeFile.write("\t%s %s &> %s\n" %
+      (executable_shell,
+       fitHists_hadd_calibrated['shellFileName'],
+       fitHists_hadd_calibrated['logFileName']))
+makeFile.write("\n")
+
+#add uncalibrated and calibrated fit
+if len(fitHists_hadd_all['inputFileNames']) > 0:
+    makeFile.write("%s: %s\n" %
+      (fitHists_hadd_all['outputFileName'],
+       make_MakeFile_vstring(fitHists_hadd_all['inputFileNames'])))
+    makeFile.write("\t%s %s &> %s\n" %
+      (executable_shell,
+       fitHists_hadd_all['shellFileName'],
+       fitHists_hadd_all['logFileName']))
+makeFile.write("\n")
+
+# resolution
+makeFile.write("%s: %s\n" %
+  (fileNames_and_options_fitResolution['outputFileName'],
+   #make_MakeFile_vstring(fitHists_hadd_calibrated['outputFileName'])))    
+   fitHists_hadd_all['outputFileName']))    
+makeFile.write("\t%s %s &> %s\n" %
+  (executable_fitResolution,
+   fileNames_and_options_fitResolution['commandLine'],
+   fileNames_and_options_fitResolution['logFileName']))
+makeFile.write("\n")
+
+# histo graph
+for algorithm in algorithms:
+    makeFile.write("%s: %s\n" %
+      (fileNames_and_options_showHistos[algorithm]['outputFileName'],
+       fitHists_hadd_all['outputFileName']))    
+    makeFile.write("\t%s %s &> %s\n" %
+      (executable_showHistos,
+       fileNames_and_options_showHistos[algorithm]['commandLine'],
+       fileNames_and_options_showHistos[algorithm]['logFileName']))
+    for refVariable in [ "RefPt", "JetEta" ]:
         makeFile.write("%s: %s\n" %
-          (fileNames_hadd[sampleName]['outputFileName'],
-           make_MakeFile_vstring(fileNames_hadd[sampleName]['inputFileNames'])))
+          (fileNames_and_options_showGraphs[algorithm][refVariable]['outputFileName'],
+	   fileNames_and_options_fitResolution['outputFileName']))    
         makeFile.write("\t%s %s &> %s\n" %
-          (executable_shell,
-           fileNames_hadd[sampleName]['shellFileName'],
-           fileNames_hadd[sampleName]['logFileName']))
-makeFile.write("\n")
-for sampleName in samplesToAnalyze:
-    makeFile.write("%s: %s\n" %
-      (fileNames_and_options_jrAnalyzer[sampleName]['outputFileName'],
-       make_MakeFile_vstring(fileNames_and_options_jrAnalyzer[sampleName]['inputFileNames'])))    
-    makeFile.write("\t%s %s &> %s\n" %
-      (executable_jrAnalyzer,
-       fileNames_and_options_jrAnalyzer[sampleName]['commandLine'],
-       fileNames_and_options_jrAnalyzer[sampleName]['logFileName']))
-makeFile.write("\n")
-for sampleName in samplesToAnalyze:
-    makeFile.write("%s: %s\n" %
-      (fileNames_and_options_fitResponse_uncalibrated[sampleName]['outputFileName'],
-       make_MakeFile_vstring(fileNames_and_options_fitResponse_uncalibrated[sampleName]['inputFileNames'])))    
-    makeFile.write("\t%s %s &> %s\n" %
-      (executable_fitResponse,
-       fileNames_and_options_fitResponse_uncalibrated[sampleName]['commandLine'],
-       fileNames_and_options_fitResponse_uncalibrated[sampleName]['logFileName']))
-makeFile.write("\n")
-for sampleName in samplesToAnalyze:
-    makeFile.write("%s: %s\n" %
-      (fileNames_and_options_fitL3param[sampleName]['outputFileName'],
-       make_MakeFile_vstring(fileNames_and_options_fitL3param[sampleName]['inputFileNames'])))    
-    makeFile.write("\t%s %s &> %s\n" %
-      (executable_fitL3param,
-       fileNames_and_options_fitL3param[sampleName]['commandLine'],
-       fileNames_and_options_fitL3param[sampleName]['logFileName']))
-    makeFile.write("%s: %s\n" %
-      (fileNames_and_options_fitL2param[sampleName]['outputFileName'],
-       make_MakeFile_vstring(fileNames_and_options_fitL2param[sampleName]['inputFileNames'])))    
-    makeFile.write("\t%s %s &> %s\n" %
-      (executable_fitL2param,
-       fileNames_and_options_fitL2param[sampleName]['commandLine'],
-       fileNames_and_options_fitL2param[sampleName]['logFileName']))
-makeFile.write("\n")
-for sampleName in samplesToAnalyze:
-    makeFile.write("%s: %s\n" %
-      (fileNames_and_options_applyL2L3param[sampleName]['outputFileName'],
-       make_MakeFile_vstring(fileNames_and_options_applyL2L3param[sampleName]['inputFileNames'])))    
-    makeFile.write("\t%s %s &> %s\n" %
-      (executable_applyL2L3param,
-       fileNames_and_options_applyL2L3param[sampleName]['commandLine'],
-       fileNames_and_options_applyL2L3param[sampleName]['logFileName']))
-makeFile.write("\n")
-for sampleName in samplesToAnalyze:
-    makeFile.write("%s: %s\n" %
-      (fileNames_and_options_jrAnalyzer_calibrated[sampleName]['outputFileName'],
-       make_MakeFile_vstring(fileNames_and_options_jrAnalyzer_calibrated[sampleName]['inputFileNames'])))    
-    makeFile.write("\t%s %s &> %s\n" %
-      (executable_jrAnalyzer,
-       fileNames_and_options_jrAnalyzer_calibrated[sampleName]['commandLine'],
-       fileNames_and_options_jrAnalyzer_calibrated[sampleName]['logFileName']))    
-makeFile.write("\n")
-for sampleName in samplesToAnalyze:
-    makeFile.write("%s: %s\n" %
-      (fileNames_and_options_fitResponse_calibrated[sampleName]['outputFileName'],
-       make_MakeFile_vstring(fileNames_and_options_fitResponse_calibrated[sampleName]['inputFileNames'])))    
-    makeFile.write("\t%s %s &> %s\n" %
-      (executable_fitResponse,
-       fileNames_and_options_fitResponse_calibrated[sampleName]['commandLine'],
-       fileNames_and_options_fitResponse_calibrated[sampleName]['logFileName']))
-    makeFile.write("%s: %s\n" %
-      (fileNames_and_options_fitResolution[sampleName]['outputFileName'],
-       make_MakeFile_vstring(fileNames_and_options_fitResolution[sampleName]['inputFileNames'])))    
-    makeFile.write("\t%s %s &> %s\n" %
-      (executable_fitResolution,
-       fileNames_and_options_fitResolution[sampleName]['commandLine'],
-       fileNames_and_options_fitResolution[sampleName]['logFileName']))
-makeFile.write("\n")
-for sampleName in samplesToAnalyze:
-    for algorithm in algorithms:
-        for refVariable in [ "RefPt", "JetEta" ]:
-            makeFile.write("%s: %s\n" %
-              (fileNames_and_options_showHistos[sampleName][algorithm][refVariable]['outputFileName'],
-               make_MakeFile_vstring(fileNames_and_options_showHistos[sampleName][algorithm][refVariable]['inputFileNames'])))    
-            makeFile.write("\t%s %s &> %s\n" %
-              (executable_showHistos,
-               fileNames_and_options_showHistos[sampleName][algorithm][refVariable]['commandLine'],
-               fileNames_and_options_showHistos[sampleName][algorithm][refVariable]['logFileName']))
-            makeFile.write("%s: %s\n" %
-              (fileNames_and_options_showGraphs[sampleName][algorithm][refVariable]['outputFileName'],
-               make_MakeFile_vstring(fileNames_and_options_showGraphs[sampleName][algorithm][refVariable]['inputFileNames'])))    
-            makeFile.write("\t%s %s &> %s\n" %
-              (executable_showGraphs,
-               fileNames_and_options_showGraphs[sampleName][algorithm][refVariable]['commandLine'],
-               fileNames_and_options_showGraphs[sampleName][algorithm][refVariable]['logFileName']))       
-makeFile.write("\n")        
+          (executable_showGraphs,
+           fileNames_and_options_showGraphs[algorithm][refVariable]['commandLine'],
+           fileNames_and_options_showGraphs[algorithm][refVariable]['logFileName']))       
+makeFile.write("\n")  
+
 makeFile.write(".PHONY: clean\n")
 makeFile.write("clean:\n")
 makeFile.write("\trm -f %s\n" % make_MakeFile_vstring(outputFileNames_runJRAtauworkflow))
 makeFile.write("\techo 'Finished deleting old files.'\n")
 makeFile.write("\n")
 makeFile.close()
+#--------------------------------------------------------------------------------
 
-print("Finished building Makefile. Now execute 'make -j 8 -f %s'." % makeFileName)
+#print("Finished building Makefile. Now execute 'make -j 16 -f %s'." % makeFileName)
+print("Finished building Makefile. Now execute 'make -j -f %s'." % makeFileName)
+
