@@ -334,16 +334,87 @@ void L2Creator::loopOverEtaBins() {
         	fabscor->SetParameter(4,0.0);
         }
         else if (alg.find("jpt")!=string::npos || alg.find("tau")!=string::npos) {
-        	fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",xmin,xmax);
-          //
-          // INITIAL PARAMS: These are the fitted parameters that work for JetEta0.261to0.348
-          //
-        	fabscor->SetParameter(0,-8.9);
-        	fabscor->SetParameter(1,530);
-        	fabscor->SetParameter(2,16);
-        	fabscor->SetParameter(3,-22);
-        	fabscor->SetParameter(4,0.06);
-        	fabscor->SetParameter(5,-0.28);
+            if(l2calofit.EqualTo("standard",TString::kIgnoreCase)) {
+                fabscor=new TF1("fit","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",xmin,xmax);
+                //
+                // INITIAL PARAMS: These are the fitted parameters that work for JetEta0.261to0.348
+                //
+                fabscor->SetParameter(0,-8.9);
+                fabscor->SetParameter(1,530);
+                fabscor->SetParameter(2,16);
+                fabscor->SetParameter(3,-22);
+                fabscor->SetParameter(4,0.06);
+                fabscor->SetParameter(5,-0.28);
+            }
+            else if(l2calofit.EqualTo("DynamicMin",TString::kIgnoreCase)) {
+                xmin=findPeak(gabscor,0,3,3,false);
+                TString fcn = "[0] + ([1]/(pow(log10(x),2)+[2])) + ([3]*exp(-([4]*((log10(x)-[5])*(log10(x)-[5]))))) + ([6]*exp(-([7]*((log10(x)-[8])*(log10(x)-[8])))))";
+                fabscor=new TF1("fit",fcn.Data(),xmin,xmax);
+                fabscor->SetParameter(0,-0.0221278);
+                fabscor->SetParameter(1,119.265);
+                fabscor->SetParameter(2,100);
+                fabscor->SetParameter(3,-0.0679365);
+                fabscor->SetParameter(4,2.82597);
+                fabscor->SetParameter(5,1.8277);
+                fabscor->SetParameter(6,-0.0679365);
+                fabscor->SetParameter(7,3.82597);
+                fabscor->SetParameter(8,1.8277);
+                fabscor->SetParLimits(6,-20,10);
+                fabscor->SetParLimits(7,0,100);
+                fabscor->SetParLimits(3,-15,15);
+                fabscor->SetParLimits(4,0,500);
+                fabscor->SetParLimits(0,-2,25);
+                fabscor->SetParLimits(1,0,250);
+            }
+            else if(l2calofit.EqualTo("Erf",TString::kIgnoreCase)) {
+                xmin=hl_jetpt.minimum(0,ieta);
+                fabscor = new TF1("fit","[0]+[1]*TMath::Erf([2]*(log10(x)-[3]))+[4]*exp([5]*(log10(x)-[6])*(log10(x)-[6]))",xmin,xmax);
+
+                fabscor->SetParameter(0,-4790.13);
+                fabscor->SetParameter(1,-4791.24);
+                fabscor->SetParameter(2,-3.95017);
+                fabscor->SetParameter(3,0.393983);
+                fabscor->SetParameter(4,0.445609);
+                fabscor->SetParameter(5,-1.18887);
+                fabscor->SetParameter(6,0.956648);
+                
+                 if(ieta==3) {
+                   fabscor->SetParameter(0,-4790.16);
+                   fabscor->SetParameter(1,-4791.21);
+                   fabscor->SetParameter(2,-93.1228);
+                   fabscor->SetParameter(3,1.21101);
+                   fabscor->SetParameter(4,0.112504);
+                   fabscor->SetParameter(5,-10.5307);
+                   fabscor->SetParameter(6,1.36997);
+                }
+                if(ieta>=11 && ieta<=14) {
+                   fabscor->SetParameter(0,-4790.19);
+                   fabscor->SetParameter(1,-4791.18);
+                   fabscor->SetParameter(2,-5.25329);
+                   fabscor->SetParameter(3,0.714413);
+                   fabscor->SetParameter(4,0.266478);
+                   fabscor->SetParameter(5,-1.73264);
+                   fabscor->SetParameter(6,1.24294);
+                }
+                if(ieta>=15 && ieta<=69) {
+                   fabscor->SetParameter(0,-5796.16);
+                   fabscor->SetParameter(1,-5797.2);
+                   fabscor->SetParameter(2,-4.23654);
+                   fabscor->SetParameter(3,0.729816);
+                   fabscor->SetParameter(4,0.14041);
+                   fabscor->SetParameter(5,-0.995273);
+                   fabscor->SetParameter(6,0.870276);
+                }
+                if(ieta==77) {
+                   fabscor->SetParameter(0,-4790.16);
+                   fabscor->SetParameter(1,-4791.21);
+                   fabscor->SetParameter(2,-94.5755);
+                   fabscor->SetParameter(3,1.20769);
+                   fabscor->SetParameter(4,0.109479);
+                   fabscor->SetParameter(5,-11.3274);
+                   fabscor->SetParameter(6,1.37828);
+                }
+            }
         }
         else if (alg.find("calo")!=string::npos) {
         	if(l2calofit.EqualTo("standard",TString::kIgnoreCase)) {
@@ -376,6 +447,18 @@ void L2Creator::loopOverEtaBins() {
       			fabscor->SetParLimits(0,-2,25);
       			fabscor->SetParLimits(1,0,250);
       		}
+            else if(l2calofit.EqualTo("Erf",TString::kIgnoreCase)) {
+                if (xmin<6) xmin=6;
+                fabscor = new TF1("fit","[0]+[1]*TMath::Erf([2]*(log10(x)-[3]))+[4]*exp([5]*(log10(x)-[6])*(log10(x)-[6]))",xmin,xmax);
+                
+                fabscor->SetParameter(0,-4790.13);
+                fabscor->SetParameter(1,-4791.24);
+                fabscor->SetParameter(2,-3.95017);
+                fabscor->SetParameter(3,0.393983);
+                fabscor->SetParameter(4,0.445609);
+                fabscor->SetParameter(5,-1.18887);
+                fabscor->SetParameter(6,0.956648);
+            }
       	}
         else {
         	cout << "WARNING::Cannot determine fit function for " << alg << "." << endl;
