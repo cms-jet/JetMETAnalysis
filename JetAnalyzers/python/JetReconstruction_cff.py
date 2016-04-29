@@ -45,6 +45,7 @@ ak6PUPPIJets    = ak5PFJets.clone   ( rParam=0.6, src = cms.InputTag('puppi'))
 ak7GenJets      = ak5GenJets.clone  ( rParam=0.7 )
 ak7PUPPIJets    = ak5PFJets.clone   ( rParam=0.7, src = cms.InputTag('puppi'))
 ak8GenJets      = ak5GenJets.clone  ( rParam=0.8 )
+ak8CaloJets     = ak5CaloJets.clone ( rParam=0.8 ) # for support HLT usage
 ak8PFJets       = ak5PFJets.clone   ( rParam=0.8 )
 ak8PFchsJets    = ak5PFchsJets.clone( rParam=0.8 )
 ak8PUPPIJets    = ak5PFJets.clone   ( rParam=0.8, src = cms.InputTag('puppi'))
@@ -57,6 +58,11 @@ ak10PFJets      = ak5PFJets.clone   ( rParam=1.0 )
 ak10PFchsJets   = ak5PFchsJets.clone( rParam=1.0 )
 ak10PUPPIJets   = ak5PFJets.clone   ( rParam=1.0, src = cms.InputTag('puppi'))
 
+# objects for HLT usage
+ak4CaloHLTJets = ak4CaloJets.clone( src = 'hltAK4CaloJets' )
+ak4PFHLTJets = ak4PFJets.clone( src = 'hltAK4PFJets' )
+ak8CaloHLTJets = ak8CaloJets.clone( src = 'hltAK8CaloJets' )
+ak8PFHLTJets = ak8PFJets.clone( src = 'hltAK8PFJets' )
 
 # sc & ic clones
 sc5GenJets = sisCone5GenJets.clone()

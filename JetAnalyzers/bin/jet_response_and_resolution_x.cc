@@ -59,7 +59,7 @@ int main(int argc,char**argv)
   bool           dorho         = cl.getValue<bool>   ("dorho",             false);
   vector<string> flavors       = cl.getVector<string>("flavors",              "");
   vector<string> algs          = cl.getVector<string>("algs",                 "");
-  bool           fitres        = cl.getValue<bool>   ("fitres",             true);
+  bool           fitres        = cl.getValue<bool>   ("fitres",            false);
   bool           unweighted    = cl.getValue<bool>   ("unweighted",        false);
   bool           verbose       = cl.getValue<bool>   ("verbose",           false);
   bool           forcefit      = cl.getValue<bool>   ("forcefit",          false);
@@ -76,9 +76,9 @@ int main(int argc,char**argv)
   float          fracRMSjpt    = cl.getValue<float> ("fracRMSjpt",            1.);
   float          fracRMScalo   = cl.getValue<float> ("fracRMScalo",           1.);
 
-  float          calomin       = cl.getValue<float>  ("calomin",             -1.);
+  float          calomin       = cl.getValue<float>  ("calomin",             -5.);
   float          jptmin        = cl.getValue<float>  ("jptmin",              -1.);
-  float          pfmin         = cl.getValue<float>  ("pfmin",               -1.);
+  float          pfmin         = cl.getValue<float>  ("pfmin",               -5.);
   float          puppimin      = cl.getValue<float>  ("puppimin",            -1.);
 
   float          calofitmin    = cl.getValue<float>  ("calofitmin",          -1.);
@@ -133,6 +133,9 @@ int main(int argc,char**argv)
       //variables.push_back("RelRsp:JetY");
       variables.push_back("RelRsp:JetEta:RefPt");
       variables.push_back("RelRsp:JetEta#1:RefPt");  //fitmin and min options affect JetEta#1 (vs. JetEta), seems to try to fit res but not rsp
+      variables.push_back("RelRsp:TrueNPU");
+      variables.push_back("RelRsp:TrueNPU:RefPt");
+      variables.push_back("RelRsp:TrueNPU#1:RefPt");
       //variables.push_back("RelRsp:JetY:RefPt");
       //variables.push_back("RelRsp:JetY#1:RefPt");
       //variables.push_back("RelRsp_Barrel:RefPt");

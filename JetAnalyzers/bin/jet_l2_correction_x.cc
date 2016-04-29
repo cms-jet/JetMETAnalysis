@@ -33,7 +33,7 @@ int main(int argc,char**argv)
   CommandLine cl;
   if (!cl.parse(argc,argv)) return 0;
 
-  bool           batch     = cl.getValue<bool>    ("batch",      false);
+  bool           batch     = cl.getValue<bool>    ("batch",      true);
 
   if (!cl.partialCheck()) return 0;
   cl.print();

@@ -59,9 +59,9 @@ int main(int argc,char**argv)
   string         output    = cl.getValue<string>  ("output",       "");
   string         jecpath   = cl.getValue<string>  ("jecpath",      "");
   vector<string> algs      = cl.getVector<string> ("algs",         "");
-  bool           L1FastJet = cl.getValue<bool>    ("L1FastJet", false);
+  bool           L1FastJet = cl.getValue<bool>    ("L1FastJet",  true);
   vector<string> postfix   = cl.getVector<string> ("postfix",      "");
-  bool           useTags   = cl.getValue<bool>    ("useTags",    true);
+  bool           useTags   = cl.getValue<bool>    ("useTags",   false);
   bool           saveitree = cl.getValue<bool>    ("saveitree",  true);
   bool           debug     = cl.getValue<bool>    ("debug",     false);
   

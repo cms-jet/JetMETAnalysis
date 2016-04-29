@@ -106,6 +106,9 @@ public :
    vector<Float_t>* pfcand_e;
    vector<Flavor>*  pfcand_id;
    vector<Float_t>* refdzvtx;
+   Long64_t         nUnMatchJet; //Branch for un-matched reco jets
+   vector<Float_t>* unmapjteta; //Branch for un-matched reco jets
+   vector<Float_t>* unmapjtpt; //Branch for un-matched reco jets
 
    // List of branches
    TBranch        *b_npus;   //!
@@ -163,6 +166,9 @@ public :
    TBranch        *b_pfcand_e;   //!
    TBranch        *b_pfcand_id;   //!
    TBranch        *b_refdzvtx;   //!
+   TBranch        *b_nUnMatchJet; //Branch for un-matched reco jets
+   TBranch        *b_unmapjteta; //Branch for un-matched reco jets
+   TBranch        *b_unmapjtpt; //Branch for un-matched reco jets
 
    JRAEvent(TTree *tree = 0, bitset<8> b = 0);
    virtual ~JRAEvent();

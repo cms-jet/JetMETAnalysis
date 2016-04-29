@@ -62,6 +62,10 @@ TString pdgid_to_flavor_name(int pdgid);
 void fill_histo(float value,float weight,float x,
                 const vector<float>& binsx,const vector<TH1F**>& histos);
 
+/// fill the appropriate histogram (histos), based on x and binsx
+void fill_histo(float value,float weight,float x,
+                const vector<float>& binsx,const vector<TH1F*>& histos);
+
 /// fill the appropriate histogram (histos), based on pdgid, x and binsx
 void fill_histo(int pdgid,float value,float weight,float x,
                 const vector<float>& binsx,const vector<TH1F**>& histos,
@@ -71,6 +75,11 @@ void fill_histo(int pdgid,float value,float weight,float x,
 void fill_histo(float value,float weight,float x,float y,
                 const vector<float>& binsx,const vector<float>& binsy,
                 const vector<TH1F***>& histos);
+
+/// fill the appropriate histogram (histos), based on x, y, binsx, and binsy
+void fill_histo(float value,float weight,float x,float y,
+                const vector<float>& binsx,const vector<float>& binsy,
+                const vector<TH1F**>& histos);
 
 /// fill the appropriate histogram (histos), based on pdgid, x, y, binsx, and binsy
 void fill_histo(int pdgid,float value,float weight,float x,float y,
@@ -128,6 +137,7 @@ int main(int argc,char**argv)
   vector<float>  binseta           = cl.getVector<float> ("binseta",                    "");
   vector<float>  binsphi           = cl.getVector<float> ("binsphi",                    "");
   vector<float>  binsy             = cl.getVector<float> ("binsy",                      "");
+  vector<float>  binsTrueNPU       = cl.getVector<float> ("binsTrueNPU",                "");
   vector<float>  binsmu            = cl.getVector<float> ("binsmu",                     "");
   vector<float>  binsrho           = cl.getVector<float> ("binsrho",                    "");
   string         treename          = cl.getValue<string> ("treename",                  "t");
@@ -151,7 +161,7 @@ int main(int argc,char**argv)
   bool           doflavor          = cl.getValue<bool>   ("doflavor",                false);
   TString        flavorDefinition  = cl.getValue<TString>("flavorDefinition",       "phys");
   bool           noabsflavors      = cl.getValue<bool>   ("noabsflavors",            false);
-  float          drmax             = cl.getValue<float>  ("drmax",                     0.3);
+  float          drmax             = cl.getValue<float>  ("drmax",                    0.25);
   float          dphimin           = cl.getValue<float>  ("dphimin",                   2.7);
   bool           dojetpt           = cl.getValue<bool>   ("dojetpt",                 false);
   bool           dorefpt           = cl.getValue<bool>   ("dorefpt",                  true);
@@ -394,7 +404,12 @@ int main(int argc,char**argv)
     vector<TH1F****> relRspVsJetEtaRhoRefPt;
     vector<TH1F***>  relRspVsJetYJetPt;
     vector<TH1F***>  relRspVsJetYRefPt;
-    
+   
+    /// add for HLT usage: true pileup will be treated as variable
+    vector<TH1F*>   relRspVsTrueNPU;
+    vector<TH1F**>  relRspVsTrueNPUJetPt;
+    vector<TH1F**>  relRspVsTrueNPURefPt;
+
     vector<TH1F**>   absRspVsJetPt;
     vector<TH1F**>   absRspVsRefPt;
     vector<TH1F**>   absRspVsRefPtBarrel;
@@ -419,7 +434,19 @@ int main(int argc,char**argv)
     vector<TH1F**>   phiRspVsJetPhi;
     vector<TH1F***>  phiRspVsJetEtaJetPt;
     vector<TH1F***>  phiRspVsJetEtaRefPt;
-    
+   
+    // book TrueNPU histograms
+	if (binsTrueNPU.size()>=2){
+	  string hname;
+      if (dorelrsp&&dorefpt) {
+		 for(unsigned int iTPU=0;iTPU<binsTrueNPU.size()-1;++iTPU){
+            hname = "RelRsp_"+get_suffix("TrueNPU",iTPU,binsTrueNPU);
+            relRspVsTrueNPU.push_back(new TH1F(hname.c_str(),";p_{T}/p_{T}^{ref}",
+                                          nbinsrelrsp,relrspmin,relrspmax));
+		 }
+      }
+    }
+
     // book pT histograms
     if (binspt.size()>=2) {
       for (unsigned int ipt=0;ipt<binspt.size()-1;++ipt) {
@@ -783,6 +810,46 @@ int main(int argc,char**argv)
 	
       }
     }
+
+	// book TrueNPU/pT histograms
+	if (binsTrueNPU.size()>=2 && binspt.size()>=2){
+	  for (unsigned int iTPU=0;iTPU<binsTrueNPU.size()-1;++iTPU){
+		TH1F** relRspJetPt(0); 
+		TH1F** relRspRefPt(0);
+
+        if (dorelrsp && dojetpt) {
+          relRspJetPt=new TH1F*[binspt.size()-1];
+        }
+	
+        if (dorelrsp && dorefpt) {
+          relRspRefPt=new TH1F*[binspt.size()-1];
+        }
+
+        string jetTrueNPUSuffix=get_suffix("TrueNPU",iTPU,binsTrueNPU);
+     
+		for (unsigned int ipt=0;ipt<binspt.size()-1;ipt++){
+		  string hname;
+
+          string jetPtSuffix=get_suffix("JetPt",ipt,binspt);
+          string refPtSuffix=get_suffix("RefPt",ipt,binspt);
+
+		  if (dorelrsp && dojetpt) {
+			hname="RelRsp_"+jetTrueNPUSuffix+"_"+jetPtSuffix;
+			relRspJetPt[ipt]=new TH1F(hname.c_str(),";p_{T}/p_{T}^{ref}",
+						nbinsrelrsp,relrspmin,relrspmax);
+		  }
+
+		  if (dorelrsp && dorefpt) {
+			hname="RelRsp_"+jetTrueNPUSuffix+"_"+refPtSuffix;
+			relRspRefPt[ipt]=new TH1F(hname.c_str(),";p_{T}/p_{T}^{ref}",
+						nbinsrelrsp,relrspmin,relrspmax);
+		  }
+		}
+
+		if (dorelrsp && dojetpt) relRspVsTrueNPUJetPt.push_back(relRspJetPt);
+		if (dorelrsp && dorefpt) relRspVsTrueNPURefPt.push_back(relRspRefPt);
+	  }
+	}
 
     // book eta/pT histograms
     if (binspt.size()>=2&&binseta.size()>=2) {
@@ -1312,6 +1379,7 @@ int main(int argc,char**argv)
         tree->GetEntry(ientry);
 
         float mu = JRAEvt->tnpus->at(itInd);
+        float TrueNPU = JRAEvt->tnpus->at(0);
 
         if (nrefmax>0) JRAEvt->nref = std::min((int)JRAEvt->nref,nrefmax);
         for (unsigned char iref=0;iref<JRAEvt->nref;iref++) {
@@ -1569,6 +1637,7 @@ int main(int argc,char**argv)
             }
             if (dorefpt) {
               fill_histo(relrsp,weight,refpt,binspt,relRspVsRefPt);
+              fill_histo(relrsp,weight,TrueNPU,binsTrueNPU,relRspVsTrueNPU); //Fill TrueNPU hist!!!
               if (doflavor) fill_histo(pdgid,relrsp,flavorWeight,
                                        refpt,binspt,relRspVsRefPt,
                                        noabsflavors);
@@ -1591,6 +1660,7 @@ int main(int argc,char**argv)
 	  
             if (dojetpt) {
               fill_histo(relrsp,weight,eta,pt,binseta,binspt,relRspVsJetEtaJetPt);
+              fill_histo(relrsp,weight,TrueNPU,pt,binsTrueNPU,binspt,relRspVsTrueNPUJetPt);
               if (domu)  fill_histo(relrsp, weight, eta, mu,  pt, binseta, binsmu,  binspt, relRspVsJetEtaMuJetPt);
               if (dorho) fill_histo(relrsp, weight, eta, JRAEvt->rho, pt, binseta, binsrho, binspt, relRspVsJetEtaRhoJetPt);
 
@@ -1608,6 +1678,7 @@ int main(int argc,char**argv)
             }
             if (dorefpt) {
               fill_histo(relrsp,weight,eta,refpt,binseta,binspt,relRspVsJetEtaRefPt);
+              fill_histo(relrsp,weight,TrueNPU,refpt,binsTrueNPU,binspt,relRspVsTrueNPURefPt);
               if (domu)  fill_histo(relrsp, weight, eta, mu,  refpt, binseta, binsmu,  binspt, relRspVsJetEtaMuRefPt);
               if (dorho) fill_histo(relrsp, weight, eta, JRAEvt->rho, refpt, binseta, binsrho, binspt, relRspVsJetEtaRhoRefPt);
 
@@ -1809,7 +1880,6 @@ int get_index(float x,const vector<float>& binsx)
   return -1;
 }
 
-
 //______________________________________________________________________________
 vector<string> get_flavors(bool noabsflavors)
 {
@@ -1883,6 +1953,14 @@ void fill_histo(float value,float weight,float x,
   if (ix>=0) histos[ix][0]->Fill(value,weight);
 }
 
+//______________________________________________________________________________
+void fill_histo(float value,float weight,float x,
+		const vector<float>& binsx, const vector<TH1F*>& histos)
+{
+	if (binsx.size()==0) return;
+	int ix=get_index(x,binsx);
+	if (ix>=0) histos[ix]->Fill(value,weight);
+}
 
 //______________________________________________________________________________
 void fill_histo(int pdgid,float value,float weight,float x,const vector<float>& binsx,
@@ -1945,6 +2023,18 @@ void fill_histo(float value,float weight,float x,float y,
   int ix=get_index(x,binsx);
   int iy=get_index(y,binsy);
   if (ix>=0&&iy>=0) histos[ix][iy][0]->Fill(value,weight);
+}
+
+
+//______________________________________________________________________________
+void fill_histo(float value,float weight,float x,float y,
+		const vector<float>& binsx,const vector<float>& binsy,
+		const vector<TH1F**>& histos)
+{
+	if (binsx.size()==0||binsy.size()==0) return;
+	int ix=get_index(x,binsx);
+	int iy=get_index(y,binsy);
+	if (ix>=0&&iy>=0) histos[ix][iy]->Fill(value,weight);
 }
 
 
