@@ -45,6 +45,7 @@ int main(int argc,char**argv)
    	bool doRatioPt  		= cl.getValue<bool> ("doRatioPt",  		   false);
    	bool doRatioEta 		= cl.getValue<bool> ("doRatioEta", 		   false);
    	bool doFlavorDifference = cl.getValue<bool> ("doFlavorDifference", false);
+    bool ptcl               = cl.getValue<bool> ("ptcl",               false);
 
    	if (!cl.partialCheck()) return 0;
    	cl.print();
@@ -54,7 +55,7 @@ int main(int argc,char**argv)
 	if(doPt || doEta) {
 		unique_ptr<ClosureMaker> cm(new ClosureMaker(cl));
 		if(doPt) {
-			cm->makeClosure(VARIABLES::refpt);
+            ptcl ? cm->makeClosure(VARIABLES::ptclpt) : cm->makeClosure(VARIABLES::refpt);
 		}
 		if(doEta) {
 			if(doPt)

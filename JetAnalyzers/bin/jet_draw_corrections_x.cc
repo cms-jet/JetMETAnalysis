@@ -1050,13 +1050,8 @@ TCanvas * getCorrectionMap(TString algo, FactorizedJetCorrector * jetCorr,
 
 //---------------------------------------------------------------------
 TCanvas * draw_response(TString algo, FactorizedJetCorrector * jetCorr, TString suffix, bool doATLAS) {
-  if (!_jec) {
     _jec = jetCorr;
-  }
-  TF1 *_jecpt(0);
-  if (!_jecpt) {
-    _jecpt = new TF1("jecpt",fJECPt,0,4000,3);
-  }
+    TF1 *_jecpt = new TF1("jecpt",fJECPt,0,4000,3);
 
   // doATLAS:
   // If true, these values represent energies
@@ -1145,7 +1140,16 @@ TCanvas * draw_response(TString algo, FactorizedJetCorrector * jetCorr, TString 
   l->SetLineStyle(kDashed);
   l->DrawLine(3.2,0.7,3.2,1.1);
 
-  tex->DrawLatex(0.35,0.86,"2016 JES: "+JetInfo::get_legend_title(algo));
+  TLatex* tex_tmp = tex->DrawLatex(0.35,0.86,"2016 JES: "+JetInfo::get_legend_title(algo));
+  //The size of the x-axis in axis coordinates
+  double x_axis_width = c1->GetUxmax()-c1->GetUxmin();
+  //The width of the pad in x-axis coordinates = x-axis width/percentage that the x-axis takes up in NDC coordinates
+  double total_width = x_axis_width/(1.0-c1->GetRightMargin()-c1->GetLeftMargin());
+  //The blank space on either size of the text in NDC coordinates starting from the left margin (i.e. in the frame)
+  double side_padding = (1.0-c1->GetRightMargin()-c1->GetLeftMargin()-(tex_tmp->GetXsize()/total_width))/2.0;
+  //Add back in the left margin so that the text is centered in the frame and not the pad
+  tex_tmp->SetX(c1->GetLeftMargin()+side_padding);
+  tex_tmp->Draw("same");
 
   tex->DrawLatex(0.19,0.78,"Barrel");
   tex->DrawLatex(0.47,0.78,"Endcap"); //0.42

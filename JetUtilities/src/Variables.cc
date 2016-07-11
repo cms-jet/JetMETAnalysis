@@ -10,6 +10,7 @@ namespace VARIABLES {
 	std::string getVariableString(Variable var) {      
 	    if (var == none)      	 return "none";
 	    else if (var == refpt)	 return "refpt";
+	    else if (var == ptclpt)	 return "refpt";
 	    else if (var == refeta)	 return "refeta";
 	    else if (var == jtpt)	 return "jtpt";
 	    else if (var == jteta)   return "jteta";
@@ -29,6 +30,7 @@ namespace VARIABLES {
 	std::string getVariableTitleString(Variable var) {      
 	    if (var == none)      	 return "None";
 	    else if (var == refpt)	 return "RefPt";
+	    else if (var == ptclpt)	 return "RefPt";
 	    else if (var == refeta)	 return "RefEta";
 	    else if (var == jtpt)	 return "JetPt";
 	    else if (var == jteta)   return "JetEta";
@@ -47,10 +49,11 @@ namespace VARIABLES {
 	// A routine that returns a string fit for a title
 	std::string getVariableAxisTitleString(Variable var, bool unit) { 
 	    if (var == none)      	 return "None";
-	    else if (var == refpt)	 return unit ? "p_{T}^{REF} (GeV)" : "p_{T}^{REF}"; //ref->ptcl
-	    else if (var == refeta)	 return "#eta^{REF}"; //ref->ptcl
-	    else if (var == jtpt)	 return unit ? "p_{T}^{RECO} (GeV)" : "p_{T}^{RECO}";
-	    else if (var == jteta)   return "#eta^{RECO}";
+	    else if (var == refpt)	 return unit ? "p_{T}^{Ref} (GeV)" : "p_{T}^{Ref}"; //ref->ptcl
+	    else if (var == ptclpt)	 return unit ? "p_{T}^{ptcl} (GeV)" : "p_{T}^{ptcl}"; //ref->ptcl
+	    else if (var == refeta)	 return "#eta^{Ref}"; //ref->ptcl
+	    else if (var == jtpt)	 return unit ? "p_{T}^{Reco} (GeV)" : "p_{T}^{Reco}";
+	    else if (var == jteta)   return "#eta^{Reco}";
 	    else if (var == mu)   	 return "#mu";
 	    else if (var == npv)	 return "N_{PV}";
 	    else if (var == npu)	 return "N_{PU}";
@@ -67,6 +70,7 @@ namespace VARIABLES {
 	VARIABLES::Variable getVariable(std::string str) {  
 	    if (str == "none")    	   return none;
 	    else if (str == "refpt")   return refpt;
+	    else if (str == "ptclpt")  return ptclpt;
 	    else if (str == "refeta")  return refeta;
 	    else if (str == "jtpt")    return jtpt;
 	    else if (str == "jteta")   return jteta;

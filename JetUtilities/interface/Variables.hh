@@ -14,7 +14,7 @@
 
 namespace VARIABLES {
 
-	enum Variable {none, refpt, refeta, jtpt, jteta, mu, npv, npu, rho, area, other, unknown};
+   enum Variable {none, refpt, ptclpt, refeta, jtpt, jteta, mu, npv, npu, rho, area, other, unknown};
 	static const unsigned int nVariable = 12;
 
 

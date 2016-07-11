@@ -97,7 +97,7 @@ void ClosureMaker::getHistograms(TDirectoryFile* idir) {
         hl.reset();
     }
 
-    if(var == VARIABLES::refpt) {
+    if(var == VARIABLES::refpt || var == VARIABLES::ptclpt) {
         hl.load_objects(idir,"RelRspVsRefPt:JetEta"); 
         objects_loaded = true;
         if(hl.nobjects()!=NDetectorNames) {
@@ -138,7 +138,7 @@ void ClosureMaker::closeFiles() {
 void ClosureMaker::makeLines() {
     pair<int,int> min_max;
     //if(var.EqualTo("pt",TString::kIgnoreCase)) {
-    if(var == VARIABLES::refpt || var == VARIABLES::jtpt) {
+    if(var == VARIABLES::refpt || var == VARIABLES::jtpt || var == VARIABLES::ptclpt) {
         min_max = make_pair(0,5000);
     }
     //else if(var.EqualTo("eta",TString::kIgnoreCase)) {
@@ -252,7 +252,7 @@ void ClosureMaker::loopOverAlgorithms() {
         // Formats the final canvases
         //
         makeCanvases();
-        if(var == VARIABLES::refpt || var == VARIABLES::jtpt) {
+        if(var == VARIABLES::refpt || var == VARIABLES::jtpt || var == VARIABLES::ptclpt) {
             makeMergedCanvas();
         }
 
@@ -275,7 +275,7 @@ void ClosureMaker::loopOverHistograms() {
         // Create the output histogram
         //
         TString name;
-        if(var == VARIABLES::refpt) {
+        if(var == VARIABLES::refpt || var == VARIABLES::ptclpt) {
             name = Form("ClosureVsRefPt_JetEta%gto%g",hl.minimum(0,ibin),hl.maximum(0,ibin));
             hClosure.push_back(new TH1F(name,name,NPtBins,vpt));
         }
@@ -321,7 +321,7 @@ void ClosureMaker::loopOverBins(TH2F* hvar, unsigned int iVarBin) {
     vector<string> varBins;
     unsigned int nbins = 0;
 
-    if(var == VARIABLES::refpt || var == VARIABLES::jtpt) {
+    if(var == VARIABLES::refpt || var == VARIABLES::jtpt || var == VARIABLES::ptclpt) {
         nbins = NPtBins;
         varBins.insert(varBins.end(), &Pt[0], &Pt[NPtBins+1]);
     }
@@ -447,7 +447,7 @@ void ClosureMaker::makeCanvases() {
         // Setup the frame, canvas, and legend
         //
         TH1D* frame = new TH1D();
-        if(var == VARIABLES::refpt || var == VARIABLES::jtpt) {
+        if(var == VARIABLES::refpt || var == VARIABLES::jtpt || var == VARIABLES::ptclpt) {
             if(TString(alg).Contains("pf",TString::kIgnoreCase) ||
          TString(alg).Contains("puppi",TString::kIgnoreCase)) {
                 frame->GetXaxis()->SetLimits(XminPF[ih],Xmax[ih]);
@@ -480,7 +480,7 @@ void ClosureMaker::makeCanvases() {
         frame->GetYaxis()->SetTitle("Response");
         canvases_legends.push_back(make_pair(tdrCanvas(name,frame,14,11,true),
                                              tdrLeg(0.58,0.16,0.9,0.4)));
-        if((var == VARIABLES::refpt || var == VARIABLES::jtpt) && ih<3)
+        if((var == VARIABLES::refpt || var == VARIABLES::jtpt || var == VARIABLES::ptclpt) && ih<3)
             canvases_legends.back().first->GetPad(0)->SetLogx();
         
         //
@@ -489,7 +489,7 @@ void ClosureMaker::makeCanvases() {
         pave.push_back(tdrText(0.5,0.75,0.93,1-gPad->GetTopMargin()-0.045*(1-gPad->GetTopMargin()-gPad->GetBottomMargin()),31));
         pave.back()->AddText("QCD Monte Carlo");
         pave.back()->AddText(JetInfo::get_legend_title(string(alg)).c_str());
-        if(var == VARIABLES::refpt || var == VARIABLES::jtpt) {
+        if(var == VARIABLES::refpt || var == VARIABLES::jtpt || var == VARIABLES::ptclpt) {
             pave.back()->AddText(detector_regions_eta[ih]);
         }
         else if(var == VARIABLES::refeta || var == VARIABLES::jteta) {

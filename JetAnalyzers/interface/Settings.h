@@ -35,7 +35,7 @@ const int RhoHigh                     = 100;
 const int NTNPU                       = 200;
 const int NNPU                        = 200;
 const int NAlgorithms                 = 6;
-const int NJetTypes                   = 26;
+const int NJetTypes                   = 27;
 const int NCorrectionLevels           = 7;
 const int NConeSizes                  = 10;
 const int NDetectorNames              = 4;
@@ -138,7 +138,7 @@ const double drmax_all[NAlgs] = {0.210,0.250,0.210,0.240,0.200,0.240,0.190,0.220
 
 const TString algorithms[NAlgorithms] = {"IC","GK","SC","KT","AK","CA"};
 
-const TString jet_types[NJetTypes] = {"Calo","JPT","TRK","PF","PFchs","PUPPI",
+const TString jet_types[NJetTypes] = {"Calo","JPT","TRK","PF","PFchs","PFPuppi","PUPPI",
 		"CaloHLT","PFHLT","PFchsHLT","JPTHLT",
 		"tau",
         "tauHPSlooseCombDBcorrAll",
