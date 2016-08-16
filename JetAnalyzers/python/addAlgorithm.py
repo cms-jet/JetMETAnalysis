@@ -4,11 +4,11 @@ import FWCore.ParameterSet.Config as cms
 ## filter final state partons (define globaly)
 ################################################################################
 
-partons = cms.EDProducer('PartonSelector',
-    src = cms.InputTag('genParticles'),
-    withLeptons = cms.bool(False),
-    skipFirstN = cms.uint32(0)
-)
+#partons = cms.EDProducer('PartonSelector',
+#    src = cms.InputTag('genParticles'),
+#    withLeptons = cms.bool(False),
+#    skipFirstN = cms.uint32(0)
+#)
 
 
 ################################################################################
@@ -47,10 +47,12 @@ stdGenJetsDict = {
 #	'ak3calo'       : 'ak3GenJets',
 #	'ak4calo'       : 'ak4GenJets',
     'ak4calo'       : 'ak4GenJets',
+    'ak4caloHLT'    : 'ak4GenJets', # for HLT usage
     'ak5calo'       : 'ak5GenJets',
 #	'ak6calo'       : 'ak6GenJets',
     'ak7calo'       : 'ak7GenJets',
 #	'ak8calo'       : 'ak8GenJets',
+    'ak8caloHLT'    : 'ak8GenJets', # for HLT usage
 #	'ak9calo'       : 'ak9GenJets',
 #	'ak10calo'      : 'ak10GenJets',
     'kt4calo'       : 'kt4GenJets',
@@ -60,10 +62,12 @@ stdGenJetsDict = {
 	'ak2pf'         : 'ak2GenJets',
 	'ak3pf'         : 'ak3GenJets',
 	'ak4pf'         : 'ak4GenJets',
+    'ak4pfHLT'      : 'ak4GenJets', # for HLT usage
     'ak5pf'         : 'ak5GenJets',
 	'ak6pf'         : 'ak6GenJets',
     'ak7pf'         : 'ak7GenJets',
 	'ak8pf'         : 'ak8GenJets',
+    'ak8pfHLT'      : 'ak8GenJets', # for HLT usage
 	'ak9pf'         : 'ak9GenJets',
 	'ak10pf'        : 'ak10GenJets',
     'kt4pf'         : 'kt4GenJets',
@@ -109,10 +113,12 @@ genJetsDict = {
 #	'ak3calo'       : ('ak3GenJetsNoNu',               ak3GenJetsNoNu),
 #	'ak4calo'       : ('ak4GenJetsNoNu',               ak4GenJetsNoNu),
     'ak4calo'       : ('ak4GenJetsNoNu',               ak4GenJetsNoNu), #chaned to NoNu from NoMuNoNu
+    'ak4caloHLT'    : ('ak4GenJetsNoNu',               ak4GenJetsNoNu), # for HLT usage
     'ak5calo'       : ('ak5GenJetsNoNu',               ak5GenJetsNoNu),
 #	'ak6calo'       : ('ak6GenJetsNoNu',               ak6GenJetsNoNu),
     'ak7calo'       : ('ak7GenJetsNoNu',               ak7GenJetsNoNu),
 #	'ak8calo'       : ('ak8GenJetsNoNu',               ak8GenJetsNoNu),
+    'ak8caloHLT'    : ('ak8GenJetsNoNu',               ak8GenJetsNoNu),
 #	'ak9calo'       : ('ak9GenJetsNoNu',               ak9GenJetsNoNu),
 #	'ak10calo'      : ('ak10GenJetsNoNu',              ak10GenJetsNoNu),
     'kt4calo'       : ('kt4GenJetsNoNu',               kt4GenJetsNoNu),
@@ -122,10 +128,12 @@ genJetsDict = {
 	'ak2pf'         : ('ak2GenJetsNoNu',               ak2GenJetsNoNu),
 	'ak3pf'         : ('ak3GenJetsNoNu',               ak3GenJetsNoNu),
 	'ak4pf'         : ('ak4GenJetsNoNu',               ak4GenJetsNoNu),
+    'ak4pfHLT'      : ('ak4GenJetsNoNu',               ak4GenJetsNoNu),
     'ak5pf'         : ('ak5GenJetsNoNu',               ak5GenJetsNoNu),
 	'ak6pf'         : ('ak6GenJetsNoNu',               ak6GenJetsNoNu),
     'ak7pf'         : ('ak7GenJetsNoNu',               ak7GenJetsNoNu),
 	'ak8pf'         : ('ak8GenJetsNoNu',               ak8GenJetsNoNu),
+    'ak8pfHLT'      : ('ak8GenJetsNoNu',               ak8GenJetsNoNu),
 	'ak9pf'         : ('ak9GenJetsNoNu',               ak9GenJetsNoNu),
 	'ak10pf'        : ('ak10GenJetsNoNu',              ak10GenJetsNoNu),
     'kt4pf'         : ('kt4GenJetsNoNu',               kt4GenJetsNoNu),
@@ -160,22 +168,24 @@ genJetsDict = {
 #    'ak7jpt'        : ('ak7GenJetsNoNu',               ak7GenJetsNoNu),
     'ak5tauHPSall'  : ('tauGenJetsSelectorAllHadrons', tauGenJetsSelectorAllHadrons),
 #    'ak5tauTaNCall' : ('tauGenJetsSelectorAllHadrons', tauGenJetsSelectorAllHadrons)
-}    
+}
 for tauDiscriminator_and_DecayMode in tauDiscriminators_and_DecayModes:
     if   tauDiscriminator_and_DecayMode.find("HPS")  != -1:
         genJetsDict[tauDiscriminator_and_DecayMode] = genJetsDict["ak5tauHPSall"]
     elif tauDiscriminator_and_DecayMode.find("TaNC") != -1:
         genJetsDict[tauDiscriminator_and_DecayMode] = genJetsDict["ak5tauTaNCall"]
 
-    
+
 stdRecJetsDict = {
 #    'ak3calo'       : 'ak3CaloJets',
 #    'ak4calo'       : 'ak4CaloJets',
     'ak4calo'       : 'ak4CaloJets',
+    'ak4caloHLT'    : 'hltAK4CaloJets', # for HLT usage
     'ak5calo'       : 'ak5CaloJets',
 #	'ak6calo'       : 'ak6CaloJets',
     'ak7calo'       : 'ak7CaloJets',
 #	'ak8calo'       : 'ak8CaloJets',
+    'ak8caloHLT'    : 'hltAK8CaloJets', # for HLT usage
 #	'ak9calo'       : 'ak9CaloJets',
 #	'ak10calo'      : 'ak10CaloJets',
     'kt4calo'       : 'kt4CaloJets',
@@ -185,10 +195,12 @@ stdRecJetsDict = {
     'ak2pf'         : 'ak2PFJets',
     'ak3pf'         : 'ak3PFJets',
     'ak4pf'         : 'ak4PFJets',
+    'ak4pfHLT'      : 'hltAK4PFJets', # for HLT usage
     'ak5pf'         : 'ak5PFJets',
 	'ak6pf'         : 'ak6PFJets',
     'ak7pf'         : 'ak7PFJets',
     'ak8pf'         : 'ak8PFJets',
+    'ak8pfHLT'      : 'hltAK8PFJets', # for HLT usage
     'ak9pf'         : 'ak9PFJets',
 	'ak10pf'        : 'ak10PFJets',
     'kt4pf'         : 'kt4PFJets',
@@ -232,10 +244,12 @@ recJetsDict = {
 #    'ak3calo'       : ('ak3CaloJets',        ak3CaloJets),
 #    'ak4calo'       : ('ak4CaloJets',        ak4CaloJets),
     'ak4calo'       : ('ak4CaloJets',        ak4CaloJets),
+    'ak4caloHLT'    : ('ak4CaloHLTJets',     ak4CaloHLTJets), # for HLT usage
     'ak5calo'       : ('ak5CaloJets',        ak5CaloJets),
 #	'ak6calo'       : ('ak6CaloJets',        ak6CaloJets),
     'ak7calo'       : ('ak7CaloJets',        ak7CaloJets),
 #	'ak8calo'       : ('ak8CaloJets',        ak8CaloJets),
+    'ak8caloHLT'    : ('ak8CaloHLTJets',     ak8CaloHLTJets), # for HLT usage
 #	'ak9calo'       : ('ak9CaloJets',        ak9CaloJets),
 #	'ak10calo'      : ('ak10CaloJets',       ak10CaloJets),
     'kt4calo'       : ('kt4CaloJets',        kt4CaloJets),
@@ -245,10 +259,12 @@ recJetsDict = {
     'ak2pf'         : ('ak2PFJets',          ak2PFJets),
     'ak3pf'         : ('ak3PFJets',          ak3PFJets),
     'ak4pf'         : ('ak4PFJets',          ak4PFJets),
+    'ak4pfHLT'      : ('ak4PFHLTJets',       ak4PFHLTJets), # for HLT usage
     'ak5pf'         : ('ak5PFJets',          ak5PFJets),
 	'ak6pf'         : ('ak6PFJets',          ak6PFJets),
     'ak7pf'         : ('ak7PFJets',          ak7PFJets),
 	'ak8pf'         : ('ak8PFJets',          ak8PFJets),
+    'ak8pfHLT'      : ('ak8PFHLTJets',       ak8PFHLTJets), # for HLT usage
 	'ak9pf'         : ('ak9PFJets',          ak9PFJets),
 	'ak10pf'        : ('ak10PFJets',         ak10PFJets),
     'kt4pf'         : ('kt4PFJets',          kt4PFJets),
@@ -262,7 +278,7 @@ recJetsDict = {
     'ak7pfchs'      : ('ak7PFchsJets',       ak7PFchsJets),
 	'ak8pfchs'      : ('ak8PFchsJets',       ak8PFchsJets),
 	'ak9pfchs'      : ('ak9PFchsJets',       ak9PFchsJets),
-	'ak10pfchs'     : ('ak10PFchsJets',      ak10PFchsJets),	
+	'ak10pfchs'     : ('ak10PFchsJets',      ak10PFchsJets),
     'ak5pfHLT'      : ('ak5PFHLTJets',       ak5PFHLTJets),
     'ak5pfchsHLT'   : ('ak5PFchsHLTJets',    ak5PFchsHLTJets),
     'ak5trk'        : ('ak5TrackJets',       ak5TrackJets),
@@ -321,13 +337,13 @@ corrJetsDict = {
     'ak1pfchsl1'           : ('ak1PFchsJetsL1Fast',        ak1PFchsJetsL1Fast),
     'ak2pfchsl1'           : ('ak2PFchsJetsL1Fast',        ak2PFchsJetsL1Fast),
     'ak3pfchsl1'           : ('ak3PFchsJetsL1Fast',        ak3PFchsJetsL1Fast),
-    'ak4pfchsl1'           : ('ak4PFchsJetsL1Fast',        ak4PFchsJetsL1Fast),	
-    'ak5pfchsl1'           : ('ak5PFchsJetsL1Fast',        ak5PFchsJetsL1Fast),	
+    'ak4pfchsl1'           : ('ak4PFchsJetsL1Fast',        ak4PFchsJetsL1Fast),
+    'ak5pfchsl1'           : ('ak5PFchsJetsL1Fast',        ak5PFchsJetsL1Fast),
     'ak6pfchsl1'           : ('ak6PFchsJetsL1Fast',        ak6PFchsJetsL1Fast),
     'ak7pfchsl1'           : ('ak7PFchsJetsL1Fast',        ak7PFchsJetsL1Fast),
     'ak8pfchsl1'           : ('ak8PFchsJetsL1Fast',        ak8PFchsJetsL1Fast),
     'ak9pfchsl1'           : ('ak9PFchsJetsL1Fast',        ak9PFchsJetsL1Fast),
-    'ak10pfchsl1'          : ('ak10PFchsJetsL1Fast',       ak10PFchsJetsL1Fast),	
+    'ak10pfchsl1'          : ('ak10PFchsJetsL1Fast',       ak10PFchsJetsL1Fast),
     'ak5pfHLTl1'           : ('ak5PFHLTJetsL1Fast',        ak5PFHLTJetsL1Fast),
     'ak5pfHLTl1off'        : ('ak5PFHLTJetsL1Off',         ak5PFHLTJetsL1Off),
     'ak5pfchsHLTl1'        : ('ak5PFchsHLTJetsL1Fast',     ak5PFchsHLTJetsL1Fast),
@@ -416,7 +432,7 @@ corrJetsDict = {
 ## addAlgorithm
 ################################################################################
 def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
-    """ 
+    """
     addAlgorithm takes the following parameters:
     ============================================
       process:            the CMSSW process object
@@ -430,7 +446,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
     to kinematically select references and jets, select partons and match
     them to the references, match references and jets, and finally execute
     the JetResponseAnalyzer.
-    """ 
+    """
     ## deterine algorithm, size, type (Calo|PF|Track|JPT), and wether to apply jec
     alg_size      = ''
     type          = ''
@@ -475,13 +491,13 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
             alg_size_type = alg_size + 'tauTaNCall'
         else:
             for tauDiscriminator in tauDiscriminatorDict:
-                if tauDiscriminator in alg_size_type_corr: 
+                if tauDiscriminator in alg_size_type_corr:
                     alg_size_type = tauDiscriminator
             for tauDecayMode in tauDecayModeDict:
                 if tauDecayModeDict[tauDecayMode] != "" and \
                    tauDecayMode in alg_size_type_corr:
                     alg_size_type += tauDecayMode
-                    
+
     elif (alg_size_type_corr.find('jpt') > 0) :
         alg_size      = alg_size_type_corr[0:alg_size_type_corr.find('jpt')]
         type          = 'JPT'
@@ -492,14 +508,14 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         alg_size_type = alg_size + 'trk'
     else:
         raise ValueError("Can't identify valid jet type: calo|caloHLT|pf|pfchs|pfHLT|jpt|trk|tau|puppi")
-        
+
     if (alg_size_type_corr.find('l1') > 0):
         correctl1 = True
         if (alg_size_type_corr.find('l1off') > 0):
             correctl1off = True
         if not reco:
             raise ValueError("Can't subtract PU without reco!")
-        
+
     if (alg_size_type_corr.find('l2l3') > 0):
         correctl2l3 = True
 
@@ -510,7 +526,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         not reco and stdRecJetsDict.keys().index(alg_size_type)
     except ValueError:
         raise ValueError("Algorithm unavailable in standard format: " + alg_size_type)
-    
+
     try:
         reco and genJetsDict.keys().index(alg_size_type)
         reco and recJetsDict.keys().index(alg_size_type)
@@ -521,7 +537,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         correctl2l3 and corrJetsDict.keys().index(alg_size_type_corr)
     except ValueError:
         raise ValueError("Invalid jet correction: " + alg_size_type_corr)
-        
+
     ## reference (genjet) kinematic selection
     refPtEta = cms.EDFilter('EtaPtMinCandViewRefSelector',
         Defaults.RefPtEta,
@@ -539,7 +555,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
     if not reco:
         jetPtEta.src = stdRecJetsDict[alg_size_type]
     setattr(process, alg_size_type_corr + 'PtEta', jetPtEta)
-    
+
     ## create the sequence
     sequence = cms.Sequence(refPtEta * jetPtEta)
 
@@ -559,27 +575,27 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
 
     ## add pu density calculation
     if not correctl1 and not correctl1off:
-        if type == 'CaloHLT': #added 02/15/2012
-            process.kt6CaloJets = kt6CaloJets 
-            process.kt6CaloJets.doRhoFastjet = True
-            process.kt6CaloJets.Ghost_EtaMax = Defaults.kt6CaloJetParameters.Ghost_EtaMax.value()
-            process.kt6CaloJets.Rho_EtaMax   = Defaults.kt6CaloJetParameters.Rho_EtaMax
-            sequence = cms.Sequence(process.kt6CaloJets * sequence)
-        elif type == 'PFchsHLT':
+#        if type == 'CaloHLT': #added 02/15/2012
+#            process.kt6CaloJets = kt6CaloJets
+#            process.kt6CaloJets.doRhoFastjet = True
+#            process.kt6CaloJets.Ghost_EtaMax = Defaults.kt6CaloJetParameters.Ghost_EtaMax.value()
+#            process.kt6CaloJets.Rho_EtaMax   = Defaults.kt6CaloJetParameters.Rho_EtaMax
+#            sequence = cms.Sequence(process.kt6CaloJets * sequence)
+        if type == 'PFchsHLT': # I have to keep this for compatibility while it makes no effect
             process.kt6PFJets = kt6PFJets
             process.kt6PFJets.doRhoFastjet = True
             process.kt6PFJets.Ghost_EtaMax = Defaults.kt6PFJetParameters.Ghost_EtaMax.value()
             process.kt6PFJets.Rho_EtaMax   = Defaults.kt6PFJetParameters.Rho_EtaMax
             sequence = cms.Sequence(process.kt6PFJets * sequence)
-        elif type == 'PFHLT':
-            process.kt6PFJets = kt6PFJets
-            process.kt6PFJets.doRhoFastjet = True
-            process.kt6PFJets.Ghost_EtaMax = Defaults.kt6PFJetParameters.Ghost_EtaMax.value()
-            process.kt6PFJets.Rho_EtaMax   = Defaults.kt6PFJetParameters.Rho_EtaMax
-            sequence = cms.Sequence(process.kt6PFJets * sequence)
+#        elif type == 'PFHLT':
+#            process.kt6PFJets = kt6PFJets
+#            process.kt6PFJets.doRhoFastjet = True
+#            process.kt6PFJets.Ghost_EtaMax = Defaults.kt6PFJetParameters.Ghost_EtaMax.value()
+#            process.kt6PFJets.Rho_EtaMax   = Defaults.kt6PFJetParameters.Rho_EtaMax
+#            sequence = cms.Sequence(process.kt6PFJets * sequence)
     elif correctl1 and not correctl1off:  #modified 10/10/2011
         if type == 'CaloHLT': #added 02/15/2012
-            process.kt6CaloJets = kt6CaloJets 
+            process.kt6CaloJets = kt6CaloJets
             process.kt6CaloJets.doRhoFastjet = True
             process.kt6CaloJets.Ghost_EtaMax = Defaults.kt6PFJetParameters.Ghost_EtaMax.value()
             process.kt6CaloJets.Rho_EtaMax   = Defaults.kt6PFJetParameters.Rho_EtaMax
@@ -614,7 +630,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
             process.kt6PFJets.Ghost_EtaMax = Defaults.kt6PFJetParameters.Ghost_EtaMax.value()
             process.kt6PFJets.Rho_EtaMax   = Defaults.kt6PFJetParameters.Rho_EtaMax
             sequence = cms.Sequence(process.kt6PFJets * sequence)
-    
+
     ## reconstruct jets
     if type == 'JPT':
         process.load('Configuration.Geometry.GeometryIdeal_cff')
@@ -679,7 +695,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
 #                        "hpsTancTausDiscriminationByDecayModeSelection"
 #                    ]
                 tauDiscriminators.append(tauIsoDiscriminator)
-#                                
+#
                 tauDiscriminatorConfigs = []
                 for tauDiscriminator in tauDiscriminators:
                     tauDiscriminatorConfigs.append(
@@ -688,7 +704,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
                             selectionCut = cms.double(0.5)
                         )
                     )
-#                
+#
                 selTauModule = pfTauSelector.clone(
                     src = cms.InputTag(recLabel),
                     discriminators = cms.VPSet(tauDiscriminatorConfigs)
@@ -703,9 +719,9 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
                 selTauModuleName = alg_size_type + "Selected"
                 setattr(process, selTauModuleName, selTauModule)
                 tauRecoSequence += getattr(process, selTauModuleName)
-#                        
+#
 #                jetPtEta.src = cms.InputTag(selTauModuleName)
-#            
+#
             process.load("PhysicsTools.JetMCAlgos.TauGenJets_cfi")
 #
             sequence = cms.Sequence(tauRecoSequence * process.tauGenJets * sequence)
@@ -714,7 +730,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
     if reco:
         (genLabel, genJets) = genJetsDict[alg_size_type]
         setattr(process, genLabel, genJets)
-        
+
         sequence.replace(refPtEta, genJets * refPtEta)
 
         if type == 'Calo':
@@ -724,23 +740,23 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
             setattr(process,'genParticlesForJetsNoNu',genParticlesForJetsNoNu)
             sequence = cms.Sequence(genParticlesForJetsNoNu * sequence)
         refPtEta.src = genJets.label()
-        
+
     ## filter / map partons only if flavor information is requested
-    if Defaults.JetResponseParameters.doFlavor.value() :
-        setattr(process, 'partons', partons)
-        if reco: #added 02/29/2012
-            jetsTag = cms.InputTag(genJetsDict[alg_size_type][0])
-        else:
-            jetsTag = cms.InputTag(stdGenJetsDict[alg_size_type])
-        genToParton = cms.EDProducer('JetPartonMatcher',
-            jets = jetsTag,
-            #jets = cms.InputTag(genJets.label()), #commented out on 02/29/2012 for line above.
-            coneSizeToAssociate = cms.double(0.3),
-            partons = cms.InputTag('partons')
-        )
-        setattr(process, alg_size_type + 'GenToParton', genToParton)
-        sequence = cms.Sequence(sequence * partons * genToParton)
-        
+#    if Defaults.JetResponseParameters.doFlavor.value() :
+#        setattr(process, 'partons', partons)
+#        if reco: #added 02/29/2012
+#            jetsTag = cms.InputTag(genJetsDict[alg_size_type][0])
+#        else:
+#            jetsTag = cms.InputTag(stdGenJetsDict[alg_size_type])
+#        genToParton = cms.EDProducer('JetPartonMatcher',
+#            jets = jetsTag,
+#            #jets = cms.InputTag(genJets.label()), #commented out on 02/29/2012 for line above.
+#            coneSizeToAssociate = cms.double(0.3),
+#            partons = cms.InputTag('partons')
+#        )
+#        setattr(process, alg_size_type + 'GenToParton', genToParton)
+#        sequence = cms.Sequence(sequence * partons * genToParton)
+
     ## reference to jet matching
     jetToRef = cms.EDProducer('MatchRecToGen',
         srcGen = cms.InputTag(refPtEta.label()),
@@ -757,18 +773,19 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
     setattr(process,alg_size_type_corr + 'JetToUncorJet', jetToUncorJet)
     sequence = cms.Sequence(sequence * jetToUncorJet)
 	##############################
-	
+
     ## jet response analyzer
     jraAnalyzer = 'JetResponseAnalyzer'
     jra = cms.EDAnalyzer(jraAnalyzer,
                          Defaults.JetResponseParameters,
                          srcRefToJetMap    = cms.InputTag(jetToRef.label(), 'gen2rec'),
+                         srcJetUnMatch     = cms.InputTag(jetToRef.label(), 'unmaprec'),
                          srcRef            = cms.InputTag(refPtEta.label()),
                          jecLabel          = cms.string(''),
                          srcRhos           = cms.InputTag(''),
                          srcRho            = cms.InputTag(''),
                          srcRhoHLT         = cms.InputTag(''),
-                         srcVtx            = cms.InputTag('offlinePrimaryVertices'),
+                         srcVtx            = cms.InputTag('hltPixelVertices'),
                          srcJetToUncorJetMap = cms.InputTag(jetToUncorJet.label(), 'rec2gen'),
                          srcPFCandidates   = cms.InputTag('')
                         )
@@ -788,13 +805,14 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
 
     if type == 'CaloHLT':
         jra.srcRho = ak4CaloL1Fastjet.srcRho #added 02/15/2012
-        jra.srcRhoHLT = ak5CaloHLTL1Fastjet.srcRho
+        #jra.srcRhoHLT = ak5CaloHLTL1Fastjet.srcRho
+        jra.srcRhoHLT = cms.InputTag('hltFixedGridRhoFastjetAllCalo') # for HLT usage
     elif type == 'Calo':
         jra.srcRho = ak4CaloL1Fastjet.srcRho #added 10/14/2011
     elif type == 'PFchs':
         process.kt6PFchsJetsRhos = kt6PFJets.clone(src = 'pfNoPileUpJME',
                                                    doFastJetNonUniform = cms.bool(True),
-                                                   puCenters = cms.vdouble(-5,-4,-3,-2,-1,0,1,2,3,4,5), 
+                                                   puCenters = cms.vdouble(-5,-4,-3,-2,-1,0,1,2,3,4,5),
                                                    puWidth = cms.double(.8),
                                                    nExclude = cms.uint32(2))
         sequence = cms.Sequence(process.kt6PFchsJetsRhos * sequence)
@@ -803,14 +821,15 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         jra.srcPFCandidates = cms.InputTag('pfNoPileUpJME')
     elif type == 'PFHLT':
         jra.srcRho = ak4PFL1Fastjet.srcRho #added 02/15/2012
-        jra.srcRhoHLT = ak5PFHLTL1Fastjet.srcRho
+        #jra.srcRhoHLT = ak5PFHLTL1Fastjet.srcRho
+        jra.srcRhoHLT = cms.InputTag('hltFixedGridRhoFastjetAll') # for HLT usage
     elif type == 'PFchsHLT':
         jra.srcRho = ak4PFchsL1Fastjet.srcRho #added 02/15/2012
         jra.srcRhoHLT = ak5PFchsHLTL1Fastjet.srcRho
     elif type == 'PF':
         process.kt6PFJetsRhos = kt6PFJets.clone(doFastJetNonUniform = cms.bool(True),
                                                 puCenters = cms.vdouble(-5,-4,-3,-2,-1,0,1,2,3,4,5),
-                                                puWidth = cms.double(.8), 
+                                                puWidth = cms.double(.8),
                                                 nExclude = cms.uint32(2))
         sequence = cms.Sequence(process.kt6PFJetsRhos * sequence)
         jra.srcRhos = cms.InputTag("kt6PFJetsRhos", "rhos")
@@ -830,12 +849,12 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
     if correctl1 or correctl2l3:
         jra.jecLabel = corrJets.correctors[0].replace("Corrector","")
 
-    if Defaults.JetResponseParameters.doFlavor.value():
-		jra.srcRefToPartonMap = cms.InputTag(genToParton.label())
+#    if Defaults.JetResponseParameters.doFlavor.value():
+#		jra.srcRefToPartonMap = cms.InputTag(genToParton.label())
 
     setattr(process,alg_size_type_corr,jra)
     sequence = cms.Sequence(sequence * jra)
-    
+
     ## add chs to path is needed
     if type == 'PFchs':
         sequence = cms.Sequence(process.pfNoPileUpJMESequence * sequence)

@@ -20,6 +20,7 @@ JetResponseAnalyzer::JetResponseAnalyzer(const edm::ParameterSet& iConfig)
   , srcRef_                 (consumes<reco::CandidateView>(iConfig.getParameter<edm::InputTag>                ("srcRef")))
   , srcJetToUncorJetMap_    (consumes<reco::CandViewMatchMap>(iConfig.getParameter<edm::InputTag>("srcJetToUncorJetMap")))
   , srcRefToJetMap_         (consumes<reco::CandViewMatchMap>(iConfig.getParameter<edm::InputTag>     ("srcRefToJetMap")))
+  , srcJetUnMatch_          (consumes<reco::CandViewMatchMap>(iConfig.getParameter<edm::InputTag> ("srcJetUnMatch")))
   , srcRhos_                (consumes<vector<double> >(iConfig.getParameter<edm::InputTag>                   ("srcRhos")))
   , srcRho_                 (consumes<double>(iConfig.getParameter<edm::InputTag>                             ("srcRho")))
   , srcRhoHLT_              (consumes<double>(iConfig.getParameter<edm::InputTag>                          ("srcRhoHLT")))
@@ -126,6 +127,7 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
   edm::Handle<reco::CandidateView>               refs;
   edm::Handle<reco::CandViewMatchMap>            jetToUncorJetMap;
   edm::Handle<reco::CandViewMatchMap>            refToJetMap;
+  edm::Handle<reco::CandViewMatchMap>            jetUnMatch; // unmatched reco-jet branch
   edm::Handle<reco::JetMatchedPartonsCollection> refToPartonMap;
   edm::Handle<vector<double> >                   rhos;
   edm::Handle<double>                            rho;
@@ -172,7 +174,7 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
   if (iEvent.getByToken(srcVtx_,vtx)) {
      const reco::VertexCollection::const_iterator vtxEnd = vtx->end();
      for (reco::VertexCollection::const_iterator vtxIter = vtx->begin(); vtxEnd != vtxIter; ++vtxIter) {
-        if (!vtxIter->isFake() && vtxIter->ndof()>=4 && fabs(vtxIter->z())<=24) {
+        if (!vtxIter->isFake() && vtxIter->ndof()>=1 && fabs(vtxIter->z())<=24) { // online with ndof>=1 instead of 4 for offline!!!
            ++(JRAEvt_->npv);
            JRAEvt_->refdzvtx->push_back(0);//fabs(vtxIter->z()-);
         }
@@ -218,6 +220,7 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
   iEvent.getByToken(srcRef_,               refs);
   iEvent.getByToken(srcJetToUncorJetMap_, jetToUncorJetMap); 
   iEvent.getByToken(srcRefToJetMap_,refToJetMap);
+  iEvent.getByToken(srcJetUnMatch_, jetUnMatch); /////Unmatched reco jet config!!!
   if (getFlavorFromMap_) iEvent.getByToken(srcRefToPartonMap_,refToPartonMap);
   if (doBalancing_&&refToJetMap->size()!=1) return;
   JRAEvt_->nref = 0;
@@ -459,6 +462,17 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
     }
 
      JRAEvt_->nref++;
+  }
+
+  ////////////Unmatched reco jet config!!!!!!!!!!!!!!
+  reco::CandViewMatchMap::const_iterator itUnMatch;
+  JRAEvt_->nUnMatchJet = 0;
+  for(itUnMatch=jetUnMatch->begin();itUnMatch!=jetUnMatch->end();itUnMatch++)
+  {
+      reco::CandidateBaseRef unmatchrecojet = itUnMatch->val;
+      JRAEvt_->unmapjteta->push_back(unmatchrecojet->eta());
+      JRAEvt_->unmapjtpt->push_back(unmatchrecojet->pt());
+      JRAEvt_->nUnMatchJet++;
   }
   
   tree_->Fill();

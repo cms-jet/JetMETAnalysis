@@ -88,7 +88,7 @@ int main(int argc,char**argv)
   string         output  = cl.getValue<string> ("output",        "");
   double         nsigma  = cl.getValue<double> ("nsigma",       1.5);
   float          jtptmin = cl.getValue<float>  ("jtptmin",      1.0);
-  int            niter   = cl.getValue<int>    ("niter",          3);
+  int            niter   = cl.getValue<int>    ("niter",         30);
   int            ndfmin  = cl.getValue<int>    ("ndfmin",         5);
   vector<string> algs    = cl.getVector<string>("algs",          "");
   int            verbose = cl.getValue<int>    ("verbose",        0);

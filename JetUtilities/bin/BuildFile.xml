@@ -8,3 +8,5 @@
 </bin>
 <bin   name="jet_inspect_graphs_x" file="jet_inspect_graphs_x.cc">
 </bin>
+<bin   name="jet_inspect_multigraphs_x" file="jet_inspect_multigraphs_x.cc">
+</bin>

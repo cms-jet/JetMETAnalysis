@@ -129,6 +129,10 @@ void JRAEvent::MakeTree(TTree* tree)
       fChain->Branch("pfcand_id", "vector<JRAEvent::Flavor>", &pfcand_id);
    }
    fChain->Branch("refdzvtx", "vector<Float_t>", &refdzvtx);
+   ///////////////Unmatched Jet config!!!!!!!!!!!!!!!!!
+   fChain->Branch("nUnMatchJet", &nUnMatchJet, "nUnMatchJet/L");
+   fChain->Branch("unmapjtpt", "vector<Float_t>", &unmapjtpt);
+   fChain->Branch("unmapjteta", "vector<Float_t>", &unmapjteta);
    Notify();
 }
 
@@ -226,6 +230,10 @@ void JRAEvent::Init(TTree *tree)
       fChain->SetBranchAddress("pfcand_id", &pfcand_id, &b_pfcand_id);
    }
    fChain->SetBranchAddress("refdzvtx", &refdzvtx, &b_refdzvtx);
+   ///////////////Unmatched Jet config!!!!!!!
+   fChain->SetBranchAddress("nUnMatchJet", &nUnMatchJet, &b_nUnMatchJet);
+   fChain->SetBranchAddress("unmapjtpt", &unmapjtpt, &b_unmapjtpt);
+   fChain->SetBranchAddress("unmapjteta", &unmapjteta, &b_unmapjteta);
    Notify();
 }
 
@@ -316,6 +324,9 @@ void JRAEvent::MakeVectors()
       pfcand_id               = new vector<Flavor>;
    }
    refdzvtx                = new vector<float>;
+   ///////////////Unmatched Jet config!!
+   unmapjtpt              = new vector<float>;
+   unmapjteta              = new vector<float>;
 }
 
 void JRAEvent::clear()
@@ -378,6 +389,9 @@ void JRAEvent::clear()
       pfcand_id->clear();
    }
    refdzvtx->clear();
+   ///////////////Unmatched Jet config!!
+   unmapjtpt->clear();
+   unmapjteta->clear();
 }
 
 void JRAEvent::Loop()

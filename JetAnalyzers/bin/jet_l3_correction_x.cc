@@ -65,9 +65,9 @@ int main(int argc,char**argv)
   string         input   = cl.getValue<string> ("input");
   string         era     = cl.getValue<string> ("era");
   string         output  = cl.getValue<string> ("output","l3.root");
-  vector<string> formats = cl.getVector<string>("formats",      "");
+  vector<string> formats = cl.getVector<string>("formats",   "png");
   vector<string> algs    = cl.getVector<string>("algs",         "");
-  bool           batch   = cl.getValue<bool>   ("batch",     false);
+  bool           batch   = cl.getValue<bool>   ("batch",      true);
   bool           logx    = cl.getValue<bool>   ("logx",      false);
   bool           logy    = cl.getValue<bool>   ("logy",      false);
   string         flavor  = cl.getValue<string> ("flavor",       "");

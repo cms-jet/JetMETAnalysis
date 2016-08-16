@@ -20,7 +20,7 @@ L2Creator::L2Creator() {
   l2l3 = true;
   l2calofit = "standard";
   l2pffit = "standard";
-  mpv = false;
+  mpv = true;
   delphes = false;
   maxFitIter = 30;
 }
@@ -40,7 +40,7 @@ L2Creator::L2Creator(CommandLine& cl) {
   l2l3       = cl.getValue<bool>    ("l2l3",            true);
   l2calofit  = cl.getValue<TString> ("l2calofit", "standard");
   l2pffit    = cl.getValue<TString> ("l2pffit",   "standard");
-  mpv        = cl.getValue<bool>    ("mpv",            false);
+  mpv        = cl.getValue<bool>    ("mpv",             true);
   delphes    = cl.getValue<bool>    ("delphes",        false);
   maxFitIter = cl.getValue<int>     ("maxFitIter",        30);
 
@@ -311,6 +311,12 @@ void L2Creator::loopOverEtaBins() {
           //
 					if(alg.find("HLT")!=string::npos){
 						fabscor=new TF1("fit","(x>=[6])*([0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5])))+(x<[6])*[7]",xmin,xmax);
+                        fabscor->SetParameter(0,0.5);
+                        fabscor->SetParameter(1,9.0);
+                        fabscor->SetParameter(2,8.0);
+                        fabscor->SetParameter(3,-0.3);
+                        fabscor->SetParameter(4,0.6);
+                        fabscor->SetParameter(5,1.0);
 						fabscor->FixParameter(6,xmin);
 						fabscor->FixParameter(7,0.0);
 					}
