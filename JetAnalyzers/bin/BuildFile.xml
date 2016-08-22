@@ -1,5 +1,5 @@
-<use   name="JetMETAnalysis/JetAnalyzers"/>
 <use   name="JetMETAnalysis/JetUtilities"/>
+<use   name="JetMETAnalysis/JetAnalyzers"/>
 <use   name="CondFormats/JetMETObjects"/>
 <use   name="PhysicsTools/Utilities"/>
 <use   name="FWCore/FWLite"/>
@@ -26,7 +26,6 @@
 <bin   name="jet_draw_corrections_TDR_ratio_x" file="jet_draw_corrections_TDR_ratio_x.cc" />
 <bin   name="jet_draw_closure_x"               file="jet_draw_closure_x.cc" />
 <bin   name="jet_draw_l3rsp_refpt_ratio_x"     file="jet_draw_l3rsp_refpt_ratio_x.cc" />
-<bin   name="jet_draw_l2_correction_x"         file="jet_draw_l2_correction_x.cc" />
 <bin   name="jet_draw_distributions_x"         file="jet_draw_distributions_x.cc" />
 <bin   name="jet_draw_l5_correction_x"         file="jet_draw_l5_correction_x.cc" />
 <bin   name="jet_combine_closure_pt_x"         file="jet_combine_closure_pt_x.cc" />

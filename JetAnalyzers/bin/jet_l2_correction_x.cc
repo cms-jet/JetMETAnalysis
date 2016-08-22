@@ -13,6 +13,8 @@
 
 #include "TApplication.h"
 
+#include <memory>
+
 using namespace std;
 
 
@@ -33,7 +35,8 @@ int main(int argc,char**argv)
   CommandLine cl;
   if (!cl.parse(argc,argv)) return 0;
 
-  bool           batch     = cl.getValue<bool>    ("batch",      false);
+  bool           batch              = cl.getValue<bool>   ("batch",              false);
+  string         makeCanvasVariable = cl.getValue<string> ("makeCanvasVariable",    "");
 
   if (!cl.partialCheck()) return 0;
   cl.print();
@@ -44,7 +47,13 @@ int main(int argc,char**argv)
   argc = (batch) ? 2 : 1; if (batch) argv[1] = (char*)"-b";
   TApplication* app = new TApplication("jet_l2_correction_x",&argc,argv);
   
-  L2Creator* l2c = new L2Creator(cl);
+  //
+  // Set the style
+  //
+  setTDRStyle();
+  gROOT->ForceStyle();
+
+  unique_ptr<L2Creator> l2c(new L2Creator(cl));
   //
   // open output file
   //
@@ -56,7 +65,7 @@ int main(int argc,char**argv)
   l2c->openInputFile();
   l2c->openL3File();
   l2c->loopOverDirectories();
-  l2c->loopOverAlgorithms();
+  l2c->loopOverAlgorithms(makeCanvasVariable);
   
   //
   // close output file
