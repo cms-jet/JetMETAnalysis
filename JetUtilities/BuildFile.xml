@@ -5,6 +5,7 @@
 <use   name="rootcore"/>
 <use   name="rootMinuit"/>
 <use   name="rootspectrum"/>
+<use   name="gsl"/>
 <export>
   <lib   name="1"/>
 </export>

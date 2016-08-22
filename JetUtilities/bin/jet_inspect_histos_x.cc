@@ -11,6 +11,7 @@
 #include "JetMETAnalysis/JetUtilities/interface/ObjectLoader.h"
 #include "JetMETAnalysis/JetUtilities/interface/RootStyle.h"
 
+#include "TSystem.h"
 #include <TApplication.h>
 #include <TStyle.h>
 #include <TFile.h>
@@ -74,6 +75,7 @@ string get_range(const ObjectLoader<TH1F>& hl,
 
 void draw_range(const string& range, const int residual);
 
+string get_animated_name(string prefix, const ObjectLoader<TH1F>& hl, vector<unsigned int>& indices, string suffix);
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -89,6 +91,11 @@ int main(int argc,char** argv)
   vector<string> algs       = cl.getVector<string>("algs",          "kt4calo");
   vector<string> variables  = cl.getVector<string>("variables","RelRsp:RefPt");
   int            npercanvas = cl.getValue<int>    ("npercanvas",            0);
+  bool			 animated   = cl.getValue<bool>   ("animated",          false);
+  bool           loop       = cl.getValue<bool>   ("loop",               true);
+  int 			 delay 		= cl.getValue<int>    ("delay",                 0);
+  int 			 lastdelay  = cl.getValue<int>    ("lastdelay",             0);
+  int 			 repeats    = cl.getValue<int>    ("repeats",			   -1);
 
   vector<string> tdrlabels  = cl.getVector<string>("tdrlabels",            "");
   bool           tdrautobins= cl.getValue<bool>   ("tdrautobins",       false);
@@ -134,6 +141,18 @@ int main(int argc,char** argv)
   if (!cl.check()) return 0;
   cl.print();
 
+  /// IF THE IMAGE IS ANIMATED IT MAKES SENSE TO HAVE EVERY HISTOGRAM IN ITS OWN CANVAS
+  if(animated) npercanvas = 1;
+
+  /// CHECK THAT FORMATS CONTAINS GIF IF ANIMATED IMAGE IS SELECTED
+  if(animated) {
+  	bool containsGIF = false;
+  	for(unsigned int iform=0; iform<formats.size(); iform++) {
+  		if(formats[iform]=="gif") containsGIF=true;
+  	}
+  	if(containsGIF==false) formats.push_back("gif");
+  }
+
   if (prefix.empty()) prefix=algs[0];
   
   if (batch&&formats.size()==0) formats.push_back("pdf");
@@ -170,6 +189,8 @@ int main(int argc,char** argv)
   vector<TLegend**> vleg;
 
   vector<string> ranges;
+
+  vector<string> animated_names;
   
   /// LOOP OVER FILES
   for (unsigned int ifile=0;ifile<inputs.size();ifile++) {
@@ -192,7 +213,7 @@ int main(int argc,char** argv)
 
 	ObjectLoader<TH1F> hl;
 	hl.load_objects(dir,variable);
-	
+
 	bool put_range = (npercanvas!=0||
 			  (hl.nvariables()>0&&hl.nobjects(hl.nvariables()-1)==1));
 	
@@ -247,7 +268,7 @@ int main(int argc,char** argv)
 
 	    vleg.push_back(new TLegend*[nx*ny]);
 
-
+	    animated_names.push_back(get_animated_name(prefix,hl,indices,suffix));
 	  }
 
 	  int icnv = ihisto/npercanvas;
@@ -393,10 +414,29 @@ int main(int argc,char** argv)
   } // inputs
   
   for (unsigned int ic=0;ic<c.size();ic++) {
-    string output = c[ic]->GetName();
+    string output = (animated) ? animated_names[ic] : c[ic]->GetName();
     if (!opath.empty()) output = opath + "/" + output;
+    string printCmd; stringstream ss;
     for (unsigned int ifmt=0;ifmt<formats.size();ifmt++) {
-      c[ic]->Print((output+"."+formats[ifmt]).c_str());
+      printCmd = output+"."+formats[ifmt];
+
+      /// UNLINK ANY PREVIOUS ANIMATIONS
+      if(animated && ic==0) gSystem->Unlink(printCmd.c_str());
+
+      /// APPEND THE ANIMATION COMMANDS
+      if(animated && loop && ic==c.size()-1) {
+      	ss.str("");	(repeats>-1) ? ss << "+" : ss << "++"; ss << lastdelay;
+      	printCmd += (lastdelay>0 || (lastdelay==0 && repeats>-1)) ? ss.str()+"++" : "++";
+      	ss.str(""); ss << repeats;
+      	printCmd += (repeats>-1) ? ss.str() : "";
+      }
+      else if(animated)	{
+      	ss.str(""); ss << "+" << delay;
+      	printCmd += (delay>0) ? ss.str() : "+";
+      }
+
+      /// PRINT THE CANVAS
+      c[ic]->Print(printCmd.c_str());
     }
   }
   
@@ -881,6 +921,12 @@ void draw_stats(TH1* h,double xoffset,Color_t color,Color_t fitColor)
     sssgma<<setw(6)<<setiosflags(ios::left)<<"Sigma:"
 	  <<setw(9)<<resetiosflags(ios::left)<<setprecision(4)
 	  <<fitfnc->GetParameter(2);
+
+  stringstream sschi2ndf;
+  if (0!=fitfnc)
+  	sschi2ndf<<setw(6)<<setiosflags(ios::left)<<"Chi2/NDF:"
+  	  <<setw(9)<<resetiosflags(ios::left)<<setprecision(4)
+  	  <<fitfnc->GetChisquare()/fitfnc->GetNDF();
   
   TLatex stats;
   stats.SetNDC(true);
@@ -896,6 +942,7 @@ void draw_stats(TH1* h,double xoffset,Color_t color,Color_t fitColor)
     stats.SetTextColor(fitColor);
     stats.DrawLatex(xoffset,0.735,sspeak.str().c_str());
     stats.DrawLatex(xoffset,0.70,sssgma.str().c_str());
+    stats.DrawLatex(xoffset,0.665,sschi2ndf.str().c_str());
   }
 }
 
@@ -1063,5 +1110,19 @@ void draw_line_legend(bool mean,bool median,bool peak)
     leg->AddEntry(lPeak,"peak","l");
   }
   leg->Draw();
+}
+
+
+//______________________________________________________________________________
+string get_animated_name(string prefix, const ObjectLoader<TH1F>& hl, vector<unsigned int>& indices, string suffix) {
+	stringstream sscname;sscname<<prefix<<"_"<<hl.quantity();
+	for (unsigned int i=0;i<hl.nvariables();i++) {
+	    sscname<<"_"<<hl.variable(i);
+	    if (hl.nobjects(i)==1)
+			sscname<<hl.minimum(i,indices[i])<<"to"
+			       <<hl.maximum(i,indices[i]);
+	}
+	if (!suffix.empty()) sscname<<"_"<<suffix;
+	return sscname.str();
 }
 

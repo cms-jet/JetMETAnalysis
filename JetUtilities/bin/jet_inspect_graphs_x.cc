@@ -113,10 +113,10 @@ int main(int argc,char** argv)
   bool           leginplot = cl.getValue<bool>   ("leginplot",           true);
 
   bool           drawlegend= cl.getValue<bool>   ("drawlegend",          true);
-  double         legx      = cl.getValue <double>("legx",                0.5);
-  double         legy      = cl.getValue <double>("legy",                0.9);
-  double         legw      = cl.getValue <double>("legw",                0.4);
-  int            extraleglabels = cl.getValue<int>("extraleglabels",       0);
+  double         legx      = cl.getValue <double>("legx",                 0.5);
+  double         legy      = cl.getValue <double>("legy",                 0.9);
+  double         legw      = cl.getValue <double>("legw",                 0.4);
+  int            extraleglabels = cl.getValue<int>("extraleglabels",        0);
 
   string         xtitle    = cl.getValue<string> ("xtitle",                "");
   string         ytitle    = cl.getValue<string> ("ytitle",                "");
