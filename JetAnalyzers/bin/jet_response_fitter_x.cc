@@ -58,7 +58,6 @@ double fnc_dscb(double*xx,double*pp);
 /// test this...
 void guesstimate_fitrange(TH1* h,double& min,double& max,const string alg);
 
-
 /// check if a vector of strings contains a certain element
 bool contains(const vector<string>& collection,const string& element);
 void adjust_fitrange(TH1* h,double& min,double& max);
@@ -70,6 +69,9 @@ bool from_string(T& t,
   std::istringstream iss(s);
   return !(iss >> f >> t).fail();
 }
+
+/// get the number of filled bins in a given range
+int number_filled_bins(TH1* h, double min, double max);
 
 ////////////////////////////////////////////////////////////////////////////////
 // main
@@ -444,7 +446,7 @@ void fit_gaussian(TH1F*& hrsp,
   double norm  = hrsp->GetMaximumStored();
   double peak  = mean;
   int nbins = 50;//100;
-  TSpectrum *spec = new TSpectrum(2);
+  TSpectrum *spec = new TSpectrum(4);
   if(nbins < 100) spec->Search(hrsp,6,"nobackground nodraw goff"); //turn off background removal when nbins too small
   else spec->Search(hrsp,6,"nodraw goff");
   Double_t* xpos = spec->GetPositionX();
@@ -483,7 +485,13 @@ void fit_gaussian(TH1F*& hrsp,
     fitfnc->SetParameter(0,norm);
     fitfnc->SetParameter(1,peak);
     fitfnc->SetParameter(2,sigma);
-    if(hrsp->GetEntries()==0) {
+
+    //Total entries in hrsp could be >0, but the number of entries in the fit range <=1.
+    //In that case ROOT would print "Warning in <Fit>: Fit data is empty"
+    //So instead check that the number of entries (unweighted integral) in the fit range is >1
+    double entries_in_range = hrsp->Integral(hrsp->FindBin(fitrange_min),hrsp->FindBin(fitrange_max));
+    int filled_bins_in_range = number_filled_bins(hrsp,fitrange_min,fitrange_max);
+    if(entries_in_range<=1 || filled_bins_in_range<=1) {
        if(verbose>0)
          cout << "Warning in <Fit>: Fit data is empty" << endl
               << "hrsp->GetName(): " << hrsp->GetName() << endl;
@@ -563,4 +571,18 @@ void guesstimate_fitrange(TH1* h,double& min,double& max, const string alg)
   }
   min = h->GetBinLowEdge(imin);
   max = h->GetBinLowEdge(imax);
+}
+
+//______________________________________________________________________________
+int number_filled_bins(TH1* h, double min, double max)
+{
+  int first_bin = h->FindBin(min);
+  int last_bin  = h->FindBin(max);
+  int counter(0);
+
+  for(int ibin=first_bin; ibin<=last_bin; ibin++) {
+    if(h->GetBinContent(ibin)>0) counter++;
+  }
+
+  return counter;
 }
