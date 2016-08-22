@@ -67,14 +67,14 @@ void clearHistograms(vector<TH2*>& hResRho, vector<TH2*>& hOffRho, vector<TH2*>&
    }
 }
 
-void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = "./images", bool fixedRange = true){
+void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = "./images", bool fixedRange = true){
    TString algo1(calgo1);
    TString algo2(calgo2);
    TString algo12 = algo1+"_"+algo2;
    if (algo1.EqualTo(algo2)) 
       algo12 = algo1;
    TString algo(algo12);
-   TString filename=Form("output_%s.root",algo.Data());
+   TString filename=Form("%s/output_%s.root",inputDir.Data(),algo.Data());
    cout<<"Producing plots from file "<<filename<<endl;
    TFile *fin = new TFile(filename);
 
@@ -1041,7 +1041,7 @@ void SynchPlots(TString calgo1="ak5pf",TString calgo2="ak5pf", TString outDir = 
    c->Draw();
    c = getGausMeanOffsetWithSum("MeanOffRefPFWithSum_BB","<p_{T}^{PU}-p_{T}^{noPU}>",algo,hResRho,dynamic_cast<TH2D*>(histograms["p_offResVsrefpt_bb_all"]),fixedRange,npvRhoNpuBins,make_pair(minNpvRhoNpu,maxNpvRhoNpu));
    c->Draw();
-   TString unassociatedCHF = "output_ak5pf.root";
+   TString unassociatedCHF = inputDir+"/output_ak5pf.root";
    if(!unassociatedCHF.IsNull()) {
       pOffPF.back()->SetNameTitle("prof_offResVsrefpt_bb_unassociatedchf","prof_offResVsrefpt_bb_unassociatedchf");
       TDirectory* cdir = gDirectory;
@@ -1390,6 +1390,7 @@ int main(int argc,char**argv)
 {
    CommandLine cl;
    if (!cl.parse(argc,argv)) return 0;
+   string         inputDir          = cl.getValue<string>   ("inputDir",       "./");
    string         algo1             = cl.getValue<string>   ("algo1",       "ak5pf");
    string         algo2             = cl.getValue<string>   ("algo2",       "ak5pf");
    string         outDir            = cl.getValue<string>   ("outDir",   "./images");
@@ -1416,5 +1417,5 @@ int main(int argc,char**argv)
          npvRhoNpuBins.push_back(make_pair(ibin*npvRhoNpuBinWidth+binOffset,ibin*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1+binOffset));
    }
 
-   SynchPlots(algo1, algo2, outDir, fixedRange);
+   SynchPlots(inputDir, algo1, algo2, outDir, fixedRange);
 }

@@ -231,7 +231,7 @@ map<evtid, pair<Long64_t, Long64_t>, evtid> MatchEventsAndJets::fillMap(bool noP
    cout << endl << "\tRead " << mapTree.size() << " unique signatures" << endl;
    if(no_ref_events>0) {
       cout << "\tWARNING::There were " << no_ref_events << " events which don't contain any ref jets" << endl
-           << "\t\tThese events were be skipped" << endl << endl;
+           << "\t\tThese events will be skipped" << endl << endl;
    }
    t->fChain->SetBranchStatus("*",1);
    return mapTree;
@@ -578,11 +578,14 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
 
 //______________________________________________________________________________
 void MatchEventsAndJets::LoopOverEvents(bool verbose, bool reduceHistograms) {
+   cout << "Looping over the mapped events:" << endl << "\tprogress:" << endl;
+   Long64_t nentries = mapTreePU.size();
    for (IT::const_iterator it = mapTreePU.begin(); it != mapTreePU.end(); ++it) {
 
       if (iftest && nevs >= maxEvts) return;
       
-      if (nevs%10000==0) cout << "\t"<<nevs << endl;
+      //if (nevs%10000==0) cout << "\t"<<nevs << endl;
+      loadbar2(nevs+1,nentries,50,"\t\t");
 
       // if this entry does not exist on the second ntuple just skip this event
       if (mapTreeNoPU.find(it->first) == mapTreeNoPU.end()) {
