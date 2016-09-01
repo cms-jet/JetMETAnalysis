@@ -1,0 +1,14 @@
+<tool name="delphes" version="v00-00-CMSp1">
+  <info url="https://twiki.cern.ch/twiki/bin/viewauth/CMS/DelphesUPG"/>
+  <lib name="Delphes"/>
+   <client>
+    <environment name="DELPHES_DIR" default="$CMSSW_BASE/delphes"/>
+    <environment name="DELPHES_INTERFACE_BASE" default="$DELPHES_DIR"/>
+    <environment name="LIBDIR"             default="$DELPHES_DIR"/>
+    <environment name="INCLUDE" value="$DELPHES_INTERFACE_BASE"/>
+	<environment name="ROOT_INCLUDE_PATH" value="$DELPHES_DIR"/>
+   </client>
+  <runtime name="LD_LIBRARY_PATH"   value="$DELPHES_INTERFACE_BASE"           type="path"/>
+  <runtime name="INCLUDE" value="$DELPHES_INTERFACE_BASE" type="path"/>
+</tool>
+
