@@ -7,39 +7,24 @@
 ///////////////////////////////////////////////////////////////////
 
 #include "JetMETAnalysis/JetAnalyzers/interface/Settings.h"
-#include "JetMETAnalysis/JetAnalyzers/interface/VectorWrapper.h"
-#include "JetMETAnalysis/JetAnalyzers/interface/VectorWrapper2D.h"
-#include "Delphes/classes/DelphesClasses.h"
-#include "Delphes/external/ExRootAnalysis/ExRootTreeReader.h"
-#include "JetMETAnalysis/JetUtilities/interface/TProfileMDF.h"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
-#include "JetMETAnalysis/JetUtilities/interface/JRANtuple.h"
+#include "JetMETAnalysis/JetUtilities/interface/JRAEvent.h"
+#include "JetMETAnalysis/JetUtilities/interface/ProgressBar.hh"
 
-#include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
-#include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
-#include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
+#include "classes/DelphesClasses.h"
+#include "external/ExRootAnalysis/ExRootTreeReader.h"
+
 #include "DataFormats/Math/interface/deltaR.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
 #include "TROOT.h"
 #include "TSystem.h"
-#include <TObjectTable.h>
 #include "TFile.h"
+#include "TFileCollection.h"
+#include "THashList.h"
 #include "TTree.h"
 #include "TChain.h"
-#include "TH1.h"
-#include "TH1F.h"
-#include "TH1D.h"
-#include "TH2.h"
-#include "TH2F.h"
-#include "TH3D.h"
-#include "TF1.h"
-#include "TString.h"
 #include "TMath.h"
-#include "TFitResult.h"
-#include "TProfile.h"
-#include "TProfile2D.h"
-#include "TProfile3D.h"
 #include "TBenchmark.h"
 #include "TLorentzVector.h"
 #include "TClonesArray.h"
@@ -80,7 +65,7 @@ typedef IndexSet_t::const_iterator                              IndexIter_t;
 typedef set<Match_t,MatchLtComp>                                MatchSet_t;
 typedef MatchSet_t::const_iterator                              MatchIter_t;
 typedef map<Jet*, Jet*>                                         JetToJet_t;
-typedef map<string,pair<TClonesArray*,JRANtuple*> >             NtupleMap_t;
+typedef map<string,pair<TClonesArray*,JRAEvent*> >             NtupleMap_t;
 
 ////////////////////////////////////////////////////////////////////////////////
 // define global variables
@@ -118,29 +103,13 @@ int main(int argc,char**argv) {
 	CommandLine cl;
 	if (!cl.parse(argc,argv)) return 0;
 
-    TString         inputFilePath     = cl.getValue<TString>       ("inputFilePath");
-	TString 	    inputFilename     = cl.getValue<TString> 	   ("inputFilename",        "");
-	TString 	    outputDir         = cl.getValue<TString> 	   ("outputDir",          "./");
-    //int             tnpu              = cl.getValue<int>           ("tnpu",                 20);
-	int             maxEvts           = cl.getValue<int>           ("maxEvts",               0);
-	//vector<TString> collections       = cl.getVector<TString>      ("collections", "GenJet:::CAJet:::Jet")    
-	//bool    	 	doComposition_    = cl.getValue<bool>    	   ("doComposition",      true);
-	//bool    	 	doFlavor_         = cl.getValue<bool>    	   ("doFlavor",           true);
-	//bool    	 	doJetPt_          = cl.getValue<bool>    	   ("doJetPt",            true);
-	//bool 		 	doRefPt_          = cl.getValue<bool>    	   ("doRefPt",            true);
-	//bool 		 	doHLT_            = cl.getValue<bool>    	   ("doHLT",              true);
-	unsigned int 	nRefMax_          = cl.getValue<unsigned int>  ("nRefMax",               0);
-	double       	deltaRMax_        = cl.getValue<double>  	   ("deltaRMax",           0.0);
-	double       	deltaPhiMin_      = cl.getValue<double>  	   ("deltaPhiMin",       3.141);
-	//double       	deltaRPartonMax_  = cl.getValue<double>  	   ("deltaRPartonMax",     0.0);
- 	bool         	doBalancing_      = cl.getValue<bool>    	   ("doBalancing",       false);
- 	//bool         	getFlavorFromMap_ = cl.getValue<bool>   	   ("getFlavorFromMap_", false);
-	//bool         	isCaloJet_;
-	//bool         	isJPTJet_;
-	//bool         	isPFJet_;
-	//bool         	isTrackJet_;
-	//bool         	isTauJet_;
-
+    string       inputFilePath  = cl.getValue<string>       ("inputFilePath");
+	string 	 	 inputFilename  = cl.getValue<string> 	    ("inputFilename",                 "");
+	string       fileList       = cl.getValue<string>       ("fileList",                      "");
+	string 	     outputDir      = cl.getValue<string> 	    ("outputDir",                   "./");
+	string       outputFilename = cl.getValue<string>       ("outputFilename", "DelphesJRA.root");
+	int          maxEvts        = cl.getValue<int>          ("maxEvts",                        0);
+	unsigned int nRefMax_       = cl.getValue<unsigned int> ("nRefMax",                        0);
 
 	if (!cl.check()) return 0;
 	cl.print();
@@ -149,100 +118,91 @@ int main(int argc,char**argv) {
 	m_benchmark->Reset();
 	m_benchmark->Start("event");
 
-	if (deltaRMax_!=0.0) {
-    	doBalancing_=false;
-  	}
-  	else if (deltaPhiMin_>=0) {
-    	doBalancing_=true;
-  	}
-    doBalancing_ = doBalancing_;
-
   	// Create chain of root trees
+  	int file_count(0);
   	TChain chain("Delphes");
-  	//chain.Add(inputFilename);
-    cout<<"\tAdding "<<inputFilePath+"/"+inputFilename+"*.root"<<endl;
-    int file_count = chain.Add(inputFilePath+"/"+inputFilename+"*.root");
+  	if(!fileList.empty()) {
+  		cout<<"\tAdding files from the list " << inputFilePath << "/" << fileList<<endl;
+  		TFileCollection fc("fc","",(inputFilePath+"/"+fileList).c_str());
+  		chain.AddFileInfoList((TCollection*)fc.GetList());
+  		if(chain.GetListOfFiles()->GetEntries()!=fc.GetNFiles()) {
+  			cout << "ERROR::DelphesNtupleToJRANtuple_x::main Something went wrong and the number of files in the filesList doesn't equal the number of files in the chain." << endl;
+			return -1;  			
+  		}
+  		file_count = chain.GetListOfFiles()->GetEntries();
+  	}
+  	else {
+	    cout<<"\tAdding "<<inputFilePath+"/"+inputFilename+"*.root"<<endl;
+    	file_count = chain.Add((inputFilePath+"/"+inputFilename+"*.root").c_str());
+    }
     if (file_count==0){
        cout << "\tNo files found!  Aborting.\n";
        return 0;
     }
 
-	// Create object of class ExRootTreeReader
-  	ExRootTreeReader *treeReader = new ExRootTreeReader(&chain);
-  	Long64_t numberOfEntries = treeReader->GetEntries();
-
     // Turn off unwanted all branches and turn on only the ones we want
-    treeReader->SetBranchStatus("*",0);
-    treeReader->SetBranchStatus("RawJetNoPU*",1);
-    treeReader->SetBranchStatus("RawJet*",1);
-    treeReader->SetBranchStatus("GenJet*",1);
-    treeReader->SetBranchStatus("Jet*",1);
-    treeReader->SetBranchStatus("Rho*",1);
-    treeReader->SetBranchStatus("NPU*",1);
-    //treeReader->SetBranchStatus("EFlowTrack*",1);
-    //treeReader->SetBranchStatus("EFlowTower*",1);
-    //treeReader->SetBranchStatus("EFlowMuon*",1);
+    chain.SetBranchStatus("*",0);
+    chain.SetBranchStatus("Event.*",1);
+    chain.SetBranchStatus("GenJet.*",1);
+    chain.SetBranchStatus("Jet.*",1);
+    chain.SetBranchStatus("JetPF.*",1);
+    chain.SetBranchStatus("JetPUPPI.*",1);
+    chain.SetBranchStatus("Vertex.*",1);
+    if(chain.FindBranch("Rho"))
+	    chain.SetBranchStatus("Rho.*",1);
+
+  	// Create object of class ExRootTreeReader
+  	ExRootTreeReader *treeReader = new ExRootTreeReader(&chain);
+  	Long64_t numberOfEntries = (maxEvts>0) ? maxEvts : treeReader->GetEntries();
 
 	// Get pointers to branches used in this analysis
-	TClonesArray *branchRawJetNoPU = treeReader->UseBranch("RawJetNoPU");
-  	TClonesArray *branchRawJet = treeReader->UseBranch("RawJet");
-  	TClonesArray *branchGenJet = treeReader->UseBranch("GenJet");
-  	TClonesArray *branchJet = treeReader->UseBranch("Jet");
-	//TClonesArray *branchCAJet = treeReader->UseBranch("CAJet");
-  	TClonesArray *branchRho = treeReader->UseBranch("Rho");
-  	TClonesArray *branchNPU = treeReader->UseBranch("NPU");
+	TClonesArray *branchEvent    = treeReader->UseBranch("Event");
+  	TClonesArray *branchGenJet   = treeReader->UseBranch("GenJet");
+  	TClonesArray *branchJet      = treeReader->UseBranch("Jet");
+  	TClonesArray *branchJetPF    = treeReader->UseBranch("JetPF");
+  	TClonesArray *branchJetPUPPI = treeReader->UseBranch("JetPUPPI");
+  	TClonesArray *branchVertex   = treeReader->UseBranch("Vertex");
+  	TClonesArray *branchRho      = treeReader->UseBranch("Rho");
 
-  	// Constituents will be 0 otherwise
-  	//TClonesArray *branchEFlowTrack = treeReader->UseBranch("EFlowTrack");
-  	//TClonesArray *branchEFlowTower = treeReader->UseBranch("EFlowTower");
-  	//TClonesArray *branchEFlowMuon = treeReader->UseBranch("EFlowMuon");
+    // open the output file
+  	TFile* ofile = TFile::Open((outputDir+"/"+outputFilename).c_str(),"RECREATE");
 
-    // output file, tree, and branches
-  	TFile* ofile = new TFile(outputDir+"/DelphesJRA.root","RECREATE");
-  	ofile->mkdir("ak4pfchs","genRawJet");
-  	ofile->mkdir("ak4pfchsl1","genRawNoPUJet");
-  	ofile->mkdir("ak4pfchsrhocorrected","genJet");
-  	//ofile->mkdir("ca8pf","genCAJet");
-  	TTree* genRawJet_     = new TTree("t","t");
-  	TTree* genRawNoPUJet_ = new TTree("t","t");
-  	TTree* genJet_        = new TTree("t","t");
-    //TTree* genCAJet_      = new TTree("t","t");
-  	JRANtuple* genRawJet     = new JRANtuple(genRawJet_,true);
-  	JRANtuple* genRawNoPUJet = new JRANtuple(genRawNoPUJet_,true);
-  	JRANtuple* genJet        = new JRANtuple(genJet_,true);
-  	//JRANtuple* genCAJet      = new JRANtuple(genCAJet_,true);
-
-  	//Set vector of reco jet collections
+  	//Make output directories and ntuples and setup the map of reco jet collections
   	NtupleMap_t recoJetMap;
-  	recoJetMap["ak4pfchs"]       = make_pair(branchRawJet,     genRawJet);
-  	recoJetMap["ak4pfchsl1"]     = make_pair(branchRawJetNoPU, genRawNoPUJet);
-  	recoJetMap["ak4pfchsrhocorrected"] = make_pair(branchJet,        genJet);
-  	//recoJetMap["ca8pf"]       = make_pair(branchCAJet,      genCAJet);
+  	if(branchJetPF) {
+	  	ofile->mkdir("ak4pf", "genJetPF");
+	  	JRAEvent* genJetPF      = new JRAEvent(0,85);
+	  	recoJetMap["ak4pf"] = make_pair(branchJetPF, genJetPF);
+	}
+  	if(branchJet) {
+	  	ofile->mkdir("ak4pfchs", "genJet");
+	  	JRAEvent* genJetPFchs   = new JRAEvent(0,85);
+	  	recoJetMap["ak4pfchs"] = make_pair(branchJet, genJetPFchs);
+	}
+  	if(branchJetPUPPI) {
+  		ofile->mkdir("ak4puppi", "genJetPUPPI");
+  		JRAEvent* genJetPFPuppi = new JRAEvent(0,85);
+	  	recoJetMap["ak4puppi"] = make_pair(branchJetPUPPI, genJetPFPuppi);
+	}
 
   	//Set up the matching maps
   	initMatchingMaps(recoJetMap);
 
 	for(Int_t iEntry=0; iEntry<numberOfEntries; iEntry++) {
-		if(maxEvts>0 && iEntry>=maxEvts) continue;
 		treeReader->ReadEntry(iEntry);
-		if(iEntry%10000==0)
-			cout << "Doing entry " << iEntry << " ..." << endl;
+		loadbar2(iEntry+1,numberOfEntries,50,"\t");
 
 		for (NtupleMap_t::iterator ialg=recoJetMap.begin(); ialg!=recoJetMap.end(); ++ialg) {
-		//for(unsigned int ialg=0; ialg<recoJetMap.size(); ialg++) {
+			//Clear the JRAEvent from the previous event
+			ialg->second.second->clear();
 
 			//Do the gen2rec matching
-			JetToJet_t refToJetMap = matchRecToGen(branchGenJet,ialg->second.first,
-			                                       false,ialg->first);
+			JetToJet_t refToJetMap = matchRecToGen(branchGenJet,ialg->second.first,false,ialg->first);
 
 			//Set values for genRawJet collection
-	   		//size_t nRef=(nRefMax_==0) ? refToJetMap.size() : std::min(nRefMax_,(unsigned int)refToJetMap.size());
 	   		size_t nRef=(nRefMax_==0) ? branchGenJet->GetEntries() : std::min(nRefMax_,(unsigned int)branchGenJet->GetEntries());
-	   		//ialg->second.second->nref = branchGenJet->GetEntries();
 	   		size_t nref_ = 0;
 	   		for(size_t iRef=0; iRef<nRef; iRef++) {
-
-	   			//if(iEntry==0)cout << "loop " << iRef << " in the gen jet section" << endl; 
 
 	   			Jet* ref = (Jet*)branchGenJet->At(iRef);
 	   			JetToJet_t::const_iterator itMatch = refToJetMap.find(ref);
@@ -250,60 +210,52 @@ int main(int argc,char**argv) {
 	   			Jet* jet = itMatch->second;
 	
 	   			//Set values for the GenJet collection
-	   			ialg->second.second->refrank[nref_]  = nref_;
-				ialg->second.second->refpt[nref_]    = ref->PT;
-				ialg->second.second->refeta[nref_]   = ref->Eta;
-				ialg->second.second->refphi[nref_]   = ref->Phi;
-				ialg->second.second->refe[nref_]     = ref->P4().E();
-				ialg->second.second->refy[nref_]     = ref->P4().Rapidity();
-				//ialg->second.second->refdrjt[nref_]  = TMath::Sqrt(TMath::Power(iDelphes.GenJet_DeltaEta[nref_],2)+
-				//                                        TMath::Power(iDelphes.GenJet_DeltaPhi[nref_],2));
-				ialg->second.second->refdrjt[nref_]  = ref->P4().DeltaR(jet->P4());
-				ialg->second.second->refarea[nref_]  = ref->AreaP4().Pt();
-				ialg->second.second->refpdgid[nref_] = 0;
+	   			ialg->second.second->refrank->push_back(nref_);
+				ialg->second.second->refpt->push_back(ref->PT);
+				ialg->second.second->refeta->push_back(ref->Eta);
+				ialg->second.second->refphi->push_back(ref->Phi);
+				ialg->second.second->refe->push_back(ref->P4().E());
+				ialg->second.second->refy->push_back(ref->P4().Rapidity());
+				ialg->second.second->refdrjt->push_back(ref->P4().DeltaR(jet->P4()));
+				ialg->second.second->refarea->push_back(ref->Area.Pt());
+				ialg->second.second->refpdgid->push_back(0);
 				ialg->second.second->beta            = 0.0;//gen->Beta;
 				ialg->second.second->betaStar        = 0.0;//gen->BetaStar;
 
 				//Set values for the Jet collection
-				ialg->second.second->jtpt[nref_]    = jet->PT;
-				ialg->second.second->jteta[nref_]   = jet->Eta;
-				ialg->second.second->jtphi[nref_]   = jet->Phi;
-				ialg->second.second->jte[nref_]     = jet->P4().E();
-				ialg->second.second->jty[nref_]     = jet->P4().Rapidity();
-				ialg->second.second->jtjec[nref_]   = 0.0;
-				ialg->second.second->jtarea[nref_]  = jet->AreaP4().Pt();
-				ialg->second.second->jtchf[nref_]   = 0.0;
-				ialg->second.second->jtnhf[nref_]   = 0.0;
-				ialg->second.second->jtnef[nref_]   = 0.0;
-				ialg->second.second->jtcef[nref_]   = 0.0;
-				ialg->second.second->jtmuf[nref_]   = 0.0;
-				ialg->second.second->jthfhf[nref_]  = 0.0;
-				ialg->second.second->jthfef[nref_]  = 0.0;
+				ialg->second.second->jtpt->push_back(jet->PT);
+				ialg->second.second->jteta->push_back(jet->Eta);
+				ialg->second.second->jtphi->push_back(jet->Phi);
+				ialg->second.second->jte->push_back(jet->P4().E());
+				ialg->second.second->jty->push_back(jet->P4().Rapidity());
+				ialg->second.second->jtjec->push_back(0.0);
+				ialg->second.second->jtarea->push_back(jet->Area.Pt());
+				ialg->second.second->jtchf->push_back(0.0);
+				ialg->second.second->jtnhf->push_back(0.0);
+				ialg->second.second->jtnef->push_back(0.0);
+				ialg->second.second->jtcef->push_back(0.0);
+				ialg->second.second->jtmuf->push_back(0.0);
+				ialg->second.second->jthfhf->push_back(0.0);
+				ialg->second.second->jthfef->push_back(0.0);
 
 				nref_++;
 				ialg->second.second->nref = nref_;
 	   		}
-
-	   		//Set event based values
-			ialg->second.second->evt     = iEntry;
+	   		if(ialg->second.second->refrank->size()==0) ialg->second.second->nref = 0;
 
 			//Set values for the Rho Collection
-	   		size_t nRho = branchRho->GetEntries();
-            double avgRho = 0;
-	   		for(size_t iRho=0; iRho<nRho; iRho++) {
-               ScalarHT *rho = (ScalarHT*) branchRho->At(iRho);
-               avgRho+=rho->HT;
-            }
-			ialg->second.second->rho     = avgRho/nRho;
-			ialg->second.second->rho_hlt = 0;
+			if(branchRho) {
+		   		size_t nRho = branchRho->GetEntries();
+	            double avgRho = 0;
+		   		for(size_t iRho=0; iRho<nRho; iRho++) {
+	               ScalarHT *rho = (ScalarHT*) branchRho->At(iRho);
+	               avgRho+=rho->HT;
+	            }
+				ialg->second.second->rho     = avgRho/nRho;
+			}
 
 			//Set values for the NPU Collection
-			ScalarHT *NPU = (ScalarHT*) branchNPU->At(0);
-			int nPUvertices_true = (int)NPU->HT;
-            //ialg->second.second->tnpus = new vector<float>(3,0);
-            //(*ialg->second.second->tnpus)[0] = nPUvertices_true;
-            //(*ialg->second.second->tnpus)[1] = nPUvertices_true;
-            //(*ialg->second.second->tnpus)[2] = nPUvertices_true;
+			int nPUvertices_true = (int)branchVertex->GetEntries();
             ialg->second.second->bxns->clear();
             ialg->second.second->bxns->push_back(-1);
             ialg->second.second->bxns->push_back(0);
@@ -317,9 +269,7 @@ int main(int argc,char**argv) {
             ialg->second.second->tnpus->push_back(nPUvertices_true);
             ialg->second.second->tnpus->push_back(nPUvertices_true);
             ialg->second.second->tnpus->push_back(nPUvertices_true);
-            //ialg->second.second->tnpus.push_back(tnpu);
-            //ialg->second.second->tnpus.push_back(tnpu);
-            //ialg->second.second->tnpus.push_back(tnpu);
+            ialg->second.second->npv    = std::max(1,(int)(nPUvertices_true*0.74));
 
             //Set values for sumpt
             ialg->second.second->sumpt_lowpt->clear();
@@ -341,20 +291,20 @@ int main(int argc,char**argv) {
             ialg->second.second->ntrks_highpt->push_back(0);
             ialg->second.second->ntrks_highpt->push_back(0);
 
-			//Set values for missing collections
-			ialg->second.second->pthat  = 0;
-			ialg->second.second->weight = 0;
-            if(ialg->first == "ak4pfchsl1")
-               ialg->second.second->npv    = (int)(1);
-            else
-               ialg->second.second->npv    = (int)(nPUvertices_true/0.74);
+			//Set event based values
+			HepMCEvent* event = (HepMCEvent*)branchEvent->At(0);
 			ialg->second.second->run    = 1;
+			ialg->second.second->lumi   = 1;
+			ialg->second.second->evt    = event->Number;
+			ialg->second.second->pthat  = 0;
+			ialg->second.second->weight = event->Weight;
 
 			ofile->cd(ialg->first.c_str());
 			ialg->second.second->fChain->Fill();
 		}
 	}
 
+	cout << endl;
 	for (NtupleMap_t::iterator ialg=recoJetMap.begin(); ialg!=recoJetMap.end(); ++ialg) {
 		ofile->cd(ialg->first.c_str());
 		ialg->second.second->fChain->Write();

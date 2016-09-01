@@ -75,7 +75,8 @@ void   draw_graph_residual(TPad* pad,TMultiGraph* mg,
 			   float ymin=-1.,
 			   float ymax=-1.,
 			   int fullfit=-1,
-         bool tdr=false);
+               bool tdr=false,
+               bool interpolate=false);
 
 TH1F*  set_axis_range(TMultiGraph* mg, 
 		       float xmin=-1., float xmax=-1.,
@@ -152,6 +153,7 @@ int main(int argc,char** argv)
   float          yresmax   = cl.getValue<float>  ("yresmax",               -1);
   bool           resmcdata = cl.getValue<bool>   ("resmcdata",          false);
   vector<int>    defmcdata = cl.getVector<int>   ("defmcdata",             "");
+  bool           interpolate=cl.getValue<bool>   ("interpolate",        false);
 
   float          xmin      = cl.getValue<float>  ("xmin",                -1.0);
   float          xmax      = cl.getValue<float>  ("xmax",                -1.0);
@@ -161,7 +163,7 @@ int main(int argc,char** argv)
   bool           doFlavor  = cl.getValue<bool>   ("doFlavor",           false);
   bool           override  = cl.getValue<bool>   ("override",           false);
   bool           removeFit = cl.getValue<bool>   ("removeFit",          false);
-  bool           useSpline = cl.getValue<bool>   ("useSpline",          false);
+  bool           drawSpline= cl.getValue<bool>   ("drawSpline",         false);
 
 
   if (!cl.check()) return 0;
@@ -176,7 +178,7 @@ int main(int argc,char** argv)
     return 0;
   }
 
-  if (resmcdata && defmcdata.size()!=2) {
+  if (resmcdata && defmcdata.size()!=2 && !interpolate) {
     cout<<"If using residual for MC to data comparison you MUST provide"<<endl
 	<<"in defmcdata: 1) number of graph with MC (+fit) 2) number of data graph"<<endl;
     return 0;
@@ -281,7 +283,13 @@ int main(int argc,char** argv)
       string alg=algs[ialg];
       
       TDirectory* dir =(TDirectory*)file->Get(alg.c_str());
-      if (0==dir) { cout<<"No dir "<<algs[ialg]<<" found"<<endl; return 0; }
+      if (0==dir && override) {
+        continue;
+      }
+      else if(0==dir) {
+        cout<<"No dir "<<algs[ialg]<<" found"<<endl;
+        return 0;
+      }
 
       /// LOOP OVER VARIABLES
       for (unsigned int ivar=0;ivar<variables.size();ivar++) {
@@ -365,12 +373,12 @@ int main(int argc,char** argv)
 
       if(!leg->GetHeader() && ivar==0)
         leg->SetHeader(header);
-      if(!leg2->GetHeader() && ivar==1)
+      if(leg2 && !leg2->GetHeader() && ivar==1)
         leg2->SetHeader(header);
 
       if(ivar==0)
         leg->AddEntry(g,label.c_str(),"lp");
-      else
+      else if(leg2)
         leg2->AddEntry(g," ","lp");
     }
     else if(doFlavor && (ivar==0||ivar==variables.size()-1))
@@ -484,15 +492,15 @@ int main(int argc,char** argv)
       frameRatio->GetXaxis()->SetLimits(xmin,xmax);
       frameRatio->GetXaxis()->SetMoreLogLabels(logx);
       frameRatio->GetXaxis()->SetNoExponent(logx);
-      int ratioMin = 0;
-      int ratioMax = 2;
-      frameRatio->GetYaxis()->SetRangeUser(-ratioMin,ratioMax);
-      set_axis_titles(frameRatio,quantity,-ratioMin,ratioMax,xtitle,restitle,refpt,tdr);
+      float ratioMin = 0.9;
+      float ratioMax = 1.1;
+      frameRatio->GetYaxis()->SetRangeUser(ratioMin,ratioMax);
+      set_axis_titles(frameRatio,quantity,ratioMin,ratioMax,xtitle,restitle,refpt,tdr);
       frameRatio->GetYaxis()->SetTitleSize(0.049);
       
       if(residual>=0) {
         c = tdrDiCanvas(mg->GetName(),frame,frameRatio,14,11);
-        frameRatio->GetYaxis()->SetRangeUser(-ratioMin,ratioMax);
+        frameRatio->GetYaxis()->SetRangeUser(ratioMin,ratioMax);
         c->GetPad(1)->SetLogx(logx);
         c->GetPad(1)->SetLogy(logy);
         c->GetPad(2)->SetLogx(logx);
@@ -547,7 +555,7 @@ int main(int argc,char** argv)
               continue;
           }
         }
-        if(useSpline) {
+        if(drawSpline) {
           spline = new TSpline3(Form("%s_spline",tmp->GetName()),tmp);
           spline->SetLineColor(tmp->GetLineColor());
           //spline->SetLineWidth(tmp->GetLineWidth());
@@ -575,7 +583,7 @@ int main(int argc,char** argv)
             leg->AddEntry(bounds,"qg","f");
         }
         else {
-          if(useSpline) {
+          if(drawSpline) {
             spline->Draw("same");
           }
           tdrDraw(tmp,"P",tmp->GetMarkerStyle(),tmp->GetMarkerColor(),
@@ -589,7 +597,7 @@ int main(int argc,char** argv)
         draw_zline(frameRatio,xmin,xmax,1.0);
         draw_graph_residual(c,mg,residual,
                             resmcdata,defmcdata,yresmax,restitle,restitlesize,
-                            xmin,xmax,ymin,ymax,fullfit,tdr);
+                            xmin,xmax,ymin,ymax,fullfit,tdr,interpolate);
       }
 
       c->cd(1);
@@ -601,7 +609,7 @@ int main(int argc,char** argv)
         gPad->Modified(); gPad->Update(); // make sure it's (re)drawn
       }
 
-      if(override && drawlegend) {
+      if(override && drawlegend && leg2) {
         leg2->SetLineColor(0);
         leg2->SetFillColor(0);
         leg2->SetBorderSize(0);
@@ -642,7 +650,7 @@ int main(int argc,char** argv)
       draw_extrapolation(mg,fullfit,xmin,xmax);
       draw_graph_residual((TPad*)gPad,mg,residual,
                           resmcdata,defmcdata,yresmax,restitle,restitlesize,
-                          xmin,xmax,ymin,ymax,fullfit,tdr);
+                          xmin,xmax,ymin,ymax,fullfit,tdr,interpolate);
 
       //leg->SetLineColor(10);
       leg->SetLineColor(0);
@@ -691,7 +699,7 @@ int main(int argc,char** argv)
       draw_extrapolation(mgind,fullfit,xmin,xmax);
       draw_graph_residual((TPad*)gPad,mgind,residual,
 			  resmcdata,defmcdata,yresmax,restitle,restitlesize,
-			  xmin,xmax,ymin,ymax,fullfit,tdr);
+                          xmin,xmax,ymin,ymax,fullfit,tdr,interpolate);
       
       if (drawrange) draw_range(ranges[i],residual);
       if (tdrautobins) tdrlabels.push_back(ranges[i]);
@@ -891,7 +899,7 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
 			 const float yresmax, const string& restitle,
 			 const float restitlesize,
 			 float xmin,float xmax,float ymin,float ymax,
-			 int fullfit, bool tdr)
+             int fullfit, bool tdr, bool interpolate)
 {
   if (errMode<0) return;
   else if (errMode>5){
@@ -919,13 +927,16 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
   for (unsigned i=0;i<vf.size()&&nofits;i++) {
     if (0!=vf[i]) nofits = false;
   }
-  if (nofits) {
+  if(nofits && interpolate) {
+     cout<<"draw_graph_residual() did not find ANY fits, but using TSpline3 interpolation instead"<<endl;
+  }
+  else if (nofits) {
     cout<<"draw_graph_residual() did not find ANY fits..., skipping"<<endl;
     return;
   }
 
   if (resmcdata) {
-
+    if(!interpolate) {
     if (defmcdata.size()!=2) {
       cout<<"DAMN: resmcdata==1, but defmcdata.size()!=2 -> skipping!"<<endl;return;
     }
@@ -952,6 +963,21 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
     for (unsigned i=defmcdata[1]+1;i<vg.size();i++) vf.push_back(mcfit);
 
     assert(vg.size()==vf.size());
+    }
+    else {
+      if (vg.size()<(unsigned)*std::max_element(defmcdata.begin(),defmcdata.end())) {
+        cout<<"DAMN: defmcdata contains graphs which DO NOT EXIST in this multigraph!"<<endl;
+        return;
+      }
+      if (*std::min_element(defmcdata.begin(),defmcdata.end())<-1) {
+        cout<<"DAMN: defmcdata contains graphs which DO NOT EXIST in this multigraph or do not indicate data!"<<endl;
+        return;
+      }
+      vf.clear();
+      TF1* mcfit(0);
+      for (unsigned i=0;i<vg.size();i++) vf.push_back(mcfit);
+      assert(vg.size()==vf.size());
+    }
   }
 
   
@@ -963,7 +989,7 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
   //vector<TGraphErrors*> vrGraph;
 
   for (unsigned i(0);i<vg.size();i++){
-    
+    if (defmcdata[i] == -1) continue;
     if(!tdr) {
       //divide this pad
       if (0==i) pad->Divide(1,2,0.01,0.0);
@@ -1004,11 +1030,15 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
       
       double ffxmin(0.0),ffxmax(0.0);
 
-      if (0==vf[i]) continue;
-      vf[i]->GetRange(ffxmin,ffxmax);
+      if (0==vf[i] && !interpolate) continue;
+      else if(vf[i] && !interpolate) vf[i]->GetRange(ffxmin,ffxmax);
+      else {
+         ffxmin = vg[i]->GetX()[0];
+         ffxmax = vg[i]->GetX()[vg[i]->GetN()-1];
+      }
       if (x<ffxmin || x>ffxmax) continue;
 
-      double fy = (0==vf[i]) ? 0.0 : vf[i]->Eval(x);
+      double fy = (0==vf[i]) ? (interpolate) ? vg[defmcdata[i]]->Eval(x,0,"s") :  0.0 : vf[i]->Eval(x);
 
       double resy(0.0),resey(0.0);
 
@@ -1041,8 +1071,9 @@ void draw_graph_residual(TPad* pad,TMultiGraph* mg,
     if (errMode==3 || errMode==4 || errMode==5) rGraph->SetMarkerSize(.75); else rGraph->SetMarkerSize(1.);
     if (0!=vf[i]) rGraph->SetMarkerColor(vf[i]->GetLineColor());
     if (0!=vf[i]) rGraph->SetLineColor(vf[i]->GetLineColor());
-    if (resmcdata)  rGraph->SetMarkerColor(vg[defmcdata[1]]->GetLineColor());
-    if (resmcdata)  rGraph->SetLineColor(vg[defmcdata[1]]->GetLineColor());
+    if (resmcdata)  rGraph->SetMarkerColor(vg[defmcdata[i]]->GetMarkerColor());
+    if (resmcdata)  rGraph->SetMarkerStyle(vg[defmcdata[i]]->GetMarkerStyle());
+    if (resmcdata)  rGraph->SetLineColor(vg[defmcdata[i]]->GetLineColor());
 
     rGraph->SetLineWidth(1);
       
