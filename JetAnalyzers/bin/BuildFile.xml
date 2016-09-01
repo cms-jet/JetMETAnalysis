@@ -7,7 +7,7 @@
 <use   name="rootspectrum"/>
 <use   name="rootgraphics"/>
 <use   name="root"/>
-<!--<lib   name="Delphes"/>-->
+<!--<use   name="Delphes"/>-->
 <bin   name="jet_response_analyzer_x"          file="jet_response_analyzer_x.cc" />
 <bin   name="jet_mass_analyzer_x"              file="jet_mass_analyzer_x.cc" />
 <bin   name="jet_response_fitter_x"            file="jet_response_fitter_x.cc" />
@@ -38,8 +38,8 @@
 <bin   name="jet_synchtest_x"                  file="jet_synchtest_x.cc" />
 <bin   name="jet_synchfit_x"                   file="jet_synchfit_x.cc" />
 <bin   name="jet_synchplot_x"                  file="jet_synchplot_x.cc" />
-<!--<bin   name="DelphesNtupleToJRANtuple_x"       file="DelphesNtupleToJRANtuple_x.cc" />-->
-<!--<bin   name="JRAtoPUNtuple_x"                  file="JRAtoPUNtuple_x.cc" />-->
 <bin   name="jet_cone_size_scans_x"            file="jet_cone_size_scans_x.cc" />
 <bin   name="jet_draw_jer_plots_x"             file="jet_draw_jer_plots_x.cc" />
 <bin   name="jet_draw_jer_plots_minimal_x"     file="jet_draw_jer_plots_minimal_x.cc" />
+<!--<bin   name="DelphesNtupleToJRANtuple_x"       file="DelphesNtupleToJRANtuple_x.cc" />-->
+<!--<bin   name="JRAtoPUNtuple_x"                  file="JRAtoPUNtuple_x.cc" />-->
