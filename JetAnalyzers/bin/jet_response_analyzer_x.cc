@@ -158,6 +158,7 @@ int main(int argc,char**argv)
   bool           dorefpt           = cl.getValue<bool>   ("dorefpt",                  true);
   bool           domu              = cl.getValue<bool>   ("domu",                    false);
   bool           dorho             = cl.getValue<bool>   ("dorho",                   false);
+  bool           NpuNotMu          = cl.getValue<bool>   ("NpuNotMu",                false);
   int            nbinsrelrsp       = cl.getValue<int>    ("nbinsrelrsp",                50);
   float          relrspmin         = cl.getValue<float>  ("relrspmin",                 0.0);
   float          relrspmax         = cl.getValue<float>  ("relrspmax",                 2.0);
@@ -174,13 +175,13 @@ int main(int argc,char**argv)
   vector<string> algs              = cl.getVector<string>("algs",                       "");
   vector<string> presel            = cl.getVector<string>("presel",                     "");
   int            itlow             = cl.getValue<int>    ("itlow",                       0);
-  int            ithigh            = cl.getValue<int>    ("ithigh",                   1000);
+  int            ithigh            = cl.getValue<int>    ("ithigh",                 100000);
   int            earlyootlow       = cl.getValue<int>    ("earlyootlow",                 0);
-  int            earlyoothigh      = cl.getValue<int>    ("earlyoothigh",             1000);
+  int            earlyoothigh      = cl.getValue<int>    ("earlyoothigh",           100000);
   int            lateootlow        = cl.getValue<int>    ("lateootlow",                  0);
-  int            lateoothigh       = cl.getValue<int>    ("lateoothigh",              1000);
+  int            lateoothigh       = cl.getValue<int>    ("lateoothigh",            100000);
   int            totalootlow       = cl.getValue<int>    ("totalootlow",                 0);
-  int            totaloothigh      = cl.getValue<int>    ("totaloothigh",             1000);
+  int            totaloothigh      = cl.getValue<int>    ("totaloothigh",           100000);
   TString        weightfile        = cl.getValue<TString>("weightfile",                 "");
   TString        MCPUReWeighting   = cl.getValue<TString>("MCPUReWeighting",            "");
   TString        MCPUHistoName     = cl.getValue<TString>("MCPUHistoName",        "pileup");
@@ -1316,7 +1317,7 @@ int main(int argc,char**argv)
         const Long64_t ientry = el->GetEntry(ievt);
         tree->GetEntry(ientry);
 
-        float mu = JRAEvt->tnpus->at(itInd);
+        float mu = (NpuNotMu) ? JRAEvt->npus->at(itInd) : JRAEvt->tnpus->at(itInd);
 
         if (nrefmax>0) JRAEvt->nref = std::min((int)JRAEvt->nref,nrefmax);
         for (unsigned char iref=0;iref<JRAEvt->nref;iref++) {
