@@ -336,7 +336,7 @@ void L2Creator::loopOverEtaBins() {
                             vector<double> merge_points = {xmin,xmax};
                             vabscor_eta_spline.push_back(new PiecewiseSpline(string("spline_")+gabscor->GetName(),gabscor,merge_points,l2pffit.Contains("spline5",TString::kIgnoreCase),!l2pffit.Contains("akima",TString::kIgnoreCase)));
                         }
-                        else if(l2pffit.EqualTo("spline3",TString::kIgnoreCase) || l2pffit.EqualTo("spline5",TString::kIgnoreCase)) {
+                        else if(l2pffit.EqualTo("spline3",TString::kIgnoreCase) || l2pffit.EqualTo("spline5",TString::kIgnoreCase) || l2pffit.EqualTo("splineAkima",TString::kIgnoreCase)) {
                             xmin = gabscor->GetX()[0];
                             vabscor_eta_spline.push_back(new PiecewiseSpline(string("spline_")+gabscor->GetName(),gabscor,{},l2pffit.Contains("spline5",TString::kIgnoreCase),!l2pffit.Contains("akima",TString::kIgnoreCase)));
                         }
@@ -502,6 +502,7 @@ void L2Creator::loopOverEtaBins() {
             gErrorIgnoreLevel = kBreak;
             perform_smart_fit(gabscor,fabscor,maxFitIter);
             gErrorIgnoreLevel = origIgnoreLevel;
+            
             if (alg.find("pf")!=string::npos) {
                 if (alg.find("HLT")!=string::npos) {
                     ((TF1*)gabscor->GetListOfFunctions()->First())->FixParameter(7,fabscor->Eval(fabscor->GetParameter(6)));
@@ -610,14 +611,16 @@ void L2Creator::makeCanvas(string makeCanvasVariable) {
         //
         // Draw the splines for each graph, if they exist
         //
-        PiecewiseSpline* spline = vabscor_eta_spline[igraph];
-        for(int isection=0; isection<spline->getNSections(); isection++) {
-            pair<double,double> bounds = spline->getSectionBounds(isection);
-            TF1* spline_func = (TF1*)spline->setParameters(isection)->Clone("tmp_func");
-            spline_func->SetRange(bounds.first,bounds.second);
-            spline_func->SetLineColor(igraph%nperpad+1);
-            spline_func->SetLineStyle(kDotted);
-            spline_func->Draw("same");
+        if(vabscor_eta_spline.size()>0) {
+            PiecewiseSpline* spline = vabscor_eta_spline[igraph];
+            for(int isection=0; isection<spline->getNSections(); isection++) {
+                pair<double,double> bounds = spline->getSectionBounds(isection);
+                TF1* spline_func = (TF1*)spline->setParameters(isection)->Clone("tmp_func");
+                spline_func->SetRange(bounds.first,bounds.second);
+                spline_func->SetLineColor(igraph%nperpad+1);
+                spline_func->SetLineStyle(kDotted);
+                spline_func->Draw("same");
+            }
         }
 
         //
@@ -1005,75 +1008,81 @@ double L2Creator::findNext(double xvalue,TGraph* g, bool highest, bool debug) {
 //______________________________________________________________________________
 void L2Creator::perform_smart_fit(TGraphErrors * gabscor, TF1 * fabscor, int maxFitIter) {
     cout << "\tFitting on range [" << fabscor->GetXmin() << "," << fabscor->GetXmax() << "] ... " << endl;
-  int fitIter = 0, bestIter = 0;
-  double bestRChi2 = 0.0;
-  vector<TFitResultPtr> fitResultPtrs;
-  do {         
-      //
-      // do the fit, get the results and the parameters of the fitted function
-      //
-      fitResultPtrs.push_back(gabscor->Fit(fabscor,"RQS"));
-      //vector<double> auxPars = fitResPtr.Get()->Parameters();
-  
-      //
-      // compute the reduced chi2 of this fit and if it is the best fit so far
-      // then save the parameters
-      //
-      double rchi2 = fitResultPtrs.back().Get()->Chi2()/ fitResultPtrs.back().Get()->Ndf();
-      if (fitResultPtrs.back().Get()->Ndf() == 0) rchi2 = 0;
-      if (rchi2 > 0 && (rchi2<bestRChi2 || bestRChi2==0)){
-        bestIter = fitIter;
-        bestRChi2 = rchi2;
-      }
-  
-      //
-      // increment the counter
-      //
-      fitIter++;
-  }while(( bestRChi2 > 2 || bestRChi2 == 0 ) && fitIter < maxFitIter);
-   
-  //
-  // set the best parameters and chi2 to the fit function
-  //
-  TF1 * ffh = gabscor->GetFunction("fit");
-  for (unsigned int np=0;np < fitResultPtrs.size() ; np++){
-      ffh->SetParameters(&fitResultPtrs[bestIter].Get()->Parameters()[0]);
-      fabscor->SetParameters(&fitResultPtrs[bestIter].Get()->Parameters()[0]);
-  }
-  ffh->SetChisquare(fitResultPtrs[bestIter].Get()->Chi2());
-  fabscor->SetChisquare(fitResultPtrs[bestIter].Get()->Chi2());
+    int fitIter = 0, bestIter = 0;
+    double bestRChi2 = 0.0;
+    vector<TFitResultPtr> fitResultPtrs;
+    do {         
+        //
+        // do the fit, get the results and the parameters of the fitted function
+        //
+        fitResultPtrs.push_back(gabscor->Fit(fabscor,"RQS"));
+        //vector<double> auxPars = fitResPtr.Get()->Parameters();
+
+        //
+        // compute the reduced chi2 of this fit and if it is the best fit so far
+        // then save the parameters
+        //
+        double rchi2 = fitResultPtrs.back().Get()->Chi2()/ fitResultPtrs.back().Get()->Ndf();
+        if (fitResultPtrs.back().Get()->Ndf() == 0) rchi2 = 0;
+        if (rchi2 > 0 && (rchi2<bestRChi2 || bestRChi2==0)){
+            bestIter = fitIter;
+            bestRChi2 = rchi2;
+        }
+
+        //
+        // increment the counter
+        //
+        fitIter++;
+    }while(( bestRChi2 > 2 || bestRChi2 == 0 ) && fitIter < maxFitIter);
+
+    //
+    // set the best parameters and chi2 to the fit function
+    //
+    TF1 * ffh = gabscor->GetFunction("fit");
+    for (unsigned int np=0;np < fitResultPtrs.size() ; np++){
+        ffh->SetParameters(&fitResultPtrs[bestIter].Get()->Parameters()[0]);
+        fabscor->SetParameters(&fitResultPtrs[bestIter].Get()->Parameters()[0]);
+    }
+    ffh->SetChisquare(fitResultPtrs[bestIter].Get()->Chi2());
+    fabscor->SetChisquare(fitResultPtrs[bestIter].Get()->Chi2());
+
+    //
+    // Skip the warnings if using a pure spline and the fit was merely structural
+    //
+    if(l2pffit.EqualTo("spline3",TString::kIgnoreCase) || l2pffit.EqualTo("spline5",TString::kIgnoreCase) || l2pffit.EqualTo("splineAkima",TString::kIgnoreCase))
+        return;        
       
-  //
-  // warn if the fit diverges from graph at low pt
-  //
-  //if (fabscor->Integral(0,10) > 60)
-  //if(abs(gabscor->GetY()[0]-fabscor->Eval(gabscor->GetX()[0]))>0.05)
-  //   cout << "\t***ERROR***, fit for histo " << gabscor->GetName() << " diverges at low pt" << endl;
+    //
+    // warn if the fit diverges from graph at low pt
+    //
+    //if (fabscor->Integral(0,10) > 60)
+    //if(abs(gabscor->GetY()[0]-fabscor->Eval(gabscor->GetX()[0]))>0.05)
+    //   cout << "\t***ERROR***, fit for histo " << gabscor->GetName() << " diverges at low pt" << endl;
+    
+    //   
+    // check for failed fits
+    // a chi2 of zero is symptomatic of a failed fit.
+    //
+    if (bestRChi2 < 0.001) {
+        cout<<"\t***ERROR***, FIT HAS FAILED for histo "<<gabscor->GetName()
+            <<" which has a reduced chi2="<<bestRChi2
+            <<" after "<<fitIter<<" iterations. "<<endl;
+    }
   
-  //   
-  // check for failed fits
-  // a chi2 of zero is symptomatic of a failed fit.
-  //
-  if (bestRChi2 < 0.001) {
-    cout<<"\t***ERROR***, FIT HAS FAILED for histo "<<gabscor->GetName()
-      <<" which has a reduced chi2="<<bestRChi2
-      <<" after "<<fitIter<<" iterations. "<<endl;
-  }
-  
-  //
-  // check for large reduced chi2's
-  // above 10 is a plain error; between 5 and 10 is a warning
-  //
-  if (bestRChi2 > 5){
-      if (bestRChi2 > 10)
-        cout<<"\t***ERROR***,";
-      else
-        cout<<"\tWARNING,";
-  
-      cout<<" fit for histo "<<gabscor->GetName()
-        <<" has a reduced chi2="<<bestRChi2
-        <<" after "<<fitIter<<" iterations"<<endl;
-  }
+    //
+    // check for large reduced chi2's
+    // above 10 is a plain error; between 5 and 10 is a warning
+    //
+    if (bestRChi2 > 5){
+        if (bestRChi2 > 10)
+            cout<<"\t***ERROR***,";
+        else
+            cout<<"\tWARNING,";
+    
+        cout<<" fit for histo "<<gabscor->GetName()
+            <<" has a reduced chi2="<<bestRChi2
+            <<" after "<<fitIter<<" iterations"<<endl;
+    }
 }
 
 //______________________________________________________________________________
