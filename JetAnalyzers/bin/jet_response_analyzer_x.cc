@@ -1319,6 +1319,11 @@ int main(int argc,char**argv)
 
         float mu = (NpuNotMu) ? JRAEvt->npus->at(itInd) : JRAEvt->tnpus->at(itInd);
 
+        if(JRAEvt->refdrjt->size()!=(unsigned int)JRAEvt->nref) {
+          if(verbose) cout << "WARNING::The number of reference jets doesn't match the number of stored values!" << endl;
+          continue;
+        }
+
         if (nrefmax>0) JRAEvt->nref = std::min((int)JRAEvt->nref,nrefmax);
         for (unsigned char iref=0;iref<JRAEvt->nref;iref++) {
           if(ievt%10000==0 && iref<JRAEvt->nref-1)
