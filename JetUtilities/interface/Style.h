@@ -244,10 +244,18 @@ CMS_lumi( TPad* pad, int iPeriod, int iPosX )
   else if ( iPeriod==12 )
     {
       lumiText += "8 TeV";
-    }  
+    }
+  else if ( iPeriod==13 )
+    {
+      lumiText += "7 TeV + 8 TeV";
+    }
   else if ( iPeriod==14 )
     {
       lumiText += "13 TeV";
+    }
+  else if ( iPeriod==15 )
+    {
+      lumiText += "14 TeV";
     }
    
   cout << lumiText << endl;

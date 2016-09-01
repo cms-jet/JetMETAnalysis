@@ -46,89 +46,19 @@ void getPtBinning(double ptbins[],int nbins){
 
 }//getPtBinning
 
-
-
-void cmsPrelim(double intLUMI=0) {
-  const float LUMINOSITY = intLUMI;
-  TLatex latex;
-  latex.SetNDC();
-  latex.SetTextSize(0.045);
-
-  latex.SetTextAlign(31); // align right
-  latex.DrawLatex(0.93,0.96,"#sqrt{s} = 8 TeV");
-  if (LUMINOSITY > 0.) {
-    latex.SetTextAlign(31); // align right
-    //latex.DrawLatex(0.82,0.7,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //Original
-    latex.DrawLatex(0.65,0.85,Form("#int #font[12]{L} dt = %d pb^{-1}", (int) LUMINOSITY)); //29/07/2011
-  }
-  latex.SetTextAlign(11); // align left
-  latex.DrawLatex(0.16,0.96,"CMS Simulation");
-
-  latex.SetTextSize(0.035);
-  latex.DrawLatex(0.424,0.879,"QCD Monte Carlo");
-  latex.DrawLatex(0.397,0.835,"Anti-k_{T} R=0.5, PF+CHS");
-  latex.SetTextSize(0.035);
-  latex.DrawLatex(0.493,0.793,"|#eta| < 1.3");
-}
-
-void setTreeBranches(TTree * t, JRAEvent * ev) {
-
-  t->SetBranchAddress("npus", &ev->npus);
-  t->SetBranchAddress("tnpus", &ev->tnpus);
-  t->SetBranchAddress("bxns", &ev->bxns);
-  t->SetBranchAddress("sumpt_lowpt", &ev->sumpt_lowpt);
-  t->SetBranchAddress("sumpt_highpt", &ev->sumpt_highpt);
-  t->SetBranchAddress("ntrks_lowpt", &ev->ntrks_lowpt);
-  t->SetBranchAddress("ntrks_highpt", &ev->ntrks_highpt);
-  t->SetBranchAddress("rho", &ev->rho);
-  t->SetBranchAddress("rho50", &ev->rho50);
-  t->SetBranchAddress("rho_hlt", &ev->rho_hlt);
-  t->SetBranchAddress("pthat", &ev->pthat);
-  t->SetBranchAddress("weight", &ev->weight);
-  t->SetBranchAddress("npv", &ev->npv);
-  t->SetBranchAddress("evt", &ev->evt);
-  t->SetBranchAddress("run", &ev->run);
-  t->SetBranchAddress("nref", &ev->nref);
-  t->SetBranchAddress("refrank", &ev->refrank);
-  t->SetBranchAddress("refpdgid", &ev->refpdgid);
-  t->SetBranchAddress("refe", &ev->refe);
-  t->SetBranchAddress("refpt", &ev->refpt);
-  t->SetBranchAddress("refeta", &ev->refeta);
-  t->SetBranchAddress("refphi", &ev->refphi);
-  t->SetBranchAddress("refy", &ev->refy);
-  t->SetBranchAddress("refdrjt", &ev->refdrjt);
-  t->SetBranchAddress("refarea", &ev->refarea);
-  t->SetBranchAddress("jte", &ev->jte);
-  t->SetBranchAddress("jtpt", &ev->jtpt);
-  t->SetBranchAddress("jteta", &ev->jteta);
-  t->SetBranchAddress("jtphi", &ev->jtphi);
-  t->SetBranchAddress("jty", &ev->jty);
-  t->SetBranchAddress("jtjec", &ev->jtjec);
-  t->SetBranchAddress("jtarea", &ev->jtarea);
-  t->SetBranchAddress("jtchf", &ev->jtchf);
-  t->SetBranchAddress("jtnhf", &ev->jtnhf);
-  t->SetBranchAddress("jtnef", &ev->jtnef);
-  t->SetBranchAddress("jtcef", &ev->jtcef);
-  t->SetBranchAddress("jtmuf", &ev->jtmuf);
-  t->SetBranchAddress("jthfhf", &ev->jthfhf);
-  t->SetBranchAddress("jthfef", &ev->jthfef);
-
-}// setTreeBranches;
-
-
-void plotProfiles(vector<TProfile*> profs, TString yAxisTitle, TProfile* pNoPU){
+void plotProfiles(vector<TProfile*> profs, TString yAxisTitle, TProfile* pNoPU, TString suffix){
 
   // Create the canvas
-  TString cn = Form("Can%i",canvasNumber);
+   TString cn = Form("Can%i_%s",canvasNumber,suffix.Data());
   //TCanvas * c = new TCanvas(cn,cn,600,600);
   TH1D* frame = new TH1D();
   frame->GetXaxis()->SetLimits(20,2000);
-  frame->GetXaxis()->SetTitle("p_{T}^{GEN} [GeV]");
+  frame->GetXaxis()->SetTitle("p_{T}^{GEN} (GeV)");
   frame->GetXaxis()->SetMoreLogLabels();
   frame->GetXaxis()->SetNoExponent();
-  frame->GetYaxis()->SetRangeUser(0.8,1.7);
+  frame->GetYaxis()->SetRangeUser(0.7,2.0);
   frame->GetYaxis()->SetTitle(yAxisTitle);
-  TCanvas * c = tdrCanvas(cn,frame,2,11,true);
+  TCanvas * c = tdrCanvas(cn,frame,15,11,true);
 
   //Format the noPU profile
   if(pNoPU) {
@@ -140,9 +70,15 @@ void plotProfiles(vector<TProfile*> profs, TString yAxisTitle, TProfile* pNoPU){
 
   //Plot the profiles
   //TLegend * leg = new TLegend(0.5,0.437,0.875,0.762);
-  TLegend * leg = tdrLeg(0.345,0.427,0.825,0.91);
-  leg->AddEntry((TObject*)0,"QCD Monte Carlo","");
-  leg->AddEntry((TObject*)0,"Anti-k_{T} R=0.5, PF+CHS","");
+  //TLegend * leg = tdrLeg(0.345,0.427,0.825,0.91);
+  TLegend * leg = tdrLeg(0.455,0.427,0.885,0.91);
+  leg->AddEntry((TObject*)0,"TTbar RelVal","");
+  if(suffix.Contains("puppi"))
+     leg->AddEntry((TObject*)0,"Anti-k_{T} R=0.4, PF+PUPPI","");
+  else if(suffix.Contains("chs"))
+     leg->AddEntry((TObject*)0,"Anti-k_{T} R=0.4, PF+CHS","");
+  else
+     leg->AddEntry((TObject*)0,"Anti-k_{T} R=0.4, PF","");
   leg->AddEntry((TObject*)0,"|#eta| < 1.3","");
   if(pNoPU) leg->AddEntry(pNoPU,pNoPU->GetTitle(),"lpe");
   for (int p = 0 ; p < (int) profs.size();p++){
@@ -173,7 +109,6 @@ void plotProfiles(vector<TProfile*> profs, TString yAxisTitle, TProfile* pNoPU){
   leg->Draw("same");
   
   // Plot the "CMS preliminary 8TeV", etc. 
-  //cmsPrelim();
 
   c->SetLogx();
   c->Print(cn+".eps");
@@ -200,8 +135,7 @@ void fillProfiles(TFile * file, TString dir, const vector<int> & npu, vector<TPr
 
   //Get the tree and fill the profiles
   TTree * t = (TTree *) gDirectory->Get("t");
-  JRANtuple * ev = new JRANtuple();
-  setTreeBranches(t,ev);
+  JRAEvent * ev = new JRAEvent(t);
   
   // Fill the Tree, looping over events
   unsigned int nev = t->GetEntries();
@@ -217,10 +151,11 @@ void fillProfiles(TFile * file, TString dir, const vector<int> & npu, vector<TPr
 
       // Loop over jets in the event
       for (int j=0;j<ev->nref;j++){
-       if (ev->refpt[j] >10 && ev->refdrjt[j] < 0.25 && fabs(ev->jteta[j]) < 1.3 
+         if (ev->refpt->at(j)>10 && ev->refdrjt->at(j)<0.2 && fabs(ev->jteta->at(j))<1.3 
 //           && ev->npv >= npu[n] && ev->npv < npu[n+1])
-           && ev->tnpus->at(iIT) >= npu[n] && ev->tnpus->at(iIT) < npu[n+1])
-         profs[n]->Fill(ev->refpt[j], ev->jtpt[j]/ev->refpt[j]);
+//           && ev->tnpus->at(iIT) >= npu[n] && ev->tnpus->at(iIT) < npu[n+1])
+           && ev->npus->at(iIT) >= npu[n] && ev->npus->at(iIT) < npu[n+1])
+            profs[n]->Fill(ev->refpt->at(j), ev->jtpt->at(j)/ev->refpt->at(j));
       }// for jets
     }// for entries
 
@@ -229,21 +164,27 @@ void fillProfiles(TFile * file, TString dir, const vector<int> & npu, vector<TPr
   
 }//fillProfiles
 
- 
-void simpleResponsePlots(){
+void simpleResponsePlots(TString algo = "ak4pf", TString PU = ""){
 
+  canvasNumber = 0;
   setTDRStyle();
+  
+  TString basepath = "/uscms_data/d2/aperloff/YOURWORKINGAREA/JEC/gitty/CMSSW_8_1_0_pre8/src/JetMETAnalysis/JetAnalyzers/test/JEC/81X/";
 
-  TFile *file0 = TFile::Open("/fdata/hepx/store/user/aperloff/JRA_outfiles_53X_20140526_pbs/JRA/JRA.root"); // ak5pfchs RD
-  TFile *file1 = TFile::Open("/fdata/hepx/store/user/aperloff/JRA_outfiles_53X_20140531_pbs/JRA/JRA.root"); //ak5pfchsl1 RD
-  TFile *file2 = TFile::Open("/fdata/hepx/store/user/aperloff/JRA_outfiles_53X_20140526_NoPileup_pbs/JRA/JRA.root"); // ak5pfchs NoPU RD
-  TFile *file3 = TFile::Open("/fdata/hepx/store/user/aperloff/JRA_outfiles_53X_20140531_pbs/JRA/JRA_jec.root"); // ak5pfchsl1l2l3 RD
-  TFile *file4 = TFile::Open("/fdata/hepx/store/user/aperloff/JRA_outfiles_53X_20140526_NoPileup_pbs/JRA/JRA_jec.root"); // ak5pfchsl2l3 NoPU RD
-  TFile *outFile = new TFile("outputA.root","RECREATE");
+  TFile *file0 = TFile::Open(basepath+"JRA_TTbar_PU"+PU+".root"); // ak5pfchs RD
+  TFile *file1 = TFile::Open(basepath+"JRA_TTbar_PU"+PU+"_jecl1.root"); //ak5pfchsl1 RD
+  TFile *file2 = TFile::Open(basepath+"JRA_TTbar_NoPU.root"); // ak5pfchs NoPU RD
+  TFile *file3 = TFile::Open(basepath+"JRA_TTbar_PU"+PU+"_jecl1l2l3.root"); // ak5pfchsl1l2l3 RD
+  TFile *file4 = TFile::Open(basepath+"JRA_TTbar_NoPU"+PU+"_jecl2l3.root"); // ak5pfchsl2l3 NoPU RD
+  TFile *outFile = new TFile("simpleResponsePlots_"+algo+".root","RECREATE");
 
   // Vector of npu
   vector<int> npu;
-  for (int n=0; n<41; n = n+10)  
+  pair<int,int> puBounds;
+  if(PU.Contains("200")) puBounds = make_pair(170,240);
+  else if(PU.Contains("140")) puBounds = make_pair(110,180);
+  else puBounds = make_pair(0,50);
+  for (int n=puBounds.first; n<puBounds.second; n+=10)  
     npu.push_back(n);
   vector<int> npuNoPU;
   //npuNoPU.push_back(1);
@@ -286,17 +227,17 @@ void simpleResponsePlots(){
     profsl2l3_NoPU.push_back(aux1);
   }//for
 
-  fillProfiles(file0, "/ak5pfchs", npu, profs);
-  fillProfiles(file1, "/ak5pfchsl1", npu, profsl1);
-  fillProfiles(file3, "/ak5pfchsl1l2l3", npu, profsl123);
-  fillProfiles(file2, "/ak5pfchs", npuNoPU, profs_NoPU);
-  fillProfiles(file4, "/ak5pfchsl2l3", npuNoPU, profsl2l3_NoPU);
+  fillProfiles(file0, "/"+algo, npu, profs);
+  fillProfiles(file1, "/"+algo+"l1", npu, profsl1);
+  fillProfiles(file3, "/"+algo+"l1l2l3", npu, profsl123);
+  fillProfiles(file2, "/"+algo, npuNoPU, profs_NoPU);
+  fillProfiles(file4, "/"+algo+"l2l3", npuNoPU, profsl2l3_NoPU);
   
   // Plot the profiles
   outFile->cd();
-  plotProfiles(profs,"Response",profs_NoPU[0]);
-  plotProfiles(profsl1,"Pileup-Corrected Response",profs_NoPU[0]);
-  plotProfiles(profsl123,"Corrected Response",profsl2l3_NoPU[0]);
+  plotProfiles(profs,"Response",profs_NoPU[0],algo);
+  plotProfiles(profsl1,"Pileup-Corrected Response",profs_NoPU[0],algo);
+  plotProfiles(profsl123,"Corrected Response",profsl2l3_NoPU[0],algo);
 
   //Close the file
   outFile->Write();
