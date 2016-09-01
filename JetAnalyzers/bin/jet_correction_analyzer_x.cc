@@ -114,6 +114,7 @@ int main(int argc,char**argv)
    string          path              = cl.getValue<string>       ("path");
    string          era               = cl.getValue<string>       ("era");
    TString         outputDir         = cl.getValue<TString>      ("outputDir",            "");
+   TString         suffix            = cl.getValue<TString>      ("suffix",               "");
    bool            useL1Cor          = cl.getValue<bool>         ("useL1Cor",          false);
    bool            useL2Cor          = cl.getValue<bool>         ("useL2Cor",          false);
    bool            useL3Cor          = cl.getValue<bool>         ("useL3Cor",          false);
@@ -201,7 +202,7 @@ int main(int argc,char**argv)
 
    if(!outputDir.IsNull() && !outputDir.EndsWith("/")) outputDir += "/";
    TFile *outf = TFile::Open(outputDir+"Closure_"+
-                             JetInfo::ListToString(algs,TString("_"))+".root",
+                             JetInfo::ListToString(algs,TString("_"))+suffix+".root",
                              "RECREATE");
 
    //
