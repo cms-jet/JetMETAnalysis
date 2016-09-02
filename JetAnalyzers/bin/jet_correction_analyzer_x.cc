@@ -12,6 +12,7 @@
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 #include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
 #include "JetMETAnalysis/JetUtilities/interface/JRAEvent.h"
+#include "JetMETAnalysis/JetUtilities/interface/ProgressBar.hh"
 
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
@@ -121,6 +122,8 @@ int main(int argc,char**argv)
    bool            useL2L3ResCor     = cl.getValue<bool>         ("useL2L3ResCor",     false);
    bool            useL5Cor          = cl.getValue<bool>         ("useL5Cor",          false);
    bool            doflavor          = cl.getValue<bool>         ("doflavor",          false);
+   bool            doTProfileMDF     = cl.getValue<bool>         ("doTProfileMDF",     false);
+   bool            reduceHistograms  = cl.getValue<bool>         ("reduceHistograms",   true);
    int             pdgid             = cl.getValue<int>          ("pdgid",                 0);
    vector<double>  drmax             = cl.getVector<double>      ("drmax",                "");
    double          ptmin             = cl.getValue<double>       ("ptmin",                 0);
@@ -171,14 +174,12 @@ int main(int argc,char**argv)
    const char pusources[3][10] = {"EOOT","IT","LOOT"};
    double vresp[NRespBins+1];
    double vcorr[NRespBins+1];
-   for(int i=0; i<=NRespBins; i++)
-   {
+   for(int i=0; i<=NRespBins; i++) {
       vresp[i] = (i*((RespHigh-RespLow)/(double)NRespBins));
       vcorr[i] = (i*((CorrHigh-CorrLow)/(double)NRespBins));
-   }//for(int i=0; i<=NRespBins; i++)
+   }
    double vrho[NRhoBins+1];
-   for(int i=0; i<=NRhoBins; i++)
-   {
+   for(int i=0; i<=NRhoBins; i++) {
       vrho[i] = (i*((RhoHigh-RhoLow)/(double)NRhoBins));
    }
 
@@ -187,8 +188,7 @@ int main(int argc,char**argv)
    //
    TFile *weightFile;
    TH1D *weightHist=0;
-   if(!weightfilename.IsNull())
-   {
+   if(!weightfilename.IsNull()) {
       weightFile = new TFile(weightfilename,"READ");
       if (!weightFile->IsOpen()) {cout<<"Can't open ff.root to get weights for ptgen"<<endl;}
       weightHist = (TH1D*)gDirectory->Get("we");
@@ -208,8 +208,7 @@ int main(int argc,char**argv)
    //
    // Loop over the algorithms
    //
-   for(unsigned int a=0; a<algs.size(); a++)
-   {
+   for(unsigned int a=0; a<algs.size(); a++) {
       JetInfo jetInfo(algs[a]);
 
       TFile *inf = new TFile(inputFilename);
@@ -221,44 +220,44 @@ int main(int argc,char**argv)
 
       vector<TH2F*> RelRspVsRefPt;
       TH2F *RelRspVsJetEta[NPtBins];
-      TH3F *RespVsEtaVsPt;
-      TH3F *ScaleVsEtaVsPt;
-      TProfile *RelRspVsSumPt;
+      TH3F *RespVsEtaVsPt(nullptr);
+      TH3F *ScaleVsEtaVsPt(nullptr);
+      TProfile *RelRspVsSumPt(nullptr);
       TH1F *SumPtDistributions[NPileup/2];
       TH1F *ResolutionVsEta[NPtBins];
-      TH1F *ResolutionVsPt;
-      TH2D *EtaVsPt;
-      TH1F *RefEtaDistribution;
-      TH1F *EtaDistribution;
-      TH1F *iEtaDistribution;
-      TH1F *EtaDistributionPU0;
+      TH1F *ResolutionVsPt(nullptr);
+      TH2D *EtaVsPt(nullptr);
+      TH1F *RefEtaDistribution(nullptr);
+      TH1F *EtaDistribution(nullptr);
+      TH1F *iEtaDistribution(nullptr);
+      TH1F *EtaDistributionPU0(nullptr);
       TH1F *EtaDistributionPU[10];
-      TH1F *ThetaDistribution;
-      TH1F *SolidAngleDist;
-      TH1F *HigherDist;
-      TH1F *MiddleDist;
-      TH1F *LowerDist;
+      TH1F *ThetaDistribution(nullptr);
+      TH1F *SolidAngleDist(nullptr);
+      TH1F *HigherDist(nullptr);
+      TH1F *MiddleDist(nullptr);
+      TH1F *LowerDist(nullptr);
       TH1F *RelContributions[NPtBins];
-      TProfile* rhoVsRhoHLT;
-      TProfile* npvVsRhoHLT;
-      TH1F *TPUDistribution;
+      TProfile *rhoVsRhoHLT(nullptr);
+      TProfile *npvVsRhoHLT(nullptr);
+      TH1F *TPUDistribution(nullptr);
       TProfile *DPtVsNPU[3];
       TProfile *DPtVsPtGen[3];
       TProfile *RespRatioVsPtGen[3];
       TProfile *ErrorForNPU[3];
       TProfile *ErrorForPtGen[3];
       TProfile *Error2ForPtGen[3];
-      TProfileMDF *RespVsPileup; //For pileup studies (fully implemented)
+      TProfileMDF *RespVsPileup(nullptr); //For pileup studies (fully implemented)
       vector<Double_t> coord;
-      TProfileMDF *RhoVsPileupVsEta;
+      TProfileMDF *RhoVsPileupVsEta(nullptr);
       vector<Double_t> coord2;
-      TProfile3D *RespVsRho; //For Mikko and Ricardo to create Calo and PF HLT L1 files
-      TProfile2D *OffVsRhoVsEta; //For Ricardo to create Calo and PF HLT L1 files
-      TProfile2D *RhoVsOffETVsEta;
-      TProfile2D *RhoVsOffITVsEta;
-      TProfile2D *RhoVsOffLTVsEta;
-      TProfile2D *RespVsEtaVsPtProfile;
-      TProfile *RespVsPtProfile;
+      TProfile3D *RespVsRho(nullptr); //For Mikko and Ricardo to create Calo and PF HLT L1 files
+      TProfile2D *OffVsRhoVsEta(nullptr); //For Ricardo to create Calo and PF HLT L1 files
+      TProfile2D *RhoVsOffETVsEta(nullptr);
+      TProfile2D *RhoVsOffITVsEta(nullptr);
+      TProfile2D *RhoVsOffLTVsEta(nullptr);
+      TProfile2D *RespVsEtaVsPtProfile(nullptr);
+      TProfile *RespVsPtProfile(nullptr);
 
       //
       // Get the corrections from the text files
@@ -338,55 +337,59 @@ int main(int argc,char**argv)
             RelRspVsRefPt.back()->Sumw2();
          }
       }
-      RespVsPtProfile = new TProfile("RespVsPtProfile","RespVsPtProfile",NPtBins,vpt);
-      RespVsPtProfile->Sumw2();
-      RespVsPtProfile->SetErrorOption("s");
-      HigherDist = new TH1F("HigherDist","HigherDist",1999,1,2000);
-      MiddleDist = new TH1F("MiddleDist","MiddleDist",1999,1,2000);
-      LowerDist = new TH1F("LowerDist","LowerDist",1999,1,2000);
-      ScaleVsEtaVsPt = new TH3F("ScaleVsEtaVsPt","ScaleVsEtaVsPt",NPtBins,vpt,NETA,veta,NRespBins,vcorr);
-      ScaleVsEtaVsPt->Sumw2();
       RespVsEtaVsPt = new TH3F("RespVsEtaVsPt","RespVsEtaVsPt",NPtBins,vpt,NETA,veta,NRespBins,vresp);
       RespVsEtaVsPt->Sumw2();
-      RespVsEtaVsPtProfile = new TProfile2D("RespVsEtaVsPtProfile","RespVsEtaVsPtProfile",NPtBins,vpt,NETA,veta);
-      RespVsEtaVsPtProfile->Sumw2();
-      RespVsEtaVsPtProfile->SetErrorOption("s");
-      RelRspVsSumPt = new TProfile("RelRspVsSumPt","RelRspVsSumPt",NPtBins,vpt);
-      RelRspVsSumPt->Sumw2();
-      ResolutionVsPt = new TH1F("ResolutionVsPt","ResolutionVsPt",NPtBins,vpt);
-      ResolutionVsPt->Sumw2();
-      iEtaDistribution  = new TH1F("iEtaDistribution"   ,"iEtaDistribution",NETA,veta);
-      iEtaDistribution->Sumw2();
-      RefEtaDistribution  = new TH1F("RefEtaDistribution"   ,"RefEtaDistribution",220, -5.5, 5.5);
-      RefEtaDistribution  ->Sumw2();
-      EtaDistribution     = new TH1F("EtaDistribution"   ,"EtaDistribution",220, -5.5, 5.5);
-      EtaDistribution     ->Sumw2(); 
-      EtaDistributionPU0  = new TH1F("EtaDistributionPU0","EtaDistributionPU0",220, -5.5, 5.5);
-      EtaDistributionPU0  ->Sumw2(); 
-      EtaVsPt  = new TH2D("EtaVsPt","EtaVsPt",220, -5.5, 5.5,170,1,4);
-      EtaVsPt  ->Sumw2();
-      for (int i=0 ; i<50 ; i += 5 ){
-         stringstream ss;
-         ss<<"EtaDistributionPU"<<i<<"_"<<i+4;
-         EtaDistributionPU[int(i/5)]  = new TH1F(ss.str().c_str(),ss.str().c_str(),240,-5.5,5.5);
-         EtaDistributionPU[int(i/5)] -> Sumw2();
+      ScaleVsEtaVsPt = new TH3F("ScaleVsEtaVsPt","ScaleVsEtaVsPt",NPtBins,vpt,NETA,veta,NRespBins,vcorr);
+      ScaleVsEtaVsPt->Sumw2();  
+      if(!reduceHistograms) {
+         RespVsPtProfile = new TProfile("RespVsPtProfile","RespVsPtProfile",NPtBins,vpt);
+         RespVsPtProfile->Sumw2();
+         RespVsPtProfile->SetErrorOption("s");
+         HigherDist = new TH1F("HigherDist","HigherDist",1999,1,2000);
+         MiddleDist = new TH1F("MiddleDist","MiddleDist",1999,1,2000);
+         LowerDist = new TH1F("LowerDist","LowerDist",1999,1,2000);              
+         RespVsEtaVsPtProfile = new TProfile2D("RespVsEtaVsPtProfile","RespVsEtaVsPtProfile",NPtBins,vpt,NETA,veta);
+         RespVsEtaVsPtProfile->Sumw2();
+         RespVsEtaVsPtProfile->SetErrorOption("s");
+         RelRspVsSumPt = new TProfile("RelRspVsSumPt","RelRspVsSumPt",NPtBins,vpt);
+         RelRspVsSumPt->Sumw2();
+         ResolutionVsPt = new TH1F("ResolutionVsPt","ResolutionVsPt",NPtBins,vpt);
+         ResolutionVsPt->Sumw2();
+         iEtaDistribution  = new TH1F("iEtaDistribution"   ,"iEtaDistribution",NETA,veta);
+         iEtaDistribution->Sumw2();
+         RefEtaDistribution  = new TH1F("RefEtaDistribution"   ,"RefEtaDistribution",220, -5.5, 5.5);
+         RefEtaDistribution  ->Sumw2();
+         EtaDistribution     = new TH1F("EtaDistribution"   ,"EtaDistribution",220, -5.5, 5.5);
+         EtaDistribution     ->Sumw2(); 
+         EtaDistributionPU0  = new TH1F("EtaDistributionPU0","EtaDistributionPU0",220, -5.5, 5.5);
+         EtaDistributionPU0  ->Sumw2(); 
+         EtaVsPt  = new TH2D("EtaVsPt","EtaVsPt",220, -5.5, 5.5,170,1,4);
+         EtaVsPt  ->Sumw2();
+         for (int i=0 ; i<50 ; i += 5 ){
+            stringstream ss;
+            ss<<"EtaDistributionPU"<<i<<"_"<<i+4;
+            EtaDistributionPU[int(i/5)]  = new TH1F(ss.str().c_str(),ss.str().c_str(),240,-5.5,5.5);
+            EtaDistributionPU[int(i/5)] -> Sumw2();
+         }
+         ThetaDistribution = new TH1F("ThetaDistribution","ThetaDistribution",100, 0, TMath::Pi());
+         //
+         // dN/dOmega = dN/2*Pi*d(cos(theta))
+         //
+         SolidAngleDist    = new TH1F("SolidAngleDist","SolidAngleDist",200, -2*TMath::Pi(),2*TMath::Pi());
       }
-      ThetaDistribution = new TH1F("ThetaDistribution","ThetaDistribution",100, 0, TMath::Pi());
-      //
-      // dN/dOmega = dN/2*Pi*d(cos(theta))
-      //
-      SolidAngleDist    = new TH1F("SolidAngleDist","SolidAngleDist",200, -2*TMath::Pi(),2*TMath::Pi());
       for(int i=0;i<NPtBins;i++)
       {
          sprintf(name,"RelRspVsJetEta_RefPt%sto%s",Pt[i],Pt[i+1]);
          RelRspVsJetEta[i] = new TH2F(name,name,NETA,veta,NRespBins,RespLow,RespHigh);
-         sprintf(name,"RelContributions_RefPt%sto%s",Pt[i],Pt[i+1]);
-         RelContributions[i] = new TH1F(name,name,1999,1,2000);
-         sprintf(name,"ResolutionVsEta_RefPt%sto%s",Pt[i],Pt[i+1]);
-         ResolutionVsEta[i] = new TH1F(name,name,NETA,veta);
-         ResolutionVsEta[i]->Sumw2();
+         if(!reduceHistograms) {
+            sprintf(name,"RelContributions_RefPt%sto%s",Pt[i],Pt[i+1]);
+            RelContributions[i] = new TH1F(name,name,1999,1,2000);
+            sprintf(name,"ResolutionVsEta_RefPt%sto%s",Pt[i],Pt[i+1]);
+            ResolutionVsEta[i] = new TH1F(name,name,NETA,veta);
+            ResolutionVsEta[i]->Sumw2();
+         }
       }//for(int i=0;i<NPtBins;i++)
-      if(readRespVsPileup.IsNull())
+      if(!reduceHistograms && doTProfileMDF && readRespVsPileup.IsNull())
       {
          const double vpt_Coarse[16] = {15, 20, 25, 30, 35, 40, 50, 70, 90, 120, 150, 200, 300, 400, 600, 1000};
          RespVsPileup = new TProfileMDF("RespVsPileup","RespVsPileup");
@@ -410,7 +413,7 @@ int main(int argc,char**argv)
          RhoVsPileupVsEta->Sumw2();
          coord2.assign(RhoVsPileupVsEta->GetNaxis(),0);
       }
-      else
+      else if(!reduceHistograms && doTProfileMDF)
       {
          RhoVsPileupVsEta = new TProfileMDF("RhoVsPileupVsEta","RhoVsPileupVsEta");
          RespVsPileup = new TProfileMDF("RespVsPileup","RespVsPileup");
@@ -428,57 +431,61 @@ int main(int argc,char**argv)
          RespVsRho->SetDirectory(0);
       }
       odir->cd();
-      OffVsRhoVsEta = new TProfile2D("OffVsRhoVsEta","OffVsRhoVsEta",26,0,26,NETA,veta);
-      OffVsRhoVsEta->Sumw2();
-      RhoVsOffETVsEta = new TProfile2D("RhoVsOffETVsEta","RhoVsOffETVsEta",100,0,50,NETA,veta);
-      RhoVsOffETVsEta->Sumw2();
-      RhoVsOffITVsEta = new TProfile2D("RhoVsOffITVsEta","RhoVsOffITVsEta",100,0,50,NETA,veta);
-      RhoVsOffITVsEta->Sumw2();
-      RhoVsOffLTVsEta = new TProfile2D("RhoVsOffLTVsEta","RhoVsOffLTVsEta",100,0,50,NETA,veta);
-      RhoVsOffLTVsEta->Sumw2();
-      rhoVsRhoHLT = new TProfile("rhoVsRhoHLT","rhoVsRhoHLT",1000,0,100);
-      rhoVsRhoHLT->Sumw2();
-      npvVsRhoHLT = new TProfile("npvVsRhoHLT","npvVsRhoHLT",100,0,100);
-      npvVsRhoHLT->Sumw2();
-      for(unsigned int i=0; i<NPileup/2; i++)
-      {
-         sprintf(name,"SumPtDistribution_NPU%sto%s",pileup_boundaries[i*2],pileup_boundaries[(i*2)+1]);
-         SumPtDistributions[i] = new TH1F(name,name,NPtBins,vpt);
-      }//for(unsigned int i=0; i<NPileup/2; i++)
-      for(int i=0; i<3; i++)
-      {
-         sprintf(name,"DPtVsNPU_%s",pusources[i]);
-         DPtVsNPU[i] = new TProfile(name,name,26,0,26);
-         DPtVsNPU[i]->Sumw2();
-         sprintf(name,"DPtVsPtGen_%s",pusources[i]);
-         DPtVsPtGen[i] = new TProfile(name,name,NPtBins,vpt);
-         DPtVsPtGen[i]->Sumw2();
-         sprintf(name,"RespRatioVsPtGen_%s",pusources[i]);
-         RespRatioVsPtGen[i] = new TProfile(name,name,NPtBins,vpt);
-         RespRatioVsPtGen[i]->Sumw2();
-         sprintf(name,"ErrorForNPU_%s",pusources[i]);
-         ErrorForNPU[i] = new TProfile(name,name,26,0,26);
-         //ErrorForNPU[i]->SetDirectory(0);
-         sprintf(name,"ErrorForPtGen_%s",pusources[i]);
-         ErrorForPtGen[i] = new TProfile(name,name,NPtBins,vpt);
-         //ErrorForPtGen[i]->SetDirectory(0);
-         sprintf(name,"Error2ForPtGen_%s",pusources[i]);
-         Error2ForPtGen[i] = new TProfile(name,name,NPtBins,vpt);
-         //Error2ForPtGen[i]->SetDirectory(0);
-      }//for(int i=0; i<3; i++)
-      TPUDistribution = new TH1F("TPUDistribution","TPUDistribution",1000,0,100);
+      if(!reduceHistograms) {
+         OffVsRhoVsEta = new TProfile2D("OffVsRhoVsEta","OffVsRhoVsEta",26,0,26,NETA,veta);
+         OffVsRhoVsEta->Sumw2();
+         RhoVsOffETVsEta = new TProfile2D("RhoVsOffETVsEta","RhoVsOffETVsEta",100,0,50,NETA,veta);
+         RhoVsOffETVsEta->Sumw2();
+         RhoVsOffITVsEta = new TProfile2D("RhoVsOffITVsEta","RhoVsOffITVsEta",100,0,50,NETA,veta);
+         RhoVsOffITVsEta->Sumw2();
+         RhoVsOffLTVsEta = new TProfile2D("RhoVsOffLTVsEta","RhoVsOffLTVsEta",100,0,50,NETA,veta);
+         RhoVsOffLTVsEta->Sumw2();
+         rhoVsRhoHLT = new TProfile("rhoVsRhoHLT","rhoVsRhoHLT",1000,0,100);
+         rhoVsRhoHLT->Sumw2();
+         rhoVsRhoHLT->GetXaxis()->SetTitle("Rho^{HLT}");
+         rhoVsRhoHLT->GetYaxis()->SetTitle("Rho^{RECO}");
+         npvVsRhoHLT = new TProfile("npvVsRhoHLT","npvVsRhoHLT",100,0,100);
+         npvVsRhoHLT->Sumw2();
+         npvVsRhoHLT->GetXaxis()->SetTitle("Rho^{HLT}");
+         npvVsRhoHLT->GetYaxis()->SetTitle("NPV^{RECO}");
+         for(unsigned int i=0; i<NPileup/2; i++)
+         {
+            sprintf(name,"SumPtDistribution_NPU%sto%s",pileup_boundaries[i*2],pileup_boundaries[(i*2)+1]);
+            SumPtDistributions[i] = new TH1F(name,name,NPtBins,vpt);
+         }//for(unsigned int i=0; i<NPileup/2; i++)
+         for(int i=0; i<3; i++)
+         {
+            sprintf(name,"DPtVsNPU_%s",pusources[i]);
+            DPtVsNPU[i] = new TProfile(name,name,26,0,26);
+            DPtVsNPU[i]->Sumw2();
+            sprintf(name,"DPtVsPtGen_%s",pusources[i]);
+            DPtVsPtGen[i] = new TProfile(name,name,NPtBins,vpt);
+            DPtVsPtGen[i]->Sumw2();
+            sprintf(name,"RespRatioVsPtGen_%s",pusources[i]);
+            RespRatioVsPtGen[i] = new TProfile(name,name,NPtBins,vpt);
+            RespRatioVsPtGen[i]->Sumw2();
+            sprintf(name,"ErrorForNPU_%s",pusources[i]);
+            ErrorForNPU[i] = new TProfile(name,name,26,0,26);
+            //ErrorForNPU[i]->SetDirectory(0);
+            sprintf(name,"ErrorForPtGen_%s",pusources[i]);
+            ErrorForPtGen[i] = new TProfile(name,name,NPtBins,vpt);
+            //ErrorForPtGen[i]->SetDirectory(0);
+            sprintf(name,"Error2ForPtGen_%s",pusources[i]);
+            Error2ForPtGen[i] = new TProfile(name,name,NPtBins,vpt);
+            //Error2ForPtGen[i]->SetDirectory(0);
+         }//for(int i=0; i<3; i++)
+         TPUDistribution = new TH1F("TPUDistribution","TPUDistribution",1000,0,100);
+      }
 
       //
       // fill histograms
       //
-      unsigned int nevt = (unsigned int)tree->GetEntries();
-      cout<<algs[a]<<"......"<<nevt<<" entries:"<<endl;
+      unsigned int nevt = (evtmax>0) ? evtmax : (unsigned int)tree->GetEntries();
+      cout << "Jet Collection: " << algs[a] << " ...... Processing " << nevt << " of " << tree->GetEntries() << " entries:" << endl;
       int min_npu=100;
-      for (unsigned int ievt=0;ievt<nevt;ievt++) 
-      {
-         if (evtmax>0 && ievt>evtmax) continue;
-         if (ievt % 100000 == 0) 
-            cout<<ievt<<endl;
+      for (unsigned int ievt=0;ievt<nevt;ievt++) {
+         loadbar2(ievt+1,nevt,50,"\t");
+
          tree->GetEntry(ievt);
 
          int iIT = itIndex(JRAEvt->bxns);
@@ -497,8 +504,10 @@ int main(int argc,char**argv)
          }
          if (dphimin>0 && abs(JRAEvt->jtphi->at(0)-JRAEvt->jtphi->at(1))<dphimin) continue;
 
-         rhoVsRhoHLT->Fill(JRAEvt->rho_hlt,JRAEvt->rho);
-         npvVsRhoHLT->Fill(JRAEvt->rho_hlt,JRAEvt->npv);
+         if(!reduceHistograms) {
+            rhoVsRhoHLT->Fill(JRAEvt->rho_hlt,JRAEvt->rho);
+            npvVsRhoHLT->Fill(JRAEvt->rho_hlt,JRAEvt->npv);
+         }
 
          if(nrefmax>0 && JRAEvt->nref>nrefmax) JRAEvt->nref = nrefmax;
          for (unsigned char iref=0;iref<JRAEvt->nref;iref++) 
@@ -577,174 +586,183 @@ int main(int argc,char**argv)
             //{
             //   RespVsPt_Fwd->Fill(ptgen,relrsp,weight); 
             //}
-
-            if(HigherDist->FindBin(scale*pt) < HigherDist->FindBin(ptgen)) HigherDist->Fill(scale*pt,weight);
-            if(MiddleDist->FindBin(scale*pt) == MiddleDist->FindBin(ptgen)) MiddleDist->Fill(scale*pt,weight);
-            if(LowerDist->FindBin(scale*pt) > LowerDist->FindBin(ptgen)) LowerDist->Fill(scale*pt,weight);
             RespVsEtaVsPt->Fill(ptgen,eta,relrsp,weight);
-            RespVsEtaVsPtProfile->Fill(ptgen,eta,relrsp,weight);
-            RespVsPtProfile->Fill(ptgen,relrsp,weight);
-            EtaVsPt->Fill(eta, log10(pt*scale),weight);
-            TPUDistribution->Fill(JRAEvt->tnpus->at(iIT),weight);
+            if(!reduceHistograms) {
+               if(HigherDist->FindBin(scale*pt) < HigherDist->FindBin(ptgen)) HigherDist->Fill(scale*pt,weight);
+               if(MiddleDist->FindBin(scale*pt) == MiddleDist->FindBin(ptgen)) MiddleDist->Fill(scale*pt,weight);
+               if(LowerDist->FindBin(scale*pt) > LowerDist->FindBin(ptgen)) LowerDist->Fill(scale*pt,weight);
+               RespVsEtaVsPtProfile->Fill(ptgen,eta,relrsp,weight);
+               RespVsPtProfile->Fill(ptgen,relrsp,weight);
+               EtaVsPt->Fill(eta, log10(pt*scale),weight);
+               TPUDistribution->Fill(JRAEvt->tnpus->at(iIT),weight);
+            }
 
             j = getBin(ptgen,vpt,NPtBins);
             k = getBin(eta,veta,NETA);
             if (j<NPtBins && j>=0 && k<NETA && k>=0)
             {
                RelRspVsJetEta[j]->Fill(eta,relrsp,weight);
-               RelContributions[j]->Fill(scale*pt,weight);
-               if(readRespVsPileup.IsNull())
-               { 
-                  coord[0] = ptgen;
-                  coord[1] = eta;
-                  /*
-                  if(!algs[a].Contains("HLT"))
-                     coord[2] = rho;
-                  else
-                     coord[2] = rho_hlt;
-                  */
-                  coord[2] = sumEOOT(JRAEvt->npus,iIT);
-                  coord[3] = JRAEvt->npus->at(iIT);
-                  coord[4] = sumLOOT(JRAEvt->npus,iIT);
-                  RespVsPileup->Fill(coord,relrsp);
+
+               if(!reduceHistograms) {
+                  RelContributions[j]->Fill(scale*pt,weight);
+
+                  if(doTProfileMDF && readRespVsPileup.IsNull())
+                  { 
+                     coord[0] = ptgen;
+                     coord[1] = eta;
+                     /*
+                     if(!algs[a].Contains("HLT"))
+                        coord[2] = rho;
+                     else
+                        coord[2] = rho_hlt;
+                     */
+                     coord[2] = sumEOOT(JRAEvt->npus,iIT);
+                     coord[3] = JRAEvt->npus->at(iIT);
+                     coord[4] = sumLOOT(JRAEvt->npus,iIT);
+                     RespVsPileup->Fill(coord,relrsp);
                   
-                  if(!jetInfo.isHLT())
-                     RespVsRho->Fill(ptgen,eta,rho,relrsp);
-                  else
-                     RespVsRho->Fill(ptgen,eta,rho_hlt,relrsp);
+                     if(!jetInfo.isHLT())
+                        RespVsRho->Fill(ptgen,eta,rho,relrsp);
+                     else
+                        RespVsRho->Fill(ptgen,eta,rho_hlt,relrsp);
 
-                  coord2[0] = eta;
-                  coord2[1] = sumEOOT(JRAEvt->npus,iIT);
-                  coord2[2] = JRAEvt->npus->at(iIT);
-                  coord2[3] = sumLOOT(JRAEvt->npus,iIT);
-                  if(!jetInfo.isHLT())
-                     RhoVsPileupVsEta->Fill(coord2,rho);
-                  else
-                     RhoVsPileupVsEta->Fill(coord2,rho_hlt);
-               }
-               else
-               {
-                  coord[0] = ptgen;
-                  coord[1] = eta;
-                  /*
-                  if(!algs[a].Contains("HLT"))
-                     coord[2] = rho;
-                  else
-                     coord[2] = rho_hlt;
-                  */
-                  coord[2] = 5;
-                  coord[3] = JRAEvt->npus->at(iIT);
-                  coord[4] = sumLOOT(JRAEvt->npus,iIT);
-                  double resp_EOOT = RespVsPileup->GetBinContent(RespVsPileup->FindBin(coord));
-                  double eresp_EOOT = RespVsPileup->GetBinError(RespVsPileup->FindBin(coord));
-
-                  coord[2] = sumEOOT(JRAEvt->npus,iIT);
-                  coord[3] = 5;
-                  coord[4] = sumLOOT(JRAEvt->npus,iIT);
-                  double resp_IT   = RespVsPileup->GetBinContent(RespVsPileup->FindBin(coord));
-                  double eresp_IT = RespVsPileup->GetBinError(RespVsPileup->FindBin(coord));
-
-                  coord[2] = sumEOOT(JRAEvt->npus,iIT);
-                  coord[3] = JRAEvt->npus->at(iIT);
-                  coord[4] = 5;
-                  double resp_LOOT = RespVsPileup->GetBinContent(RespVsPileup->FindBin(coord));
-                  double eresp_LOOT = RespVsPileup->GetBinError(RespVsPileup->FindBin(coord));
-
-                  double resp_rho = RespVsRho->GetBinContent(RespVsRho->FindBin(ptgen,eta,1));
-
-                  //
-                  // Psi = {RelRsp[p_T^GEN,EOOT,IT,LOOT]-RelRsp[p_T^GEN,EOOT,IT,LOOT]}*p_T^GEN
-                  // where either EOOT,IT, or LOOT are 5 for the second RelRsp. The first RelRsp
-                  // is the relative response of the current jet.
-                  //
-                  double Psi_EOOT = (relrsp-resp_EOOT)*ptgen;
-                  double ePsi_EOOT = eresp_EOOT*ptgen;
-                  double Psi_IT = (relrsp-resp_IT)*ptgen;
-                  double ePsi_IT = eresp_IT*ptgen;
-                  double Psi_LOOT = (relrsp-resp_LOOT)*ptgen;
-                  double ePsi_LOOT = eresp_LOOT*ptgen;
-
-                  double off_rho = (relrsp-resp_rho)*ptgen;
-
-                  //
-                  // PsiPrime = RelRsp[p_T^GEN,EOOT,IT,LOOT]/RelRsp[p_T^GEN,EOOT,IT,LOOT]
-                  // where either EOOT,IT, or LOOT are 5 for the RelRsp in the denominator.
-                  // The RelRsp in the numerator is the relative response of the current jet.
-                  //
-                  double PsiPrime_EOOT = relrsp/resp_EOOT;
-                  double ePsiPrime_EOOT = (PsiPrime_EOOT*eresp_EOOT)/resp_EOOT;
-                  double PsiPrime_IT = relrsp/resp_IT;
-                  double ePsiPrime_IT = (PsiPrime_IT*eresp_IT)/resp_IT;
-                  double PsiPrime_LOOT = relrsp/resp_LOOT;
-                  double ePsiPrime_LOOT = (PsiPrime_LOOT*eresp_LOOT)/resp_LOOT;
-
-                  if(resp_EOOT!=0)
-                  {
-                     DPtVsNPU[0]->Fill(eootnpu,Psi_EOOT);
-                     DPtVsPtGen[0]->Fill(ptgen,Psi_EOOT);
-                     RespRatioVsPtGen[0]->Fill(ptgen,PsiPrime_EOOT);
-                     ErrorForNPU[0]->Fill(eootnpu,ePsi_EOOT);
-                     ErrorForPtGen[0]->Fill(ptgen,ePsi_EOOT);
-                     Error2ForPtGen[0]->Fill(ptgen,ePsiPrime_EOOT);
-
-                     RhoVsOffETVsEta->Fill(eootnpu,eta,rho_hlt);
+                     coord2[0] = eta;
+                     coord2[1] = sumEOOT(JRAEvt->npus,iIT);
+                     coord2[2] = JRAEvt->npus->at(iIT);
+                     coord2[3] = sumLOOT(JRAEvt->npus,iIT);
+                     if(!jetInfo.isHLT())
+                        RhoVsPileupVsEta->Fill(coord2,rho);
+                     else
+                        RhoVsPileupVsEta->Fill(coord2,rho_hlt);
                   }
-                  if(resp_IT!=0)
+                  else if(doTProfileMDF)
                   {
-                     DPtVsNPU[1]->Fill(itnpu,Psi_IT); 
-                     DPtVsPtGen[1]->Fill(ptgen,Psi_IT);
-                     RespRatioVsPtGen[1]->Fill(ptgen,PsiPrime_IT);
-                     ErrorForNPU[1]->Fill(itnpu,ePsi_IT);
-                     ErrorForPtGen[1]->Fill(ptgen,ePsi_IT);
-                     Error2ForPtGen[1]->Fill(ptgen,ePsiPrime_IT);
+                     coord[0] = ptgen;
+                     coord[1] = eta;
+                     /*
+                     if(!algs[a].Contains("HLT"))
+                        coord[2] = rho;
+                     else
+                        coord[2] = rho_hlt;
+                     */
+                     coord[2] = 5;
+                     coord[3] = JRAEvt->npus->at(iIT);
+                     coord[4] = sumLOOT(JRAEvt->npus,iIT);
+                     double resp_EOOT = RespVsPileup->GetBinContent(RespVsPileup->FindBin(coord));
+                     double eresp_EOOT = RespVsPileup->GetBinError(RespVsPileup->FindBin(coord));
 
-                     RhoVsOffITVsEta->Fill(itnpu,eta,rho_hlt);
-                  } 
-                  if(resp_LOOT!=0)
-                  {
-                     DPtVsNPU[2]->Fill(lootnpu,Psi_LOOT);
-                     DPtVsPtGen[2]->Fill(ptgen,Psi_LOOT);
-                     RespRatioVsPtGen[2]->Fill(ptgen,PsiPrime_LOOT);
-                     ErrorForNPU[2]->Fill(lootnpu,ePsi_LOOT);
-                     ErrorForPtGen[2]->Fill(ptgen,ePsi_LOOT);
-                     Error2ForPtGen[2]->Fill(ptgen,ePsiPrime_LOOT);
+                     coord[2] = sumEOOT(JRAEvt->npus,iIT);
+                     coord[3] = 5;
+                     coord[4] = sumLOOT(JRAEvt->npus,iIT);
+                     double resp_IT   = RespVsPileup->GetBinContent(RespVsPileup->FindBin(coord));
+                     double eresp_IT = RespVsPileup->GetBinError(RespVsPileup->FindBin(coord));
 
-                     RhoVsOffLTVsEta->Fill(lootnpu,eta,rho_hlt);
-                  }
+                     coord[2] = sumEOOT(JRAEvt->npus,iIT);
+                     coord[3] = JRAEvt->npus->at(iIT);
+                     coord[4] = 5;
+                     double resp_LOOT = RespVsPileup->GetBinContent(RespVsPileup->FindBin(coord));
+                     double eresp_LOOT = RespVsPileup->GetBinError(RespVsPileup->FindBin(coord));
 
-                  OffVsRhoVsEta->Fill(rho_hlt,eta,off_rho);
-               }//if(!readRespVsPileup.IsNull())
+                     double resp_rho = RespVsRho->GetBinContent(RespVsRho->FindBin(ptgen,eta,1));
+
+                     //
+                     // Psi = {RelRsp[p_T^GEN,EOOT,IT,LOOT]-RelRsp[p_T^GEN,EOOT,IT,LOOT]}*p_T^GEN
+                     // where either EOOT,IT, or LOOT are 5 for the second RelRsp. The first RelRsp
+                     // is the relative response of the current jet.
+                     //
+                     double Psi_EOOT = (relrsp-resp_EOOT)*ptgen;
+                     double ePsi_EOOT = eresp_EOOT*ptgen;
+                     double Psi_IT = (relrsp-resp_IT)*ptgen;
+                     double ePsi_IT = eresp_IT*ptgen;
+                     double Psi_LOOT = (relrsp-resp_LOOT)*ptgen;
+                     double ePsi_LOOT = eresp_LOOT*ptgen;
+   
+                     double off_rho = (relrsp-resp_rho)*ptgen;
+   
+                     //
+                     // PsiPrime = RelRsp[p_T^GEN,EOOT,IT,LOOT]/RelRsp[p_T^GEN,EOOT,IT,LOOT]
+                     // where either EOOT,IT, or LOOT are 5 for the RelRsp in the denominator.
+                     // The RelRsp in the numerator is the relative response of the current jet.
+                     //
+                     double PsiPrime_EOOT = relrsp/resp_EOOT;
+                     double ePsiPrime_EOOT = (PsiPrime_EOOT*eresp_EOOT)/resp_EOOT;
+                     double PsiPrime_IT = relrsp/resp_IT;
+                     double ePsiPrime_IT = (PsiPrime_IT*eresp_IT)/resp_IT;
+                     double PsiPrime_LOOT = relrsp/resp_LOOT;
+                     double ePsiPrime_LOOT = (PsiPrime_LOOT*eresp_LOOT)/resp_LOOT;
+   
+                     if(resp_EOOT!=0)
+                     {
+                        DPtVsNPU[0]->Fill(eootnpu,Psi_EOOT);
+                        DPtVsPtGen[0]->Fill(ptgen,Psi_EOOT);
+                        RespRatioVsPtGen[0]->Fill(ptgen,PsiPrime_EOOT);
+                        ErrorForNPU[0]->Fill(eootnpu,ePsi_EOOT);
+                        ErrorForPtGen[0]->Fill(ptgen,ePsi_EOOT);
+                        Error2ForPtGen[0]->Fill(ptgen,ePsiPrime_EOOT);
+   
+                        RhoVsOffETVsEta->Fill(eootnpu,eta,rho_hlt);
+                     }
+                     if(resp_IT!=0)
+                     {
+                        DPtVsNPU[1]->Fill(itnpu,Psi_IT); 
+                        DPtVsPtGen[1]->Fill(ptgen,Psi_IT);
+                        RespRatioVsPtGen[1]->Fill(ptgen,PsiPrime_IT);
+                        ErrorForNPU[1]->Fill(itnpu,ePsi_IT);
+                        ErrorForPtGen[1]->Fill(ptgen,ePsi_IT);
+                        Error2ForPtGen[1]->Fill(ptgen,ePsiPrime_IT);
+   
+                        RhoVsOffITVsEta->Fill(itnpu,eta,rho_hlt);
+                     } 
+                     if(resp_LOOT!=0)
+                     {
+                        DPtVsNPU[2]->Fill(lootnpu,Psi_LOOT);
+                        DPtVsPtGen[2]->Fill(ptgen,Psi_LOOT);
+                        RespRatioVsPtGen[2]->Fill(ptgen,PsiPrime_LOOT);
+                        ErrorForNPU[2]->Fill(lootnpu,ePsi_LOOT);
+                        ErrorForPtGen[2]->Fill(ptgen,ePsi_LOOT);
+                        Error2ForPtGen[2]->Fill(ptgen,ePsiPrime_LOOT);
+   
+                        RhoVsOffLTVsEta->Fill(lootnpu,eta,rho_hlt);
+                     }
+   
+                     OffVsRhoVsEta->Fill(rho_hlt,eta,off_rho);
+                  }//if(!readRespVsPileup.IsNull())
+               }//if(!reduceHistograms)
             }//if (j<NPtBins && j>=0)
 
-            RelRspVsSumPt->Fill(sumpt,relrsp);
-            for(int spd=0; spd<NPileup/2; spd++)
-            {
-               if(itnpu>=vpileup[spd*2] && itnpu<=vpileup[(spd*2)+1])
-                  SumPtDistributions[spd]->Fill(sumpt);
+            if(!reduceHistograms) {
+               RelRspVsSumPt->Fill(sumpt,relrsp);
+               for(int spd=0; spd<NPileup/2; spd++)
+               {
+                  if(itnpu>=vpileup[spd*2] && itnpu<=vpileup[(spd*2)+1])
+                     SumPtDistributions[spd]->Fill(sumpt);
+               }
+               RefEtaDistribution->Fill(JRAEvt->refeta->at(iref));
+               EtaDistribution->Fill(eta);
+               iEtaDistribution->Fill(eta);
+               //
+               // These bins correspont to 0-4, 5-9, 10-14, 15-19, 20-24, 25-29, 30-34, 35-39, 40-44, 45-infinity
+               //
+               int in_npu = npu/5;
+               if (in_npu > 9) in_npu = 9;
+                 
+               EtaDistributionPU[in_npu]->Fill(eta);
+               if (npu==0) EtaDistributionPU0->Fill(eta);
+               ThetaDistribution ->Fill(theta);
+               SolidAngleDist ->Fill(2*TMath::Pi()*cos(theta));
             }
-            RefEtaDistribution->Fill(JRAEvt->refeta->at(iref));
-            EtaDistribution->Fill(eta);
-            iEtaDistribution->Fill(eta);
-            //
-            // These bins correspont to 0-4, 5-9, 10-14, 15-19, 20-24, 25-29, 30-34, 35-39, 40-44, 45-infinity
-            //
-            int in_npu = npu/5;
-            if (in_npu > 9) in_npu = 9;
-              
-            EtaDistributionPU[in_npu]->Fill(eta);
-            if (npu==0) EtaDistributionPU0->Fill(eta);
-            ThetaDistribution ->Fill(theta);
-            SolidAngleDist ->Fill(2*TMath::Pi()*cos(theta));
          }//for (unsigned char iref=0;iref<nrefmax;iref++) 
       }//for (unsigned int ievt=0;ievt<nevt;ievt++)
 
       //
       // make histograms that rely on other, completely filled, histograms
       //
-      for (int i=1; i<=NPtBins; i++) {
-         makeResolutionHistogram(RespVsEtaVsPt,ResolutionVsEta[i-1],"y",mpv,i,i);
+      if(!reduceHistograms) {
+         for (int i=1; i<=NPtBins; i++) {
+            makeResolutionHistogram(RespVsEtaVsPt,ResolutionVsEta[i-1],"y",mpv,i,i);
+         }
+         makeResolutionHistogram(RespVsEtaVsPt,ResolutionVsPt,"x",mpv);
       }
-      makeResolutionHistogram(RespVsEtaVsPt,ResolutionVsPt,"x",mpv);
 
       /*if(!readRespVsPileup.IsNull()) {
         for(int i=0; i<3; i++) {
@@ -755,32 +773,24 @@ int main(int argc,char**argv)
         }*/
 
       //
-      // formating for specific histograms
-      //
-      rhoVsRhoHLT->GetXaxis()->SetTitle("Rho^{HLT}");
-      rhoVsRhoHLT->GetYaxis()->SetTitle("Rho^{RECO}");
-      npvVsRhoHLT->GetXaxis()->SetTitle("Rho^{HLT}");
-      npvVsRhoHLT->GetYaxis()->SetTitle("NPV^{RECO}");
-
-      //
       // final cout statements
       //
-      cout << " min_npu="<<min_npu<<endl;
+      cout << endl << " min_npu="<<min_npu<<endl;
 
       //
       // close files
       //
-      cout << "Write " << "RespVsPileup_" << algs[a] << ".root" << " ... ";
-      if(readRespVsPileup.IsNull())
+      if(!reduceHistograms && doTProfileMDF && readRespVsPileup.IsNull())
       {
+         cout << "Write " << "RespVsPileup_" << algs[a] << ".root" << " ... ";
          RespVsPileup->WriteToFile(outputDir+"RespVsPileup_"+jetInfo.alias+".root");
          TFile tempout(outputDir+"RespVsPileup_"+jetInfo.alias+".root","UPDATE");
          tempout.cd();
          RespVsRho->Write();
          tempout.Close();
          RhoVsPileupVsEta->WriteToFile(outputDir+"RhoVsPileupVsEta_"+jetInfo.alias+".root");
+         cout << "DONE" << endl;
       }
-      cout << "DONE" << endl;
    }//for(unsigned int a=0; a<algs.size(); a++)
 
    cout << "Write " << "Closure.root" << " ... ";

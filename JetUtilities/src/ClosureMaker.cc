@@ -16,6 +16,7 @@ ClosureMaker::ClosureMaker() {
     useMPV          = false;
     nsigma          = 1.5;
     outputDir       = "./";
+    outputFilename  = "";
     outputFormat    = {".png",".eps",".pdf"};
     CMEnergy        = 13000;
     draw_guidelines = true;
@@ -42,17 +43,18 @@ ClosureMaker::ClosureMaker(CommandLine& cl) {
     //
     // evaluate command-line / configuration file options
     //
-    algs         = cl.getVector<TString> ("algs",                    "");
-    flavor       = cl.getValue<TString>  ("flavor",                  "");
-    path         = cl.getValue<TString>  ("path",                    "");
-    filename     = cl.getValue<TString>  ("filename",         "Closure");
-    useMPV       = cl.getValue<bool>     ("useMPV",               false);
-    nsigma       = cl.getValue<double>   ("nsigma",                 1.5);
-    draw_guidelines = cl.getValue<bool>  ("draw_guidelines",       true);
-    outputDir    = cl.getValue<TString>  ("outputDir",             "./");
-    outputFormat = cl.getVector<TString> ("outputFormat", ".png:::.eps");
-    CMEnergy     = cl.getValue<double>   ("CMEnergy",             13000);
-    bool help    = cl.getValue<bool>     ("help",                 false);
+    algs            = cl.getVector<TString> ("algs",                    "");
+    flavor          = cl.getValue<TString>  ("flavor",                  "");
+    path            = cl.getValue<TString>  ("path",                    "");
+    filename        = cl.getValue<TString>  ("filename",         "Closure");
+    useMPV          = cl.getValue<bool>     ("useMPV",               false);
+    nsigma          = cl.getValue<double>   ("nsigma",                 1.5);
+    draw_guidelines = cl.getValue<bool>     ("draw_guidelines",       true);
+    outputDir       = cl.getValue<TString>  ("outputDir",             "./");
+    outputFilename  = cl.getValue<TString>  ("outputFilename",          "");
+    outputFormat    = cl.getVector<TString> ("outputFormat", ".png:::.eps");
+    CMEnergy        = cl.getValue<double>   ("CMEnergy",             13000);
+    bool help       = cl.getValue<bool>     ("help",                 false);
 
     if (help) {cl.print(); return;}
     if (!cl.partialCheck()) return;
@@ -125,6 +127,7 @@ void ClosureMaker::openOutputFile() {
     TString ofname = Form("%s/ClosureVs%s.root",outputDir.Data(),getVariableTitleString(var).c_str());
     if(!flavor.IsNull()) ofname = Form("%s/ClosureVs%s_%s.root",outputDir.Data(),
                                        getVariableTitleString(var).c_str(),flavor.Data());
+    if(!outputFilename.IsNull()) ofname = Form("%s/%s",outputDir.Data(),outputFilename.Data());
     ofile = TFile::Open(ofname,"RECREATE");
 }
 

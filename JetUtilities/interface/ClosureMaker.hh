@@ -89,7 +89,7 @@ public:
 private:
 	bool           	 				 useMPV, objects_loaded, draw_guidelines;
     double							 CMEnergy, nsigma;
-	TString        	 				 path, filename, outputDir, flavor, alg;
+	TString        	 				 path, filename, outputDir, outputFilename, flavor, alg;
 	vector<TString>	 				 algs, outputFormat;
 	JetInfo							 *ji;
 	TFile							 *ifile, *ofile;
