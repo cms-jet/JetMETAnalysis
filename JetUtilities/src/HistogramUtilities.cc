@@ -37,13 +37,25 @@ namespace HistUtil {
         else if (type.find("RMS_f")!=string::npos)   return RMS_f;
         else if (type.find("sigma_f")!=string::npos) return sigma_f;
         else if (type.find("median")!=string::npos)  return median;
-        else cout << "ERROR in HistUtil::getHistogramMetricType type=" << type << " not defined!. Returning none." << endl;
+        else cout << "ERROR in HistUtil::getHistogramMetricType type=" << type << " not defined. Returning none." << endl;
         return none;
     }//getHistogramMetricType
 
     //______________________________________________________________________________
+    // A routine that returns the associated metric
+    HistogramMetric getAssociatedHistogramMetric(HistogramMetric type) {
+        if      (type == mu_h)                     return RMS_h;
+        else if (type == RMS_h)                    return mu_h;
+        else if (type == mu_f || type == mpv)      return RMS_f;
+        else if (type == RMS_f || type == sigma_f) return mu_f;
+        else if (type == median )                  return RMS_h;
+        else cout << "ERROR in HistUtil::getAssociatedHistogramMetric type=" << type << " not defined. Returning none." << endl;
+        return none;
+    }//getAssociatedHistogramMetric
+
+    //______________________________________________________________________________
     // A routine that returns a given HistogramMetric
-    pair<double,double> getHistogramMetric1D(HistogramMetric type, TH1* hist) {
+    pair<double,double> getHistogramMetric1D(HistogramMetric type, TH1* hist, double fallback_threshold, bool verbose) {
         if(!hist) {
             cout << "ERROR in HistUtil::getHistogramMetric1D the histogram is not defined (" << hist << ")" << endl;
             return make_pair(0.0,0.0);
@@ -54,9 +66,24 @@ namespace HistUtil {
         else if (type == mu_f || type == mpv || type == RMS_f || type == sigma_f) {
             TF1* f = dynamic_cast<TF1*>(hist->GetListOfFunctions()->Last());
 
+            // Fallback if the fit doesn't exist or if the fit is so bad its error doesn't meet the fallback threshold
             if(!f) {
-                cout << "WARNING in HistUtil::getHistogramMetric1D can't find the last function in hist" << endl;
-                return make_pair(0.0,0.0);
+                if(verbose) cout << "WARNING in HistUtil::getHistogramMetric1D can't find the last function in hist" << endl
+                                 << "\tFalling back to mu_h/RMS_h.";
+                if(type == mu_f || type == mpv)
+                   return getHistogramMetric1D(mu_h,hist);
+                if(type == RMS_f || type == sigma_f)
+                   return getHistogramMetric1D(RMS_h,hist);
+            }
+            if((type == mu_f || type == mpv) && f->GetParError(1)>fallback_threshold) {
+                if(verbose) cout << "WARNING in HistUtil::getHistogramMetric1D The error on fit mean didn't pass the fallback threshold" << endl
+                                 << "\tFalling back to mu_h.";
+                return getHistogramMetric1D(mu_h,hist);
+            }
+            if((type == RMS_f || type == sigma_f) && f->GetParError(2)>fallback_threshold) {
+                if(verbose) cout << "WARNING in HistUtil::getHistogramMetric1D The error on fit RMS/Sigma didn't pass the fallback threshold" << endl
+                                 << "\tFalling back to RMS_h.";
+                return getHistogramMetric1D(RMS_h,hist);
             }
 
             if      (type == mu_f  || type == mpv)     return make_pair(f->GetParameter(1),f->GetParError(1));
@@ -67,8 +94,8 @@ namespace HistUtil {
         return make_pair(0.0,0.0);
     }//getHistogramMetric1D
 
-    pair<double,double> getHistogramMetric1D(string type, TH1* hist) {
-        return getHistogramMetric1D(getHistogramMetricType(type),hist);
+    pair<double,double> getHistogramMetric1D(string type, TH1* hist, double fallback_threshold, bool verbose) {
+        return getHistogramMetric1D(getHistogramMetricType(type),hist,fallback_threshold,verbose);
     }//getHistogramMetric1D
 
     //______________________________________________________________________________
@@ -94,13 +121,19 @@ namespace HistUtil {
         // Choose the difference which is biggest
         // We cannot determine the exact median from binned values
         // The best we can do is a linear approximation of where inside the bin the median resides
+        // For an unbinned median follow http://davidmlane.com/hyperstat/A106993.html for the error
         Double_t low_edge = hist->GetBinLowEdge(hist->FindBin(median));
         Double_t width = hist->GetBinWidth(hist->FindBin(median));
         Double_t high_edge = hist->GetBinLowEdge(hist->FindBin(median)) + width;
-        Double_t error = std::max(abs(median-low_edge),abs(high_edge-median));
+        Double_t error = std::max(std::abs(median-low_edge),std::abs(high_edge-median));
         if (debug) {
             cout << "\tlow_dege: " << low_edge << endl << "\thigh_edge: " << high_edge << endl
                  << "\twidth: " << width << endl << "\terror: " << error << endl;
+            cout << "\tdouble check error: " << std::max(std::abs(median-low_edge),std::abs(high_edge-median)) << endl
+                 << "\tabs(median-low_edge): " << std::abs(median-low_edge) << endl
+                 << "\tabs(high_edge-median): " << std::abs(high_edge-median) << endl
+                 << "\tmedian-low_edge: " << median-low_edge << endl
+                 << "\thigh_edge-median: " << high_edge-median << endl;
         } 
         delete [] x;
         delete [] y;

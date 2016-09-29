@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <cmath>
 
 #include "JetMETAnalysis/JetUtilities/interface/ProgressBar.hh"
 
@@ -55,13 +56,15 @@ namespace HistUtil{
     // A routine that returns the string given the HistogramMetric 
     string getHistogramMetricString(HistogramMetric);
 
-
     // A routine that returns the HistogramMetric type given the string
     HistogramMetric getHistogramMetricType(string);
 
+    // A routine that returns the associated metric
+    HistogramMetric getAssociatedHistogramMetric(HistogramMetric);
+
     // A routine that returns a given HistogramMetric and its error (if any)
-    pair<double,double> getHistogramMetric1D(HistogramMetric, TH1*);
-    pair<double,double> getHistogramMetric1D(string, TH1*);    
+    pair<double,double> getHistogramMetric1D(HistogramMetric, TH1*, double fallback_threshold = 0.05, bool verbose = false);
+    pair<double,double> getHistogramMetric1D(string, TH1*, double fallback_threshold = 0.05, bool verbose = false);    
 
     // A routine that returns the median of a given histogram and an error equal to the width of the bin that contains the histogram
     pair<double,double> getHistogramMedian1D(TH1*, bool debug = false);
