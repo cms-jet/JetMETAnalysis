@@ -127,7 +127,7 @@ inline void fixOverlay() {
 // CMS_lumi.h //
 ////////////////
 
-inline void CMS_lumi( TPad* pad, int iPeriod=3, int iPosX=10 );
+inline void CMS_lumi( TPad* pad, int iPeriod=3, int iPosX=10, bool verbose=false );
 //inline void reset_globals();
 
 
@@ -138,7 +138,7 @@ inline void CMS_lumi( TPad* pad, int iPeriod=3, int iPosX=10 );
 //#include "CMS_lumi.h"
 
 inline void 
-CMS_lumi( TPad* pad, int iPeriod, int iPosX )
+CMS_lumi( TPad* pad, int iPeriod, int iPosX, bool verbose )
 {            
 
   //
@@ -258,7 +258,7 @@ CMS_lumi( TPad* pad, int iPeriod, int iPosX )
       lumiText += "14 TeV";
     }
    
-  cout << lumiText << endl;
+  if(verbose) cout << lumiText << endl;
 
   TLatex latex;
   latex.SetNDC();
@@ -360,7 +360,8 @@ CMS_lumi( TPad* pad, int iPeriod, int iPosX )
 // Create h after calling setTDRStyle to get all the settings right
 inline TCanvas* tdrCanvas(const char* canvName, TH1D *h,
                           int iPeriod = 2, int iPos = 11,
-                          bool square = kRectangular) {
+                          bool square = kRectangular,
+                          bool verbose = false) {
 
   setTDRStyle();
   //reset_globals();
@@ -423,7 +424,7 @@ inline TCanvas* tdrCanvas(const char* canvName, TH1D *h,
   h->Draw("AXIS");
 
   // writing the lumi information and the CMS "logo"
-  CMS_lumi( canv, iPeriod, iPos );
+  CMS_lumi( canv, iPeriod, iPos, verbose );
   
   canv->Update();
   canv->RedrawAxis();
@@ -436,7 +437,8 @@ inline TCanvas* tdrCanvas(const char* canvName, TH1D *h,
 // Create h after calling setTDRStyle to get all the settings right
 // Created by: Mikko Voutilainen (HIP)
 inline TCanvas* tdrDiCanvas(const char* canvName, TH1D *hup, TH1D *hdw,
-                            int iPeriod = 2, int iPos = 11) {
+                            int iPeriod = 2, int iPos = 11,
+                            bool verbose = false) {
 
   setTDRStyle();
   //reset_globals();
@@ -504,7 +506,7 @@ inline TCanvas* tdrDiCanvas(const char* canvName, TH1D *hup, TH1D *hdw,
   hup->Draw("AXIS");
 
   // writing the lumi information and the CMS "logo"
-  CMS_lumi( (TCanvas*)gPad, iPeriod, iPos );
+  CMS_lumi( (TCanvas*)gPad, iPeriod, iPos, verbose );
 
   canv->cd(2);
   gPad->SetPad(0, 0, 1, Hdw / H);
