@@ -124,11 +124,16 @@ int main(int argc,char**argv)
    bool            doflavor          = cl.getValue<bool>         ("doflavor",          false);
    bool            doTProfileMDF     = cl.getValue<bool>         ("doTProfileMDF",     false);
    bool            reduceHistograms  = cl.getValue<bool>         ("reduceHistograms",   true);
+   bool            useweight         = cl.getValue<bool>         ("useweight",         false);
+   float           xsection          = cl.getValue<float>        ("xsection",            0.0);
+   float           luminosity        = cl.getValue<float>        ("luminosity",          1.0);
    int             pdgid             = cl.getValue<int>          ("pdgid",                 0);
    vector<double>  drmax             = cl.getVector<double>      ("drmax",                "");
    double          ptmin             = cl.getValue<double>       ("ptmin",                 0);
    double          ptgenmin          = cl.getValue<double>       ("ptgenmin",              0);
    double          ptrawmin          = cl.getValue<double>       ("ptrawmin",              0);
+   float           pthatmin          = cl.getValue<float>        ("pthatmin",            0.0);
+   float           pthatmax          = cl.getValue<float>        ("pthatmax",           -1.0);
    double          etamax            = cl.getValue<double>       ("etamax",                0);
    double          dphimin           = cl.getValue<double>       ("dphimin",               0);
    unsigned int    nrefmax           = cl.getValue<unsigned int> ("nrefmax",               0);
@@ -149,6 +154,7 @@ int main(int argc,char**argv)
    TString         DataPUReWeighting = cl.getValue<TString>      ("DataPUReWeighting",    "");
    bool            mpv               = cl.getValue<bool>         ("mpv",               false);
    TString         readRespVsPileup  = cl.getValue<TString>      ("readRespVsPileup",     "");
+   bool            verbose           = cl.getValue<bool>         ("verbose",           false);
    bool            debug             = cl.getValue<bool>         ("debug",             false);
 
    if (!cl.check()) return 0;
@@ -183,22 +189,10 @@ int main(int argc,char**argv)
       vrho[i] = (i*((RhoHigh-RhoLow)/(double)NRhoBins));
    }
 
-   //
-   // To get weights for ptgen distribution
-   //
-   TFile *weightFile;
-   TH1D *weightHist=0;
-   if(!weightfilename.IsNull()) {
-      weightFile = new TFile(weightfilename,"READ");
-      if (!weightFile->IsOpen()) {cout<<"Can't open ff.root to get weights for ptgen"<<endl;}
-      weightHist = (TH1D*)gDirectory->Get("we");
-      if (weightHist==0) {cout<<"weightHist named \"we\" was not in file ff.root"<<endl; return 0;}
-      weightHist->Scale(1./weightHist->Integral(1,weightHist->FindBin(3)));
+   edm::LumiReWeighting LumiWeights_;
+   if(!MCPUReWeighting.IsNull() && !DataPUReWeighting.IsNull()) {
+      LumiWeights_ = edm::LumiReWeighting(string(MCPUReWeighting),string(DataPUReWeighting),"pileup","pileup");
    }
-    edm::LumiReWeighting LumiWeights_;
-    if(!MCPUReWeighting.IsNull() && !DataPUReWeighting.IsNull()) {
-       LumiWeights_ = edm::LumiReWeighting(string(MCPUReWeighting),string(DataPUReWeighting),"pileup","pileup");
-    }
 
    if(!outputDir.IsNull() && !outputDir.EndsWith("/")) outputDir += "/";
    TFile *outf = TFile::Open(outputDir+"Closure_"+
@@ -209,6 +203,17 @@ int main(int argc,char**argv)
    // Loop over the algorithms
    //
    for(unsigned int a=0; a<algs.size(); a++) {
+      TFile *weightFile(nullptr);
+      TH2D *weightHist(nullptr);
+      if(!weightfilename.IsNull()) {
+          weightFile = TFile::Open(weightfilename,"READ");
+          if (!weightFile->IsOpen()) { cout<<"Can't open "<<weightfilename<<endl; }
+          cout << "Getting the weight histogram all_ ... " << flush; 
+          weightHist = (TH2D*)weightFile->Get(algs[a]+"/all_");
+          if(weightHist==nullptr) { cout<<"FAIL!"<<endl<<"Histogram of weights named \"all_\" was not in file "<<weightfilename<<endl; return 0; } 
+          cout << "DONE" << endl;
+      }
+   
       JetInfo jetInfo(algs[a]);
 
       TFile *inf = new TFile(inputFilename);
@@ -218,6 +223,7 @@ int main(int argc,char**argv)
       int j,k;
       char name[1024];
 
+      TH1F *pThatDistribution(nullptr);
       vector<TH2F*> RelRspVsRefPt;
       TH2F *RelRspVsJetEta[NPtBins];
       TH3F *RespVsEtaVsPt(nullptr);
@@ -319,16 +325,30 @@ int main(int argc,char**argv)
       tree->SetBranchStatus("*",0);
       vector<string> branch_names = {"nref","refpt","refeta","jtpt","jteta","jtphi",
                                      "bxns","npus","tnpus","sumpt_lowpt","refdrjt",
-                                     "refpdgid","npv","rho","rho_hlt"};
+                                     "refpdgid","npv","rho","rho_hlt","pthat","weight"};
       for(auto n : branch_names) {
          if(!doflavor && n=="refpdgid") continue;
          if(n=="rho_hlt" && 0==tree->GetBranch("rho_hlt")) continue;
+         if(n=="weight") {
+            if (xsection>0.0) { 
+                useweight = false;
+            }
+            if (useweight) {
+                if (0==tree->GetBranch(n.c_str()))
+                    cout<<"branch 'weight' not found, events will NOT be weighted!"<<endl;
+                else
+                    tree->SetBranchStatus(n.c_str(),1);
+            }
+            continue;
+         }
          tree->SetBranchStatus(n.c_str(),1);
       }
 
       //
       // book histograms
       //
+      pThatDistribution = new TH1F("pThat","pThat",(int)vpt[NPtBins]/10.0,vpt[0],vpt[NPtBins]);
+      pThatDistribution->Sumw2();
       for(int ieta=0; ieta<NETA_Coarse; ieta++) {
          if(veta_coarse[ieta]<0) continue;
          else {
@@ -494,6 +514,8 @@ int main(int argc,char**argv)
          int itnpu = JRAEvt->npus->at(iIT);
          int lootnpu = (int)sumLOOT(JRAEvt->npus,iIT);
          double sumpt = JRAEvt->sumpt_lowpt->at(1);
+         float pthat = JRAEvt->pthat;
+         float evt_fill = true;
          if (printnpu) cout<<" ievt = "<<ievt<<"\tnpu = "<<npu<<endl;
          if (npu<min_npu) min_npu = npu;
 
@@ -503,6 +525,14 @@ int main(int argc,char**argv)
             continue;
          }
          if (dphimin>0 && abs(JRAEvt->jtphi->at(0)-JRAEvt->jtphi->at(1))<dphimin) continue;
+         if (pthatmin>0.0 && pthat<pthatmin) {
+            if(verbose) cout << "WARNING::The pthat of this event is less than the minimum pthat!" << endl;
+            continue;
+         }
+         if (pthatmax!=-1.0 && pthat>pthatmax) {
+            if(verbose) cout << "WARNING::The pthat of this event is greater than the maximum pthat!" << endl;
+            continue;
+         }
 
          if(!reduceHistograms) {
             rhoVsRhoHLT->Fill(JRAEvt->rho_hlt,JRAEvt->rho);
@@ -510,8 +540,7 @@ int main(int argc,char**argv)
          }
 
          if(nrefmax>0 && JRAEvt->nref>nrefmax) JRAEvt->nref = nrefmax;
-         for (unsigned char iref=0;iref<JRAEvt->nref;iref++) 
-         {
+         for (unsigned char iref=0;iref<JRAEvt->nref;iref++) {
             float rho = JRAEvt->rho;
             float rho_hlt = (0!=tree->GetBranch("rho_hlt")) ? JRAEvt->rho_hlt : 0;
             float ptgen  = JRAEvt->refpt->at(iref);
@@ -521,8 +550,7 @@ int main(int argc,char**argv)
             float eta    = JRAEvt->jteta->at(iref);
             if (etamax>0 && TMath::Abs(eta)>etamax) continue;
             float pt     = JRAEvt->jtpt->at(iref);
-            if (pt > 14000) 
-            {
+            if (pt > 14000) {
                cout << "WARNING::pt>14000 GeV (pt = " << pt << " GeV)." << endl << "Skipping this jet." << endl;
                continue;
             }
@@ -548,14 +576,18 @@ int main(int argc,char**argv)
             if ((pt*scale)<ptmin) continue;
             float relrsp = scale*JRAEvt->jtpt->at(iref)/JRAEvt->refpt->at(iref);
             float theta  = 2.0*atan(exp(-eta));
-            double weight = 1.0;
+            double weight(1.0);
 
-            if(weightHist!=0) weight = weightHist->GetBinContent(weightHist->FindBin(log10(ptgen)));
+            if(xsection>0.0) weight = (xsection*luminosity)/nevt;
+            if(useweight) weight = JRAEvt->weight;
+            if(!(xsection>0.0) && !useweight) weight = 1.0;
+            if(weightHist!=nullptr) weight *= weightHist->GetBinContent(weightHist->FindBin(ptgen,eta));
             if(!MCPUReWeighting.IsNull() && !DataPUReWeighting.IsNull()) {
                double LumiWeight = LumiWeights_.weight(JRAEvt->tnpus->at(iIT));
                weight *= LumiWeight;
             }
 
+            if(evt_fill) {pThatDistribution->Fill(pthat,weight); evt_fill=false;}
             //-4 to cut off the negative side of the detector
             if(fabs(eta)<veta_coarse[NETA_Coarse]) {
                if(debug && ievt>5400000) {
