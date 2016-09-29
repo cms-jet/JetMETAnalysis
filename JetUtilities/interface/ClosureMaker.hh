@@ -15,6 +15,7 @@
 #include "JetMETAnalysis/JetUtilities/interface/Variables.hh"
 #include "JetMETAnalysis/JetUtilities/interface/Exceptions.hh"
 #include "JetMETAnalysis/JetUtilities/interface/Style.h"
+#include "JetMETAnalysis/JetUtilities/interface/HistogramUtilities.hh"
 
 #include "TROOT.h"
 #include "TSystem.h"
@@ -87,9 +88,9 @@ public:
 	void 				makeClosure(const VARIABLES::Variable ivar = VARIABLES::refpt);
 
 private:
-	bool           	 				 useMPV, objects_loaded, draw_guidelines;
+	bool           	 				 objects_loaded, draw_guidelines;
     double							 CMEnergy, nsigma;
-	TString        	 				 path, filename, outputDir, outputFilename, flavor, alg;
+	TString        	 				 path, filename, outputDir, outputFilename, flavor, alg, histMet;
 	vector<TString>	 				 algs, outputFormat;
 	JetInfo							 *ji;
 	TFile							 *ifile, *ofile;
@@ -102,6 +103,7 @@ private:
 	vector<TPaveText*>				 pave;
 	VARIABLES::Variable 			 var;
 	TDirectoryFile					 *odir;
+	HistUtil::HistogramMetric        histogramMetric;
 };
 
 #endif

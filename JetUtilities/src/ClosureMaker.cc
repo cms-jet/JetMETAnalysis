@@ -13,7 +13,8 @@ ClosureMaker::ClosureMaker() {
     flavor          = "";
     path            = "";
     filename        = "Closure";
-    useMPV          = false;
+    histMet         = "mu_h";
+    histogramMetric = HistUtil::getHistogramMetricType(string(histMet));
     nsigma          = 1.5;
     outputDir       = "./";
     outputFilename  = "";
@@ -47,13 +48,14 @@ ClosureMaker::ClosureMaker(CommandLine& cl) {
     flavor          = cl.getValue<TString>  ("flavor",                  "");
     path            = cl.getValue<TString>  ("path",                    "");
     filename        = cl.getValue<TString>  ("filename",         "Closure");
-    useMPV          = cl.getValue<bool>     ("useMPV",               false);
     nsigma          = cl.getValue<double>   ("nsigma",                 1.5);
     draw_guidelines = cl.getValue<bool>     ("draw_guidelines",       true);
     outputDir       = cl.getValue<TString>  ("outputDir",             "./");
     outputFilename  = cl.getValue<TString>  ("outputFilename",          "");
     outputFormat    = cl.getVector<TString> ("outputFormat", ".png:::.eps");
     CMEnergy        = cl.getValue<double>   ("CMEnergy",             13000);
+    histMet         = cl.getValue<TString>  ("histMet",             "mu_h");
+    histogramMetric = HistUtil::getHistogramMetricType(string(histMet));
     bool help       = cl.getValue<bool>     ("help",                 false);
 
     if (help) {cl.print(); return;}
@@ -339,10 +341,10 @@ void ClosureMaker::loopOverBins(TH2F* hvar, unsigned int iVarBin) {
         name = Form("Response_%s_%d_%s%sto%s",const_bin.c_str(),
                     ibin,getVariableTitleString(var).c_str(),
                     varBins[ibin].c_str(),varBins[ibin+1].c_str());
-        h.push_back(hvar->ProjectionY(name,ibin+1,ibin+1));
+        h.push_back(hvar->ProjectionY(name,ibin+1,ibin+1,"e"));
 
-        if (h.back()->GetEntries()>5) {
-            if(useMPV) {
+        if (h.back()->GetEntries()>4) {
+            if(histogramMetric==HistUtil::mu_f || histogramMetric==HistUtil::mpv) {
                 int nbins = 50;//100;
                 TSpectrum *spec = new TSpectrum(10);
                 if(nbins < 100) spec->Search(h.back(),6,"nobackground nodraw goff"); //turn off background removal when nbins too small
@@ -374,12 +376,16 @@ void ClosureMaker::loopOverBins(TH2F* hvar, unsigned int iVarBin) {
 
                 delete spec;
             }
-            else {
-                hClosure.back()->SetBinContent(ibin+1,h.back()->GetMean());
-                hClosure.back()->SetBinError(ibin+1,h.back()->GetMeanError());
+            else if(histogramMetric==HistUtil::mu_h || histogramMetric==HistUtil::median) {
+                hClosure.back()->SetBinContent(ibin+1,getHistogramMetric1D(histogramMetric,h.back()).first);
+                hClosure.back()->SetBinError(ibin+1,getHistogramMetric1D(histogramMetric,h.back()).second);
+            }
+            else{
+                cout << "ERROR::ClosureMaker::loopOverBins Unknown histogramMetric. Skipping bin " << ibin << "." << endl;
+                continue;
             }
         }
-        else if(h.back()->GetEntries()<=5 && h.back()->GetEntries()>1) {
+        else if(h.back()->GetEntries()<=4 && h.back()->GetEntries()>1) {
             hClosure.back()->SetBinContent(ibin+1,h.back()->GetMean());
             hClosure.back()->SetBinError(ibin+1,h.back()->GetMeanError());
         }
