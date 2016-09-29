@@ -3,6 +3,7 @@
 #include "JetMETAnalysis/JetUtilities/interface/PUNtuple.hh"
 #include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
 #include "JetMETAnalysis/JetUtilities/interface/EvtID.hh"
+#include "JetMETAnalysis/JetUtilities/interface/TSplineSteffen.hh"
 
 #include "DataFormats/Common/interface/Wrapper.h"
 
