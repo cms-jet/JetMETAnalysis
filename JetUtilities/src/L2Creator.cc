@@ -20,7 +20,8 @@ L2Creator::L2Creator() {
     l2l3 = true;
     l2calofit = "standard";
     l2pffit = "standard";
-    mpv = false;
+    histMet = "mu_h";
+    histogramMetric = HistUtil::getHistogramMetricType(histMet);
     delphes = false;
     maxFitIter = 30;
 }
@@ -40,9 +41,10 @@ L2Creator::L2Creator(CommandLine& cl) {
     l2l3       = cl.getValue<bool>    ("l2l3",            true);
     l2calofit  = cl.getValue<TString> ("l2calofit", "standard");
     l2pffit    = cl.getValue<TString> ("l2pffit",   "standard");
-    mpv        = cl.getValue<bool>    ("mpv",            false);
     delphes    = cl.getValue<bool>    ("delphes",        false);
     maxFitIter = cl.getValue<int>     ("maxFitIter",        30);
+    histMet    = cl.getValue<string>  ("histMet",       "mu_h");
+    histogramMetric = HistUtil::getHistogramMetricType(histMet);
 
     if (!cl.partialCheck()) return;
     cl.print();
@@ -176,13 +178,23 @@ void L2Creator::loopOverAlgorithms(string makeCanvasVariable) {
         }
 
         //
-        // write the L2 correction text file for the current algorithm
+        // Write the L2 correction text file for the current algorithm
+        // Don't need splines for the separated L2/L3 file because no splines are implemented for thos fits
         //
-        if(alg.find("pf")!=string::npos && l2pffit.Contains("spline"))
+        if(l2l3 && alg.find("pf")!=string::npos && l2pffit.Contains("spline"))
             writeTextFileForCurrentAlgorithm_spline();
         else
             writeTextFileForCurrentAlgorithm();
         
+        //
+        // Check that the FormulaEvaluator returns the same value as the TF1 used to create the fit
+        // This is necessary because several times in the past the FormulaEvaluator has returned strange values
+        //
+        assert(checkFormulaEvaluator());
+
+        //
+        // Draw several canvases of the graphs and associated fits
+        //
         if(!makeCanvasVariable.empty()) {
             makeCanvas(makeCanvasVariable);
         }
@@ -219,34 +231,46 @@ void L2Creator::loopOverEtaBins() {
         // only add points to the graphs if the current histo is not empty
         // the current setting might be a little high
         //
-        if (hrsp->GetEntries() > 10) {//hrsp->Integral()!=0) { 
+        if (hrsp->GetEntries() > 4) {//hrsp->Integral()!=0) { 
 
-            TF1*  frsp    = (TF1*)hrsp->GetListOfFunctions()->Last();
+            //TF1*  frsp    = (TF1*)hrsp->GetListOfFunctions()->Last();
             //std::cout << "hrspName = " << hrsp->GetName() << ": frsp = " << frsp << std::endl;
             TH1F* hrefpt  = hl_refpt.object(indices);
             TH1F* hjetpt  = hl_jetpt.object(indices);
 
             assert(hrefpt->GetEntries()>0&&hjetpt->GetEntries()>0);
 
-            double refpt  =hrefpt->GetMean();
-            double erefpt =hrefpt->GetMeanError();
-            double jetpt  =hjetpt->GetMean();
-            double ejetpt =hjetpt->GetMeanError();
+            double ejetpt;
+            double jetpt;
+            double erefpt;
+            double refpt;
+            //if(histogramMetric == HistUtil::median) {
+            //    ejetpt =HistUtil::getHistogramMetric1D(histogramMetric,hjetpt).second;
+            //    jetpt  =HistUtil::getHistogramMetric1D(histogramMetric,hjetpt).first;
+            //    erefpt =HistUtil::getHistogramMetric1D(histogramMetric,hrefpt).second;
+            //    refpt  =HistUtil::getHistogramMetric1D(histogramMetric,hrefpt).first;
+            //}
+            //else {
+            ejetpt =HistUtil::getHistogramMetric1D(HistUtil::mu_h,hjetpt).second;
+            jetpt  =HistUtil::getHistogramMetric1D(HistUtil::mu_h,hjetpt).first;
+            erefpt =HistUtil::getHistogramMetric1D(HistUtil::mu_h,hrefpt).second;
+            refpt  =HistUtil::getHistogramMetric1D(HistUtil::mu_h,hrefpt).first;
+            //}
 
-            double peak;
-            double epeak;
-            if(alg.find("calo")!=string::npos) {
-                peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(1);
-                epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(1);
-            }
-            else if(alg.find("pf")!=string::npos) {
-                peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(1);
-                epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(1);
-            }
-            else {
-                peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(1);
-                epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(1);
-            }
+            double peak = HistUtil::getHistogramMetric1D(histogramMetric,hrsp).first;
+            double epeak = HistUtil::getHistogramMetric1D(histogramMetric,hrsp).second;
+            //if(alg.find("calo")!=string::npos) {
+            //    peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(1);
+            //    epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(1);
+            //}
+            //else if(alg.find("pf")!=string::npos) {
+            //    peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(1);
+            //    epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(1);
+            //}
+            //else {
+            //    peak = (frsp==0 || !mpv)?hrsp->GetMean():frsp->GetParameter(1);
+            //    epeak = (frsp==0 || !mpv)?hrsp->GetMeanError():frsp->GetParError(1);
+            //}
 
             double absrsp = peak;
             double eabsrsp = epeak;
@@ -284,6 +308,8 @@ void L2Creator::loopOverEtaBins() {
             //
             //xmin = gabscor->GetX()[0];
             //xmin = max(gabscor->GetX()[0],3.0);
+                // Sort the points. Doesn't matter which ref pt produced a given jet pt as long as they are sorted.
+                gabscor->Sort();
                 xmin = max(gabscor->GetX()[0],10.0);
                 xmax = gabscor->GetX()[gabscor->GetN()-1];
             }
@@ -334,11 +360,11 @@ void L2Creator::loopOverEtaBins() {
                             if(xmax>1000.0)
                                 xmax = min(findNext(1000.0,gabscor,true),xmax);
                             vector<double> merge_points = {xmin,xmax};
-                            vabscor_eta_spline.push_back(new PiecewiseSpline(string("spline_")+gabscor->GetName(),gabscor,merge_points,l2pffit.Contains("spline5",TString::kIgnoreCase),!l2pffit.Contains("akima",TString::kIgnoreCase)));
+                            vabscor_eta_spline.push_back(new PiecewiseSpline(string("spline_")+gabscor->GetName(),gabscor,merge_points,PiecewiseSpline::getROOTSplineType(string(l2pffit)),!l2pffit.Contains("akima",TString::kIgnoreCase)&&!l2pffit.Contains("steffen",TString::kIgnoreCase)));
                         }
-                        else if(l2pffit.EqualTo("spline3",TString::kIgnoreCase) || l2pffit.EqualTo("spline5",TString::kIgnoreCase) || l2pffit.EqualTo("splineAkima",TString::kIgnoreCase)) {
+                        else if(l2pffit.EqualTo("spline3",TString::kIgnoreCase) || l2pffit.EqualTo("spline5",TString::kIgnoreCase) || l2pffit.EqualTo("splineAkima",TString::kIgnoreCase) || l2pffit.EqualTo("splineSteffen",TString::kIgnoreCase)) {
                             xmin = gabscor->GetX()[0];
-                            vabscor_eta_spline.push_back(new PiecewiseSpline(string("spline_")+gabscor->GetName(),gabscor,{},l2pffit.Contains("spline5",TString::kIgnoreCase),!l2pffit.Contains("akima",TString::kIgnoreCase)));
+                            vabscor_eta_spline.push_back(new PiecewiseSpline(string("spline_")+gabscor->GetName(),gabscor,{},PiecewiseSpline::getROOTSplineType(string(l2pffit)),!l2pffit.Contains("akima",TString::kIgnoreCase)&&!l2pffit.Contains("steffen",TString::kIgnoreCase)));
                         }
                         if(l2pffit.Contains("akima",TString::kIgnoreCase)) {
                             gsl_spline *spline_akima = gsl_spline_alloc(gsl_interp_akima, gabscor->GetN());
@@ -526,6 +552,106 @@ void L2Creator::loopOverEtaBins() {
 }
 
 //______________________________________________________________________________
+bool L2Creator::checkFormulaEvaluator() {
+    vector<double> pt_to_check  = {10.0,30.0,100.0,500.0,1000.0,4000.0};
+
+    unsigned int vector_size = 0;
+    if(l2l3) vector_size = vabscor_eta.size(); //For L2L3 Corrections Together
+    else vector_size = vrelcor_eta.size(); //For L2 & L3 Corrections Separate
+    for (unsigned int ieta=0;ieta<vector_size;ieta++) {
+        //
+        // Load the appropriate graph
+        //
+        TGraph* gcor;
+        if(l2l3) gcor = vabscor_eta[ieta]; //For L2L3 Corrections Together
+        else gcor = vrelcor_eta[ieta]; //For L2 & L3 Corrections Separate
+
+        //
+        // Load the appropriate TF1
+        //
+        TF1 *root_func(nullptr);
+        PiecewiseSpline* spline(nullptr);
+
+        // This checks if this is a spline function or simply a regular TF1
+        if(vabscor_eta_spline.size()>0) {
+            //Load the spline function
+            spline = vabscor_eta_spline[ieta];
+            root_func = spline->getFullFunction();
+        }
+        else {
+            //Load the regular TF1
+            root_func = (TF1*)gcor->GetListOfFunctions()->Last();
+        }
+
+        //
+        // Load the FactorizedJetCorrector
+        //
+        string txtfilename = string(outputDir + era + "_L2Relative_" + ji->getAlias() + ".txt");
+        JetCorrectorParameters *L2JetPar = new JetCorrectorParameters(txtfilename);
+        vector<JetCorrectorParameters> vPar;
+        vPar.push_back(*L2JetPar);
+        FactorizedJetCorrector *JetCorrector = new FactorizedJetCorrector(vPar);
+
+        //
+        // Do the actual testing
+        //
+        if(root_func!=nullptr) {
+            double  eta_avg  = (hl_jetpt.minimum(0,ieta)+hl_jetpt.maximum(0,ieta))/2.0;
+            double  ptmin = gcor->GetX()[0];
+            double  ptmax = gcor->GetX()[gcor->GetN()-1];
+            for(auto ipt : pt_to_check) {
+
+                //
+                // Check that ipt is not outside [ptmin,ptmax]
+                //
+                if (ipt<ptmin || ipt>ptmax) continue;
+
+                //
+                // Set the inputs for the FactorizedJetCorrector
+                // Need to return the correction here because one must reset the inputs each time there is a call to getCorrection()
+                //
+                JetCorrector->setJetPt(ipt);
+                JetCorrector->setJetEta(eta_avg);
+                double fe_value = JetCorrector->getCorrection();
+
+                //
+                // Need the actual pT value to determine the spline section and load the appropriate parameters.
+                //
+                if(vabscor_eta_spline.size()>0)
+                    root_func = spline->setParameters(spline->getSection(ipt));
+
+                //
+                // Do the comparison
+                //
+                if(abs(fe_value-root_func->Eval(ipt))>0.0006) {
+                    cout << "ERROR::L2Creator::checkFormulaEvaluator TF1 and FormulaEvaluator do not agree!" << endl
+                         << "pT: " << ipt << " eta: " << eta_avg << " TF1: " << root_func->Eval(ipt) << " FormulaEvaluator: "
+                         << fe_value << endl;
+                    return false;
+                }
+            }
+        }
+    }
+
+    cout << "L2Creator::checkFormulaEvaluator All pT and eta values checked agree for TF1 and FormulaEvaluator." << endl;
+
+    return true;
+
+
+
+    /*
+
+TF1* f = new TF1("f","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",3.70269,3499.16)
+f->SetParameters( 0.7111,9.24906,16.3009,-0.127602,0.96894,1.57828)
+f->Eval(10.0)
+
+
+
+
+    */
+}
+
+//______________________________________________________________________________
 void L2Creator::makeCanvas(string makeCanvasVariable) {    
     //
     // Containers and canvas settings
@@ -626,7 +752,7 @@ void L2Creator::makeCanvas(string makeCanvasVariable) {
         //
         // Draw the legend and save the canvas (last thing before making a new canvas or ending loop)
         //
-        if((igraph+1)%nperpad==0) {
+        if((igraph+1)%nperpad==0 || igraph==graphs.size()-1) {
             vleg.back()->Draw("same");
             c.back()->Write();
             for(unsigned int iformat=0; iformat<formats.size(); iformat++) {
@@ -686,7 +812,7 @@ void L2Creator::setAndFitFLogAndFGaus(TGraphErrors* gabscor, TF1* flog, TF1* fga
 //______________________________________________________________________________
 TString L2Creator::getOfflinePFFunction() {
     if(l2pffit.EqualTo("standard",TString::kIgnoreCase) || (l2pffit.Contains("standard",TString::kIgnoreCase)&&l2pffit.Contains("spline",TString::kIgnoreCase)) ) {
-        return "[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))";
+        return "[0]+([1]/(pow(log10(x),2)+[2]))+([3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5])))";
     }
     else if(l2pffit.EqualTo("standard+Gaussian",TString::kIgnoreCase)) {
         return "[0]+([1]/(pow(log10(x),2)+[2]))+([3]*exp(-([4]*((log10(x)-[5])*(log10(x)-[5])))))+([6]*exp(-([7]*((log10(x)-[8])*(log10(x)-[8])))))";
@@ -707,24 +833,21 @@ TString L2Creator::getOfflinePFFunction() {
     else if(l2pffit.EqualTo("ErrorFunction+standard+Gaussian",TString::kIgnoreCase)) {
         return "[0]+([1]*TMath::Erf([2]*log10(x)-[3]))+([4]/(pow(log10(x),2)+[5]))+([6]*exp(-[7]*pow(log10(x)-[8],2)))+([9]*exp(-[10]*pow(log10(x)-[11],2)))";
     }
-    else if(l2pffit.EqualTo("spline3",TString::kIgnoreCase)) {
-        return "[0]+(x-[1])*([2]+(x-[1])*([3]+(x-[1])*[4]))";
+    else if(l2pffit.EqualTo("spline3",TString::kIgnoreCase) || l2pffit.EqualTo("splineAkima",TString::kIgnoreCase) || l2pffit.EqualTo("splineSteffen",TString::kIgnoreCase)) {
+        return "[0]+((x-[1])*([2]+((x-[1])*([3]+((x-[1])*[4])))))";
     }
     else if(l2pffit.EqualTo("spline5",TString::kIgnoreCase)) {
-        return "[0]+(x-[1])*([2]+(x-[1])*([3]+(x-[1])*([4]+(x-[1])*([5]+(x-[1])*[6]))))";
+        return "[0]+((x-[1])*([2]+((x-[1])*([3]+((x-[1])*([4]+((x-[1])*([5]+((x-[1])*[6])))))))))";
     }
-    else if(l2pffit.EqualTo("splineAkima",TString::kIgnoreCase)) {
-        return "[0]+(x-[1])*([2]+(x-[1])*([3]+(x-[1])*[4]))";
-    }
-    else if(l2pffit.EqualTo("standard+spline3",TString::kIgnoreCase)) {
-        return "[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))";
-    }
-    else if(l2pffit.EqualTo("standard+spline5",TString::kIgnoreCase)) {
-        return "[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))";
-    }
-    else if(l2pffit.EqualTo("standard+splineAkima",TString::kIgnoreCase)) {
-        return "[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))";
-    }
+    //else if(l2pffit.EqualTo("standard+spline3",TString::kIgnoreCase)) {
+    //    return "[0]+([1]/(pow(log10(x),2)+[2]))+([3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5])))";
+    //}
+    //else if(l2pffit.EqualTo("standard+spline5",TString::kIgnoreCase)) {
+    //    return "[0]+([1]/(pow(log10(x),2)+[2]))+([3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5])))";
+    //}
+    //else if(l2pffit.EqualTo("standard+splineAkima",TString::kIgnoreCase)) {
+    //    return "[0]+([1]/(pow(log10(x),2)+[2]))+([3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5])))";
+    //}
     else {
         cout << "ERROR::getOfflinePFFunction::Unknown PF function choice." << endl;
         return "";      
@@ -744,7 +867,8 @@ void L2Creator::setOfflinePFParameters(TGraphErrors* gabscor, TF1* fabscor, doub
     }
 
     if(l2pffit.EqualTo("standard",TString::kIgnoreCase) || l2pffit.EqualTo("standard+spline3",TString::kIgnoreCase) || 
-       l2pffit.EqualTo("standard+spline5",TString::kIgnoreCase) || l2pffit.EqualTo("standard+splineAkima",TString::kIgnoreCase)) {
+       l2pffit.EqualTo("standard+spline5",TString::kIgnoreCase) || l2pffit.EqualTo("standard+splineAkima",TString::kIgnoreCase) ||
+       l2pffit.EqualTo("standard+splineSteffen",TString::kIgnoreCase)) {
         fabscor->SetParameter(0,0.5);
         fabscor->SetParameter(1,9.0);
         fabscor->SetParameter(2,8.0);
@@ -913,7 +1037,7 @@ void L2Creator::doRelCorFits() {
         // only add a point to the graph if the current histo is not empty
         if (hjetpt->Integral()!=0) {
             TF1*   fabscor  =vabscor_eta[ieta]->GetFunction("fit");
-            double jetpt    =hjetpt->GetMean();
+            double jetpt    =HistUtil::getHistogramMetric1D(HistUtil::mu_h,hjetpt).first;//hjetpt->GetMean();
             if(!fabscor) continue;
             double refpt    =jetpt*fabscor->Eval(jetpt);
             double l3cor    = 1;
@@ -1049,7 +1173,8 @@ void L2Creator::perform_smart_fit(TGraphErrors * gabscor, TF1 * fabscor, int max
     //
     // Skip the warnings if using a pure spline and the fit was merely structural
     //
-    if(l2pffit.EqualTo("spline3",TString::kIgnoreCase) || l2pffit.EqualTo("spline5",TString::kIgnoreCase) || l2pffit.EqualTo("splineAkima",TString::kIgnoreCase))
+    if(l2pffit.EqualTo("spline3",TString::kIgnoreCase) || l2pffit.EqualTo("spline5",TString::kIgnoreCase) ||
+       l2pffit.EqualTo("splineAkima",TString::kIgnoreCase) || l2pffit.EqualTo("splineSteffen",TString::kIgnoreCase))
         return;        
       
     //
@@ -1145,13 +1270,13 @@ void L2Creator::writeTextFileForCurrentAlgorithm_spline() {
 
             for(int isection=0; isection<spline->getNSections(); isection++) {
                 pair<double,double> bounds = spline->getSectionBounds(isection);
-                fout<<setw(11)<<etamin<<setw(11)<<etamax
-                    <<setw(11)<<bounds.first<<setw(11)<<bounds.second
-                    <<setw(11)<<(int)(spline->getNpar()+2) //Number of parameters + 2 
-                    <<setw(12)<<bounds.first<<setw(12)<<bounds.second;
+                fout<<setw(15)<<etamin<<setw(15)<<etamax
+                    <<setw(15)<<bounds.first<<setw(15)<<bounds.second
+                    <<setw(15)<<(int)(spline->getNpar()+2) //Number of parameters + 2 
+                    <<setw(15)<<bounds.first<<setw(15)<<bounds.second;
                 TF1* spline_func = spline->setParameters(isection);
                 for(int p=0; p<spline->getNpar(); p++) {
-                    fout<<setw(13)<<spline_func->GetParameter(p);
+                    fout<<setw(15)<<spline_func->GetParameter(p);
                 }
                 fout<<endl;
             } 
