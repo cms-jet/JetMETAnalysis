@@ -134,6 +134,7 @@ int main(int argc,char**argv)
   string         output            = cl.getValue<string> ("output",             "jra.root");
   bool           useweight         = cl.getValue<bool>   ("useweight",               false);
   float          xsection          = cl.getValue<float>  ("xsection",                  0.0);
+  float          luminosity        = cl.getValue<float>  ("luminosity",                1.0);
   int            nrefmax           = cl.getValue<int>    ("nrefmax",                     0);
   int            nbinspt           = cl.getValue<int>    ("nbinspt",                    50);
   int            nbinseta          = cl.getValue<int>    ("nbinseta",                   25);
@@ -172,6 +173,8 @@ int main(int argc,char**argv)
   float          phirspmin         = cl.getValue<float>  ("phirspmin",                -1.0);
   float          phirspmax         = cl.getValue<float>  ("phirspmax",                 1.0);
   float          jtptmin           = cl.getValue<float>  ("jtptmin",                   1.0);
+  float          pthatmin          = cl.getValue<float>  ("pthatmin",                  0.0);
+  float          pthatmax          = cl.getValue<float>  ("pthatmax",                 -1.0);
   vector<string> algs              = cl.getVector<string>("algs",                       "");
   vector<string> presel            = cl.getVector<string>("presel",                     "");
   int            itlow             = cl.getValue<int>    ("itlow",                       0);
@@ -302,7 +305,7 @@ int main(int argc,char**argv)
     tree->SetBranchStatus("*",0);
     vector<string> branch_names = {"nref","weight","rho","refpdgid","refpt",
                                    "refeta","refphi","jtpt","jteta","jtphi",
-                                   "jty","refdxjt","bxns","npus","tnpus"};
+                                   "jty","refdxjt","bxns","npus","tnpus","pthat"};
     for(auto n : branch_names) {
         if(n=="refpdgid") {
             if(!doflavor) continue;
@@ -315,7 +318,9 @@ int main(int argc,char**argv)
             }
         }
         if(n=="weight") {
-            if (xsection>0.0) { weight = xsection/tree->GetEntries(); useweight = false; }
+            if (xsection>0.0) { 
+                useweight = false;
+            }
             if (useweight) {
                 if (0==tree->GetBranch(n.c_str()))
                     cout<<"branch 'weight' not found, events will NOT be weighted!"<<endl;
@@ -382,6 +387,9 @@ int main(int argc,char**argv)
     vector<TH1F***>  jetPtVsJetYJetPt;
     vector<TH1F***>  refPtVsJetYRefPt;
     vector<TH1F***>  jetPtVsJetYRefPt;
+
+    vector<TH1F**>   pThatVsRefPt;
+    vector<TH1F***>  pThatVsJetEtaRefPt;
     
     vector<TH1F**>   relRspVsJetPt;
     vector<TH1F**>   relRspVsRefPt;
@@ -425,7 +433,7 @@ int main(int argc,char**argv)
     vector<TH1F**>   phiRspVsJetPhi;
     vector<TH1F***>  phiRspVsJetEtaJetPt;
     vector<TH1F***>  phiRspVsJetEtaRefPt;
-    
+
     // book pT histograms
     if (binspt.size()>=2) {
       for (unsigned int ipt=0;ipt<binspt.size()-1;++ipt) {
@@ -458,6 +466,17 @@ int main(int argc,char**argv)
                                                3*nbinspt,
                                                0,
                                                3.0*ptmax);
+          }
+        }
+
+        if (dorefpt) {
+          pThatVsRefPt.push_back(new TH1F*[flavors.size()]);
+          for (unsigned int iflv=0;iflv<flavors.size();iflv++) {
+            hname=flavors[iflv]+"pThat_"+get_suffix("RefPt",ipt,binspt);
+            pThatVsRefPt.back()[iflv]=new TH1F(hname.c_str(),";#hat{p}_{T} [GeV]",
+                                               (int)binspt[binspt.size()-1]/10.0,
+                                               0,
+                                               binspt[binspt.size()-1]);
           }
         }
 	
@@ -804,6 +823,7 @@ int main(int argc,char**argv)
         TH1F***  jetPtRefPt(0);
         TH1F**** jetPtMuRefPt(0);
         TH1F**** jetPtRhoRefPt(0);
+        TH1F***  pThatRefPt(0);
         TH1F***  relRspJetPt(0);
         TH1F**** relRspMuJetPt(0);
         TH1F**** relRspRhoJetPt(0);
@@ -890,6 +910,12 @@ int main(int argc,char**argv)
                 jetPtRhoRefPt[irho][ipt]=new TH1F*[flavors.size()];
             }
           }
+        }
+
+        if (dorefpt) {
+          pThatRefPt =new TH1F**[binspt.size()];
+          for (unsigned int ipt=0;ipt<binspt.size()-1;ipt++)
+            pThatRefPt[ipt]=new TH1F*[flavors.size()];
         }
 	
         if (dorelrsp&&dojetpt) {
@@ -1089,6 +1115,14 @@ int main(int argc,char**argv)
                                              3.0*ptmax);
             }
 
+            if (dorefpt) {             
+              hname=flavors[iflv]+"pThat_"+jetEtaSuffix+"_"+refPtSuffix;
+              pThatRefPt[ipt][iflv]=new TH1F(hname.c_str(),";#hat{p}_{T}",
+                                            (int)binspt[binspt.size()-1]/10.0,
+                                            0,
+                                            binspt[binspt.size()-1]);
+            }
+
             if (dorelrsp&&dojetpt) {
               hname=flavors[iflv]+"RelRsp_"+jetEtaSuffix+"_"+jetPtSuffix;
               relRspJetPt[ipt][iflv]=new TH1F(hname.c_str(),";p_{T}/p_{T}^{ref}",
@@ -1152,6 +1186,7 @@ int main(int argc,char**argv)
         if (dorefpt)                  jetPtVsJetEtaRefPt    .push_back(jetPtRefPt);
         if (dorefpt&&domu)            jetPtVsJetEtaMuRefPt  .push_back(jetPtMuRefPt);
         if (dorefpt&&dorho)           jetPtVsJetEtaRhoRefPt .push_back(jetPtRhoRefPt);
+        if (dorefpt)                  pThatVsJetEtaRefPt    .push_back(pThatRefPt);
         if (dorelrsp&&dojetpt)        relRspVsJetEtaJetPt   .push_back(relRspJetPt);
         if (dorelrsp&&dojetpt&&domu)  relRspVsJetEtaMuJetPt .push_back(relRspMuJetPt);
         if (dorelrsp&&dojetpt&&dorho) relRspVsJetEtaRhoJetPt.push_back(relRspRhoJetPt);
@@ -1318,10 +1353,20 @@ int main(int argc,char**argv)
         tree->GetEntry(ientry);
 
         float mu = (NpuNotMu) ? JRAEvt->npus->at(itInd) : JRAEvt->tnpus->at(itInd);
+        float pthat = JRAEvt->pthat;
+        bool evt_fill = true;
 
         if(JRAEvt->refdrjt->size()!=(unsigned int)JRAEvt->nref) {
           if(verbose) cout << "WARNING::The number of reference jets doesn't match the number of stored values!" << endl;
           continue;
+        }
+        if(pthatmin>0.0 && pthat<pthatmin) {
+           if(verbose) cout << "WARNING::The pthat of this event is less than the minimum pthat!" << endl;
+           continue;
+        }
+        if(pthatmax!=-1.0 && pthat>pthatmax) {
+           if(verbose) cout << "WARNING::The pthat of this event is greater than the maximum pthat!" << endl;
+           continue;
         }
 
         if (nrefmax>0) JRAEvt->nref = std::min((int)JRAEvt->nref,nrefmax);
@@ -1373,25 +1418,26 @@ int main(int argc,char**argv)
           //
           // retrieve the correct weight
           //
+          if(xsection>0.0) weight = (xsection*luminosity)/nevt;
           if(useweight) weight = JRAEvt->weight;
           if(!(xsection>0.0) && !useweight) weight = 1.0;
           if(!weightfile.IsNull())
           {
              if(!doflavor)
              {
-                weight = weightMap["all_"]->GetBinContent(weightMap["all_"]->FindBin(refpt,eta));
+                weight *= weightMap["all_"]->GetBinContent(weightMap["all_"]->FindBin(refpt,eta));
              }
              else if(doflavor)
              {
-                weight = weightMap["all_"]->GetBinContent(weightMap["all_"]->FindBin(refpt,eta));
+                weight *= weightMap["all_"]->GetBinContent(weightMap["all_"]->FindBin(refpt,eta));
                 if(noabsflavors)
-                   flavorWeight = weightMap[pdgid_to_flavor_name(pdgid)]->GetBinContent(weightMap[pdgid_to_flavor_name(pdgid)]->FindBin(refpt,eta));
+                   flavorWeight *= weightMap[pdgid_to_flavor_name(pdgid)]->GetBinContent(weightMap[pdgid_to_flavor_name(pdgid)]->FindBin(refpt,eta));
                 else
-                   flavorWeight = weightMap[pdgid_to_flavor_name(fabs(pdgid))]->GetBinContent(weightMap[pdgid_to_flavor_name(fabs(pdgid))]->FindBin(refpt,eta));
+                   flavorWeight *= weightMap[pdgid_to_flavor_name(fabs(pdgid))]->GetBinContent(weightMap[pdgid_to_flavor_name(fabs(pdgid))]->FindBin(refpt,eta));
              }
           }
           else
-             flavorWeight = weight;
+             flavorWeight *= weight;
           if(!MCPUReWeighting.IsNull() && !DataPUReWeighting.IsNull()) {
              double LumiWeight = LumiWeights_.weight(JRAEvt->tnpus->at(itIndex(JRAEvt->bxns)));
              weight *= LumiWeight;
@@ -1537,29 +1583,21 @@ int main(int argc,char**argv)
             if (domu)  fill_histo(pt, weight, eta, mu,  refpt, binseta, binsmu,  binspt, jetPtVsJetEtaMuRefPt);
             if (dorho) fill_histo(pt, weight, eta, JRAEvt->rho, refpt, binseta, binsrho, binspt, jetPtVsJetEtaRhoRefPt);
 
-            fill_histo(refpt,weight,y,refpt,
-                       binsy,binspt,refPtVsJetYRefPt);
-            fill_histo(pt,weight,y,refpt,
-                       binsy,binspt,jetPtVsJetYRefPt);
+            if(evt_fill) {fill_histo(pthat,weight,eta,refpt,binseta,binspt,pThatVsJetEtaRefPt); if(!doflavor) {evt_fill=false;}}
+            fill_histo(refpt,weight,y,refpt,binsy,binspt,refPtVsJetYRefPt);
+            fill_histo(pt,weight,y,refpt,binsy,binspt,jetPtVsJetYRefPt);
             if (doflavor) {
-              fill_histo(pdgid,refpt,flavorWeight,
-                         eta,refpt,binseta,binspt,refPtVsJetEtaRefPt,
-                         noabsflavors);
+              fill_histo(pdgid,refpt,flavorWeight,eta,refpt,binseta,binspt,refPtVsJetEtaRefPt,noabsflavors);
               if (domu)  fill_histo(pdgid, refpt, flavorWeight, eta, mu,  refpt, binseta, binsmu,  binspt, refPtVsJetEtaMuRefPt,  noabsflavors);
               if (dorho) fill_histo(pdgid, refpt, flavorWeight, eta, JRAEvt->rho, refpt, binseta, binsrho, binspt, refPtVsJetEtaRhoRefPt, noabsflavors);
 
-              fill_histo(pdgid,pt,flavorWeight,
-                         eta,refpt,binseta,binspt,jetPtVsJetEtaRefPt,
-                         noabsflavors);
+              fill_histo(pdgid,pt,flavorWeight,eta,refpt,binseta,binspt,jetPtVsJetEtaRefPt,noabsflavors);
               if (domu)  fill_histo(pdgid, pt, flavorWeight, eta, mu,  refpt, binseta, binsmu,  binspt, jetPtVsJetEtaMuRefPt,  noabsflavors);
               if (dorho) fill_histo(pdgid, pt, flavorWeight, eta, JRAEvt->rho, refpt, binseta, binsrho, binspt, jetPtVsJetEtaRhoRefPt, noabsflavors);
 
-              fill_histo(pdgid,refpt,flavorWeight,
-                         y,refpt,binsy,binspt,refPtVsJetYRefPt,
-                         noabsflavors);
-              fill_histo(pdgid,pt,flavorWeight,
-                         y,refpt,binsy,binspt,jetPtVsJetYRefPt,
-                         noabsflavors);
+              fill_histo(pdgid,refpt,flavorWeight,y,refpt,binsy,binspt,refPtVsJetYRefPt,noabsflavors);
+              fill_histo(pdgid,pt,flavorWeight,y,refpt,binsy,binspt,jetPtVsJetYRefPt,noabsflavors);
+              if(evt_fill) {fill_histo(pdgid,pthat,flavorWeight,eta,refpt,binseta,binspt,pThatVsJetEtaRefPt,noabsflavors); evt_fill=false;}
             }
           }
 	
