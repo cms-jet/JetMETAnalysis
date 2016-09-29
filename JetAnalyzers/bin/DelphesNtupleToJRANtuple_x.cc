@@ -16,6 +16,9 @@
 
 #include "DataFormats/Math/interface/deltaR.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
+//https://github.com/xrootd/xrootd/blob/master/src/XrdCl/XrdClFileSystem.hh#L621
+//https://github.com/xrootd/xrootd/blob/master/src/XrdCl/XrdClXRootDResponses.hh
+#include "xrootd/XrdCl/XrdClFileSystem.hh"
 
 #include "TROOT.h"
 #include "TSystem.h"
@@ -106,6 +109,7 @@ int main(int argc,char**argv) {
     string       inputFilePath  = cl.getValue<string>       ("inputFilePath");
 	string 	 	 inputFilename  = cl.getValue<string> 	    ("inputFilename",                 "");
 	string       fileList       = cl.getValue<string>       ("fileList",                      "");
+    string       url_string     = cl.getValue<string>       ("url",                           "");
 	string 	     outputDir      = cl.getValue<string> 	    ("outputDir",                   "./");
 	string       outputFilename = cl.getValue<string>       ("outputFilename", "DelphesJRA.root");
 	int          maxEvts        = cl.getValue<int>          ("maxEvts",                        0);
@@ -131,6 +135,19 @@ int main(int argc,char**argv) {
   		}
   		file_count = chain.GetListOfFiles()->GetEntries();
   	}
+    else if(!url_string.empty()) {
+       XrdCl::DirectoryList *response;
+       XrdCl::DirListFlags::Flags flags = XrdCl::DirListFlags::None;
+       XrdCl::URL url(url_string);
+       XrdCl::FileSystem fs(url);
+       fs.DirList(inputFilePath,flags,response);
+       for(auto iresp=response->Begin(); iresp!=response->End(); iresp++) {
+          if((*iresp)->GetName().find(".root")!=std::string::npos) {
+             cout << "\tAdding " << url_string << inputFilePath << (*iresp)->GetName() << endl;
+             file_count = chain.Add((url_string+inputFilePath+(*iresp)->GetName()).c_str());
+          }
+       }
+    }
   	else {
 	    cout<<"\tAdding "<<inputFilePath+"/"+inputFilename+"*.root"<<endl;
     	file_count = chain.Add((inputFilePath+"/"+inputFilename+"*.root").c_str());
