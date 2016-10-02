@@ -32,7 +32,7 @@ void MakeMCHistogram(string ipath, string ifilename, string idirectory="",
 
    cout << "MakeMCHistogram::Opening the output file and booking the output histogram ... " << flush;
    TFile* ofile = TFile::Open("MyMCPileupHistogram.root","RECREATE");
-   TH1D* h = new TH1D("pileup","pileup",60,0,60);
+   TH1D* h = new TH1D("pileup","pileup",80,0,80);
    cout << "DONE" << endl;
 
    cout << "MakeMCHistogram::Filling the output histogram ... " << flush;
