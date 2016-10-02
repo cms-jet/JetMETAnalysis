@@ -69,6 +69,7 @@ void L2Creator::resetForNextAlgorithm() {
     vabsrsp_eta.erase(vabsrsp_eta.begin(),vabsrsp_eta.end());
     vabscor_eta.erase(vabscor_eta.begin(),vabscor_eta.end());
     vrelcor_eta.erase(vrelcor_eta.begin(),vrelcor_eta.end());
+    vabscor_eta_spline.erase(vabscor_eta_spline.begin(),vabscor_eta_spline.end());
 }
 
 //______________________________________________________________________________
@@ -181,7 +182,7 @@ void L2Creator::loopOverAlgorithms(string makeCanvasVariable) {
         // Write the L2 correction text file for the current algorithm
         // Don't need splines for the separated L2/L3 file because no splines are implemented for thos fits
         //
-        if(l2l3 && alg.find("pf")!=string::npos && l2pffit.Contains("spline"))
+        if(l2l3 && (alg.find("pf")!=string::npos || alg.find("puppi")!=string::npos) && l2pffit.Contains("spline"))
             writeTextFileForCurrentAlgorithm_spline();
         else
             writeTextFileForCurrentAlgorithm();
@@ -553,7 +554,7 @@ void L2Creator::loopOverEtaBins() {
 
 //______________________________________________________________________________
 bool L2Creator::checkFormulaEvaluator() {
-    vector<double> pt_to_check  = {10.0,30.0,100.0,500.0,1000.0,4000.0};
+   vector<double> pt_to_check  = {10.0,30.0,100.0,500.0,1000.0,2000.0,3000.0,4000.0};
 
     unsigned int vector_size = 0;
     if(l2l3) vector_size = vabscor_eta.size(); //For L2L3 Corrections Together
@@ -653,6 +654,14 @@ f->Eval(10.0)
 
 //______________________________________________________________________________
 void L2Creator::makeCanvas(string makeCanvasVariable) {    
+    //
+    // Delete any canvases that may still exist from other algorithms
+    //
+    TList* loc = (TList*)gROOT->GetListOfCanvases();
+    TListIter itc(loc);
+    TObject *o(0);
+    while ((o = itc())) delete o;
+
     //
     // Containers and canvas settings
     //

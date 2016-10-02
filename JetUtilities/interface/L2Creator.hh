@@ -189,12 +189,12 @@ int PiecewiseSpline::getSection(float x) {
     //
     spline->GetKnot(0,x_knot,y_knot);
     if(x<x_knot) {
-        cout << "WARNING::PiecewiseSpline::getSection The x value is less than the minimum value of the spline (" << x_knot << ")." << endl;
+       cout << "WARNING::PiecewiseSpline::getSection The x value (" << x << ") is less than the minimum value of the spline (" << x_knot << ")." << endl;
         return 0;
     }
     spline->GetKnot(spline->GetNp()-1,x_knot,y_knot);
     if(x>x_knot) {
-        cout << "WARNING::PiecewiseSpline::getSection The x value is greater than the maximum value of the spline (" << x_knot << ")." << endl;
+       cout << "WARNING::PiecewiseSpline::getSection The x value (" << x << ") is greater than the maximum value of the spline (" << x_knot << ")." << endl;
         return getNSections();
     }
 
