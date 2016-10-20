@@ -554,7 +554,7 @@ void L2Creator::loopOverEtaBins() {
 
 //______________________________________________________________________________
 bool L2Creator::checkFormulaEvaluator() {
-   vector<double> pt_to_check  = {10.0,30.0,100.0,500.0,1000.0,2000.0,3000.0,4000.0};
+    vector<double> pt_to_check  = {10.0,30.0,100.0,500.0,1000.0,2000.0,3000.0,4000.0};
 
     unsigned int vector_size = 0;
     if(l2l3) vector_size = vabscor_eta.size(); //For L2L3 Corrections Together
@@ -600,12 +600,30 @@ bool L2Creator::checkFormulaEvaluator() {
             double  eta_avg  = (hl_jetpt.minimum(0,ieta)+hl_jetpt.maximum(0,ieta))/2.0;
             double  ptmin = gcor->GetX()[0];
             double  ptmax = gcor->GetX()[gcor->GetN()-1];
+
+            double pt_limit = 0.0;
+            //For eta-dependent spline clipping
+            if      (abs(eta_avg) < 0.6091) pt_limit = 3000;
+            else if (abs(eta_avg) < 0.9571) pt_limit = 2700;
+            else if (abs(eta_avg) < 1.3051) pt_limit = 2000;
+            else if (abs(eta_avg) < 2.0431) pt_limit = 1400;
+            else if (abs(eta_avg) < 2.51  ) pt_limit = 900;
+            else if (abs(eta_avg) < 2.9641) pt_limit = 500;
+            else if (abs(eta_avg) < 3.6641) pt_limit = 300;
+            else if (abs(eta_avg) < 4.0131) pt_limit = 200;
+            else if (abs(eta_avg) < 4.5381) pt_limit = 100;
+
             for(auto ipt : pt_to_check) {
 
                 //
                 // Check that ipt is not outside [ptmin,ptmax]
                 //
                 if (ipt<ptmin || ipt>ptmax) continue;
+
+                //
+                // Check that the ipt is not outside the pt clipping area
+                //
+                if(ipt > pt_limit) continue;
 
                 //
                 // Set the inputs for the FactorizedJetCorrector
@@ -1261,6 +1279,9 @@ void L2Creator::writeTextFileForCurrentAlgorithm_spline() {
     ofstream fout(txtfilename);
     fout.setf(ios::right); 
 
+    //For eta-dependent spline clipping
+    int pt_limit = 70;
+
     unsigned int vector_size = 0;
     vector_size = vabscor_eta.size();
     for (unsigned int ieta=0;ieta<vector_size;ieta++) { 
@@ -1277,12 +1298,50 @@ void L2Creator::writeTextFileForCurrentAlgorithm_spline() {
             double  etamin  = hl_jetpt.minimum(0,ieta);
             double  etamax  = hl_jetpt.maximum(0,ieta);
 
+            //For eta-dependent spline clipping
+            if      ( (etamax>0 && etamax < 0.6091) || (etamin<0 && etamin > -0.6091) ) pt_limit = 3000;
+            else if ( (etamax>0 && etamax < 0.9571) || (etamin<0 && etamin > -0.9571) ) pt_limit = 2700;
+            else if ( (etamax>0 && etamax < 1.3051) || (etamin<0 && etamin > -1.3051) ) pt_limit = 2000;
+            else if ( (etamax>0 && etamax < 2.0431) || (etamin<0 && etamin > -2.0431) ) pt_limit = 1400;
+            else if ( (etamax>0 && etamax < 2.51  ) || (etamin<0 && etamin > -2.51  ) ) pt_limit = 900;
+            else if ( (etamax>0 && etamax < 2.9641) || (etamin<0 && etamin > -2.9641) ) pt_limit = 500;
+            else if ( (etamax>0 && etamax < 3.6641) || (etamin<0 && etamin > -3.6641) ) pt_limit = 300;
+            else if ( (etamax>0 && etamax < 4.0131) || (etamin<0 && etamin > -4.0131) ) pt_limit = 200;
+            else if ( (etamax>0 && etamax < 4.5381) || (etamin<0 && etamin > -4.5381) ) pt_limit = 100;
+
+            bool abovePtLimit = false;
+            bool lastLine = false;
+
             for(int isection=0; isection<spline->getNSections(); isection++) {
+                if(lastLine) continue;
+
+                //Could put section checking for a jump in the JEC
+                //|splineDerivativ_{i}-SplineDerivative_{i-1}|>derivative_threshold
+                //sign(splineDerivative_{i})!=sign(splineDerivative_{i+1})
+                //Then cut out this and all further spline segments
+                //Might want to check this for the upcoming segment (i=j+1 where j is the current segment)
+                //  because then we can set the last bound to 6500
+
                 pair<double,double> bounds = spline->getSectionBounds(isection);
+                //When you go beyond a range of validity the default behavior is to return to the correction value at the closest bound to the range of validity
+                //When you go outside a bin boundary (i.e. the program cannot find the bin you are supposed to be in) then the default behavior is to return 1.0
+                //This will protext against that happening when the pT is just above where the last MC bin is.
+                //6500 is chosen ass that is the 2015-2017 beam energy.
+                //if(isection==spline->getNSections()-1) {
+                //    bounds.second = 6500;
+                //}
+
+                if(isection==spline->getNSections()-1) lastLine = true;
+                if(bounds.second >= pt_limit) {
+                    abovePtLimit = true;
+                    lastLine = true;
+                }
+
+                //For expediency of Summer16_25nsV5_MC do eta-dependent clipping
                 fout<<setw(15)<<etamin<<setw(15)<<etamax
-                    <<setw(15)<<bounds.first<<setw(15)<<bounds.second
+                    <<setw(15)<<bounds.first<<setw(15)<<(lastLine ? 6500 : bounds.second)
                     <<setw(15)<<(int)(spline->getNpar()+2) //Number of parameters + 2 
-                    <<setw(15)<<bounds.first<<setw(15)<<bounds.second;
+                    <<setw(15)<<bounds.first<<setw(15)<<(abovePtLimit ? pt_limit : bounds.second);
                 TF1* spline_func = spline->setParameters(isection);
                 for(int p=0; p<spline->getNpar(); p++) {
                     fout<<setw(15)<<spline_func->GetParameter(p);
