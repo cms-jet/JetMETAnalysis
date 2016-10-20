@@ -928,6 +928,14 @@ void draw_stats(TH1* h,double xoffset,Color_t color,Color_t fitColor)
   	  <<setw(9)<<resetiosflags(ios::left)<<setprecision(4)
   	  <<fitfnc->GetChisquare()/fitfnc->GetNDF();
   
+  stringstream ssmedian;
+  double median;
+  double prb(0.5);
+  h->GetQuantiles(1,&median,&prb);
+  ssmedian<<setw(6)<<setiosflags(ios::left)<<"Median:"
+          <<setw(9)<<resetiosflags(ios::left)<<setprecision(4)
+          <<median;
+
   TLatex stats;
   stats.SetNDC(true);
   stats.SetTextAlign(12);
@@ -943,6 +951,10 @@ void draw_stats(TH1* h,double xoffset,Color_t color,Color_t fitColor)
     stats.DrawLatex(xoffset,0.735,sspeak.str().c_str());
     stats.DrawLatex(xoffset,0.70,sssgma.str().c_str());
     stats.DrawLatex(xoffset,0.665,sschi2ndf.str().c_str());
+    stats.DrawLatex(xoffset,0.63,ssmedian.str().c_str());
+  }
+  else {
+     stats.DrawLatex(xoffset,0.735,ssmedian.str().c_str());
   }
 }
 
