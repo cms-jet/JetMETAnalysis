@@ -105,9 +105,9 @@ void MatchBackToBack::produce(edm::Event& iEvent,const edm::EventSetup& iSetup)
   
   if (sumP4.pt()>sumPtMax_) return;
 
-  auto_ptr<CandViewMatchMap> backToBackMap(new CandViewMatchMap());
+  unique_ptr<CandViewMatchMap> backToBackMap(new CandViewMatchMap());
   backToBackMap->insert(objs->refAt(0),recoils->refAt(iRecoilBest));
-  iEvent.put(backToBackMap);
+  iEvent.put(std::move(backToBackMap));
 }
 
 
