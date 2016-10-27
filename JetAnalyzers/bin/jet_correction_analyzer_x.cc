@@ -216,7 +216,7 @@ int main(int argc,char**argv)
    
       JetInfo jetInfo(algs[a]);
 
-      TFile *inf = new TFile(inputFilename);
+      TFile *inf = TFile::Open(inputFilename);
       TDirectoryFile* odir = (TDirectoryFile*)outf->mkdir(algs[a]);
       odir->cd();
   
