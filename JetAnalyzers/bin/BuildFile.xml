@@ -7,7 +7,10 @@
 <use   name="rootspectrum"/>
 <use   name="rootgraphics"/>
 <use   name="root"/>
-<!--<use   name="Delphes"/>-->
+<!--<use   name="delphes"/>-->
+<use   name="xrootd"/>
+<lib   name="XrdCl"/>
+<use   name="Utilities/XrdAdaptor"/>
 <bin   name="jet_response_analyzer_x"          file="jet_response_analyzer_x.cc" />
 <bin   name="jet_mass_analyzer_x"              file="jet_mass_analyzer_x.cc" />
 <bin   name="jet_response_fitter_x"            file="jet_response_fitter_x.cc" />
