@@ -75,6 +75,24 @@ int JetInfo::vfind(vector<TString> a, TString b) {
 }
 
 //______________________________________________________________________________
+int JetInfo::vfind(vector<double> a, double b) {
+   for (unsigned int i=0; i<a.size(); i++) {
+      if (a[i] == b)
+         return i;
+   }
+   return -1;
+}
+
+//______________________________________________________________________________
+int JetInfo::vfind(const double a[], const int size, double b) {
+  for (int i=0; i<size; i++) {
+    if (a[i] == b)
+      return i;
+  }
+  return -1;
+}
+
+//______________________________________________________________________________
 bool JetInfo::contains(const vector<std::string>& collection,const std::string& element)
 {
   vector<std::string>::const_iterator it;

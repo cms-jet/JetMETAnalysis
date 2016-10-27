@@ -46,6 +46,8 @@ public:
   /// find the index to a specific T in a vector of T
   static int vfind(const TString a[], const int size, TString b);
   static int vfind(std::vector<TString> a, TString b);
+  static int vfind(std::vector<double> a, double b);
+  static int vfind(const double a[], const int size, double b);
 
   /// check if a vector of strings contains a certain element
   static bool contains(const std::vector<std::string>& collection,const std::string& element);
