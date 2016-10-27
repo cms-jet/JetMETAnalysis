@@ -642,10 +642,11 @@ bool L2Creator::checkFormulaEvaluator() {
                 //
                 // Do the comparison
                 //
-                if(abs(fe_value-root_func->Eval(ipt))>0.0006) {
+                if(abs(fe_value-std::max(0.0001,root_func->Eval(ipt)))>0.0006) {
                     cout << "ERROR::L2Creator::checkFormulaEvaluator TF1 and FormulaEvaluator do not agree!" << endl
-                         << "pT: " << ipt << " eta: " << eta_avg << " TF1: " << root_func->Eval(ipt) << " FormulaEvaluator: "
-                         << fe_value << endl;
+                         << "pT: " << ipt << " eta: " << eta_avg 
+                         << " TF1: " << std::setprecision(8) << root_func->Eval(ipt) 
+                         << " FormulaEvaluator: " << std::setprecision(8) << fe_value << endl;
                     return false;
                 }
             }
