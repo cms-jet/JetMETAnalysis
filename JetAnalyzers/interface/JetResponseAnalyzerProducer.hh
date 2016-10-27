@@ -114,7 +114,7 @@ private:
 
   const JetCorrector* jetCorrector_;
 
-   auto_ptr<JRAEvent> JRAEvt_;
+   unique_ptr<JRAEvent> JRAEvt_;
 };
 
 #endif
