@@ -11,12 +11,14 @@
 #include "TProfile.h"
 #include "TProfile2D.h"
 #include "TProfile3D.h"
+#include "THnSparse.h"
 #include "TBenchmark.h"
 
 // C++ Libraries
 #include <iostream>
 #include <vector>
 #include <map>
+#include <sys/stat.h>
 
 // JetMETAnalysis Libraries
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
@@ -26,6 +28,8 @@
 #include "JetMETAnalysis/JetUtilities/interface/ProgressBar.hh"
 
 // CMSSW Libraries
+#include "DataFormats/Provenance/interface/RunLumiEventNumber.h"
+//#include "DataFormats/Provenance/interface/EventID.h"
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
 
@@ -46,15 +50,20 @@ class MatchEventsAndJets {
 public:
 
    MatchEventsAndJets();
-   MatchEventsAndJets(TString algo1_, TString algo2_, bool iftest_, bool runDep_);
+   MatchEventsAndJets(TString algo1_, TString algo2_, bool iftest_);
    ~MatchEventsAndJets() {;}
 
    void getMaxDeltaR();
    double getMaxDeltaR(TString algName);
    void SetMaxEvts(int me) {maxEvts = me;}
    void OpenInputFiles(TString filenamePU, TString filenameNoPU);
-   void MakeMatchedEventsMaps(TString treeName);
-   map<evtid, pair<Long64_t, Long64_t>, evtid> fillMap(bool noPU, TString treeName);
+   void MakeMatchedEventsMaps(TString treeName, TString outputPath);
+   void ConvertMapToVector(const ITS& mapTree, vector<evtid>& vevtid, vector<pair<ull,ull> >& vll);
+   void ConvertMapToTTree(const ITS& mapTree, TTree* treeMap);
+   void WriteMatchedEventsMaps(ITS mapTree, bool noPU, TString outputPath);
+   void ConvertTTreeToMap(ITS& mapTree, TTree* treeMap);
+   void ReadMatchedEventsMaps(TString pathToMaps);
+   ITS fillMap(bool noPU, TString treeName, TString outputPath);
    void GetNtuples(TString treeName = "t");
    void OpenOutputFile(TString outputPath = "./");
    void SetJEC(TString JECPar = "parameters_ak5pf.txt");
@@ -92,11 +101,14 @@ private:
    FactorizedJetCorrector* JetCorrector;
 
    //Maps
-   map<evtid, pair<Long64_t, Long64_t>, evtid> mapTreePU;
-   map<evtid, pair<Long64_t, Long64_t>, evtid> mapTreeNoPU;
+   ITS mapTreePU;
+   ITS mapTreeNoPU;
    //A map holding the equivalance of jets in two given events
    map<Int_t, Int_t> jetMap;
    map<TString, TH1*> histograms;
+   map<TString, THnSparse*> hsparse;
+   //Used for filling the THnSparse
+   Double_t* fValue;
 
    //Loop
    int nevs;
@@ -109,15 +121,16 @@ private:
    int  noPUNpvGTOneEventCounter;
    int  maxEvts;
 
-   //Settings
-   bool runDep;
+   double avg_debug;
+   int entries_debug;
+   Int_t *bins_debug;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 // define class
 ////////////////////////////////////////////////////////////////////////////////
 //______________________________________________________________________________
-MatchEventsAndJets::MatchEventsAndJets() : algo1("ak5pf"), algo2("ak5pf"), iftest(false), runDep(false) {
+MatchEventsAndJets::MatchEventsAndJets() : algo1("ak5pf"), algo2("ak5pf"), iftest(false) {
    JetCorrector = 0;
    nevs = 0;
    NBinsNpvRhoNpu = 6;
@@ -130,8 +143,8 @@ MatchEventsAndJets::MatchEventsAndJets() : algo1("ak5pf"), algo2("ak5pf"), iftes
 }
 
 //______________________________________________________________________________
-MatchEventsAndJets::MatchEventsAndJets(TString algo1_, TString algo2_, bool iftest_, bool runDep_)
-                              : algo1(algo1_), algo2(algo2_), iftest(iftest_), runDep(runDep_) {
+MatchEventsAndJets::MatchEventsAndJets(TString algo1_, TString algo2_, bool iftest_)
+                              : algo1(algo1_), algo2(algo2_), iftest(iftest_){
    JetCorrector = 0;
    nevs = 0;
    NBinsNpvRhoNpu = 6;
@@ -173,17 +186,17 @@ void MatchEventsAndJets::OpenInputFiles(TString filenamePU, TString filenameNoPU
 }
 
 //______________________________________________________________________________
-void MatchEventsAndJets::MakeMatchedEventsMaps(TString treeName) {
-   mapTreePU   = fillMap(false, treeName);
-   mapTreeNoPU = fillMap(true, treeName);
+void MatchEventsAndJets::MakeMatchedEventsMaps(TString treeName, TString outputPath) {
+   mapTreePU   = fillMap(false, treeName, outputPath);
+   mapTreeNoPU = fillMap(true, treeName, outputPath);
 }
 
 //______________________________________________________________________________
-map<evtid, pair<Long64_t, Long64_t>, evtid> MatchEventsAndJets::fillMap(bool noPU, TString treeName) {
+ITS MatchEventsAndJets::fillMap(bool noPU, TString treeName, TString outputPath) {
    TFile* f;
    JRAEvent* t;
    TString algo;
-   map<evtid, pair<Long64_t, Long64_t>, evtid> mapTree;
+   ITS mapTree;
    if(noPU == false) {
       f = fpu;
       algo = algo1;
@@ -209,9 +222,9 @@ map<evtid, pair<Long64_t, Long64_t>, evtid> MatchEventsAndJets::fillMap(bool noP
    cout <<"\tprogress:" << endl;
 
    Long64_t no_ref_events = 0;
-   Long64_t nentries = t->fChain->GetEntriesFast();
-   for (Long64_t jentry=0; jentry<nentries;jentry++) {
-      Long64_t ientry = t->LoadTree(jentry);
+   ull nentries = t->fChain->GetEntriesFast();
+   for (ull jentry=0; jentry<nentries;jentry++) {
+      long long ientry = t->LoadTree(jentry);
       if (ientry < 0) break;
       t->GetEntry(ientry);
 
@@ -220,21 +233,114 @@ map<evtid, pair<Long64_t, Long64_t>, evtid> MatchEventsAndJets::fillMap(bool noP
          continue;
       }
 
-      if(mapTree.find(evtid(t->run, lumi, t->evt, t->refpt->at(0), runDep))!=mapTree.end()) {
+      if(mapTree.find(evtid(t->run, lumi, t->evt, t->refpt->at(0)))!=mapTree.end()) {
          cout << "\tWARNING::This evtid already exists in the map." << endl;
       }
 
-      mapTree[evtid(t->run, lumi, t->evt, t->refpt->at(0), runDep)] = std::make_pair(jentry, ientry);
+      mapTree[evtid(t->run, lumi, t->evt, t->refpt->at(0))] = std::make_pair(jentry, (ull)ientry);
       loadbar2(jentry+1,nentries,50,"\t\t");
    }
 
    cout << endl << "\tRead " << mapTree.size() << " unique signatures" << endl;
    if(no_ref_events>0) {
       cout << "\tWARNING::There were " << no_ref_events << " events which don't contain any ref jets" << endl
-           << "\t\tThese events will be skipped" << endl << endl;
+           << "\t\tThese events will be skipped" << endl;
    }
    t->fChain->SetBranchStatus("*",1);
+
+   WriteMatchedEventsMaps(mapTree,noPU,outputPath);
+
    return mapTree;
+}
+
+//______________________________________________________________________________
+void MatchEventsAndJets::ConvertMapToVector(const ITS& mapTree, vector<evtid>& vevtid, vector<pair<ull,ull> >& vll) {
+   vevtid.clear();
+   vll.clear();
+   for(IT::const_iterator it=mapTree.begin(); it!=mapTree.end(); it++) {
+      vevtid.push_back(it->first);
+      vll.push_back(it->second);
+   }
+}
+
+//______________________________________________________________________________
+void MatchEventsAndJets::ConvertMapToTTree(const ITS& mapTree, TTree* treeMap) {
+   evtid tmpid;
+   pair<Long64_t,Long64_t> tmpIndex;
+   treeMap->Branch("evtid","evtid",&tmpid);
+   treeMap->Branch("indices","pair<Long64_t,Long64_t>",&tmpIndex);
+   for(IT::const_iterator it=mapTree.begin(); it!=mapTree.end(); it++) {
+      tmpid = it->first;
+      tmpIndex = it->second;
+      treeMap->Fill();
+   }
+}
+
+//______________________________________________________________________________
+void MatchEventsAndJets::WriteMatchedEventsMaps(map<evtid, pair<ull,ull>, evtid> mapTree, bool noPU, TString outputPath) {
+   TDirectory* curDir = gDirectory;
+   TString outputFilename = "matchedEventsMaps_"+algo1+"_"+algo2+".root";
+   if (algo1.EqualTo(algo2)) 
+      outputFilename = "matchedEventsMaps_"+algo1+".root";
+   outputFilename = outputPath+outputFilename;
+   TString name = "mapTree";
+   cout << "\tWriting " << name+(noPU ? "NoPU" : "PU") << " to " << outputFilename << " ... " << flush; 
+   TString option = (noPU ? "UPDATE" : "RECREATE");
+   TFile* mapFile = TFile::Open(outputFilename,option);
+   mapFile->WriteObject(&mapTree,name+(noPU ? "NoPU" : "PU"));
+   mapFile->Write();
+   mapFile->Close();
+   cout << "DONE" << endl;
+   curDir->cd();
+}
+
+//______________________________________________________________________________
+void MatchEventsAndJets::ConvertTTreeToMap(ITS& mapTree, TTree* treeMap) {
+   evtid* tmpid;
+   pair<Long64_t,Long64_t>* tmpIndex;
+   treeMap->SetBranchAddress("evtid",&tmpid);
+   treeMap->SetBranchAddress("indices",&tmpIndex);
+   int nentries = treeMap->GetEntries();
+   for(int ientry=0; ientry<nentries; ientry++) {
+      loadbar2(ientry+1,nentries,50,"\t\t");
+      treeMap->GetEntry(ientry);
+      mapTree[*tmpid] = *tmpIndex;
+   }
+}
+
+//______________________________________________________________________________
+void MatchEventsAndJets::ReadMatchedEventsMaps(TString pathToMaps) {
+   cout << "Reading matched event maps:" << endl
+        << "\tfile: " << pathToMaps << endl;
+
+   TDirectory* curDir = gDirectory;
+   TFile* mapFile = TFile::Open(pathToMaps,"READ");
+
+   auto inMapPointer = (ITS*)mapFile->Get("mapTreePU");
+   if(inMapPointer) {
+      mapTreePU = *inMapPointer;
+      cout << "\tmapTreePU:" << endl
+           << "\t\tunique signatures: " << mapTreePU.size() << endl;
+   }
+   else {
+      cout << "ERROR::MatchEventsAndJets::ReadMatchedEventsMaps Could not retrieve the mapTreePU pointer from " << pathToMaps << endl;
+      std::terminate();
+   }
+
+   inMapPointer = nullptr;
+   inMapPointer = (ITS*)mapFile->Get("mapTreeNoPU");
+   if(inMapPointer) {
+      mapTreeNoPU = *inMapPointer;
+      cout << "\tmapTreeNoPU:" << endl
+           << "\t\tunique signatures: " << mapTreeNoPU.size() << endl;
+   }
+   else {
+      cout << "ERROR::MatchEventsAndJets::ReadMatchedEventsMaps Could not retrieve the mapTreeNoPU pointer from " << pathToMaps << endl;
+      std::terminate();
+   }
+
+   mapFile->Close();
+   curDir->cd();
 }
 
 //______________________________________________________________________________
@@ -377,27 +483,69 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
       histograms["p_offOverA_etaVsJetPt"] = new TProfile2D("p_offOverA_etaVsJetPt","p_offOverA_etaVsJetPt;#eta_{j};p_{T}^{pu};OffsetOverArea",NETA, veta,NPtBins, vpt);
 
       histograms["p_off_EOOTVsITVsLOOT"]         = new TProfile3D("p_off_EOOTVsITVsLOOT","p_off_EOOTVsITVsLOOT;EOOT;IT;LOOT",NRHO,vrho,NRHO,vrho,NRHO,vrho);
+
+      //Rho
+      histograms["p_offOverA_etaVsRhoVsJetPt"]   = new TProfile3D("p_offOverA_etaVsRhoVsJetPt","p_offOverA_etaVsRhoVsJetPt;#eta_{j};Rho;p_{T}^{gen};OffsetOverAre",NETA,veta,NRHO,vrho,NPtBins,vpt);
+      histograms["p_PtAve_etaVsRhoVsJetPt"]      = new TProfile3D("p_PtAve_etaVsRhoVsJetPt","p_PtAve_etaVsRhoVsJetPt;#eta_{j};Rho;p_{T}^{gen};PtAve",NETA,veta,NRHO,vrho,NPtBins,vpt);
+      histograms["p_RhoAve_etaVsRhoVsJetPt"]   = new TProfile3D("p_RhoAve_etaVsRhoVsJetPt","p_RhoAve_etaVsRhoVsJetPt;#eta_{j};Rho;p_{T}^{gen};RhoAve",NETA,veta,NRHO,vrho,NPtBins,vpt);
+
+      //NPV
+      histograms["p_offOverA_etaVsNPVVsJetPt"]   = new TProfile3D("p_offOverA_etaVsNPVVsJetPt","p_offOverA_etaVsNPVVsJetPt;#eta_{j};NPV;p_{T}^{gen};OffsetOverAre",NETA,veta,NRHO,vrho,NPtBins,vpt);
+      histograms["p_PtAve_etaVsNPVVsJetPt"]      = new TProfile3D("p_PtAve_etaVsNPVVsJetPt","p_PtAve_etaVsNPVVsJetPt;#eta_{j};NPV;p_{T}^{gen};PtAve",NETA,veta,NRHO,vrho,NPtBins,vpt);
+      histograms["p_RhoAve_etaVsNPVVsJetPt"]   = new TProfile3D("p_RhoAve_etaVsNPVVsJetPt","p_RhoAve_etaVsNPVVsJetPt;#eta_{j};NPV;p_{T}^{gen};RhoAve",NETA,veta,NRHO,vrho,NPtBins,vpt);
    }
 
    //TNPU
    histograms["p_offOverA_etaVsTnpusVsJetPt"] = new TProfile3D("p_offOverA_etaVsTnpusVsJetPt","p_offOverA_etaVsTnpusVsJetPt;#eta_{j};tnpu;p_{T}^{gen};OffsetOverAre",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
    histograms["p_PtAve_etaVsTnpusVsJetPt"]    = new TProfile3D("p_PtAve_etaVsTnpusVsJetPt","p_PtAve_etaVsTnpusVsJetPt;#eta_{j};Tnpus;p_{T}^{gen};PtAve",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
    histograms["p_RhoAve_etaVsTnpusVsJetPt"]   = new TProfile3D("p_RhoAve_etaVsTnpusVsJetPt","p_RhoAve_etaVsTnpusVsJetPt;#eta_{j};Tnpus;p_{T}^{gen};PtAve",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
+   //THnSparse with 4 dimensions
+   Int_t bins[4] = {NETA, NRHO, NTNPU, NPtBins};
+   Double_t min[4] = {veta[0], vrho[0], vtnpu[0], vpt[0]};
+   Double_t max[4] = {veta[NETA-1], vrho[NRHO-1], vtnpu[NTNPU-1], vpt[NPtBins-1]};
+   hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"] = new THnSparseF("p_offOverA_etaRhoVsTnpusVsJetPt", "p_offOverA_etaVsRhoVsTnpusVsJetPt", 4, bins, min, max);
+   hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->SetBinEdges(0,veta_half);
+   hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->SetBinEdges(1,vrho);
+   hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->SetBinEdges(2,vtnpu);
+   hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->SetBinEdges(3,vpt);
+   hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->GetAxis(0)->SetTitle("#eta_{j}");
+   hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->GetAxis(1)->SetTitle("Rho");
+   hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->GetAxis(2)->SetTitle("tnpu");
+   hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->GetAxis(3)->SetTitle("p_{T}^{gen}");
+   hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->Sumw2();
+   hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"] = new THnSparseF("p_PtAve_etaRhoVsTnpusVsJetPt", "p_PtAve_etaVsRhoVsTnpusVsJetPt", 4, bins, min, max);
+   hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->SetBinEdges(0,veta_half);
+   hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->SetBinEdges(1,vrho);
+   hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->SetBinEdges(2,vtnpu);
+   hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->SetBinEdges(3,vpt);
+   hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->GetAxis(0)->SetTitle("#eta_{j}");
+   hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->GetAxis(1)->SetTitle("Rho");
+   hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->GetAxis(2)->SetTitle("tnpu");
+   hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->GetAxis(3)->SetTitle("p_{T}^{gen}");
+   hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->Sumw2();
+   hsparse["p_entries_etaRhoVsTnpusVsJetPt"] = new THnSparseF("p_entries_etaRhoVsTnpusVsJetPt", "p_entries_etaRhoVsTnpusVsJetPt", 4, bins, min, max);
+   hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->SetBinEdges(0,veta_half);
+   hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->SetBinEdges(1,vrho);
+   hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->SetBinEdges(2,vtnpu);
+   hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->SetBinEdges(3,vpt);
+   hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->GetAxis(0)->SetTitle("#eta_{j}");
+   hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->GetAxis(1)->SetTitle("Rho");
+   hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->GetAxis(2)->SetTitle("tnpu");
+   hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->GetAxis(3)->SetTitle("p_{T}^{gen}");
+   hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->Sumw2();
+   if (!fValue) fValue = new Double_t[4];
+   //if (!bins_debug) {
+   //   bins_debug = new Int_t[4];
+   //   bins_debug[0] = 11;
+   //   bins_debug[1] = 3;
+   //   bins_debug[2] = 6;
+   //   bins_debug[3] = 4;
+   //}
 
    //NPU
    histograms["p_offOverA_etaVsNpusVsJetPt"] = new TProfile3D("p_offOverA_etaVsNpusVsJetPt","p_offOverA_etaVsNpusVsJetPt;#eta_{j};npu;p_{T}^{gen};OffsetOverAre",NETA,veta,NNPU,vnpu,NPtBins,vpt);
    histograms["p_PtAve_etaVsNpusVsJetPt"]    = new TProfile3D("p_PtAve_etaVsNpusVsJetPt","p_PtAve_etaVsNpusVsJetPt;#eta_{j};Npus;p_{T}^{gen};PtAve",NETA,veta,NNPU,vnpu,NPtBins,vpt);
    histograms["p_RhoAve_etaVsNpusVsJetPt"]   = new TProfile3D("p_RhoAve_etaVsNpusVsJetPt","p_RhoAve_etaVsNpusVsJetPt;#eta_{j};Npus;p_{T}^{gen};PtAve",NETA,veta,NNPU,vnpu,NPtBins,vpt);
-
-   //Rho
-   histograms["p_offOverA_etaVsRhoVsJetPt"]   = new TProfile3D("p_offOverA_etaVsRhoVsJetPt","p_offOverA_etaVsRhoVsJetPt;#eta_{j};Rho;p_{T}^{gen};OffsetOverAre",NETA,veta,NRHO,vrho,NPtBins,vpt);
-   histograms["p_PtAve_etaVsRhoVsJetPt"]      = new TProfile3D("p_PtAve_etaVsRhoVsJetPt","p_PtAve_etaVsRhoVsJetPt;#eta_{j};Rho;p_{T}^{gen};PtAve",NETA,veta,NRHO,vrho,NPtBins,vpt);
-   histograms["p_RhoAve_etaVsRhoVsJetPt"]   = new TProfile3D("p_RhoAve_etaVsRhoVsJetPt","p_RhoAve_etaVsRhoVsJetPt;#eta_{j};Rho;p_{T}^{gen};RhoAve",NETA,veta,NRHO,vrho,NPtBins,vpt);
-
-   //NPV
-   histograms["p_offOverA_etaVsNPVVsJetPt"]   = new TProfile3D("p_offOverA_etaVsNPVVsJetPt","p_offOverA_etaVsNPVVsJetPt;#eta_{j};NPV;p_{T}^{gen};OffsetOverAre",NETA,veta,NRHO,vrho,NPtBins,vpt);
-   histograms["p_PtAve_etaVsNPVVsJetPt"]      = new TProfile3D("p_PtAve_etaVsNPVVsJetPt","p_PtAve_etaVsNPVVsJetPt;#eta_{j};NPV;p_{T}^{gen};PtAve",NETA,veta,NRHO,vrho,NPtBins,vpt);
-   histograms["p_RhoAve_etaVsNPVVsJetPt"]   = new TProfile3D("p_RhoAve_etaVsNPVVsJetPt","p_RhoAve_etaVsNPVVsJetPt;#eta_{j};NPV;p_{T}^{gen};RhoAve",NETA,veta,NRHO,vrho,NPtBins,vpt);
 
    if(!reduceHistograms) {
       //NPV+Rho
@@ -579,7 +727,7 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
 //______________________________________________________________________________
 void MatchEventsAndJets::LoopOverEvents(bool verbose, bool reduceHistograms) {
    cout << "Looping over the mapped events:" << endl << "\tprogress:" << endl;
-   Long64_t nentries = mapTreePU.size();
+   ull nentries = mapTreePU.size();
    for (IT::const_iterator it = mapTreePU.begin(); it != mapTreePU.end(); ++it) {
 
       if (iftest && nevs >= maxEvts) return;
@@ -591,10 +739,10 @@ void MatchEventsAndJets::LoopOverEvents(bool verbose, bool reduceHistograms) {
       if (mapTreeNoPU.find(it->first) == mapTreeNoPU.end()) {
          if(verbose) {
             cout << "\tWARNING::mapTreeNoPU.find(it->first) == mapTreeNoPU.end() failed" << endl
-                 << "\tit->first.run_ == " << it->first.run_ << endl
-                 << "\tit->first.ls_ == " << it->first.ls_ << endl
-                 << "\tit->first.evt_ == " << it->first.evt_ << endl
-                 << "\tit->first.refpt0_ == " << it->first.refpt0_ << endl;
+                 << "\tit->first.run_ == " << it->first.run() << endl
+                 << "\tit->first.ls_ == " << it->first.luminosityBlock() << endl
+                 << "\tit->first.evt_ == " << it->first.event() << endl
+                 << "\tit->first.refpt0_ == " << it->first.pt() << endl;
          }
          continue;
       }
@@ -888,31 +1036,40 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
        dynamic_cast<TProfile2D*>(histograms["p_off_etaVsJetPt"])              ->Fill(tpu->jteta->at(jpu),tpu->jtpt->at(jpu),offset);
        dynamic_cast<TProfile2D*>(histograms["p_offOverA_etaVsJetPt"])         ->Fill(tpu->jteta->at(jpu),tpu->jtpt->at(jpu),offsetOA);
        dynamic_cast<TProfile3D*>(histograms["p_off_EOOTVsITVsLOOT"])        ->Fill(tpu->sumEOOT(),tpu->npus->at(iIT),tpu->sumLOOT(),offset);
+
+       //Rho
+       dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),offsetOA);
+       dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),tpu->rho);
+       dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsRhoVsJetPt"])     ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
+
+       //NPV
+       dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNPVVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),offsetOA);
+       dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNPVVsJetPt"])     ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),tpu->rho);
+       dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNPVVsJetPt"])     ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
+
     }
     
     //TNPU
     dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsTnpusVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),offsetOA);
     dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsTnpusVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
     dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsTnpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),tpu->rho);
+    fValue[0] = tpu->jteta->at(jpu);
+    fValue[1] = tpu->rho;
+    fValue[2] = tpu->tnpus->at(iIT);
+    fValue[3] = tpu->refpt->at(jpu);
+    hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->Fill(fValue,offsetOA);
+    hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->Fill(fValue,tpu->jtpt->at(jpu));
+    hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->Fill(fValue);
+    //if(hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->GetBin(fValue)==8500) {
+    //  avg_debug +=offsetOA;
+    //  entries_debug++;
+    //}
 
-    //NPU
-    //dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNpusVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),offsetOA,1.0/TMath::Gaus(tpu->npus->at(iIT),20,sqrt(20)));
-    //dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNpusVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->jtpt->at(jpu),1.0/TMath::Gaus(tpu->npus->at(iIT),20,sqrt(20)));
-    //dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->rho,1.0/TMath::Gaus(tpu->npus->at(iIT),20,sqrt(20)));
+    //NPU (weight if NPU if tnpu is single valued at 20 = 1.0/TMath::Gaus(tpu->npus->at(iIT),20,sqrt(20))
     dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNpusVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),offsetOA);
     dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNpusVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
     dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->rho);
     
-    //Rho
-    dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),offsetOA);
-    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),tpu->rho);
-    dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsRhoVsJetPt"])     ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
-
-    //NPV
-    dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNPVVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),offsetOA);
-    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNPVVsJetPt"])     ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),tpu->rho);
-    dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNPVVsJetPt"])     ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
-
     if(!reduceHistograms) {
        //NPV+Rho
        dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsN_RVsJetPt"])  ->Fill(tpu->jteta->at(jpu),(tpu->rho+tpu->npv)/2.,tpu->refpt->at(jpu),offsetOA);
@@ -1055,6 +1212,9 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
 void MatchEventsAndJets::WriteOutput(){
    cout << endl << "Writing file " << fout->GetName() << " ... " << flush;
    fout->cd();
+   for(map<TString, THnSparse*>::const_iterator it=hsparse.begin(); it!=hsparse.end();it++) {
+      it->second->Write();
+   }
    fout->Write();
    fout->Close();
    cout << "DONE" << endl;
@@ -1067,6 +1227,8 @@ void MatchEventsAndJets::Report() {
         << "\t Total number of unique events in first  sample: " << tpu->fChain->GetEntries() << endl
         << "\t Total number of unique events in second sample: " << tnopu->fChain->GetEntries() << endl
         << "\t Number of matched events we ran over " << nevs << endl;
+
+   //cout << "THnSparse::Debug::Avg OffsetOverA of bin 8500: " << avg_debug/entries_debug << endl;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -1087,8 +1249,8 @@ int main(int argc,char**argv)
    int     maxEvts           = cl.getValue<int>     ("maxEvts",                               40000);
    bool    ApplyJEC          = cl.getValue<bool>    ("ApplyJEC",                              false);
    string  JECpar            = cl.getValue<string>  ("JECpar",               "parameters_ak5pf.txt");
-   bool    runDep            = cl.getValue<bool>    ("runDep",                                 true);
    TString outputPath        = cl.getValue<TString> ("outputPath",                             "./");
+   TString readEvtMaps       = cl.getValue<TString> ("readEvtMaps",                              "");
    TString treeName          = cl.getValue<TString> ("treeName",                                "t");
    int     npvRhoNpuBinWidth = cl.getValue<int>     ("npvRhoNpuBinWidth",                         5);
    int     NBinsNpvRhoNpu    = cl.getValue<int>     ("NBinsNpvRhoNpu",                            6);
@@ -1109,11 +1271,14 @@ int main(int argc,char**argv)
    if(!outputPath.EndsWith("/")) outputPath+="/";
    if(!basepath.EndsWith("/")) basepath+="/";
 
-   MatchEventsAndJets* mej = new MatchEventsAndJets(algo1,algo2,iftest,runDep);
+   MatchEventsAndJets* mej = new MatchEventsAndJets(algo1,algo2,iftest);
    mej->SetMaxEvts(maxEvts);
    mej->OpenInputFiles(basepath+samplePU,basepath+sampleNoPU);
    mej->GetNtuples(treeName);
-   mej->MakeMatchedEventsMaps(treeName);
+   if(readEvtMaps.IsNull())
+      mej->MakeMatchedEventsMaps(treeName,outputPath);
+   else
+      mej->ReadMatchedEventsMaps(readEvtMaps);
    mej->OpenOutputFile(outputPath);
    if (ApplyJEC) {
       cout << "jet_synchtest_x::Setting the JEC parameter file to " << JECpar << " ... ";
@@ -1132,4 +1297,6 @@ int main(int argc,char**argv)
         << "\tCPU time = " << m_benchmark->GetCpuTime("event") << " s" << endl
         << "\tReal time = " << m_benchmark->GetRealTime("event") << " s" << endl;
    delete m_benchmark;
+
+   return 0;
 }
