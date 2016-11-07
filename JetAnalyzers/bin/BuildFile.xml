@@ -1,5 +1,4 @@
 <use   name="JetMETAnalysis/JetUtilities"/>
-<use   name="JetMETAnalysis/JetAnalyzers"/>
 <use   name="CondFormats/JetMETObjects"/>
 <use   name="PhysicsTools/Utilities"/>
 <use   name="FWCore/FWLite"/>
@@ -7,6 +6,7 @@
 <use   name="rootspectrum"/>
 <use   name="rootgraphics"/>
 <use   name="root"/>
+<lib   name="TreeViewer"/>
 <!--<use   name="delphes"/>-->
 <use   name="xrootd"/>
 <lib   name="XrdCl"/>
@@ -15,6 +15,7 @@
 <bin   name="jet_mass_analyzer_x"              file="jet_mass_analyzer_x.cc" />
 <bin   name="jet_response_fitter_x"            file="jet_response_fitter_x.cc" />
 <bin   name="jet_response_and_resolution_x"    file="jet_response_and_resolution_x.cc" />
+<bin   name="jet_l1_correction_x"       	   file="jet_l1_correction_x.cc" />
 <bin   name="jet_l2_correction_x"       	   file="jet_l2_correction_x.cc" />
 <bin   name="jet_l3_correction_x"              file="jet_l3_correction_x.cc" />
 <bin   name="jet_l5_correction_x"              file="jet_l5_correction_x.cc" />
