@@ -3,9 +3,9 @@
   <class name="JRAEvent"/>
 -->
   <class name="JRAEvent" ClassVersion="25">
-	<version ClassVersion="25" checksum="2587524138"/>
-	<version ClassVersion="24" checksum="3896526987"/>
-	<version ClassVersion="23" checksum="1172937648"/>
+	  <version ClassVersion="25" checksum="2587524138"/>
+	  <version ClassVersion="24" checksum="3896526987"/>
+	  <version ClassVersion="23" checksum="1172937648"/>
     <version ClassVersion="22" checksum="2597219173"/>
     <version ClassVersion="21" checksum="1204962669"/>
     <version ClassVersion="20" checksum="2348789620"/>
@@ -27,16 +27,37 @@
   <class name="std::vector<JRAEvent::Flavor>"/>
   <class name="edm::Wrapper<JRAEvent::Flavor>"/>
   <class name="edm::Wrapper<std::vector<JRAEvent::Flavor> >"/>
+  <class name="edm::Wrapper<evtid>"/>
+  <class name="std::vector<evtid>"/>
+  <class name="edm::Wrapper<std::vector<evtid> >"/>
+  <class name="std::map<evtid,std::pair<Long64_t,Long64_t>,evtid>"/>
+  <class name="edm::Wrapper<std::map<evtid,std::pair<Long64_t,Long64_t>,evtid> >"/>
+  <class name="std::vector<std::pair<evtid,std::pair<Long64_t,Long64_t> > >"/>
+  <class name="edm::Wrapper<std::vector<std::pair<evtid,std::pair<Long64_t,Long64_t> > > >"/>
+  <class name="std::pair<Long64_t,Long64_t>"/>
+  <class name="edm::Wrapper<std::pair<Long64_t,Long64_t> >"/>
+  <class name="std::vector<std::pair<Long64_t,Long64_t> >"/>
+  <class name="edm::Wrapper<std::vector<std::pair<Long64_t,Long64_t> > >"/>
+  <class name="std::map<evtid,std::pair<ULong64_t,ULong64_t>,evtid>"/>
+  <class name="edm::Wrapper<std::map<evtid,std::pair<ULong64_t,ULong64_t>,evtid> >"/>
+  <class name="std::vector<std::pair<evtid,std::pair<ULong64_t,ULong64_t> > >"/>
+  <class name="edm::Wrapper<std::vector<std::pair<evtid,std::pair<ULong64_t,ULong64_t> > > >"/>
+  <class name="std::pair<ULong64_t,ULong64_t>"/>
+  <class name="edm::Wrapper<std::pair<ULong64_t,ULong64_t> >"/>
+  <class name="std::vector<std::pair<ULong64_t,ULong64_t> >"/>
+  <class name="edm::Wrapper<std::vector<std::pair<ULong64_t,ULong64_t> > >"/>
   <class name="TProfileMDF" ClassVersion="1">
 	<version ClassVersion="1" checksum="329505606"/>
   </class>
   <class name="PUNtuple" ClassVersion="1">
-	<version ClassVersion="1" checksum="331599642"/>
+	  <version ClassVersion="1" checksum="331599642"/>
   </class>
   <class name="JetInfo" ClassVersion="0"/>
-  <class name="evtid" ClassVersion="0"/>
+  <class name="evtid" ClassVersion="2">
+    <version ClassVersion="2" checksum="3528706086"/>
+  </class>
   <class name="TSplinePolySteffen" ClassVersion="1">
-	<version ClassVersion="1" checksum="1968756199"/>	
+	  <version ClassVersion="1" checksum="1968756199"/>	
   </class>
   <class name="TSplineSteffen" ClassVersion="1">
     <version ClassVersion="1" checksum="995403083"/>

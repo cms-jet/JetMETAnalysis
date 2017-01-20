@@ -1,4 +1,5 @@
 <use   name="CondFormats/JetMETObjects"/>
+<use   name="DataFormats/Provenance"/>
 <use   name="DataFormats/JetReco"/>
 <use   name="DataFormats/Math"/>
 <use   name="root"/>

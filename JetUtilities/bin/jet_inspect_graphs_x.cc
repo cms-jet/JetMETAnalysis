@@ -36,9 +36,8 @@
 #include <set>
 #include <map>
 #include <cmath>
-
 #include <fstream>
-
+#include <algorithm>
 
 using namespace std;
 

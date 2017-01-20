@@ -164,18 +164,18 @@ void fillProfiles(TFile * file, TString dir, const vector<int> & npu, vector<TPr
   
 }//fillProfiles
 
-void simpleResponsePlots(TString algo = "ak4pf", TString PU = ""){
+void simpleResponsePlots(TString algo = "ak4pf", TString PU = "", TString sample = "QCD"){
 
   canvasNumber = 0;
   setTDRStyle();
   
   TString basepath = "/uscms_data/d2/aperloff/YOURWORKINGAREA/JEC/gitty/CMSSW_8_1_0_pre8/src/JetMETAnalysis/JetAnalyzers/test/JEC/81X/";
 
-  TFile *file0 = TFile::Open(basepath+"JRA_TTbar_PU"+PU+".root"); // ak5pfchs RD
-  TFile *file1 = TFile::Open(basepath+"JRA_TTbar_PU"+PU+"_jecl1.root"); //ak5pfchsl1 RD
-  TFile *file2 = TFile::Open(basepath+"JRA_TTbar_NoPU.root"); // ak5pfchs NoPU RD
-  TFile *file3 = TFile::Open(basepath+"JRA_TTbar_PU"+PU+"_jecl1l2l3.root"); // ak5pfchsl1l2l3 RD
-  TFile *file4 = TFile::Open(basepath+"JRA_TTbar_NoPU"+PU+"_jecl2l3.root"); // ak5pfchsl2l3 NoPU RD
+  TFile *file0 = TFile::Open(basepath+"JRA_"+sample+"_PU"+PU+".root"); // ak5pfchs RD
+  TFile *file1 = TFile::Open(basepath+"JRA_"+sample+"_PU"+PU+"_jecl1.root"); //ak5pfchsl1 RD
+  TFile *file2 = TFile::Open(basepath+"JRA_"+sample+"_NoPU.root"); // ak5pfchs NoPU RD
+  TFile *file3 = TFile::Open(basepath+"JRA_"+sample+"_PU"+PU+"_jecl1l2l3.root"); // ak5pfchsl1l2l3 RD
+  TFile *file4 = TFile::Open(basepath+"JRA_"+sample+"_NoPU"+PU+"_jecl2l3.root"); // ak5pfchsl2l3 NoPU RD
   TFile *outFile = new TFile("simpleResponsePlots_"+algo+".root","RECREATE");
 
   // Vector of npu
