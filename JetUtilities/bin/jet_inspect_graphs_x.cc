@@ -437,9 +437,9 @@ int main(int argc,char** argv)
         leg->SetBorderSize(0);
         if (drawlegend) leg->Draw();
 
-        TLatex *beautify1 = new TLatex(0.25,0.86,"2015, 13TeV");
-        TLatex *beautify2 = new TLatex(0.25,0.81,"CMS");
-        TLatex *beautify3 = new TLatex(0.25,0.76,"Simulation");
+        TLatex *beautify1 = new TLatex(0.75,0.94,"2017 (13TeV)");
+        TLatex *beautify2 = new TLatex(0.25,0.86,"CMS");
+        TLatex *beautify3 = new TLatex(0.25,0.81,"Simulation");
 
         beautify1->SetNDC();
         beautify2->SetNDC();
@@ -951,9 +951,9 @@ void draw_range(const string& range, const int residual)
     TLatex tex;
     tex.SetNDC(true);
     tex.SetTextAlign(13);
-    tex.SetTextSize(0.055);
+    tex.SetTextSize(0.04);
     tex.SetTextFont(42);     
-    if (residual<0) tex.DrawLatex(0.18,0.98,range.c_str());
+    if (residual<0) tex.DrawLatex(0.58,0.75,range.c_str());
     else tex.DrawLatex(0.15,0.96,range.c_str());
 }
 
@@ -963,10 +963,10 @@ string get_range(const ObjectLoader<TGraphErrors>& gl,
         const vector<unsigned int>& indices,
         bool  addFixedVars, string refpt)
 {
-    string varnameEta = "#eta";
-    for (unsigned int i=0;i<gl.nvariables();i++)
-        if (gl.variable(i)=="JetEta"&&gl.minimum(i,0)>=0) varnameEta="|#eta|";
-
+    string varnameEta = "#eta^{jet}";
+/*    for (unsigned int i=0;i<gl.nvariables();i++)
+        if (gl.variable(i)=="JetEta"&&gl.minimum(i,0)>=0) varnameEta="|#eta^{jet}|";
+*/
     string varnameY = "y";
     for (unsigned int i=0;i<gl.nvariables();i++)
         if (gl.variable(i)=="JetY"&&gl.minimum(i,0)>=0) varnameY="|y|";
@@ -984,7 +984,7 @@ string get_range(const ObjectLoader<TGraphErrors>& gl,
         double varmax  = gl.maximum(i,indices[i]);
         bool   threshold(false);
 
-        if (varname=="RefPt")    { varname = refpt.empty() ? "p_{T}^{REF}" : refpt.c_str(); 
+        if (varname=="RefPt")    { varname = refpt.empty() ? "p_{T}^{gen-jet}" : refpt.c_str(); 
             unit = " GeV"; }
             if (varname=="JetPt")    { varname = "p_{T}";       unit = " GeV"; }
             if (varname=="JetEta")   { varname = varnameEta;    unit =     ""; }
@@ -1019,7 +1019,7 @@ string get_legend_label_from_alg(const string& alg)
     else return alg;
 
     string reco[10] = { "gen", "caloHLT", "pfchsHLT", "pfHLTNoPU", "pfHLT", "calo", "pfchs", "pf", "trk", "jpt" };
-    string RECO[10] = { "(Gen)","(CaloHLT)","(PFlowNPHLT)","(PFlowHLTNoPU)","(PFlowHLT)","(Calo)","(PFlowNP)","(PFlow)", "(Tracks)", "(JPT)" };
+    string RECO[10] = { "(Gen)","(Calo HLT)","(PFlowNPHLT)","(PFlowHLTNoPU)","(Particle Flow HLT)","(Calo)","(PFlowNP)","(PFlow)", "(Tracks)", "(JPT)" };
 
     size_t pos=string::npos; int ireco=-1;
     while (pos==string::npos&&ireco<8) { pos = tmp.find(reco[++ireco]); }
@@ -1135,12 +1135,12 @@ void set_axis_titles(TH1* h,const string& quantity,float ymin,float ymax,
         if (ytitle.empty()) {
             string ystr=quantity.substr(0,pos);
             if (ystr=="Rsp"||ystr=="RelRsp"||ystr=="AbsRsp") {
-                ytitle=refpt.empty() ? "p_{T} / p_{T}^{REF}" : ("p_{T} / "+refpt).c_str();
+                ytitle=refpt.empty() ? "p_{T}^{jet} / p_{T}^{gen-jet}" : ("p_{T} / "+refpt).c_str();
                 ymax = (ymax<0.0) ? 1.2 : ymax;
                 h->SetMaximum(ymax);
             }
             else if (ystr=="Res"||ystr=="RelRes"||ystr=="AbsRes") {
-                ytitle= refpt.empty() ? "#sigma(p_{T}/p_{T}^{REF}) / <p_{T}/p_{T}^{REF}>" :
+                ytitle= refpt.empty() ? "#sigma(p_{T}^{jet}) / <p_{T}^{jet}>" :
                     ("#sigma(p_{T}/"+refpt+") / <p_{T}/"+refpt+">").c_str();
                 if (ymax>0.0) h->SetMaximum(ymax);
             }
@@ -1170,9 +1170,9 @@ void set_axis_titles(TH1* h,const string& quantity,float ymin,float ymax,
 
         if (xtitle.empty()) {
             string xstr=quantity.substr(pos+2);    
-            if (xstr=="RefPt")    xtitle=refpt.empty() ? "p_{T}^{REF} [GeV]" : (refpt+" [GeV]").c_str();
+            if (xstr=="RefPt")    xtitle=refpt.empty() ? "p_{T}^{gen-jet} [GeV]" : (refpt+" [GeV]").c_str();
             if (xstr=="JetPt")    xtitle="p_{T} [GeV]";
-            if (xstr=="JetEta")   xtitle="#eta";
+            if (xstr=="JetEta")   xtitle="#eta^{jet}";
             if (xstr=="JetPhi")   xtitle="#varphi";
             if (xstr=="JetY")     xtitle="y";
             if (xstr=="PtRel")    xtitle="p_{T}^{rel} [GeV]";

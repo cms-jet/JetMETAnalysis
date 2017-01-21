@@ -56,8 +56,8 @@ public:
    void MakeMatchedEventsMaps(TString treeName);
    map<evtid, pair<Long64_t, Long64_t>, evtid> fillMap(bool noPU, TString treeName);
    void GetNtuples(TString treeName = "t");
-   void OpenOutputFile(TString outputPath = "./");
-   void SetJEC(TString JECPar = "parameters_ak5pf.txt");
+   void OpenOutputFile(TString outputPath = "./", TString order1 = "0", TString order2 = "0");
+   void SetJEC(TString JECPar = "parameters_ak4pfHLT.txt");
    void SetNpvRhoNpuValues(int NBins, int Width) {NBinsNpvRhoNpu=NBins; npvRhoNpuBinWidth=Width;}
    void SetVptBins(vector<int> vptb) {vptBins = vptb;}
    void DeclareHistograms(bool reduceHistograms);
@@ -239,21 +239,23 @@ map<evtid, pair<Long64_t, Long64_t>, evtid> MatchEventsAndJets::fillMap(bool noP
 
 //______________________________________________________________________________
 void MatchEventsAndJets::GetNtuples(TString treeName) {
-   int algo1_bit_number = (algo1JetInfo.jetType.Contains("calo",TString::kIgnoreCase)) ? 53 : 85;
-   int algo2_bit_number = (algo2JetInfo.jetType.Contains("calo",TString::kIgnoreCase)) ? 53 : 85;
+   //int algo1_bit_number = (algo1JetInfo.jetType.Contains("calo",TString::kIgnoreCase)) ? 53 : 85;
+   //int algo2_bit_number = (algo2JetInfo.jetType.Contains("calo",TString::kIgnoreCase)) ? 53 : 85;
 
    fpu->cd(algo1);
-   tpu   = new JRAEvent((TTree*) fpu->Get(algo1+"/"+treeName),algo1_bit_number);
+   tpu   = new JRAEvent((TTree*) fpu->Get(algo1+"/"+treeName));
+   //tpu   = new JRAEvent((TTree*) fpu->Get(algo1+"/"+treeName),algo1_bit_number);
 
    fnopu->cd(algo2);
-   tnopu = new JRAEvent((TTree*) fnopu->Get(algo2+"/"+treeName),algo2_bit_number);
+   tnopu = new JRAEvent((TTree*) fnopu->Get(algo2+"/"+treeName));
+   //tnopu = new JRAEvent((TTree*) fnopu->Get(algo2+"/"+treeName),algo2_bit_number);
 }
 
 //______________________________________________________________________________
-void MatchEventsAndJets::OpenOutputFile(TString outputPath) {
-   TString outputFilename = "output_"+algo1+"_"+algo2+".root";
+void MatchEventsAndJets::OpenOutputFile(TString outputPath, TString order1, TString order2) {
+   TString outputFilename = "output_"+algo1+"_"+algo2+"_"+order1+"_"+order2+".root";
    if (algo1.EqualTo(algo2)) 
-      outputFilename = "output_"+algo1+".root";
+      outputFilename = "output_"+algo1+"_"+order1+"_"+order2+".root";
    outputFilename = outputPath+outputFilename;
    fout = new TFile(outputFilename,"RECREATE");
 }
@@ -582,7 +584,7 @@ void MatchEventsAndJets::LoopOverEvents(bool verbose, bool reduceHistograms) {
 
       if (iftest && nevs >= maxEvts) return;
       
-      if (nevs%10000==0) cout << "\t"<<nevs << endl;
+      //if (nevs%10000==0) cout << "\t"<<nevs << endl;
 
       // if this entry does not exist on the second ntuple just skip this event
       if (mapTreeNoPU.find(it->first) == mapTreeNoPU.end()) {
@@ -662,7 +664,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
    if(!reduceHistograms) {
       histograms["g_nj"]        ->Fill(tpu->nref,tnopu->nref);              // njet distributions
       histograms["g_npv"]       ->Fill(tpu->npv,tnopu->npv);                // npv dist.
-      histograms["g_rho"]       ->Fill(tpu->rho,tnopu->rho);                // rho dist
+      histograms["g_rho"]       ->Fill(tpu->rho_hlt,tnopu->rho_hlt);        // rho dist
       histograms["g_pthat"]     ->Fill(tpu->pthat,tnopu->pthat);           // pthat distributions
       histograms["g_deltaNpv"]  ->Fill(tpu->npv,tpu->npv - tnopu->npv);     // Does the number of NPV change?
       histograms["m_deltaPthat"]->Fill(tpu->pthat,tpu->pthat-tnopu->pthat); // pthat sanity check
@@ -701,7 +703,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
          JetCorrector->setJetEta(tpu->jteta->at(j1));
          JetCorrector->setJetPt(tpu->jtpt->at(j1));
          JetCorrector->setJetA(tpu->jtarea->at(j1));
-         JetCorrector->setRho(tpu->rho);
+         JetCorrector->setRho(tpu->rho_hlt);
          double correction = JetCorrector->getCorrection();
          //cout <<correction<<" "<<tpu->jtpt->at(j1);
          tpu_jtpt_raw.push_back(tpu->jtpt->at(j1));
@@ -879,7 +881,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
 
     if(!reduceHistograms) {
        dynamic_cast<TProfile2D*>(histograms["p_off_etaVsNpv"])                ->Fill(tpu->jteta->at(jpu),tpu->npv,offset);
-       dynamic_cast<TProfile2D*>(histograms["p_off_etaVsRho"])                ->Fill(tpu->jteta->at(jpu),tpu->rho,offset);
+       dynamic_cast<TProfile2D*>(histograms["p_off_etaVsRho"])                ->Fill(tpu->jteta->at(jpu),tpu->rho_hlt,offset);
        dynamic_cast<TProfile2D*>(histograms["p_off_etaVspueff"])              ->Fill(tpu->jteta->at(jpu),PUEff,offset);
        dynamic_cast<TProfile2D*>(histograms["p_off_etaVsGenSumPtOA"])         ->Fill(tpu->jteta->at(jpu),GenSumPtOA,offset);
        dynamic_cast<TProfile2D*>(histograms["p_off_etaVsJetPt"])              ->Fill(tpu->jteta->at(jpu),tpu->jtpt->at(jpu),offset);
@@ -890,7 +892,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
     //TNPU
     dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsTnpusVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),offsetOA);
     dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsTnpusVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
-    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsTnpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),tpu->rho);
+    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsTnpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),tpu->rho_hlt);
 
     //NPU
     //dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNpusVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),offsetOA,1.0/TMath::Gaus(tpu->npus->at(iIT),20,sqrt(20)));
@@ -898,22 +900,22 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
     //dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->rho,1.0/TMath::Gaus(tpu->npus->at(iIT),20,sqrt(20)));
     dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNpusVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),offsetOA);
     dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNpusVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
-    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->rho);
+    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->rho_hlt);
     
     //Rho
-    dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),offsetOA);
-    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),tpu->rho);
-    dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsRhoVsJetPt"])     ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
+    dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->rho_hlt,tpu->refpt->at(jpu),offsetOA);
+    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->rho_hlt,tpu->refpt->at(jpu),tpu->rho_hlt);
+    dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsRhoVsJetPt"])     ->Fill(tpu->jteta->at(jpu),tpu->rho_hlt,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
 
     //NPV
     dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNPVVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),offsetOA);
-    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNPVVsJetPt"])     ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),tpu->rho);
+    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNPVVsJetPt"])     ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),tpu->rho_hlt);
     dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNPVVsJetPt"])     ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
 
     if(!reduceHistograms) {
        //NPV+Rho
-       dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsN_RVsJetPt"])  ->Fill(tpu->jteta->at(jpu),(tpu->rho+tpu->npv)/2.,tpu->refpt->at(jpu),offsetOA);
-       dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsN_RVsJetPt"])     ->Fill(tpu->jteta->at(jpu),(tpu->rho+tpu->npv)/2,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
+       dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsN_RVsJetPt"])  ->Fill(tpu->jteta->at(jpu),(tpu->rho_hlt+tpu->npv)/2.,tpu->refpt->at(jpu),offsetOA);
+       dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsN_RVsJetPt"])     ->Fill(tpu->jteta->at(jpu),(tpu->rho_hlt+tpu->npv)/2,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
        histograms["p_areaVsrefpt"]->Fill(tpu->refpt->at(jpu),areaDiff);
        if (tpu->refpt->at(jpu)>1000)
          histograms["p_areaVsoffset_1000"]->Fill(offset,areaDiff);
@@ -925,10 +927,10 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
        histograms["m_refpdgid_diff"]->Fill(diff_pdgid);
 
        //2D histo npv vs. rho with 15<offset<15.5
-       if (offset > 15 && offset < 15.5)  histograms["p_npvVsRho_offset_15_15h"]->Fill(tpu->rho,tpu->npv);
+       if (offset > 15 && offset < 15.5)  histograms["p_npvVsRho_offset_15_15h"]->Fill(tpu->rho_hlt,tpu->npv);
        if (idet == 0) {
-          dynamic_cast<TH3F*>(histograms["p_rho_npv_refpt_BB"])               ->Fill(tpu->rho,tpu->npv,tpu->refpt->at(jpu));
-          dynamic_cast<TProfile3D*>(histograms["p_offsetOA_rho_npv_refpt_BB"])->Fill(tpu->rho,tpu->npv,tpu->refpt->at(jpu),offsetOA);
+          dynamic_cast<TH3F*>(histograms["p_rho_npv_refpt_BB"])               ->Fill(tpu->rho_hlt,tpu->npv,tpu->refpt->at(jpu));
+          dynamic_cast<TProfile3D*>(histograms["p_offsetOA_rho_npv_refpt_BB"])->Fill(tpu->rho_hlt,tpu->npv,tpu->refpt->at(jpu),offsetOA);
        }
     }
 
@@ -1028,13 +1030,13 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
         hname = Form("p_npvVsOff_%s",detectorAbbreviation.Data());
         histograms[hname]->Fill(avg_offset_det[det],tpu->npv);
         hname = Form("p_rhoVsOff_%s",detectorAbbreviation.Data());
-        histograms[hname]->Fill(avg_offset_det[det],tpu->rho);
+        histograms[hname]->Fill(avg_offset_det[det],tpu->rho_hlt);
      }
   }
   if(!reduceHistograms) {
      histograms["p_npvVsoff"]      ->Fill(avg_offset,tpu->npv);
-     histograms["p_rhoVsoff"]      ->Fill(avg_offset,tpu->rho);
-     histograms["p_rhoVsRho"]      ->Fill(tpu->rho,tpu->rho);
+     histograms["p_rhoVsoff"]      ->Fill(avg_offset,tpu->rho_hlt);
+     histograms["p_rhoVsRho"]      ->Fill(tpu->rho_hlt,tpu->rho_hlt);
      histograms["p_npvVsNpv"]      ->Fill(tpu->npv,tpu->npv);
      histograms["p_tnpuVsTnpu"]    ->Fill(tpu->tnpus->at(iIT),tpu->tnpus->at(iIT));
      histograms["p_npuVsNpu"]    ->Fill(tpu->npus->at(iIT),tpu->npus->at(iIT));
@@ -1075,22 +1077,24 @@ int main(int argc,char**argv)
 {
    CommandLine cl;
    if (!cl.parse(argc,argv)) return 0;
-   TString samplePU          = cl.getValue<TString> ("samplePU");
-   TString sampleNoPU        = cl.getValue<TString> ("sampleNoPU");
-   TString basepath          = cl.getValue<TString> ("basepath", "/fdata/hepx/store/user/aperloff/");
-   TString algo1             = cl.getValue<TString> ("algo1",                               "ak5pf");
-   TString algo2             = cl.getValue<TString> ("algo2",                               "ak5pf");
+   TString samplePU          = cl.getValue<TString> ("samplePU", "QCDHLT/QCD_Pt-15to3000_TuneCUETP8M1_Flat_13TeV_pythia8/crab_QCDHLTJEC/161129_150822/0000/JRA_1.root");
+   TString sampleNoPU        = cl.getValue<TString> ("sampleNoPU", "QCDHLT_NoPU/QCD_Pt-15to3000_TuneCUETP8M1_Flat_13TeV_pythia8/crab_QCDHLTJECNoPU/161129_041315/0000/JRA_1.root");
+   TString basepath          = cl.getValue<TString> ("basepath", "/afs/cern.ch/user/f/fengwang/eos/cms/store/user/fengwang/");
+   TString algo1             = cl.getValue<TString> ("algo1",                            "ak4pfHLT");
+   TString algo2             = cl.getValue<TString> ("algo2",                            "ak4pfHLT");
+   TString order1            = cl.getValue<TString> ("order1",                                  "0");
+   TString order2            = cl.getValue<TString> ("order2",                                  "0");
    bool    iftest            = cl.getValue<bool>    ("iftest",                                false);
    int     maxEvts           = cl.getValue<int>     ("maxEvts",                               40000);
    bool    ApplyJEC          = cl.getValue<bool>    ("ApplyJEC",                              false);
-   string  JECpar            = cl.getValue<string>  ("JECpar",               "parameters_ak5pf.txt");
+   string  JECpar            = cl.getValue<string>  ("JECpar",            "parameters_ak4pfHLT.txt");
    bool    runDep            = cl.getValue<bool>    ("runDep",                                 true);
    TString outputPath        = cl.getValue<TString> ("outputPath",                             "./");
    TString treeName          = cl.getValue<TString> ("treeName",                                "t");
    int     npvRhoNpuBinWidth = cl.getValue<int>     ("npvRhoNpuBinWidth",                         5);
    int     NBinsNpvRhoNpu    = cl.getValue<int>     ("NBinsNpvRhoNpu",                            6);
    vector<int> vptBins       = cl.getVector<int>    ("vptBins",       "14:::18:::20:::24:::28:::30");  
-   bool    reduceHistograms  = cl.getValue<bool>    ("reduceHistograms",                       true);
+   bool    reduceHistograms  = cl.getValue<bool>    ("reduceHistograms",                      false);
    bool    verbose           = cl.getValue<bool>    ("verbose",                               false);
 
    if (!cl.check()) return 0;
@@ -1111,7 +1115,7 @@ int main(int argc,char**argv)
    mej->OpenInputFiles(basepath+samplePU,basepath+sampleNoPU);
    mej->GetNtuples(treeName);
    mej->MakeMatchedEventsMaps(treeName);
-   mej->OpenOutputFile(outputPath);
+   mej->OpenOutputFile(outputPath,order1,order2);
    if (ApplyJEC) {
       cout << "jet_synchtest_x::Setting the JEC parameter file to " << JECpar << " ... ";
       mej->SetJEC(JECpar);

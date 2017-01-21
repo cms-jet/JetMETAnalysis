@@ -54,7 +54,7 @@ if conditionsSource != "GT":
     if conditionsSource == "DB":
         conditionsConnect = cms.string("frontier://FrontierPrep/CMS_COND_PHYSICSTOOLS")
     elif conditionsSource == "SQLite":
-	conditionsConnect = cms.string('sqlite_file:'+era+'.db')    
+	conditionsConnect = cms.string('sqlite_file:'+era+'.db')
 
     from CondCore.DBCommon.CondDBSetup_cfi import *
     process.jec = cms.ESSource("PoolDBESSource",CondDBSetup,

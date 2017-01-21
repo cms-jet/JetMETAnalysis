@@ -13,10 +13,10 @@ void Corrfunction(){
 	double pthigh = 0;
 	vector<double> para;
 
-	//ifstream input("EcalMultifitHCALMethod3_L2Relative_AK4PFHLTl1.txt");
-	ifstream input("EcalMultifitHCALMethod3_L2Relative_AK8PFHLTl1.txt");
-	//ofstream output("PFFactor_AK4.txt",ios::out);
-	ofstream output("PFFactor_AK8.txt",ios::out);
+	ifstream input("EcalMultifitHCALMethod3_L2Relative_AK4PFHLTl1.txt");
+	//ifstream input("EcalMultifitHCALMethod3_L2Relative_AK8PFHLTl1.txt");
+	ofstream output("PFFactor_AK4.txt",ios::out);
+	//ofstream output("PFFactor_AK8.txt",ios::out);
 
   TF1* fun = new TF1("fun","((x>=[6])*(([0]+([1]/((log10(x)^2)+[2])))+([3]*exp(-([4]*((log10(x)-[5])*(log10(x)-[5])))))))+((x<[6])*[7])", 0, 3500);
 

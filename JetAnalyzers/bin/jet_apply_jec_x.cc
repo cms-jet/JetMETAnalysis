@@ -183,7 +183,7 @@ int main(int argc,char**argv)
     int nevt = (debug) ? 10000 : itree->GetEntries();
     for (int ievt=0;ievt<nevt;ievt++) {
        if (ievt % 100000 == 0)
-          cout<<ievt<<endl;
+          cout << "Loop on events: " << ievt << endl;
        itree->GetEntry(ievt);
        for (unsigned int ijt=0;ijt<JRAEvt->nref;ijt++) {
           corrector->setJetPt(JRAEvt->jtpt->at(ijt));

@@ -337,8 +337,8 @@ int main(int argc,char**argv){
    
    CommandLine cl;
    if (!cl.parse(argc,argv)) return 0;
-   string         aalgo1     = cl.getValue<string>  ("algo1",   "ak5pf");
-   string         aalgo2     = cl.getValue<string>  ("algo2",   "ak5pf");
+   string         aalgo1     = cl.getValue<string>  ("algo1", "ak4pfHLT");
+   string         aalgo2     = cl.getValue<string>  ("algo2", "ak4pfHLT");
    bool           highPU     = cl.getValue<bool>    ("highPU",    false);
    bool           logPol     = cl.getValue<bool>    ("logPol",     true);
    bool           useNPU     = cl.getValue<bool>    ("useNPU",    false);

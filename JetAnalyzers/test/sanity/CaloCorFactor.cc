@@ -13,10 +13,10 @@ void Corrfunction(){
 	double pthigh = 0;
 	vector<double> para;
 
-	//ifstream input("EcalMultifitHCALMethod3_L2Relative_AK4CaloHLTl1.txt");
-	ifstream input("EcalMultifitHCALMethod3_L2Relative_AK8CaloHLTl1.txt");
-	//ofstream output("CaloFactor_AK4.txt",ios::out);
-	ofstream output("CaloFactor_AK8.txt",ios::out);
+	ifstream input("EcalMultifitHCALMethod3_L2Relative_AK4CaloHLTl1.txt");
+	//ifstream input("EcalMultifitHCALMethod3_L2Relative_AK8CaloHLTl1.txt");
+	ofstream output("CaloFactor_AK4.txt",ios::out);
+	//ofstream output("CaloFactor_AK8.txt",ios::out);
 
   TF1* fun = new TF1("fun","[0]+([1]/((log10(x)^[2])+[3]))", 0, 3500);
 	// ===================== validate PF Jet correction factor =======================

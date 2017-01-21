@@ -94,7 +94,8 @@ process.GlobalTag = cms.ESSource("PoolDBESSource",
     RefreshEachRun = cms.untracked.bool(False),
     RefreshOpenIOVs = cms.untracked.bool(False),
     connect = cms.string('frontier://FrontierProd/CMS_CONDITIONS'),
-    globaltag = cms.string('80X_mcRun2_asymptotic_ForTSGStudies_v0'),
+    globaltag = cms.string('80X_mcRun2_asymptotic_ForTSGStudies_fromRunIIFall15DR76_v0'),
+    #globaltag = cms.string('80X_mcRun2_asymptotic_ForTSGStudies_v0'),
     pfnPrefix = cms.untracked.string('frontier://FrontierProd/'),
     snapshotTime = cms.string('9999-12-31 23:59:59.000'),
     toGet = cms.VPSet()
@@ -116,7 +117,8 @@ qcdFiles = cms.untracked.vstring(
 ###################
 # Upgrade with PU #
 ###################
-  '/store/group/phys_jetmet/kirschen/HLTJEC2016/QCD/QCD_Pt-15to3000_TuneCUETP8M1_Flat_13TeV_pythia8/crab_JECFall15_PUFlat0to50_withPFCalib_QCD/160222_213430/0000/outputA_5.root'
+  #'/store/group/phys_jetmet/fengwang/JECFall16HLT/QCD_Pt-15to3000_TuneCUETP8M1_Flat_13TeV_pythia8/Fall16HLTJEC_80X_FlatPU0to70HcalNZSRAW_v1/161128_155705/0001/outputA_1101.root',
+  '/store/group/phys_jetmet/fengwang/JECFall16HLT/QCD_Pt-15to3000_TuneCUETP8M1_Flat_13TeV_pythia8/Fall16HLTJEC_80X_NoPUHcalNZSRAW_v1/161128_155846/0000/outputA_11.root',
 ######################
 # Upgrade without PU #
 ######################
@@ -124,9 +126,9 @@ qcdFiles = cms.untracked.vstring(
 ###########################
 # RelVal CMSSW_7_4_0_pre9 #
 ###########################
-#       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/EEC9F0EF-10D4-E411-A6E7-0025905A48D0.root' 
+#       '/store/relval/CMSSW_7_4_0_pre9/RelValQCD_FlatPt_15_3000_13/GEN-SIM-DIGI-RECO/MCRUN2_74_V7_FastSim-v1/00000/EEC9F0EF-10D4-E411-A6E7-0025905A48D0.root'
     )
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(100))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1000))
 process.source = cms.Source("PoolSource", fileNames = qcdFiles )
 
 
@@ -144,7 +146,7 @@ if not doProducer:
 #! NEEDED FOR PFCHS (last two lines needed for 44X and up)
 #!
 #process.load('CommonTools.ParticleFlow.pfNoPileUp_cff')
-#process.pfPileUp.PFCandidates = 'particleFlow' 
+#process.pfPileUp.PFCandidates = 'particleFlow'
 #process.pfNoPileUp.bottomCollection = 'particleFlow'
 process.load('CommonTools.ParticleFlow.pfNoPileUpJME_cff')
 process.pfPileUp.checkClosestZVertex = False
