@@ -111,10 +111,23 @@ private:
    Double_t* fValue;
 
    //Loop
+   vector<int> vptBins;
    int nevs;
    int NBinsNpvRhoNpu;
    int npvRhoNpuBinWidth;
-   vector<int> vptBins;
+   int iIT;
+   int inpv;  
+   int inpv_low;
+   int inpv_high;
+   int irho;
+   int irho_low;
+   int irho_high;
+   int itnpu;
+   int itnpu_low;
+   int itnpu_high;
+   int inpu;
+   int inpu_low;
+   int inpu_high;
 
    //Debug
    bool iftest;
@@ -350,6 +363,7 @@ void MatchEventsAndJets::GetNtuples(TString treeName) {
 
    fpu->cd(algo1);
    tpu   = new JRAEvent((TTree*) fpu->Get(algo1+"/"+treeName),algo1_bit_number);
+   iIT   = tpu->itIndex();
 
    fnopu->cd(algo2);
    tnopu = new JRAEvent((TTree*) fnopu->Get(algo2+"/"+treeName),algo2_bit_number);
@@ -828,19 +842,18 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
       return false;
    }
    
-   int iIT        = tpu->itIndex();
-   int inpv       = JetInfo::getBinIndex(tpu->npv,NBinsNpvRhoNpu,npvRhoNpuBinWidth);
-   int inpv_low   = inpv*npvRhoNpuBinWidth;
-   int inpv_high  = inpv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
-   int irho       = JetInfo::getBinIndex(tpu->rho,NBinsNpvRhoNpu,npvRhoNpuBinWidth);
-   int irho_low   = irho*npvRhoNpuBinWidth;
-   int irho_high  = irho*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
-   int itnpu      = JetInfo::getBinIndex(tpu->tnpus->at(iIT),NBinsNpvRhoNpu,npvRhoNpuBinWidth);
-   int itnpu_low  = itnpu*npvRhoNpuBinWidth;
-   int itnpu_high = itnpu*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
-   int inpu       = JetInfo::getBinIndex(tpu->npus->at(iIT),NBinsNpvRhoNpu,npvRhoNpuBinWidth);
-   int inpu_low   = inpu*npvRhoNpuBinWidth;
-   int inpu_high  = inpu*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
+   inpv       = JetInfo::getBinIndex(tpu->npv,NBinsNpvRhoNpu,npvRhoNpuBinWidth);
+   inpv_low   = inpv*npvRhoNpuBinWidth;
+   inpv_high  = inpv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
+   irho       = JetInfo::getBinIndex(tpu->rho,NBinsNpvRhoNpu,npvRhoNpuBinWidth);
+   irho_low   = irho*npvRhoNpuBinWidth;
+   irho_high  = irho*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
+   itnpu      = JetInfo::getBinIndex(tpu->tnpus->at(iIT),NBinsNpvRhoNpu,npvRhoNpuBinWidth);
+   itnpu_low  = itnpu*npvRhoNpuBinWidth;
+   itnpu_high = itnpu*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
+   inpu       = JetInfo::getBinIndex(tpu->npus->at(iIT),NBinsNpvRhoNpu,npvRhoNpuBinWidth);
+   inpu_low   = inpu*npvRhoNpuBinWidth;
+   inpu_high  = inpu*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
    TString hname = "";
    
    //
@@ -848,12 +861,13 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
    //
    vector<double> tpu_jtpt_raw;
    if (JetCorrector) {
+      double correction = 1.0;
       for (int j1 = 0; j1 < tpu->nref; j1++) {
          JetCorrector->setJetEta(tpu->jteta->at(j1));
          JetCorrector->setJetPt(tpu->jtpt->at(j1));
          JetCorrector->setJetA(tpu->jtarea->at(j1));
          JetCorrector->setRho(tpu->rho);
-         double correction = JetCorrector->getCorrection();
+         correction = JetCorrector->getCorrection();
          //cout <<correction<<" "<<tpu->jtpt->at(j1);
          tpu_jtpt_raw.push_back(tpu->jtpt->at(j1));
          tpu->jtpt->at(j1) *= correction;
@@ -986,226 +1000,238 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
    double avg_offset_det[NDetectorNames] = {0,0,0,0};
    double njet_det[NDetectorNames] = {0,0,0,0};
    
-  // MATCHING HISTOS. 
-  // Loop over matched jets
-  for (map<Int_t, Int_t>::const_iterator itj = jetMap.begin(); itj != jetMap.end(); itj++) {
+   // MATCHING HISTOS. 
+   // Loop over matched jets
+   int jpu   = -1;
+   int jnopu = -1;
+   int idet  = -1;
+   TString detectorAbbreviation;
+   double offset = 0, offset_raw = 0, offsetOA = 0, offsetOrefpt = 0, areaDiff = 0, resp = 0,
+          respTonopu = 0, respNopu = 0, PUEff = 0, GenSumPtOA = 0;
+   int diff_pdgid = 0;
+   vector<double> offset_PFcat;
+   for (map<Int_t, Int_t>::const_iterator itj = jetMap.begin(); itj != jetMap.end(); itj++) {
 
-    int jpu = itj->first;
-    int jnopu = itj->second;
-        
-    int idet = JetInfo::getDetIndex(tpu->jteta->at(jpu));
-    TString detectorAbbreviation = JetInfo::get_detector_abbreviation(detector_names[idet]);
-    detectorAbbreviation.ToLower();
-    vector<int> pdgid_indecies = JetInfo::getPDGIDIndecies(tpu->refpdgid->at(jpu));
+      jpu = itj->first;
+      jnopu = itj->second;
 
-    //double eta_avg = 0.5*(tpu->jteta->at(jpu)+tnopu->jteta->at(jnopu));
-    double offset     = tpu->jtpt->at(jpu) - tnopu->jtpt->at(jnopu);
-    double offset_raw = -1.0;
-    if(tpu_jtpt_raw.size()>0)
-       offset_raw = tpu_jtpt_raw[jpu] - tnopu->jtpt->at(jnopu);
-    int diff_pdgid       = tpu->refpdgid->at(jpu) - tnopu->refpdgid->at(jnopu);
-    double areaDiff      = tpu->jtarea->at(jpu) - tnopu->jtarea->at(jnopu);
-    double resp          = tpu->jtpt->at(jpu) / tpu->refpt->at(jpu);   // response relative to reference jet
-    double respTonopu    = tpu->jtpt->at(jpu) / tnopu->jtpt->at(jnopu);// response relative to no pu jet
-    double respNopu       = tnopu->jtpt->at(jnopu) / tnopu->refpt->at(jnopu); // response no pu jet to reference jet
-    double PUEff      = 0.020*(tpu->sumEOOT())+0.975*(tpu->npus->at(iIT))+0.005*(tpu->sumLOOT()); // effective pu
-    double GenSumPtOA    = (0.020*(tpu->sumpt_lowpt->at(0))+0.975*(tpu->sumpt_lowpt->at(1))+0.005*(tpu->sumpt_lowpt->at(2)))/tpu->jtarea->at(jpu);
-    //nef,cef,muf,nhf,hfhf,hfef,chf
-    vector<double> offset_PFcat;
-    //double offset_PFcat[NPFcat];
-    if(!algo1JetInfo.jetType.Contains("calo",TString::kIgnoreCase) && !algo2JetInfo.jetType.Contains("calo",TString::kIgnoreCase)) {
-       offset_PFcat = vector<double>{tpu->jtpt->at(jpu)*tpu->jtnef->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtnef->at(jnopu),
-                                     tpu->jtpt->at(jpu)*tpu->jtcef->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtcef->at(jnopu),
-                                     tpu->jtpt->at(jpu)*tpu->jtmuf->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtmuf->at(jnopu),
-                                     tpu->jtpt->at(jpu)*tpu->jtnhf->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtnhf->at(jnopu),
-                                     tpu->jtpt->at(jpu)*tpu->jthfhf->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jthfhf->at(jnopu),
-                                     tpu->jtpt->at(jpu)*tpu->jthfef->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jthfef->at(jnopu),
-                                     tpu->jtpt->at(jpu)*tpu->jtchf->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtchf->at(jnopu)};
-    }
-    else {
-      offset_PFcat = vector<double>{0,0,0,0,0,0,0};
-    }
-    double offsetOA      = offset / tpu->jtarea->at(jpu);
-    double offsetOrefpt  = offset / tpu->refpt->at(jpu);
+      idet = JetInfo::getDetIndex(tpu->jteta->at(jpu));
+      detectorAbbreviation = JetInfo::get_detector_abbreviation(detector_names[idet]);
+      detectorAbbreviation.ToLower();
+      vector<int> pdgid_indecies = JetInfo::getPDGIDIndecies(tpu->refpdgid->at(jpu));
 
-    if(!reduceHistograms) {
-       dynamic_cast<TProfile2D*>(histograms["p_off_etaVsNpv"])                ->Fill(tpu->jteta->at(jpu),tpu->npv,offset);
-       dynamic_cast<TProfile2D*>(histograms["p_off_etaVsRho"])                ->Fill(tpu->jteta->at(jpu),tpu->rho,offset);
-       dynamic_cast<TProfile2D*>(histograms["p_off_etaVspueff"])              ->Fill(tpu->jteta->at(jpu),PUEff,offset);
-       dynamic_cast<TProfile2D*>(histograms["p_off_etaVsGenSumPtOA"])         ->Fill(tpu->jteta->at(jpu),GenSumPtOA,offset);
-       dynamic_cast<TProfile2D*>(histograms["p_off_etaVsJetPt"])              ->Fill(tpu->jteta->at(jpu),tpu->jtpt->at(jpu),offset);
-       dynamic_cast<TProfile2D*>(histograms["p_offOverA_etaVsJetPt"])         ->Fill(tpu->jteta->at(jpu),tpu->jtpt->at(jpu),offsetOA);
-       dynamic_cast<TProfile3D*>(histograms["p_off_EOOTVsITVsLOOT"])        ->Fill(tpu->sumEOOT(),tpu->npus->at(iIT),tpu->sumLOOT(),offset);
+      diff_pdgid    = tpu->refpdgid->at(jpu) - tnopu->refpdgid->at(jnopu);
+      offset        = tpu->jtpt->at(jpu) - tnopu->jtpt->at(jnopu);
+      offset_raw    = (tpu_jtpt_raw.size()>0) ? tpu_jtpt_raw[jpu] - tnopu->jtpt->at(jnopu) : -1.0;
+      offsetOA      = offset / tpu->jtarea->at(jpu);
+      offsetOrefpt  = offset / tpu->refpt->at(jpu);
+      areaDiff      = tpu->jtarea->at(jpu) - tnopu->jtarea->at(jnopu);
+      resp          = tpu->jtpt->at(jpu) / tpu->refpt->at(jpu);   // response relative to reference jet
+      respTonopu    = tpu->jtpt->at(jpu) / tnopu->jtpt->at(jnopu);// response relative to no pu jet
+      respNopu      = tnopu->jtpt->at(jnopu) / tnopu->refpt->at(jnopu); // response no pu jet to reference jet
+      PUEff         = 0.020*(tpu->sumEOOT())+0.975*(tpu->npus->at(iIT))+0.005*(tpu->sumLOOT()); // effective pu
+      GenSumPtOA    = (0.020*(tpu->sumpt_lowpt->at(0))+0.975*(tpu->sumpt_lowpt->at(1))+0.005*(tpu->sumpt_lowpt->at(2)))/tpu->jtarea->at(jpu);
 
-       //Rho
-       dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),offsetOA);
-       dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),tpu->rho);
-       dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsRhoVsJetPt"])     ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
+      if(!reduceHistograms) {
+         dynamic_cast<TProfile2D*>(histograms["p_off_etaVsNpv"])       ->Fill(tpu->jteta->at(jpu),tpu->npv,offset);
+         dynamic_cast<TProfile2D*>(histograms["p_off_etaVsRho"])       ->Fill(tpu->jteta->at(jpu),tpu->rho,offset);
+         dynamic_cast<TProfile2D*>(histograms["p_off_etaVspueff"])     ->Fill(tpu->jteta->at(jpu),PUEff,offset);
+         dynamic_cast<TProfile2D*>(histograms["p_off_etaVsGenSumPtOA"])->Fill(tpu->jteta->at(jpu),GenSumPtOA,offset);
+         dynamic_cast<TProfile2D*>(histograms["p_off_etaVsJetPt"])     ->Fill(tpu->jteta->at(jpu),tpu->jtpt->at(jpu),offset);
+         dynamic_cast<TProfile2D*>(histograms["p_offOverA_etaVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->jtpt->at(jpu),offsetOA);
+         dynamic_cast<TProfile3D*>(histograms["p_off_EOOTVsITVsLOOT"]) ->Fill(tpu->sumEOOT(),tpu->npus->at(iIT),tpu->sumLOOT(),offset);
 
-       //NPV
-       dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNPVVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),offsetOA);
-       dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNPVVsJetPt"])     ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),tpu->rho);
-       dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNPVVsJetPt"])     ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
+         //Rho
+         dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsRhoVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),offsetOA);
+         dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),tpu->rho);
+         dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsRhoVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
 
-    }
+         //NPV
+         dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNPVVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),offsetOA);
+         dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNPVVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),tpu->rho);
+         dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNPVVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
+      }
     
-    //TNPU
-    dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsTnpusVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),offsetOA);
-    dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsTnpusVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
-    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsTnpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),tpu->rho);
-    fValue[0] = tpu->jteta->at(jpu);
-    fValue[1] = tpu->rho;
-    fValue[2] = tpu->tnpus->at(iIT);
-    fValue[3] = tpu->refpt->at(jpu);
-    hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->Fill(fValue,offsetOA);
-    hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->Fill(fValue,tpu->jtpt->at(jpu));
-    hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->Fill(fValue);
-    //if(hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->GetBin(fValue)==8500) {
-    //  avg_debug +=offsetOA;
-    //  entries_debug++;
-    //}
+      //TNPU
+      dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsTnpusVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),offsetOA);
+      dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsTnpusVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
+      dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsTnpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),tpu->rho);
+      fValue[0] = tpu->jteta->at(jpu);
+      fValue[1] = tpu->rho;
+      fValue[2] = tpu->tnpus->at(iIT);
+      fValue[3] = tpu->refpt->at(jpu);
+      hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->Fill(fValue,offsetOA);
+      hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->Fill(fValue,tpu->jtpt->at(jpu));
+      hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->Fill(fValue);
+      //if(hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->GetBin(fValue)==8500) {
+      //  avg_debug +=offsetOA;
+      //  entries_debug++;
+      //}
 
-    //NPU (weight if NPU if tnpu is single valued at 20 = 1.0/TMath::Gaus(tpu->npus->at(iIT),20,sqrt(20))
-    dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNpusVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),offsetOA);
-    dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNpusVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
-    dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->rho);
-    
-    if(!reduceHistograms) {
-       //NPV+Rho
-       dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsN_RVsJetPt"])  ->Fill(tpu->jteta->at(jpu),(tpu->rho+tpu->npv)/2.,tpu->refpt->at(jpu),offsetOA);
-       dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsN_RVsJetPt"])     ->Fill(tpu->jteta->at(jpu),(tpu->rho+tpu->npv)/2,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
-       histograms["p_areaVsrefpt"]->Fill(tpu->refpt->at(jpu),areaDiff);
-       if (tpu->refpt->at(jpu)>1000)
-         histograms["p_areaVsoffset_1000"]->Fill(offset,areaDiff);
-       if (tpu->refpt->at(jpu)>30 && tpu->refpt->at(jpu)<50)
-         histograms["p_areaVsoffset_30_50"]->Fill(offset,areaDiff);
+      //NPU (weight if NPU if tnpu is single valued at 20 = 1.0/TMath::Gaus(tpu->npus->at(iIT),20,sqrt(20))
+      dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNpusVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),offsetOA);
+      dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNpusVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
+      dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->rho);
 
-       histograms["p_drVsrefpt"]    ->Fill(tpu->refpt->at(jpu),tpu->refdrjt->at(jpu));
-       histograms["m_refpt_diff"]   ->Fill(tpu->refpt->at(jpu) - tnopu->refpt->at(jnopu));
-       histograms["m_refpdgid_diff"]->Fill(diff_pdgid);
+      if(!reduceHistograms) {
+         //NPV+Rho
+         dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsN_RVsJetPt"])  ->Fill(tpu->jteta->at(jpu),(tpu->rho+tpu->npv)/2.,tpu->refpt->at(jpu),offsetOA);
+         dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsN_RVsJetPt"])     ->Fill(tpu->jteta->at(jpu),(tpu->rho+tpu->npv)/2,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
+         histograms["p_areaVsrefpt"]->Fill(tpu->refpt->at(jpu),areaDiff);
+         if (tpu->refpt->at(jpu)>1000)
+            histograms["p_areaVsoffset_1000"]->Fill(offset,areaDiff);
+         if (tpu->refpt->at(jpu)>30 && tpu->refpt->at(jpu)<50)
+            histograms["p_areaVsoffset_30_50"]->Fill(offset,areaDiff);
 
-       //2D histo npv vs. rho with 15<offset<15.5
-       if (offset > 15 && offset < 15.5)  histograms["p_npvVsRho_offset_15_15h"]->Fill(tpu->rho,tpu->npv);
-       if (idet == 0) {
-          dynamic_cast<TH3F*>(histograms["p_rho_npv_refpt_BB"])               ->Fill(tpu->rho,tpu->npv,tpu->refpt->at(jpu));
-          dynamic_cast<TProfile3D*>(histograms["p_offsetOA_rho_npv_refpt_BB"])->Fill(tpu->rho,tpu->npv,tpu->refpt->at(jpu),offsetOA);
-       }
-    }
+         histograms["p_drVsrefpt"]    ->Fill(tpu->refpt->at(jpu),tpu->refdrjt->at(jpu));
+         histograms["m_refpt_diff"]   ->Fill(tpu->refpt->at(jpu) - tnopu->refpt->at(jnopu));
+         histograms["m_refpdgid_diff"]->Fill(diff_pdgid);
 
-   //Break into detector regions
-   for (int iPF=0;iPF<NPFcat;iPF++) {
-      hname = Form("p_offResVsrefpt_%s_%s",detectorAbbreviation.Data(),PFstr[iPF].Data());
-      histograms[hname]->Fill(tpu->refpt->at(jpu),offset_PFcat[iPF]);
-      hname = Form("p_offResOtnpuVsrefpt_%s_%s",detectorAbbreviation.Data(),PFstr[iPF].Data());
-      histograms[hname]->Fill(tpu->refpt->at(jpu),offset_PFcat[iPF]/tpu->tnpus->at(iIT));
-      hname = Form("prof_offResVsrefpt_%s_%s",detectorAbbreviation.Data(),PFstr[iPF].Data());
-      histograms[hname]->Fill(tpu->refpt->at(jpu),offset_PFcat[iPF]);
-      hname = Form("prof_offResOtnpuVsrefpt_%s_%s",detectorAbbreviation.Data(),PFstr[iPF].Data());
-      histograms[hname]->Fill(tpu->refpt->at(jpu),offset_PFcat[iPF]/tpu->tnpus->at(iIT));
-   }
-   hname = Form("p_offResVsrefpt_%s_all",detectorAbbreviation.Data());
-   dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset);
-   hname = Form("p_offResOtnpuVsrefpt_%s_all",detectorAbbreviation.Data());
-   dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset/tpu->tnpus->at(iIT));
-   hname = Form("prof_offResVsrefpt_%s_all",detectorAbbreviation.Data());
-   dynamic_cast<TProfile*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset);
-   hname = Form("prof_offResOtnpuVsrefpt_%s_all",detectorAbbreviation.Data());
-   dynamic_cast<TProfile*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset/tpu->tnpus->at(iIT));
+         //2D histo npv vs. rho with 15<offset<15.5
+         if (offset > 15 && offset < 15.5)  histograms["p_npvVsRho_offset_15_15h"]->Fill(tpu->rho,tpu->npv);
+         if (idet == 0) {
+            dynamic_cast<TH3F*>(histograms["p_rho_npv_refpt_BB"])               ->Fill(tpu->rho,tpu->npv,tpu->refpt->at(jpu));
+            dynamic_cast<TProfile3D*>(histograms["p_offsetOA_rho_npv_refpt_BB"])->Fill(tpu->rho,tpu->npv,tpu->refpt->at(jpu),offsetOA);
+         }
 
-    hname = Form("p_resVsrefpt_%s",detectorAbbreviation.Data());
-    histograms[hname]->Fill(tpu->refpt->at(jpu),resp);
-    hname = Form("np_resVsrefpt_%s",detectorAbbreviation.Data());
-    histograms[hname]->Fill(tpu->refpt->at(jpu),respNopu);
+         //Break into detector regions and PF candidate types
+         //nef,cef,muf,nhf,hfhf,hfef,chf
+         if(!algo1JetInfo.jetType.Contains("calo",TString::kIgnoreCase) && !algo2JetInfo.jetType.Contains("calo",TString::kIgnoreCase)) {
+            offset_PFcat = vector<double>{tpu->jtpt->at(jpu)*tpu->jtnef->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtnef->at(jnopu),
+                                          tpu->jtpt->at(jpu)*tpu->jtcef->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtcef->at(jnopu),
+                                          tpu->jtpt->at(jpu)*tpu->jtmuf->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtmuf->at(jnopu),
+                                          tpu->jtpt->at(jpu)*tpu->jtnhf->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtnhf->at(jnopu),
+                                          tpu->jtpt->at(jpu)*tpu->jthfhf->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jthfhf->at(jnopu),
+                                          tpu->jtpt->at(jpu)*tpu->jthfef->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jthfef->at(jnopu),
+                                          tpu->jtpt->at(jpu)*tpu->jtchf->at(jpu) - tnopu->jtpt->at(jnopu)*tnopu->jtchf->at(jnopu)};
+         }
+         else {
+            offset_PFcat = vector<double>{0,0,0,0,0,0,0};
+         }
+         for (int iPF=0;iPF<NPFcat;iPF++) {
+            hname = Form("p_offResVsrefpt_%s_%s",detectorAbbreviation.Data(),PFstr[iPF].Data());
+            histograms[hname]->Fill(tpu->refpt->at(jpu),offset_PFcat[iPF]);
+            hname = Form("p_offResOtnpuVsrefpt_%s_%s",detectorAbbreviation.Data(),PFstr[iPF].Data());
+            histograms[hname]->Fill(tpu->refpt->at(jpu),offset_PFcat[iPF]/tpu->tnpus->at(iIT));
+            hname = Form("prof_offResVsrefpt_%s_%s",detectorAbbreviation.Data(),PFstr[iPF].Data());
+            histograms[hname]->Fill(tpu->refpt->at(jpu),offset_PFcat[iPF]);
+            hname = Form("prof_offResOtnpuVsrefpt_%s_%s",detectorAbbreviation.Data(),PFstr[iPF].Data());
+            histograms[hname]->Fill(tpu->refpt->at(jpu),offset_PFcat[iPF]/tpu->tnpus->at(iIT));
+         }
+         hname = Form("p_offResVsrefpt_%s_all",detectorAbbreviation.Data());
+         dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset);
+         hname = Form("p_offResOtnpuVsrefpt_%s_all",detectorAbbreviation.Data());
+         dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset/tpu->tnpus->at(iIT));
+         hname = Form("prof_offResVsrefpt_%s_all",detectorAbbreviation.Data());
+         dynamic_cast<TProfile*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset);
+         hname = Form("prof_offResOtnpuVsrefpt_%s_all",detectorAbbreviation.Data());
+         dynamic_cast<TProfile*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset/tpu->tnpus->at(iIT));
+      }
 
-    hname = Form("p_resVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),resp);
-    hname = Form("p_offresVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
-    hname = Form("p_offresOrefptVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),offsetOrefpt);
-    hname = Form("p_resVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),resp);
-    hname = Form("p_resVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),itnpu_low,itnpu_high);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),resp);
-    hname = Form("p_resVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),inpu_low,inpu_high);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),resp);
-    hname = Form("p_resVsnpu_%s_pt%.1f_%.1f",detectorAbbreviation.Data(),
-                 vpt[JetInfo::getBinIndex(tpu->refpt->at(jpu),vpt,NPtBins)],vpt[JetInfo::getBinIndex(tpu->refpt->at(jpu),vpt,NPtBins)+1]);
-    if(tpu->refpt->at(jpu)>10.0) {
-       histograms[hname]->Fill(tpu->npus->at(iIT),resp);
-    }
-    hname = Form("p_offresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
-    hname = Form("p_offresOrefptVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),offsetOrefpt);
-    hname = Form("p_offresVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),itnpu_low,itnpu_high);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
-    hname = Form("p_offresVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),inpu_low,inpu_high);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
-    hname = Form("p_offresVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
-    hname = Form("p_offresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
-    hname = Form("p_offresVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
-    hname = Form("p_offresVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
+      //Break into detector regions
+      hname = Form("p_resVsrefpt_%s",detectorAbbreviation.Data());
+      histograms[hname]->Fill(tpu->refpt->at(jpu),resp);
+      hname = Form("np_resVsrefpt_%s",detectorAbbreviation.Data());
+      histograms[hname]->Fill(tpu->refpt->at(jpu),respNopu);
 
-    for (unsigned int ipdgid=0; ipdgid<pdgid_indecies.size(); ipdgid++) {
-      hname = Form("p_offresVsrefpt_%s_pdgid_%s",detectorAbbreviation.Data(),pdgidstr[ipdgid].Data());
+      //TNPU
+      hname = Form("p_resVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),itnpu_low,itnpu_high);
+      histograms[hname]->Fill(tpu->refpt->at(jpu),resp);
+      hname = Form("p_offresVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),itnpu_low,itnpu_high);
       histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
-    }
+      hname = Form("p_offresVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
+      histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
+      hname = Form("p_nopuresVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),itnpu_low,itnpu_high);
+      histograms[hname]->Fill(tpu->refpt->at(jpu),respNopu);
 
-    hname = Form("p_resnopuVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),respTonopu);
-    hname = Form("p_resnopuVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),respTonopu);
-    hname = Form("p_nopuresVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),respNopu);
-    hname = Form("p_nopuresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),respNopu);
-    hname = Form("p_nopuresVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),itnpu_low,itnpu_high);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),respNopu);
-    hname = Form("p_nopuresVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),inpu_low,inpu_high);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),respNopu);
-    hname = Form("p_offAfterOoffBeforeVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),offset/offset_raw);
-    hname = Form("p_offAfterOoffBeforeVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
-    histograms[hname]->Fill(tpu->refpt->at(jpu),offset/offset_raw);
+      //NPU
+      hname = Form("p_resVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),inpu_low,inpu_high);
+      histograms[hname]->Fill(tpu->refpt->at(jpu),resp);
+      hname = Form("p_offresVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),inpu_low,inpu_high);
+      histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
+      hname = Form("p_offresVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
+      histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
+      hname = Form("p_nopuresVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),inpu_low,inpu_high);
+      histograms[hname]->Fill(tpu->refpt->at(jpu),respNopu);
 
-    avg_offset +=  offset;
-    avg_offset_det[idet]+=offset;
-    njet_det[idet]+=1.;
+      if(!reduceHistograms) {
+         //NPV
+         hname = Form("p_resVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
+         histograms[hname]->Fill(tpu->refpt->at(jpu),resp);
+         hname = Form("p_offresVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
+         histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
+         hname = Form("p_offresOrefptVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
+         histograms[hname]->Fill(tpu->refpt->at(jpu),offsetOrefpt);
+         hname = Form("p_offresVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
+         histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
+         hname = Form("p_resnopuVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
+         histograms[hname]->Fill(tpu->refpt->at(jpu),respTonopu);
+         hname = Form("p_nopuresVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
+         histograms[hname]->Fill(tpu->refpt->at(jpu),respNopu);
+         hname = Form("p_offAfterOoffBeforeVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
+         histograms[hname]->Fill(tpu->refpt->at(jpu),offset/offset_raw);
+   
+         //RHO
+         hname = Form("p_resVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
+         histograms[hname]->Fill(tpu->refpt->at(jpu),resp);
+         hname = Form("p_offresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
+         histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
+         hname = Form("p_offresOrefptVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
+         histograms[hname]->Fill(tpu->refpt->at(jpu),offsetOrefpt);
+         hname = Form("p_offresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
+         histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
+         hname = Form("p_resnopuVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
+         histograms[hname]->Fill(tpu->refpt->at(jpu),respTonopu);
+         hname = Form("p_nopuresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
+         histograms[hname]->Fill(tpu->refpt->at(jpu),respNopu);
+         hname = Form("p_offAfterOoffBeforeVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
+         histograms[hname]->Fill(tpu->refpt->at(jpu),offset/offset_raw);
+   
+         //OTHER
+         hname = Form("p_resVsnpu_%s_pt%.1f_%.1f",detectorAbbreviation.Data(),
+                      vpt[JetInfo::getBinIndex(tpu->refpt->at(jpu),vpt,NPtBins)],vpt[JetInfo::getBinIndex(tpu->refpt->at(jpu),vpt,NPtBins)+1]);
+         if(tpu->refpt->at(jpu)>10.0) {
+            histograms[hname]->Fill(tpu->npus->at(iIT),resp);
+         }
+         for (unsigned int ipdgid=0; ipdgid<pdgid_indecies.size(); ipdgid++) {
+            hname = Form("p_offresVsrefpt_%s_pdgid_%s",detectorAbbreviation.Data(),pdgidstr[ipdgid].Data());
+            histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
+         }
+      }
 
-  } // for matched jets 
+      avg_offset +=  offset;
+      avg_offset_det[idet]+=offset;
+      njet_det[idet]+=1.;
 
-  avg_offset /= jetMap.size();
-  for (int det=0;det<NDetectorNames;det++) {
-     if (njet_det[det]!=0.) {
-        TString detectorAbbreviation = JetInfo::get_detector_abbreviation(detector_names[det]);
-        detectorAbbreviation.ToLower();
-        avg_offset_det[det]  /= njet_det[det];
-        hname = Form("p_npvVsOff_%s",detectorAbbreviation.Data());
-        histograms[hname]->Fill(avg_offset_det[det],tpu->npv);
-        hname = Form("p_rhoVsOff_%s",detectorAbbreviation.Data());
-        histograms[hname]->Fill(avg_offset_det[det],tpu->rho);
-     }
-  }
-  if(!reduceHistograms) {
-     histograms["p_npvVsoff"]      ->Fill(avg_offset,tpu->npv);
-     histograms["p_rhoVsoff"]      ->Fill(avg_offset,tpu->rho);
-     histograms["p_rhoVsRho"]      ->Fill(tpu->rho,tpu->rho);
-     histograms["p_npvVsNpv"]      ->Fill(tpu->npv,tpu->npv);
-     histograms["p_tnpuVsTnpu"]    ->Fill(tpu->tnpus->at(iIT),tpu->tnpus->at(iIT));
-     histograms["p_npuVsNpu"]    ->Fill(tpu->npus->at(iIT),tpu->npus->at(iIT));
-     histograms["p_matchedjet_off"]->Fill(avg_offset,jetMap.size());
-  }
+   } // for matched jets 
 
-  //=========================================================
-  //              FILLING OF HISTOS ENDS HERE
-  //=========================================================
+   avg_offset /= jetMap.size();
+   for (int det=0;det<NDetectorNames;det++) {
+      if (njet_det[det]!=0.) {
+         TString detectorAbbreviation = JetInfo::get_detector_abbreviation(detector_names[det]);
+         detectorAbbreviation.ToLower();
+         avg_offset_det[det]  /= njet_det[det];
+         hname = Form("p_npvVsOff_%s",detectorAbbreviation.Data());
+         histograms[hname]->Fill(avg_offset_det[det],tpu->npv);
+         hname = Form("p_rhoVsOff_%s",detectorAbbreviation.Data());
+         histograms[hname]->Fill(avg_offset_det[det],tpu->rho);
+      }
+   }
+   if(!reduceHistograms) {
+      histograms["p_npvVsoff"]      ->Fill(avg_offset,tpu->npv);
+      histograms["p_rhoVsoff"]      ->Fill(avg_offset,tpu->rho);
+      histograms["p_rhoVsRho"]      ->Fill(tpu->rho,tpu->rho);
+      histograms["p_npvVsNpv"]      ->Fill(tpu->npv,tpu->npv);
+      histograms["p_tnpuVsTnpu"]    ->Fill(tpu->tnpus->at(iIT),tpu->tnpus->at(iIT));
+      histograms["p_npuVsNpu"]    ->Fill(tpu->npus->at(iIT),tpu->npus->at(iIT));
+      histograms["p_matchedjet_off"]->Fill(avg_offset,jetMap.size());
+   }
 
-  return true;
+   //=========================================================
+   //              FILLING OF HISTOS ENDS HERE
+   //=========================================================
+
+   return true;
 }
 
 //______________________________________________________________________________
