@@ -441,6 +441,19 @@ vector<int> JetInfo::getPDGIDIndecies(int pdgid) {
 }//getPDGIDIndecies
 
 //______________________________________________________________________________
+string JetInfo::ListToString ( const std::vector<string> &list, string delimiter )
+{
+   string result;
+   for(unsigned int i=0; i<list.size(); i++) {
+      if(i<list.size()-1)
+         result += list[i] + string(delimiter);
+      else
+         result += list[i];
+   }
+   return result;
+}
+
+//______________________________________________________________________________
 TString JetInfo::ListToString ( const std::vector<TString> &list, TString delimiter )
 {
    TString result;

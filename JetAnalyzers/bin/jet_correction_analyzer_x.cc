@@ -96,6 +96,9 @@ double sumEOOT(vector<int>* npus, unsigned int iIT);
 /// returns the number of PUs after the index iIT (i.e. the current BX index)
 double sumLOOT(vector<int>* npus, unsigned int iIT);
 
+/// returns the postfix associated with a specific level and algorithm
+string getPostfix(vector<string> postfix, string alg, int level);
+
 ////////////////////////////////////////////////////////////////////////////////
 // main
 ////////////////////////////////////////////////////////////////////////////////
@@ -113,7 +116,7 @@ int main(int argc,char**argv)
    CommandLine cl;
    if (!cl.parse(argc,argv)) return 0;
 
-   vector<TString> algs              = cl.getVector<TString>     ("algs");
+   vector<string>  algs              = cl.getVector<string>      ("algs");
    string          path              = cl.getValue<string>       ("path");
    string          era               = cl.getValue<string>       ("era");
    string          inputFilename     = cl.getValue<string>       ("inputFilename");
@@ -122,11 +125,10 @@ int main(int argc,char**argv)
    string          url_string        = cl.getValue<string>       ("url_string",           "");
    TString         outputDir         = cl.getValue<TString>      ("outputDir",            "");
    TString         suffix            = cl.getValue<TString>      ("suffix",               "");
-   bool            useL1Cor          = cl.getValue<bool>         ("useL1Cor",          false);
-   bool            useL2Cor          = cl.getValue<bool>         ("useL2Cor",          false);
-   bool            useL3Cor          = cl.getValue<bool>         ("useL3Cor",          false);
-   bool            useL2L3ResCor     = cl.getValue<bool>         ("useL2L3ResCor",     false);
-   bool            useL5Cor          = cl.getValue<bool>         ("useL5Cor",          false);
+   vector<int>     levels            = cl.getVector<int>         ("levels",               "");
+   bool            useTags           = cl.getValue<bool>         ("useTags",            true);
+   bool            L1FastJet         = cl.getValue<bool>         ("L1FastJet",         false);
+   vector<string>  postfix           = cl.getVector<string>      ("postfix",              "");
    bool            doflavor          = cl.getValue<bool>         ("doflavor",          false);
    bool            doTProfileMDF     = cl.getValue<bool>         ("doTProfileMDF",     false);
    bool            reduceHistograms  = cl.getValue<bool>         ("reduceHistograms",   true);
@@ -201,9 +203,7 @@ int main(int argc,char**argv)
    }
 
    if(!outputDir.IsNull() && !outputDir.EndsWith("/")) outputDir += "/";
-   TFile *outf = TFile::Open(outputDir+"Closure_"+
-                             JetInfo::ListToString(algs,TString("_"))+suffix+".root",
-                             "RECREATE");
+   TFile *outf = TFile::Open(outputDir+"Closure_"+JetInfo::ListToString(algs,string("_"))+suffix+".root","RECREATE");
 
    //
    // Loop over the algorithms
@@ -215,12 +215,12 @@ int main(int argc,char**argv)
          weightFile = TFile::Open(weightfilename,"READ");
          if (!weightFile->IsOpen()) { cout<<"Can't open "<<weightfilename<<endl; }
          cout << "Getting the weight histogram all_ ... " << flush; 
-         weightHist = (TH2D*)weightFile->Get(algs[a]+"/all_");
+         weightHist = (TH2D*)weightFile->Get((algs[a]+"/all_").c_str());
          if(weightHist==nullptr) { cout<<"FAIL!"<<endl<<"Histogram of weights named \"all_\" was not in file "<<weightfilename<<endl; return 0; } 
          cout << "DONE" << endl;
       }
    
-      JetInfo jetInfo(algs[a]);
+      JetInfo jetInfo(TString(algs[a]));
 
       //
       // setup the tree for reading
@@ -229,7 +229,7 @@ int main(int argc,char**argv)
       TChain* chain;
       if(!inputFilename.empty() && inputFilePath.empty()) {
          TFile *inf = TFile::Open(inputFilename.c_str());
-         TDirectoryFile *idir = (TDirectoryFile*)inf->Get(algs[a]);
+         TDirectoryFile *idir = (TDirectoryFile*)inf->Get(algs[a].c_str());
          if (idir) 
             cout << "The directory is " << idir->GetName() << endl;
          else {
@@ -242,7 +242,7 @@ int main(int argc,char**argv)
       }
       else if(!fileList.empty()) {
          cout<<"\tAdding files from the list " << inputFilePath << "/" << fileList<<endl;
-         chain = new TChain(algs[a]+"/t");
+         chain = new TChain((algs[a]+"/t").c_str());
          TFileCollection fc("fc","",(inputFilePath+"/"+fileList).c_str());
          chain->AddFileInfoList((TCollection*)fc.GetList());
          if(chain->GetListOfFiles()->GetEntries()!=fc.GetNFiles()) {
@@ -252,7 +252,7 @@ int main(int argc,char**argv)
          file_count = chain->GetListOfFiles()->GetEntries();
       }
       else if(!url_string.empty()) {
-         chain = new TChain(algs[a]+"/t");
+         chain = new TChain((algs[a]+"/t").c_str());
          XrdCl::DirectoryList *response;
          XrdCl::DirListFlags::Flags flags = XrdCl::DirListFlags::None;
          XrdCl::URL url(url_string);
@@ -267,7 +267,7 @@ int main(int argc,char**argv)
       }
       else {
          cout<<"\tAdding "<<inputFilePath+"/"+inputFilename+"*.root"<<endl;
-         chain = new TChain(algs[a]+"/t");
+         chain = new TChain((algs[a]+"/t").c_str());
          file_count = chain->Add((inputFilePath+"/"+inputFilename+"*.root").c_str());
       }
       if (file_count==0){
@@ -301,7 +301,7 @@ int main(int argc,char**argv)
       //
       // move to the output directory
       //
-      TDirectoryFile* odir = (TDirectoryFile*)outf->mkdir(algs[a]);
+      TDirectoryFile* odir = (TDirectoryFile*)outf->mkdir(algs[a].c_str());
       odir->cd();
   
       int j,k;
@@ -352,44 +352,41 @@ int main(int argc,char**argv)
       //
       // Get the corrections from the text files
       //
-      JetCorrectorParameters *L1JetPar;
-      JetCorrectorParameters *L2JetPar;
-      JetCorrectorParameters *L3JetPar;
-      JetCorrectorParameters *ResJetPar;
-      JetCorrectorParameters *L5JetPar;
-      vector<JetCorrectorParameters> vPar;
+      bool exclude(false);
+      for (unsigned int i=0;i<levels.size();i++) {
+         stringstream sslvl; sslvl<<"l"<<levels[i];
+         if (algs[a].find(sslvl.str())!=string::npos) exclude=true;
+      }
+      if (exclude) {
+         cout<<"exclude "<<algs[a]<<endl;
+         continue;
+      }
+      cout<<"jet algorithm: "<<algs[a]<<endl;
+      cout<<"correction level: "<<JetInfo::get_correction_levels(levels,L1FastJet)<<endl;
+      cout<<"correction tag: "<<JetInfo::get_correction_tags(era,algs[a],levels,path,L1FastJet)<<endl;
 
-      if(useL1Cor)
-      {
-         L1JetPar = new JetCorrectorParameters(path + era + "_L1FastJet_"    + string(jetInfo.alias) + ".txt");
-         vPar.push_back(*L1JetPar);
-         cout << "Using " << path << era << "_L1FastJet_" << string(jetInfo.alias) << ".txt" << endl;
+      cout << "Setting up the FactorizedJetCorrector ... " << flush;
+      FactorizedJetCorrector *JetCorrector;
+      if(levels.size()>0 && useTags) {
+         JetCorrector = new FactorizedJetCorrector(JetInfo::get_correction_levels(levels,L1FastJet),
+                                                   JetInfo::get_correction_tags(era,algs[a],levels,path,L1FastJet));
       }
-      if(useL2Cor)
-      {
-         L2JetPar = new JetCorrectorParameters(path + era + "_L2Relative_"   + string(jetInfo.alias) + ".txt");
-         vPar.push_back(*L2JetPar);
-         cout << "Using " << path << era << "_L2Relative_" << string(jetInfo.alias) << ".txt" << endl;
+      else if(levels.size()>0) {
+         //
+         // Make sure the levels are in the correct order (lowest level to highest)
+         //
+         sort (levels.begin(),levels.end());
+         vector<JetCorrectorParameters> vPar;
+         for(unsigned int ilevel=0; ilevel<levels.size(); ilevel++) {
+            vPar.push_back(JetCorrectorParameters(string(path + era + JetInfo::get_level_tag(levels[ilevel],L1FastJet) + 
+                                                         jetInfo.getAlias() + getPostfix(postfix,algs[a],levels[ilevel]) + ".txt")));
+         }
+         JetCorrector = new FactorizedJetCorrector(vPar);
       }
-      if(useL3Cor)
-      {
-         L3JetPar = new JetCorrectorParameters(path + era + "_L3Absolute_"   + string(jetInfo.alias) + ".txt");
-         vPar.push_back(*L3JetPar);
-         cout << "Using " << path << era << "_L3Absolute_" << string(jetInfo.alias) << ".txt" << endl;
+      else {
+         JetCorrector = nullptr;
       }
-      if(useL2L3ResCor)
-      {
-         ResJetPar = new JetCorrectorParameters(path + era + "_L2L3Residual_" + string(jetInfo.alias) + ".txt"); 
-         vPar.push_back(*ResJetPar);
-         cout << "Using " << path << era << "_L2L3Residual_" << string(jetInfo.alias) << ".txt" << endl;
-      }
-      if(useL5Cor)
-      {
-         L5JetPar = new JetCorrectorParameters(path + era + "_L5Flavor_" + string(jetInfo.alias) + ".txt",get_flavor_name(pdgid)); 
-         vPar.push_back(*L5JetPar);
-         cout << "Using " << path << era << "_L5Flavor_" << string(jetInfo.alias) << ".txt," << get_flavor_name(pdgid) << endl;
-      }
-      FactorizedJetCorrector *JetCorrector = new FactorizedJetCorrector(vPar);
+      cout << "DONE" << endl;
 
       //
       // book histograms
@@ -603,16 +600,11 @@ int main(int argc,char**argv)
             }
             float dr     = JRAEvt->refdrjt->at(iref);
             if (drmax.size()>0 && dr > drmax[a]) continue;
-            JetCorrector->setJetPt(pt);
-            JetCorrector->setJetEta(eta);
-            int origIgnoreLevel = gErrorIgnoreLevel;
-            gErrorIgnoreLevel = kBreak;
-            float scale;
-            if(useL1Cor || useL2Cor || useL3Cor || useL2L3ResCor || useL5Cor)
-               scale = JetCorrector->getCorrection();
-            else
-               scale = 1.0;
-            gErrorIgnoreLevel = origIgnoreLevel;
+            if(JetCorrector) {
+               JetCorrector->setJetPt(pt);
+               JetCorrector->setJetEta(eta);
+            }
+            float scale = (JetCorrector) ? JetCorrector->getCorrection() : 1.0;
 
             //
             // we have to fill this histogram before we kill the event
@@ -1081,6 +1073,17 @@ double sumLOOT(vector<int>* npus, unsigned int iIT) {
    return sum;
 }
 
+//______________________________________________________________________________
+string getPostfix(vector<string> postfix, string alg, int level)
+{
+  for(unsigned int ipostfix=0; ipostfix<postfix.size(); ipostfix+=3)
+    {
+      TString tmp(postfix[ipostfix+1]);
+      if(postfix[ipostfix].compare(alg)==0 && atoi(tmp.Data())==level)
+        return postfix[ipostfix+2];
+    }
+  return "";
+}
 
 /*
   TO DO::FOR FLAVOR ANALYSIES

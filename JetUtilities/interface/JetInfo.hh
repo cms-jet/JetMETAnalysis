@@ -129,7 +129,8 @@ public:
   //string s = ListToString(vec_of_strings,"_","ak4pf_ak4pfchs")
   //or
   //TString s = ListToString(vec_of_tstrings,"_","ak4pf_ak4pfchs")
-  static TString ListToString ( const std::vector<TString> &list, TString delimiter = "_" );
+  static std::string ListToString ( const std::vector<std::string> &list, std::string delimiter = "_" );
+  static TString     ListToString ( const std::vector<TString> &list,     TString delimiter = "_" );
   
   /// use like:
   //char buffer [50];
