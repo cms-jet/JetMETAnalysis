@@ -28,6 +28,7 @@
 #include <string>
 #include <sstream>
 #include <utility>
+#include <algorithm>
 
 using std::cout;
 using std::endl;
