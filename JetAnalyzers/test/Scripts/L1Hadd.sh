@@ -1,11 +1,13 @@
 #!/bin/bash
 export SCRAM_ARCH=slc6_amd64_gcc491
-cd /afs/cern.ch/work/f/fengwang/OnlineJEC/CMSSW_8_0_0/src/
+cd /afs/cern.ch/work/f/fengwang/OnlineJEC/CMSSW_8_0_0/src/ # modify this to your own directory!
 eval $(scramv1 runtime -sh)
 cd JetMETAnalysis/JetAnalyzers/test/
 
+# -------------- please change these paths to your own ones -------------
 inpath="/store/group/phys_jetmet/fengwang/HLTBX25JECL1/"
 outpath="/afs/cern.ch/work/f/fengwang/OnlineJEC/CMSSW_8_0_0/src/JetMETAnalysis/JetAnalyzers/test/"
+# -----------------------------------------------------------------------
 
 num=$1
 outfile="L1Prefile_"

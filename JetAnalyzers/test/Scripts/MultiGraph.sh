@@ -1,3 +1,7 @@
+#!/bin/bash
+#--------------- draw the closure plots and resolution calibration ---------------
+# Note: You need to change the path after -inputs in the command according to your path!
+
 jet_inspect_graphs_x -inputs ./HLTBX25JEC/EcalMultifitHCALMethod3_jra_L1L2L3_MergePt_g.root  -algs ak4pfHLTl1l2l3 ak4caloHLTl1l2l3 -variables RelResVsJetEta:RefPt@10  -xmin -5 -xmax 5 -ymin 0.2 -ymax 0.8
 
 jet_inspect_graphs_x -inputs ./HLTBX25JEC/EcalMultifitHCALMethod3_jra_L1L2L3_MergePt_g.root  -algs ak4pfHLTl1l2l3 ak4caloHLTl1l2l3 -variables RelResVsJetEta:RefPt@30  -xmin -5 -xmax 5 -ymin 0 -ymax 0.4
