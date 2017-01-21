@@ -17,13 +17,16 @@
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
 #include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
+#include "xrootd/XrdCl/XrdClFileSystem.hh"
 
 #include "TROOT.h"
 #include "TSystem.h"
 #include "TEnv.h"
 #include <TObjectTable.h>
 #include "TFile.h"
+#include "TFileCollection.h"
 #include "TTree.h"
+#include "TChain.h"
 #include "TH1.h"
 #include "TH1F.h"
 #include "TH1D.h"
@@ -110,10 +113,13 @@ int main(int argc,char**argv)
    CommandLine cl;
    if (!cl.parse(argc,argv)) return 0;
 
-   TString         inputFilename     = cl.getValue<TString>      ("inputFilename");
    vector<TString> algs              = cl.getVector<TString>     ("algs");
    string          path              = cl.getValue<string>       ("path");
    string          era               = cl.getValue<string>       ("era");
+   string          inputFilename     = cl.getValue<string>       ("inputFilename");
+   string          inputFilePath     = cl.getValue<string>       ("inputFilePath",        "");
+   string          fileList          = cl.getValue<string>       ("fileList",             "");
+   string          url_string        = cl.getValue<string>       ("url_string",           "");
    TString         outputDir         = cl.getValue<TString>      ("outputDir",            "");
    TString         suffix            = cl.getValue<TString>      ("suffix",               "");
    bool            useL1Cor          = cl.getValue<bool>         ("useL1Cor",          false);
@@ -206,17 +212,95 @@ int main(int argc,char**argv)
       TFile *weightFile(nullptr);
       TH2D *weightHist(nullptr);
       if(!weightfilename.IsNull()) {
-          weightFile = TFile::Open(weightfilename,"READ");
-          if (!weightFile->IsOpen()) { cout<<"Can't open "<<weightfilename<<endl; }
-          cout << "Getting the weight histogram all_ ... " << flush; 
-          weightHist = (TH2D*)weightFile->Get(algs[a]+"/all_");
-          if(weightHist==nullptr) { cout<<"FAIL!"<<endl<<"Histogram of weights named \"all_\" was not in file "<<weightfilename<<endl; return 0; } 
-          cout << "DONE" << endl;
+         weightFile = TFile::Open(weightfilename,"READ");
+         if (!weightFile->IsOpen()) { cout<<"Can't open "<<weightfilename<<endl; }
+         cout << "Getting the weight histogram all_ ... " << flush; 
+         weightHist = (TH2D*)weightFile->Get(algs[a]+"/all_");
+         if(weightHist==nullptr) { cout<<"FAIL!"<<endl<<"Histogram of weights named \"all_\" was not in file "<<weightfilename<<endl; return 0; } 
+         cout << "DONE" << endl;
       }
    
       JetInfo jetInfo(algs[a]);
 
-      TFile *inf = TFile::Open(inputFilename);
+      //
+      // setup the tree for reading
+      //
+      int file_count(0);
+      TChain* chain;
+      if(!inputFilename.empty() && inputFilePath.empty()) {
+         TFile *inf = TFile::Open(inputFilename.c_str());
+         TDirectoryFile *idir = (TDirectoryFile*)inf->Get(algs[a]);
+         if (idir) 
+            cout << "The directory is " << idir->GetName() << endl;
+         else {
+            cout << "ERROR::Directory " << algs[a] <<" could not be found in file " << inf->GetName() << endl;
+            cout << " SKIPPING ALGO " << algs[a] << endl;
+            continue;
+         }
+         chain = (TChain*)idir->Get("t");
+         file_count = 1;
+      }
+      else if(!fileList.empty()) {
+         cout<<"\tAdding files from the list " << inputFilePath << "/" << fileList<<endl;
+         chain = new TChain(algs[a]+"/t");
+         TFileCollection fc("fc","",(inputFilePath+"/"+fileList).c_str());
+         chain->AddFileInfoList((TCollection*)fc.GetList());
+         if(chain->GetListOfFiles()->GetEntries()!=fc.GetNFiles()) {
+            cout << "ERROR::DelphesNtupleToJRANtuple_x::main Something went wrong and the number of files in the filesList doesn't equal the number of files in the chain." << endl;
+            return -1;           
+         }
+         file_count = chain->GetListOfFiles()->GetEntries();
+      }
+      else if(!url_string.empty()) {
+         chain = new TChain(algs[a]+"/t");
+         XrdCl::DirectoryList *response;
+         XrdCl::DirListFlags::Flags flags = XrdCl::DirListFlags::None;
+         XrdCl::URL url(url_string);
+         XrdCl::FileSystem fs(url);
+         fs.DirList(inputFilePath,flags,response);
+         for(auto iresp=response->Begin(); iresp!=response->End(); iresp++) {
+            if((*iresp)->GetName().find(".root")!=std::string::npos) {
+               cout << "\tAdding " << url_string << inputFilePath << (*iresp)->GetName() << endl;
+               file_count = chain->Add((url_string+inputFilePath+(*iresp)->GetName()).c_str());
+            }
+         }
+      }
+      else {
+         cout<<"\tAdding "<<inputFilePath+"/"+inputFilename+"*.root"<<endl;
+         chain = new TChain(algs[a]+"/t");
+         file_count = chain->Add((inputFilePath+"/"+inputFilename+"*.root").c_str());
+      }
+      if (file_count==0){
+         cout << "\tNo files found!  Aborting.\n";
+         return 0;
+      }
+      if (0==chain) { cout<<"no tree/chain found."<<endl; continue; }
+      JRAEvent* JRAEvt = new JRAEvent(chain,85);
+      chain->SetBranchStatus("*",0);
+      vector<string> branch_names = {"nref","refpt","refeta","jtpt","jteta","jtphi",
+                                     "bxns","npus","tnpus","sumpt_lowpt","refdrjt",
+                                     "refpdgid","npv","rho","rho_hlt","pthat","weight"};
+      for(auto n : branch_names) {
+         if(!doflavor && n=="refpdgid") continue;
+         if(n=="rho_hlt" && 0==chain->GetBranch("rho_hlt")) continue;
+         if(n=="weight") {
+            if (xsection>0.0) { 
+                useweight = false;
+            }
+            if (useweight) {
+                if (0==chain->GetBranch(n.c_str()))
+                    cout<<"branch 'weight' not found, events will NOT be weighted!"<<endl;
+                else
+                    chain->SetBranchStatus(n.c_str(),1);
+            }
+            continue;
+         }
+         chain->SetBranchStatus(n.c_str(),1);
+      }
+
+      //
+      // move to the output directory
+      //
       TDirectoryFile* odir = (TDirectoryFile*)outf->mkdir(algs[a]);
       odir->cd();
   
@@ -306,43 +390,6 @@ int main(int argc,char**argv)
          cout << "Using " << path << era << "_L5Flavor_" << string(jetInfo.alias) << ".txt," << get_flavor_name(pdgid) << endl;
       }
       FactorizedJetCorrector *JetCorrector = new FactorizedJetCorrector(vPar);
-
-      //
-      // setup the tree for reading
-      //
-      TDirectoryFile *idir = (TDirectoryFile*)inf->Get(algs[a]);
-      if (idir) 
-         cout << "The directory is " << idir->GetName() << endl;
-      else {
-         cout << "ERROR::Directory " << algs[a] <<" could not be found in file " << inf->GetName() << endl;
-         cout << " SKIPPING ALGO " << algs[a] << endl;
-         continue;
-      }
-
-      TTree *tree = (TTree*)idir->Get("t");
-      if (0==tree) { cout<<"no tree found."<<endl; continue; }
-      JRAEvent* JRAEvt = new JRAEvent(tree,85);
-      tree->SetBranchStatus("*",0);
-      vector<string> branch_names = {"nref","refpt","refeta","jtpt","jteta","jtphi",
-                                     "bxns","npus","tnpus","sumpt_lowpt","refdrjt",
-                                     "refpdgid","npv","rho","rho_hlt","pthat","weight"};
-      for(auto n : branch_names) {
-         if(!doflavor && n=="refpdgid") continue;
-         if(n=="rho_hlt" && 0==tree->GetBranch("rho_hlt")) continue;
-         if(n=="weight") {
-            if (xsection>0.0) { 
-                useweight = false;
-            }
-            if (useweight) {
-                if (0==tree->GetBranch(n.c_str()))
-                    cout<<"branch 'weight' not found, events will NOT be weighted!"<<endl;
-                else
-                    tree->SetBranchStatus(n.c_str(),1);
-            }
-            continue;
-         }
-         tree->SetBranchStatus(n.c_str(),1);
-      }
 
       //
       // book histograms
@@ -500,13 +547,13 @@ int main(int argc,char**argv)
       //
       // fill histograms
       //
-      unsigned int nevt = (evtmax>0) ? evtmax : (unsigned int)tree->GetEntries();
-      cout << "Jet Collection: " << algs[a] << " ...... Processing " << nevt << " of " << tree->GetEntries() << " entries:" << endl;
+      unsigned int nevt = (evtmax>0) ? evtmax : (unsigned int)chain->GetEntries();
+      cout << "Jet Collection: " << algs[a] << " ...... Processing " << nevt << " of " << chain->GetEntries() << " entries:" << endl;
       int min_npu=100;
       for (unsigned int ievt=0;ievt<nevt;ievt++) {
          loadbar2(ievt+1,nevt,50,"\t");
 
-         tree->GetEntry(ievt);
+         chain->GetEntry(ievt);
 
          int iIT = itIndex(JRAEvt->bxns);
          int npu = sumEOOT(JRAEvt->npus,iIT)+JRAEvt->npus->at(iIT)+sumLOOT(JRAEvt->npus,iIT);
@@ -542,7 +589,7 @@ int main(int argc,char**argv)
          if(nrefmax>0 && JRAEvt->nref>nrefmax) JRAEvt->nref = nrefmax;
          for (unsigned char iref=0;iref<JRAEvt->nref;iref++) {
             float rho = JRAEvt->rho;
-            float rho_hlt = (0!=tree->GetBranch("rho_hlt")) ? JRAEvt->rho_hlt : 0;
+            float rho_hlt = (0!=chain->GetBranch("rho_hlt")) ? JRAEvt->rho_hlt : 0;
             float ptgen  = JRAEvt->refpt->at(iref);
             if (ptgen<ptgenmin) continue;
             if (doflavor && abs(pdgid)!=123 && abs(JRAEvt->refpdgid->at(iref))!=abs(pdgid)) continue;
@@ -823,6 +870,8 @@ int main(int argc,char**argv)
          RhoVsPileupVsEta->WriteToFile(outputDir+"RhoVsPileupVsEta_"+jetInfo.alias+".root");
          cout << "DONE" << endl;
       }
+
+      delete chain;
    }//for(unsigned int a=0; a<algs.size(); a++)
 
    cout << "Write " << "Closure.root" << " ... ";
