@@ -29,18 +29,12 @@
 
 // CMSSW Libraries
 #include "DataFormats/Provenance/interface/RunLumiEventNumber.h"
-//#include "DataFormats/Provenance/interface/EventID.h"
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
 
 using namespace std;
 
 typedef map<double, pair<Int_t, Int_t> > ITJ;
-
-/*
-const int NPtBins    = 30;//37
-const double vpt[NPtBins + 1] = {10,10.5,11,11.5,12,12.5,13,13.5,14,15,17,20,23,27,30,35,40,45,57,72,90,120,150,200,300,400,550,750,1000,1500,2000};//,2500,3000,3500,4000};//,4500,5000,10000};
-*/
 
 ////////////////////////////////////////////////////////////////////////////////
 // declare class
@@ -363,7 +357,6 @@ void MatchEventsAndJets::GetNtuples(TString treeName) {
 
    fpu->cd(algo1);
    tpu   = new JRAEvent((TTree*) fpu->Get(algo1+"/"+treeName),algo1_bit_number);
-   iIT   = tpu->itIndex();
 
    fnopu->cd(algo2);
    tnopu = new JRAEvent((TTree*) fnopu->Get(algo2+"/"+treeName),algo2_bit_number);
@@ -518,7 +511,7 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
    Double_t min[4] = {veta[0], vrho[0], vtnpu[0], vpt[0]};
    Double_t max[4] = {veta[NETA-1], vrho[NRHO-1], vtnpu[NTNPU-1], vpt[NPtBins-1]};
    hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"] = new THnSparseF("p_offOverA_etaRhoVsTnpusVsJetPt", "p_offOverA_etaVsRhoVsTnpusVsJetPt", 4, bins, min, max);
-   hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->SetBinEdges(0,veta_half);
+   hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->SetBinEdges(0,veta);
    hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->SetBinEdges(1,vrho);
    hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->SetBinEdges(2,vtnpu);
    hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->SetBinEdges(3,vpt);
@@ -528,7 +521,7 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
    hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->GetAxis(3)->SetTitle("p_{T}^{gen}");
    hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->Sumw2();
    hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"] = new THnSparseF("p_PtAve_etaRhoVsTnpusVsJetPt", "p_PtAve_etaVsRhoVsTnpusVsJetPt", 4, bins, min, max);
-   hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->SetBinEdges(0,veta_half);
+   hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->SetBinEdges(0,veta);
    hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->SetBinEdges(1,vrho);
    hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->SetBinEdges(2,vtnpu);
    hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->SetBinEdges(3,vpt);
@@ -538,7 +531,7 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
    hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->GetAxis(3)->SetTitle("p_{T}^{gen}");
    hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->Sumw2();
    hsparse["p_entries_etaRhoVsTnpusVsJetPt"] = new THnSparseF("p_entries_etaRhoVsTnpusVsJetPt", "p_entries_etaRhoVsTnpusVsJetPt", 4, bins, min, max);
-   hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->SetBinEdges(0,veta_half);
+   hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->SetBinEdges(0,veta);
    hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->SetBinEdges(1,vrho);
    hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->SetBinEdges(2,vtnpu);
    hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->SetBinEdges(3,vpt);
@@ -765,16 +758,16 @@ void MatchEventsAndJets::LoopOverEvents(bool verbose, bool reduceHistograms) {
       tpu->GetEntry(mapTreePU[it->first].second);
       tnopu->GetEntry(mapTreeNoPU[it->first].second);
       if (tpu->npv ==0 || tnopu->npv == 0) continue;
-      // HERE correct the jets in tpu if requested
+
+      // Set the in-time pileup index after the first event only
+      if(nevs==0) iIT = tpu->itIndex();
 
       // Create the mapping of matched jets.
       // key is PU, value is for NoPU
       FillJetMap();
 
-      if(FillHistograms(reduceHistograms)) {
-       nevs++;
-      }
-    
+      if(FillHistograms(reduceHistograms)) nevs++;
+
    }//for
 }
 
@@ -841,7 +834,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
       }
       return false;
    }
-   
+
    inpv       = JetInfo::getBinIndex(tpu->npv,NBinsNpvRhoNpu,npvRhoNpuBinWidth);
    inpv_low   = inpv*npvRhoNpuBinWidth;
    inpv_high  = inpv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
@@ -855,7 +848,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
    inpu_low   = inpu*npvRhoNpuBinWidth;
    inpu_high  = inpu*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1;
    TString hname = "";
-   
+
    //
    // Applying JEC from textfile
    //
@@ -874,7 +867,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
          //cout <<" "<<tpu->jtpt->at(j1)<<endl;
       }
    }
-   
+
    if(!reduceHistograms) {
       double avg_jtpt_all       = 0;
       double avg_jtpt_matched   = 0;
@@ -1051,7 +1044,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
          dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNPVVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),tpu->rho);
          dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNPVVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
       }
-    
+
       //TNPU
       dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsTnpusVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),offsetOA);
       dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsTnpusVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
