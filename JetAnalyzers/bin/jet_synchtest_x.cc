@@ -31,6 +31,7 @@
 #include "DataFormats/Provenance/interface/RunLumiEventNumber.h"
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
+#include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
 
 using namespace std;
 
@@ -44,31 +45,36 @@ class MatchEventsAndJets {
 public:
 
    MatchEventsAndJets();
-   MatchEventsAndJets(TString algo1_, TString algo2_, bool iftest_);
+   MatchEventsAndJets(string algo1_, string algo2_, bool iftest_);
    ~MatchEventsAndJets() {;}
 
-   void getMaxDeltaR();
-   double getMaxDeltaR(TString algName);
-   void SetMaxEvts(int me) {maxEvts = me;}
-   void OpenInputFiles(TString filenamePU, TString filenameNoPU);
-   void MakeMatchedEventsMaps(TString treeName, TString outputPath);
-   void ConvertMapToVector(const ITS& mapTree, vector<evtid>& vevtid, vector<pair<ull,ull> >& vll);
-   void ConvertMapToTTree(const ITS& mapTree, TTree* treeMap);
-   void WriteMatchedEventsMaps(ITS mapTree, bool noPU, TString outputPath);
-   void ConvertTTreeToMap(ITS& mapTree, TTree* treeMap);
-   void ReadMatchedEventsMaps(TString pathToMaps);
-   ITS fillMap(bool noPU, TString treeName, TString outputPath);
-   void GetNtuples(TString treeName = "t");
-   void OpenOutputFile(TString outputPath = "./");
-   void SetJEC(TString JECPar = "parameters_ak5pf.txt");
-   void SetNpvRhoNpuValues(int NBins, int Width) {NBinsNpvRhoNpu=NBins; npvRhoNpuBinWidth=Width;}
-   void SetVptBins(vector<int> vptb) {vptBins = vptb;}
-   void DeclareHistograms(bool reduceHistograms);
-   void LoopOverEvents(bool verbose, bool reduceHistograms);
-   void FillJetMap();
-   bool FillHistograms(bool reduceHistograms);
-   void WriteOutput();
-   void Report();
+   void   getMaxDeltaR();
+   double getMaxDeltaR(string algName);
+   void   SetMaxEvts(int me) {maxEvts = me;}
+   void   SetNRefMax(unsigned int nrm) {nrefmax = nrm;}
+   void   SetWeightParameters(bool useweight_, bool pThatReweight_, double bias2SelectionRef_, double bias2SelectionPow_);
+   void   SetupLumiWeights(string dataFile, string mcFile, string dataHist, string mcHist);
+   void   OpenInputFiles(string filenamePU, string filenameNoPU);
+   void   MakeMatchedEventsMaps(string treeName, string outputPath);
+   void   ConvertEvtMapToVector(const ITS& mapTree, vector<evtid>& vevtid, vector<pair<ull,ull> >& vll);
+   void   ConvertEvtMapToTTree(const ITS& mapTree, TTree* treeMap);
+   void   WriteMatchedEventsMaps(ITS mapTree, bool noPU, string outputPath);
+   void   ConvertTTreeToMap(ITS& mapTree, TTree* treeMap);
+   void   ReadMatchedEventsMaps(string pathToMaps);
+   ITS    fillMap(bool noPU, string treeName, string outputPath);
+   void   GetNtuples(string treeName = "t");
+   void   OpenOutputFile(string outputPath = "./");
+   void   SetJEC(string JECPar = "parameters_ak5pf.txt");
+   void   SetNpvRhoNpuValues(int NBins, int Width) {NBinsNpvRhoNpu=NBins; npvRhoNpuBinWidth=Width;}
+   void   SetVptBins(vector<int> vptb) {vptBins = vptb;}
+   void   DeclareHistograms(bool reduceHistograms);
+   void   LoopOverEvents(bool verbose, bool reduceHistograms, string readJetMap);
+   void   FillJetMap();
+   void   FillRecToRecThroughGenMap();
+   void   ReadJetMap(int ientry, string readJetMap);
+   bool   FillHistograms(bool reduceHistograms);
+   void   WriteOutput(string outputPath, bool writeJetMap);
+   void   Report();
 
 private:
 
@@ -78,50 +84,62 @@ private:
    TFile * fout;
 
    //Algorithms
-   TString algo1;
-   TString algo2;
+   string algo1;
+   string algo2;
    JetInfo algo1JetInfo;
    JetInfo algo2JetInfo;
-   double maxDeltaR;
+   double  maxDeltaR;
 
    //Ntuples
    JRAEvent* tpu;
    JRAEvent* tnopu;
-   
+
    //JEC
    bool ApplyJEC;
-   JetCorrectorParameters* L1JetPar;
+   JetCorrectorParameters*        L1JetPar;
    vector<JetCorrectorParameters> vPar;
-   FactorizedJetCorrector* JetCorrector;
+   FactorizedJetCorrector*        JetCorrector;
 
-   //Maps
+   //Maps and items used for looping through jets
    ITS mapTreePU;
    ITS mapTreeNoPU;
    //A map holding the equivalance of jets in two given events
-   map<Int_t, Int_t> jetMap;
-   map<TString, TH1*> histograms;
+   map<Int_t, Int_t>        jetMap;
+   map<TString, TH1*>       histograms;
    map<TString, THnSparse*> hsparse;
    //Used for filling the THnSparse
    Double_t* fValue;
+   TTree*                   jetMapTree;
+   vector<int>*             recoJetIndexPU;
+   vector<int>*             recoJetIndexNoPU;
+
 
    //Loop
-   vector<int> vptBins;
-   int nevs;
-   int NBinsNpvRhoNpu;
-   int npvRhoNpuBinWidth;
-   int iIT;
-   int inpv;  
-   int inpv_low;
-   int inpv_high;
-   int irho;
-   int irho_low;
-   int irho_high;
-   int itnpu;
-   int itnpu_low;
-   int itnpu_high;
-   int inpu;
-   int inpu_low;
-   int inpu_high;
+   vector<int>          vptBins;
+   unsigned int         nrefmax;
+   int                  nevs;
+   int                  NBinsNpvRhoNpu;
+   int                  npvRhoNpuBinWidth;
+   int                  iIT;
+   int                  inpv;  
+   int                  inpv_low;
+   int                  inpv_high;
+   int                  irho;
+   int                  irho_low;
+   int                  irho_high;
+   int                  itnpu;
+   int                  itnpu_low;
+   int                  itnpu_high;
+   int                  inpu;
+   int                  inpu_low;
+   int                  inpu_high;
+   double               weight;
+   bool                 useweight;
+   bool                 pThatReweight;
+   double               bias2SelectionRef;
+   double               bias2SelectionPow;
+   edm::LumiReWeighting LumiWeights_;
+   bool                 LumiWeightsSet_;
 
    //Debug
    bool iftest;
@@ -147,10 +165,11 @@ MatchEventsAndJets::MatchEventsAndJets() : algo1("ak5pf"), algo2("ak5pf"), iftes
    algo1JetInfo = JetInfo(algo1);
    algo2JetInfo = JetInfo(algo2);
    getMaxDeltaR();
+   LumiWeightsSet_ = false;
 }
 
 //______________________________________________________________________________
-MatchEventsAndJets::MatchEventsAndJets(TString algo1_, TString algo2_, bool iftest_)
+MatchEventsAndJets::MatchEventsAndJets(string algo1_, string algo2_, bool iftest_)
                               : algo1(algo1_), algo2(algo2_), iftest(iftest_){
    JetCorrector = 0;
    nevs = 0;
@@ -161,6 +180,29 @@ MatchEventsAndJets::MatchEventsAndJets(TString algo1_, TString algo2_, bool ifte
    algo1JetInfo = JetInfo(algo1);
    algo2JetInfo = JetInfo(algo2);
    getMaxDeltaR();
+   LumiWeightsSet_ = false;
+}
+
+//______________________________________________________________________________
+void MatchEventsAndJets::SetWeightParameters(bool useweight_, bool pThatReweight_, double bias2SelectionRef_, double bias2SelectionPow_) {
+   useweight = useweight_;
+   pThatReweight = pThatReweight_;
+   bias2SelectionRef = bias2SelectionRef_;
+   bias2SelectionPow = bias2SelectionPow_;
+}
+
+
+//______________________________________________________________________________
+void MatchEventsAndJets::SetupLumiWeights(string dataFile, string mcFile, string dataHist, string mcHist) {
+   if(!dataFile.empty() && !mcFile.empty()) {
+      LumiWeights_    = edm::LumiReWeighting(mcFile,dataFile,mcHist,dataHist);
+      LumiWeightsSet_ = true;
+      cout << endl;
+   }
+   else {
+      cout << "WARNING::MatchEventsAndJets::SetupLumiWeights LumiWeights not set." << std::endl
+           << "\tOne or both of the input files was not set." << endl << endl;
+   }
 }
 
 //______________________________________________________________________________
@@ -182,27 +224,27 @@ void MatchEventsAndJets::getMaxDeltaR() {
 }
 
 //______________________________________________________________________________
-double MatchEventsAndJets::getMaxDeltaR(TString algName) {
+double MatchEventsAndJets::getMaxDeltaR(string algName) {
    return min(0.25,JetInfo(algName).coneSize/20.0);
 }
 
 //______________________________________________________________________________
-void MatchEventsAndJets::OpenInputFiles(TString filenamePU, TString filenameNoPU) {
-   fpu = TFile::Open(filenamePU,"READ");
-   fnopu = TFile::Open(filenameNoPU,"READ");
+void MatchEventsAndJets::OpenInputFiles(string filenamePU, string filenameNoPU) {
+   fpu = TFile::Open(filenamePU.c_str(),"READ");
+   fnopu = TFile::Open(filenameNoPU.c_str(),"READ");
 }
 
 //______________________________________________________________________________
-void MatchEventsAndJets::MakeMatchedEventsMaps(TString treeName, TString outputPath) {
+void MatchEventsAndJets::MakeMatchedEventsMaps(string treeName, string outputPath) {
    mapTreePU   = fillMap(false, treeName, outputPath);
    mapTreeNoPU = fillMap(true, treeName, outputPath);
 }
 
 //______________________________________________________________________________
-ITS MatchEventsAndJets::fillMap(bool noPU, TString treeName, TString outputPath) {
+ITS MatchEventsAndJets::fillMap(bool noPU, string treeName, string outputPath) {
    TFile* f;
    JRAEvent* t;
-   TString algo;
+   string algo;
    ITS mapTree;
    if(noPU == false) {
       f = fpu;
@@ -213,9 +255,9 @@ ITS MatchEventsAndJets::fillMap(bool noPU, TString treeName, TString outputPath)
       f = fnopu;
       algo = algo2;
       t = tnopu;
-   } 
+   }
 
-   // Load only what's needed this WAY FASTER. 
+   // Load only what's needed this WAY FASTER.
    t->fChain->SetBranchStatus("*",0);
    t->fChain->SetBranchStatus("run",1);
    t->fChain->SetBranchStatus("evt",1);
@@ -261,7 +303,7 @@ ITS MatchEventsAndJets::fillMap(bool noPU, TString treeName, TString outputPath)
 }
 
 //______________________________________________________________________________
-void MatchEventsAndJets::ConvertMapToVector(const ITS& mapTree, vector<evtid>& vevtid, vector<pair<ull,ull> >& vll) {
+void MatchEventsAndJets::ConvertEvtMapToVector(const ITS& mapTree, vector<evtid>& vevtid, vector<pair<ull,ull> >& vll) {
    vevtid.clear();
    vll.clear();
    for(IT::const_iterator it=mapTree.begin(); it!=mapTree.end(); it++) {
@@ -271,7 +313,7 @@ void MatchEventsAndJets::ConvertMapToVector(const ITS& mapTree, vector<evtid>& v
 }
 
 //______________________________________________________________________________
-void MatchEventsAndJets::ConvertMapToTTree(const ITS& mapTree, TTree* treeMap) {
+void MatchEventsAndJets::ConvertEvtMapToTTree(const ITS& mapTree, TTree* treeMap) {
    evtid tmpid;
    pair<Long64_t,Long64_t> tmpIndex;
    treeMap->Branch("evtid","evtid",&tmpid);
@@ -284,17 +326,17 @@ void MatchEventsAndJets::ConvertMapToTTree(const ITS& mapTree, TTree* treeMap) {
 }
 
 //______________________________________________________________________________
-void MatchEventsAndJets::WriteMatchedEventsMaps(map<evtid, pair<ull,ull>, evtid> mapTree, bool noPU, TString outputPath) {
+void MatchEventsAndJets::WriteMatchedEventsMaps(map<evtid, pair<ull,ull>, evtid> mapTree, bool noPU, string outputPath) {
    TDirectory* curDir = gDirectory;
-   TString outputFilename = "matchedEventsMaps_"+algo1+"_"+algo2+".root";
-   if (algo1.EqualTo(algo2)) 
+   string outputFilename = "matchedEventsMaps_"+algo1+"_"+algo2+".root";
+   if (algo1 == algo2)
       outputFilename = "matchedEventsMaps_"+algo1+".root";
    outputFilename = outputPath+outputFilename;
-   TString name = "mapTree";
+   string name = "mapTree";
    cout << "\tWriting " << name+(noPU ? "NoPU" : "PU") << " to " << outputFilename << " ... " << flush; 
-   TString option = (noPU ? "UPDATE" : "RECREATE");
-   TFile* mapFile = TFile::Open(outputFilename,option);
-   mapFile->WriteObject(&mapTree,name+(noPU ? "NoPU" : "PU"));
+   string option = (noPU ? "UPDATE" : "RECREATE");
+   TFile* mapFile = TFile::Open(outputFilename.c_str(),option.c_str());
+   mapFile->WriteObject(&mapTree,(name+(noPU ? "NoPU" : "PU")).c_str());
    mapFile->Write();
    mapFile->Close();
    cout << "DONE" << endl;
@@ -316,12 +358,12 @@ void MatchEventsAndJets::ConvertTTreeToMap(ITS& mapTree, TTree* treeMap) {
 }
 
 //______________________________________________________________________________
-void MatchEventsAndJets::ReadMatchedEventsMaps(TString pathToMaps) {
+void MatchEventsAndJets::ReadMatchedEventsMaps(string pathToMaps) {
    cout << "Reading matched event maps:" << endl
         << "\tfile: " << pathToMaps << endl;
 
    TDirectory* curDir = gDirectory;
-   TFile* mapFile = TFile::Open(pathToMaps,"READ");
+   TFile* mapFile = TFile::Open(pathToMaps.c_str(),"READ");
 
    auto inMapPointer = (ITS*)mapFile->Get("mapTreePU");
    if(inMapPointer) {
@@ -351,31 +393,31 @@ void MatchEventsAndJets::ReadMatchedEventsMaps(TString pathToMaps) {
 }
 
 //______________________________________________________________________________
-void MatchEventsAndJets::GetNtuples(TString treeName) {
+void MatchEventsAndJets::GetNtuples(string treeName) {
    int algo1_bit_number = (algo1JetInfo.jetType.Contains("calo",TString::kIgnoreCase)) ? 53 : 85;
    int algo2_bit_number = (algo2JetInfo.jetType.Contains("calo",TString::kIgnoreCase)) ? 53 : 85;
 
-   fpu->cd(algo1);
-   tpu   = new JRAEvent((TTree*) fpu->Get(algo1+"/"+treeName),algo1_bit_number);
+   fpu->cd(algo1.c_str());
+   tpu   = new JRAEvent((TTree*) fpu->Get((algo1+"/"+treeName).c_str()),algo1_bit_number);
 
-   fnopu->cd(algo2);
-   tnopu = new JRAEvent((TTree*) fnopu->Get(algo2+"/"+treeName),algo2_bit_number);
+   fnopu->cd(algo2.c_str());
+   tnopu = new JRAEvent((TTree*) fnopu->Get((algo2+"/"+treeName).c_str()),algo2_bit_number);
 }
 
 //______________________________________________________________________________
-void MatchEventsAndJets::OpenOutputFile(TString outputPath) {
-   TString outputFilename = "output_"+algo1+"_"+algo2+".root";
-   if (algo1.EqualTo(algo2)) 
+void MatchEventsAndJets::OpenOutputFile(string outputPath) {
+   string outputFilename = "output_"+algo1+"_"+algo2+".root";
+   if (algo1 == algo2)
       outputFilename = "output_"+algo1+".root";
    outputFilename = outputPath+outputFilename;
-   fout = new TFile(outputFilename,"RECREATE");
+   fout = new TFile(outputFilename.c_str(),"RECREATE");
 }
 
 //______________________________________________________________________________
-void MatchEventsAndJets::SetJEC(TString JECPar) {
-   L1JetPar = new JetCorrectorParameters(JECPar.Data());
-  vPar.push_back(*L1JetPar);
-  JetCorrector = new FactorizedJetCorrector(vPar);
+void MatchEventsAndJets::SetJEC(string JECPar) {
+   L1JetPar = new JetCorrectorParameters(JECPar);
+   vPar.push_back(*L1JetPar);
+   JetCorrector = new FactorizedJetCorrector(vPar);
 }
 
 //______________________________________________________________________________
@@ -388,11 +430,15 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
    //
    // HISTOS OF GENERAL QUANTITIES.General, hence the g_ prefix
    //
+   histograms["g_LumiWeight"]  = new TH1D("g_LumiWeight", "g_LumiWeight;LumiWeight;Events", 1000,0,10);
+   histograms["g_GenWeight"]   = new TH1D("g_GenWeight", "g_GenWeight;log_{10}(GenWeight);Events", 1000,-48,2);
+   histograms["g_pThatWeight"] = new TH1D("g_pThatWeight;log_{10}(pThatWeight);Events","g_pThatWeight", 1000,-48,2);
+   histograms["g_weight"]      = new TH1D("g_weight","g_weight;log_{10}(EvtWeight);Events", 1000,-48,2);
+   histograms["g_pthat"]       = new TH1D("g_pthat","g_pthat;#hat{p}_{T}^{PU};Events",(int)vpt[NPtBins]/10.0,vpt[0],vpt[NPtBins]);   
    if(!reduceHistograms) {
       histograms["g_nj"]       = new TH2D("g_nj","g_nj",30,0,30,30,0,30);
       histograms["g_npv"]      = new TH2D("g_npv","g_npv",50,0,50,50,0,50);
       histograms["g_rho"]      = new TH2D("g_rho","g_rho",50,0,50,50,0,50);
-      histograms["g_pthat"]    = new TH2D("g_pthat","g_pthat",300,0,3000,300,0,300);
       histograms["g_deltaNpv"] = new TProfile("g_deltaNpv","g_deltaNpv",50,0,50);
    }
 
@@ -403,7 +449,7 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
       histograms["m_refpt_diff"]     = new TH1D("m_refpt_diff","refpt_diff;p_{T, j1}- p_{T, j2}; Number of events",300,-150,150);
       histograms["m_refpdgid_diff"]  = new TH1D("m_refpdgid_diff","m_refpdgid_diff;pdgid_{j1}- pdgid_{j2}; Number of events",100,-50,50);
       histograms["m_deltaPthat"]     = new TProfile("m_deltaPthat","m_deltaPthat;pthat_{pu}(GeV);pthat_{pu}-pthat_{nopu}(GeV)",300,0,3000);
-      
+
       // To show the excees of jets at low-pt for the sample with pu.
       histograms["m_njet_pt_pu"]   = new TH1D("m_njet_pt_pu","m_njet_pt_pu;p_{T}^{RECO};#jets;",NPtBins, vpt); // number of jets
       histograms["m_njet_pt_nopu"] = new TH1D("m_njet_pt_nopu","m_njet_pt-nopu;p_{T}^{RECO};#jets;",NPtBins, vpt); // number of jets
@@ -427,7 +473,7 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
       histograms["m_frac_nj_pt_b_match_nopu_npv3"]  = new TProfile("m_frac_nj_pt_b_match_nopu_npv3","m_frac_nj_pt_b_match_nopu_npv;pt_{jet};fraction of matched jets;", NPtBins,vpt);
       histograms["m_frac_nj_pt_b_match_pu_npvO"]    = new TProfile("m_frac_nj_pt_b_match_pu_npvO","m_frac_nj_pt_b_match_pu_npv;pt_{jet};fraction of matched jets;", NPtBins, vpt);
       histograms["m_frac_nj_pt_b_match_nopu_npvO"]  = new TProfile("m_frac_nj_pt_b_match_nopu_npvO","m_frac_nj_pt_b_match_nopu_npv;pt_{jet};fraction of matched jets;", NPtBins,vpt);
- 
+
       // Fraction of matched jets (reconstructed--->generated) in barrel regions, with different NPV
       histograms["m_frac_nj_pt_b_match_RG_pu"]       = new TProfile("m_frac_nj_pt_b_match_RG_pu","m_frac_nj_pt_b_match_RG_pu;pt_{jet};fraction of matched jets;", NPtBins, vpt);
       histograms["m_frac_nj_pt_e_match_RG_pu"]       = new TProfile("m_frac_nj_pt_e_match_RG_pu","m_frac_nj_pt_e_match_RG_pu;pt_{jet};fraction of matched jets;", NPtBins, vpt);
@@ -445,26 +491,26 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
 
       // Number of matched jets vs. NPV in PU sample
       histograms["m_matched_nj_npv"] = new TProfile("m_matched_nj_npv","m_matched_nj_npv;NPV;# of jets/event",30,0.5,30.5);
-      
+
       // Number of unmatched jets vs. NPV in PU sample
       histograms["m_unmatched_nj_npv"] = new TProfile("m_unmatched_nj_npv","m_unmatched_nj_npv;NPV;# of jets/event",30,0.5,30.5);
-      
-      // Average jet pt vs. NPV in PU sample  
+
+      // Average jet pt vs. NPV in PU sample
       histograms["m_all_jtpt_npv"] = new TProfile("m_all_jtpt_npv","m_all_jtpt_npv;NPV;<jet pt> (GeV)", 30, 0.5, 30.5);
-      
-      // Average matched jet pt vs. NPV in PU sample  
+
+      // Average matched jet pt vs. NPV in PU sample
       histograms["m_matched_jtpt_npv"] = new TProfile("m_matched_jtpt_npv","m_matched_jtpt_npv;NPV;<jet pt> (GeV)", 30, 0.5, 30.5);
 
-      // Average unmatched jet pt vs. NPV in PU sample  
+      // Average unmatched jet pt vs. NPV in PU sample
       histograms["m_unmatched_jtpt_npv"] = new TProfile("m_unmatched_jtpt_npv","m_unmatched_jtpt_npv;NPV;<jet pt> (GeV)", 30, 0.5, 30.5);
 
-      // Number of unmatched jets per event in different NPV bins. 
+      // Number of unmatched jets per event in different NPV bins.
       // 6 old NPV bins 0-4, 5-9, 10-14, 15-19, 20-24, 25-29
       for (int n = 0 ; n < NBinsNpvRhoNpu ; n++) {
          TString titles = ";p_{T,J};# PU Jets /event;";
          TString name = Form("m_njet_pt_npv%i_%i_unmatch",n*npvRhoNpuBinWidth,n*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
          histograms[name] = new TProfile(name, name+titles, NPtBins, vpt); // number of jets
-         
+
          titles = ";#eta_{J}; p_{T,J};# PU Jets /event;";
          name = Form("m_njet_etaVspt_npv%i_%i_unmatch",n*npvRhoNpuBinWidth,n*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
          histograms[name] = new TProfile2D(name, name+titles, NETA, veta, NPtBins, vpt); // number of jets
@@ -473,7 +519,7 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
 
    //
    // HISTOS OF PU!!!, hence the p_suffix
-   // 
+   //
    if(!reduceHistograms) {
       histograms["p_rhoVsRho"]       = new TProfile ("p_rhoVsRho","p_rhoVsRho;",80,0,80);
       histograms["p_npvVsNpv"]       = new TProfile ("p_npvVsNpv","p_npvVsNpv;",80,0,80);
@@ -558,15 +604,14 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
       //NPV+Rho
       histograms["p_offOverA_etaVsN_RVsJetPt"]   = new TProfile3D("p_offOverA_etaVsN_RVsJetPt","p_offOverA_etaVsN_RVsJetPt;#eta_{j};(NPV+Rho)/2;p_{T}^{gen};OffsetOverAre",NETA,veta,NRHO,vrho,NPtBins,vpt);
       histograms["p_PtAve_etaVsN_RVsJetPt"]      = new TProfile3D("p_PtAve_etaVsN_RVsJetPt","p_PtAve_etaVsN_RVsJetPt;#eta_{j};(NPV+Rho)/2;p_{T}^{gen};PtAve",NETA,veta,NRHO,vrho,NPtBins,vpt);
-      
+
       histograms["p_offsetOA_rho_npv_refpt_BB"]  = new TProfile3D("p_offsetOA_rho_npv_refpt_BB","p_offsetOA_rho_npv_refpt_BB;Rho;N_{PV};p_{T}^{GEN};offsetOA",NRHO,vrho,NRHO,vrho,NPtBins,vpt);
       histograms["p_npvVsoff"]               = new TH2F("p_npvVsOff","p_npvVsOff;<p_{T} Offset>_{jets} (GeV);N_{PV}",80,0,80,80,0,80);
       histograms["p_rhoVsoff"]               = new TH2F("p_rhoVsOff","p_rhoVsOff;<p_{T} Offset>_{jets} (GeV);Rho",80,0,80,80,0,80);
-      histograms["p_npvVsRho_offset_15_15h"] = new TH2F("p_npvVsRho_offset_15_15h","p_npvVsRho_offset_15_15h;Rho;N_{PV}",80,0,80,80,0,80); //ZQ
       histograms["p_areaVsrefpt"]            = new TH2F("p_areaVsrefpt","p_areaVsrefpt;p_{T}^{GEN};jtarea^{pu}-jtarea^{nopu}",NPtBins, vpt,100,-1,1);
       histograms["p_areaVsoffset_1000"]      = new TH2F("p_areaVsoffset_1000","p_areaVsoffset_1000;offset;jtarea^{pu}-jtarea^{nopu}",100,-500,500,100,-1,1);
       histograms["p_areaVsoffset_30_50"]     = new TH2F("p_areaVsoffset_30_50","p_areaVsoffset_30_50;offset;jtarea^{pu}-jtarea^{nopu}",100,-100,100,100,-1,1);
-      
+
       histograms["p_rho_npv_refpt_BB"] = new TH3F("p_rho_npv_refpt_BB","p_rho_npv_refpt_BB;Rho;N_{PV};p_{T}^{GEN}",NRHO,vrho,NRHO,vrho,NPtBins,vpt);
    }
 
@@ -732,13 +777,14 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
 }
 
 //______________________________________________________________________________
-void MatchEventsAndJets::LoopOverEvents(bool verbose, bool reduceHistograms) {
-   cout << "Looping over the mapped events:" << endl << "\tprogress:" << endl;
+void MatchEventsAndJets::LoopOverEvents(bool verbose, bool reduceHistograms, string readJetMap) {
+   cout << endl << "Looping over the mapped events:" << endl << "\tprogress:" << endl;
    ull nentries = mapTreePU.size();
+   int jetMapIndex = -1;
    for (IT::const_iterator it = mapTreePU.begin(); it != mapTreePU.end(); ++it) {
 
       if (iftest && nevs >= maxEvts) return;
-      
+
       //if (nevs%10000==0) cout << "\t"<<nevs << endl;
       loadbar2(nevs+1,nentries,50,"\t\t");
 
@@ -757,14 +803,23 @@ void MatchEventsAndJets::LoopOverEvents(bool verbose, bool reduceHistograms) {
       // Load the entries at the proper place.
       tpu->GetEntry(mapTreePU[it->first].second);
       tnopu->GetEntry(mapTreeNoPU[it->first].second);
-      if (tpu->npv ==0 || tnopu->npv == 0) continue;
+
+      //Skip events without any primary vertex as these make no sense
+      if (tpu->npv == 0 || tnopu->npv == 0) continue;
 
       // Set the in-time pileup index after the first event only
       if(nevs==0) iIT = tpu->itIndex();
 
       // Create the mapping of matched jets.
       // key is PU, value is for NoPU
-      FillJetMap();
+      //if(!readJetMap) FillJetMap();
+      if(readJetMap.empty()) {
+         FillRecToRecThroughGenMap();
+      }
+      else {
+         jetMapIndex++;
+         ReadJetMap(jetMapIndex,readJetMap);
+      }  
 
       if(FillHistograms(reduceHistograms)) nevs++;
 
@@ -773,15 +828,29 @@ void MatchEventsAndJets::LoopOverEvents(bool verbose, bool reduceHistograms) {
 
 //______________________________________________________________________________
 void MatchEventsAndJets::FillJetMap() {
-   // Create an aux map with the dR of all the possible 
+   // Create an aux map with the dR of all the possible
    // combinations of jets in both events
    map<double, pair<Int_t, Int_t> >  auxMap;
+
+   // Order j1 according to reco-jet pT
+   vector<int> j1o;
+   j1o.push_back(0);
+   for (int j1=1; j1 < tpu->nref; j1++){
+      for (unsigned ito = 0; ito < j1o.size(); ++ito){
+         if (tpu->jtpt->at(j1) > tpu->jtpt->at(j1o[ito])){
+            j1o.insert(j1o.begin()+ito,j1);
+            break;
+         }
+      }
+   }
+   if (nrefmax > 0 && nrefmax < j1o.size()) j1o.resize(nrefmax);
+
    for (int j1=0; j1 < tpu->nref; j1++){
       for (int j2=0; j2 < tnopu->nref; j2++){
-         double dR  = pow(tpu->jteta->at(j1) - tnopu->jteta->at(j2),2);
-         dR += pow(tpu->jtphi->at(j1) - tnopu->jtphi->at(j2),2);
+         double dR  = pow(tpu->jteta->at(j1o[j1]) - tnopu->jteta->at(j2),2);
+         dR += pow(tpu->jtphi->at(j1o[j1]) - tnopu->jtphi->at(j2),2);
          dR = sqrt(dR);
-         auxMap[dR] = std::make_pair(j1, j2);
+         auxMap[dR] = std::make_pair(j1o[j1], j2);
       }
    }
 
@@ -797,8 +866,8 @@ void MatchEventsAndJets::FillJetMap() {
 
       // Add to the results
       if (auxMap.begin()->first < maxDeltaR && fabs(tpu->refpt->at(j1) - tnopu->refpt->at(j2))<1 && tnopu->refdrjt->at(j2) < maxDeltaR)
-         jetMap[j1] = j2; 
-    
+         jetMap[j1] = j2;
+
       // 2- Now remove all elements from the auxMap that contain either the first or second jet
       ITJ::iterator itr = auxMap.begin();
       while(itr != auxMap.end()){
@@ -811,25 +880,123 @@ void MatchEventsAndJets::FillJetMap() {
 }//FillJetMap
 
 //______________________________________________________________________________
+void MatchEventsAndJets::FillRecToRecThroughGenMap() {
+   jetMap.clear();
+   recoJetIndexPU->clear();
+   recoJetIndexNoPU->clear();
+   if (nrefmax>0) tpu->nref = std::min((unsigned)tpu->nref,nrefmax);
+   for (int iRefPU=0; iRefPU < tpu->nref; iRefPU++) {
+      int j1 = iRefPU;
+      int j2 = -1;
+      for (int iRefNoPU=0; iRefNoPU < tnopu->nref; iRefNoPU++) {
+         if(tnopu->refpt->at(iRefNoPU)==tpu->refpt->at(iRefPU)) {
+            j2 = iRefNoPU;
+            break;
+         }
+      }
+      if(j1 >= 0 && j2 >= 0 && j1 < tpu->nref && j2 < tnopu->nref &&
+         tpu->refdrjt->at(j1) < maxDeltaR && tnopu->refdrjt->at(j2) < maxDeltaR && 
+         fabs(tpu->refpt->at(j1) - tnopu->refpt->at(j2))<0.0001) {
+         jetMap[j1] = j2;
+      }
+      recoJetIndexPU->push_back(j1);
+      recoJetIndexNoPU->push_back(j2);
+   }
+
+   //Initialize the jetMapTree if it has not already been initialized
+   if(!jetMapTree) {
+      jetMapTree = new TTree("jetMapTree","jetMapTree");
+      jetMapTree->Branch("recoJetIndexPU",  "vector<int>",&recoJetIndexPU);
+      jetMapTree->Branch("recoJetIndexNoPU","vector<int>",&recoJetIndexNoPU);
+      jetMapTree->SetDirectory(0);
+   }
+   //Always fill the jet map tree
+   jetMapTree->Fill();
+
+}//FillRecToRecThroughGenMap
+
+//______________________________________________________________________________
+void MatchEventsAndJets::ReadJetMap(int ientry, string readJetMap) {
+   //Retrieve the tree from a file
+   if(!jetMapTree) {
+      cout << "\tReading matched jets tree:" << endl
+           << "\t\tfile: " << readJetMap << endl;
+
+      TDirectory* curDir = gDirectory;
+      TFile* mapFile = TFile::Open(readJetMap.c_str(),"READ");
+
+      auto inTreePointer = (TTree*)mapFile->Get("jetMapTree");
+      if(inTreePointer) {
+         jetMapTree = (TTree*)inTreePointer->Clone();
+         cout << "\t\tjetMapTree:" << endl
+              << "\t\t\tnevts: " << jetMapTree->GetEntries() << endl;
+      }
+      else {
+         cout << "ERROR::MatchEventsAndJets::ReadJetMap Could not retrieve the jetMapTree pointer from " << readJetMap << endl;
+         std::terminate();
+      }
+      jetMapTree->SetDirectory(0);
+      jetMapTree->SetBranchAddress("recoJetIndexPU",  &recoJetIndexPU);
+      jetMapTree->SetBranchAddress("recoJetIndexNoPU",&recoJetIndexNoPU);
+
+      mapFile->Close();
+      curDir->cd();
+   }
+
+   //Create the map based on the vectors from the jetMapTree
+   jetMapTree->GetEntry(ientry);
+   jetMap.clear();
+   for(unsigned int i = 0; i<recoJetIndexPU->size() && i<nrefmax; i++) {
+      if(recoJetIndexPU->at(i) >= 0 && recoJetIndexNoPU->at(i) >= 0 &&
+         recoJetIndexPU->at(i) < tpu->nref && recoJetIndexNoPU->at(i) < tnopu->nref &&
+         tpu->refdrjt->at(recoJetIndexPU->at(i)) < maxDeltaR &&
+         tnopu->refdrjt->at(recoJetIndexNoPU->at(i)) < maxDeltaR &&
+         fabs(tpu->refpt->at(recoJetIndexPU->at(i)) - tnopu->refpt->at(recoJetIndexNoPU->at(i)))<0.0001) {
+         jetMap[recoJetIndexPU->at(i)] = recoJetIndexNoPU->at(i);
+      }
+   }
+}
+
+
+//______________________________________________________________________________
 bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
    //=========================================================
    //              FILLING OF HISTOS START HERE
    //=========================================================
 
+   //
+   // retrieve the correct weight and fill some histograms to keep track of them
+   //
+   weight = 1.0;
+   if(useweight) {
+      weight *= tpu->weight;
+      dynamic_cast<TH1D*>(histograms["g_GenWeight"])     ->Fill(log(tpu->weight));                          // The GenWeight
+   }
+   if(LumiWeightsSet_) {
+      weight *= LumiWeights_.weight(tpu->tnpus->at(iIT));
+      dynamic_cast<TH1D*>(histograms["g_LumiWeight"])    ->Fill(LumiWeights_.weight(tpu->tnpus->at(iIT)));  // The LumiWeight
+   }
+   if(pThatReweight) {
+      weight *= pow(tpu->pthat/bias2SelectionRef,bias2SelectionPow);
+      dynamic_cast<TH1D*>(histograms["g_pThatWeight"])   ->Fill(log(pow(tpu->pthat/bias2SelectionRef,bias2SelectionPow))); // The pThat weight
+   }
+   dynamic_cast<TH1D*>(histograms["g_weight"])           ->Fill(log(weight));                               // The overall weight
+
    // GENERAL HISTOS, no cuts.
+   dynamic_cast<TH1D*>(histograms["g_pthat"])            ->Fill(tpu->pthat,weight);                         // pthat distributions
    if(!reduceHistograms) {
-      histograms["g_nj"]        ->Fill(tpu->nref,tnopu->nref);              // njet distributions
-      histograms["g_npv"]       ->Fill(tpu->npv,tnopu->npv);                // npv dist.
-      histograms["g_rho"]       ->Fill(tpu->rho,tnopu->rho);                // rho dist
-      histograms["g_pthat"]     ->Fill(tpu->pthat,tnopu->pthat);           // pthat distributions
-      histograms["g_deltaNpv"]  ->Fill(tpu->npv,tpu->npv - tnopu->npv);     // Does the number of NPV change?
-      histograms["m_deltaPthat"]->Fill(tpu->pthat,tpu->pthat-tnopu->pthat); // pthat sanity check
+      dynamic_cast<TH2D*>(histograms["g_nj"])            ->Fill(tpu->nref,tnopu->nref,weight);              // njet distributions
+      dynamic_cast<TH2D*>(histograms["g_npv"])           ->Fill(tpu->npv,tnopu->npv,weight);                // npv dist.
+      dynamic_cast<TH2D*>(histograms["g_rho"])           ->Fill(tpu->rho,tnopu->rho,weight);                // rho dist
+      dynamic_cast<TProfile*>(histograms["g_deltaNpv"])  ->Fill(tpu->npv,tpu->npv - tnopu->npv,weight);     // Does the number of NPV change?
+      dynamic_cast<TProfile*>(histograms["m_deltaPthat"])->Fill(tpu->pthat,tpu->pthat-tnopu->pthat,weight); // pthat sanity check
    }
 
+   //Skip events where the noPU sample has more than one vertex
    if (tnopu->npv!=1) {
       noPUNpvGTOneEventCounter++;
       if(noPUNpvGTOneEventCounter==0) {
-         cout << "\tWARNING::The no PU sample has more than 1 PV." << endl
+         cout << "\tWARNING::The NoPU sample has more than 1 PV." << endl
               << "\tSome events will be skipped (including this one)." << endl;
       }
       return false;
@@ -855,7 +1022,9 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
    vector<double> tpu_jtpt_raw;
    if (JetCorrector) {
       double correction = 1.0;
-      for (int j1 = 0; j1 < tpu->nref; j1++) {
+      //for (int j1 = 0; j1 < tpu->nref; j1++) {
+      for (map<Int_t, Int_t>::const_iterator j1it = jetMap.begin(); j1it != jetMap.end(); j1it++) {
+         int j1 = j1it->first;
          JetCorrector->setJetEta(tpu->jteta->at(j1));
          JetCorrector->setJetPt(tpu->jtpt->at(j1));
          JetCorrector->setJetA(tpu->jtarea->at(j1));
@@ -872,9 +1041,11 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
       double avg_jtpt_all       = 0;
       double avg_jtpt_matched   = 0;
       double avg_jtpt_unmatched = 0;
-      
+
       // fill unmatch jets for PU sample
-      for (int j1 = 0; j1 < tpu->nref; j1++){
+      for (map<Int_t, Int_t>::const_iterator j1it = jetMap.begin(); j1it != jetMap.end(); j1it++) {
+         int j1 = j1it->first;
+         if(j1 == -1) continue;
 
          // matching recon-jet with gen-jet
          bool ismatchRG = tpu->refdrjt->at(j1)<getMaxDeltaR(algo1);
@@ -906,7 +1077,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
             else if (tpu->npv<=30) {
                histograms["m_frac_nj_pt_b_match_pu_npv30"]   ->Fill(tpu->jtpt->at(j1),ismatch);
                histograms["m_frac_nj_pt_b_match_RG_pu_npv30"]->Fill(tpu->jtpt->at(j1),ismatchRG);
-            } 
+            }
             else {
                histograms["m_frac_nj_pt_b_match_pu_npvO"]   ->Fill(tpu->jtpt->at(j1),ismatch);
                histograms["m_frac_nj_pt_b_match_RG_pu_npvO"]->Fill(tpu->jtpt->at(j1),ismatchRG);
@@ -941,7 +1112,9 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
       histograms["m_unmatched_jtpt_npv"]->Fill(tpu->npv, avg_jtpt_unmatched);
 
       // fill unmatch jets for NOPU sample
-      for (int j1 = 0; j1 < tnopu->nref; j1++) {
+      for (map<Int_t, Int_t>::const_iterator j1it = jetMap.begin(); j1it != jetMap.end(); j1it++) {
+         int j1 = j1it->second;
+         if(j1 == -1) continue;
 
          histograms["m_njet_pt_nopu"]->Fill(tnopu->jtpt->at(j1));
          if(tnopu->refpt->at(j1)>10){
@@ -949,7 +1122,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
          }
 
          bool ismatchRG = tnopu->refdrjt->at(j1)<getMaxDeltaR(algo2);
-         
+
          // if j1 is matched in this sample. More complicated b/c I need
          //  to search the value of the map, not the key.
          bool ismatch = false;
@@ -959,7 +1132,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
                break;
             }
          }
-         
+
          if (fabs(tnopu->jteta->at(j1))<1.3) {
             histograms["m_frac_nj_pt_b_match_nopu"]   ->Fill(tnopu->jtpt->at(j1),ismatch);
             histograms["m_frac_nj_pt_b_match_RG_nopu"]->Fill(tnopu->jtpt->at(j1),ismatchRG);
@@ -986,7 +1159,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
             hname = Form("m_njet_etaVspt_npv%i_%i_unmatch",inpv*npvRhoNpuBinWidth,inpv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
             dynamic_cast<TProfile2D*>(histograms[hname])->Fill(tnopu->jteta->at(j1), tnopu->jtpt->at(j1),-1);
          }
-      }  
+      }
    }
 
    double avg_offset = 0;
@@ -1007,6 +1180,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
 
       jpu = itj->first;
       jnopu = itj->second;
+      if(jpu == -1 || jnopu == -1) continue;
 
       idet = JetInfo::getDetIndex(tpu->jteta->at(jpu));
       detectorAbbreviation = JetInfo::get_detector_abbreviation(detector_names[idet]);
@@ -1026,65 +1200,63 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
       GenSumPtOA    = (0.020*(tpu->sumpt_lowpt->at(0))+0.975*(tpu->sumpt_lowpt->at(1))+0.005*(tpu->sumpt_lowpt->at(2)))/tpu->jtarea->at(jpu);
 
       if(!reduceHistograms) {
-         dynamic_cast<TProfile2D*>(histograms["p_off_etaVsNpv"])       ->Fill(tpu->jteta->at(jpu),tpu->npv,offset);
-         dynamic_cast<TProfile2D*>(histograms["p_off_etaVsRho"])       ->Fill(tpu->jteta->at(jpu),tpu->rho,offset);
-         dynamic_cast<TProfile2D*>(histograms["p_off_etaVspueff"])     ->Fill(tpu->jteta->at(jpu),PUEff,offset);
-         dynamic_cast<TProfile2D*>(histograms["p_off_etaVsGenSumPtOA"])->Fill(tpu->jteta->at(jpu),GenSumPtOA,offset);
-         dynamic_cast<TProfile2D*>(histograms["p_off_etaVsJetPt"])     ->Fill(tpu->jteta->at(jpu),tpu->jtpt->at(jpu),offset);
-         dynamic_cast<TProfile2D*>(histograms["p_offOverA_etaVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->jtpt->at(jpu),offsetOA);
-         dynamic_cast<TProfile3D*>(histograms["p_off_EOOTVsITVsLOOT"]) ->Fill(tpu->sumEOOT(),tpu->npus->at(iIT),tpu->sumLOOT(),offset);
+         dynamic_cast<TProfile2D*>(histograms["p_off_etaVsNpv"])       ->Fill(tpu->jteta->at(jpu),tpu->npv,offset,weight);
+         dynamic_cast<TProfile2D*>(histograms["p_off_etaVsRho"])       ->Fill(tpu->jteta->at(jpu),tpu->rho,offset,weight);
+         dynamic_cast<TProfile2D*>(histograms["p_off_etaVspueff"])     ->Fill(tpu->jteta->at(jpu),PUEff,offset,weight);
+         dynamic_cast<TProfile2D*>(histograms["p_off_etaVsGenSumPtOA"])->Fill(tpu->jteta->at(jpu),GenSumPtOA,offset,weight);
+         dynamic_cast<TProfile2D*>(histograms["p_off_etaVsJetPt"])     ->Fill(tpu->jteta->at(jpu),tpu->jtpt->at(jpu),offset,weight);
+         dynamic_cast<TProfile2D*>(histograms["p_offOverA_etaVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->jtpt->at(jpu),offsetOA,weight);
+         dynamic_cast<TProfile3D*>(histograms["p_off_EOOTVsITVsLOOT"]) ->Fill(tpu->sumEOOT(),tpu->npus->at(iIT),tpu->sumLOOT(),offset,weight);
 
          //Rho
-         dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsRhoVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),offsetOA);
-         dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),tpu->rho);
-         dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsRhoVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
+         dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsRhoVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),offsetOA,weight);
+         dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsRhoVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),tpu->rho,weight);
+         dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsRhoVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->rho,tpu->refpt->at(jpu),tpu->jtpt->at(jpu),weight);
 
          //NPV
-         dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNPVVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),offsetOA);
-         dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNPVVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),tpu->rho);
-         dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNPVVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
+         dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNPVVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),offsetOA,weight);
+         dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNPVVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),tpu->rho,weight);
+         dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNPVVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),tpu->jtpt->at(jpu),weight);
       }
 
       //TNPU
-      dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsTnpusVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),offsetOA);
-      dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsTnpusVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
-      dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsTnpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),tpu->rho);
+      dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsTnpusVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),offsetOA,weight);
+      dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsTnpusVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),tpu->jtpt->at(jpu),weight);
+      dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsTnpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),tpu->rho,weight);
       fValue[0] = tpu->jteta->at(jpu);
       fValue[1] = tpu->rho;
       fValue[2] = tpu->tnpus->at(iIT);
       fValue[3] = tpu->refpt->at(jpu);
-      hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->Fill(fValue,offsetOA);
-      hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->Fill(fValue,tpu->jtpt->at(jpu));
-      hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->Fill(fValue);
+      hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->Fill(fValue,offsetOA*weight);
+      hsparse["p_PtAve_etaRhoVsTnpusVsJetPt"]->Fill(fValue,tpu->jtpt->at(jpu)*weight);
+      hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->Fill(fValue,weight);
       //if(hsparse["p_offOverA_etaRhoVsTnpusVsJetPt"]->GetBin(fValue)==8500) {
       //  avg_debug +=offsetOA;
       //  entries_debug++;
       //}
 
-      //NPU (weight if NPU if tnpu is single valued at 20 = 1.0/TMath::Gaus(tpu->npus->at(iIT),20,sqrt(20))
-      dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNpusVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),offsetOA);
-      dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNpusVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
-      dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->rho);
+      //NPU (weight of NPU if tnpu is single valued at 20 = 1.0/TMath::Gaus(tpu->npus->at(iIT),20,sqrt(20))
+      dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNpusVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),offsetOA,weight);
+      dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNpusVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->jtpt->at(jpu),weight);
+      dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->rho,weight);
 
       if(!reduceHistograms) {
          //NPV+Rho
-         dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsN_RVsJetPt"])  ->Fill(tpu->jteta->at(jpu),(tpu->rho+tpu->npv)/2.,tpu->refpt->at(jpu),offsetOA);
-         dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsN_RVsJetPt"])     ->Fill(tpu->jteta->at(jpu),(tpu->rho+tpu->npv)/2,tpu->refpt->at(jpu),tpu->jtpt->at(jpu));
-         histograms["p_areaVsrefpt"]->Fill(tpu->refpt->at(jpu),areaDiff);
+         dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsN_RVsJetPt"])  ->Fill(tpu->jteta->at(jpu),(tpu->rho+tpu->npv)/2.,tpu->refpt->at(jpu),offsetOA,weight);
+         dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsN_RVsJetPt"])     ->Fill(tpu->jteta->at(jpu),(tpu->rho+tpu->npv)/2,tpu->refpt->at(jpu),tpu->jtpt->at(jpu),weight);
+         dynamic_cast<TH2F*>(histograms["p_areaVsrefpt"])                     ->Fill(tpu->refpt->at(jpu),areaDiff,weight);
          if (tpu->refpt->at(jpu)>1000)
-            histograms["p_areaVsoffset_1000"]->Fill(offset,areaDiff);
+            dynamic_cast<TH2F*>(histograms["p_areaVsoffset_1000"])            ->Fill(offset,areaDiff,weight);
          if (tpu->refpt->at(jpu)>30 && tpu->refpt->at(jpu)<50)
-            histograms["p_areaVsoffset_30_50"]->Fill(offset,areaDiff);
+            dynamic_cast<TH2F*>(histograms["p_areaVsoffset_30_50"])           ->Fill(offset,areaDiff,weight);
 
-         histograms["p_drVsrefpt"]    ->Fill(tpu->refpt->at(jpu),tpu->refdrjt->at(jpu));
-         histograms["m_refpt_diff"]   ->Fill(tpu->refpt->at(jpu) - tnopu->refpt->at(jnopu));
-         histograms["m_refpdgid_diff"]->Fill(diff_pdgid);
+         dynamic_cast<TProfile*>(histograms["p_drVsrefpt"])->Fill(tpu->refpt->at(jpu),tpu->refdrjt->at(jpu),weight);
+         dynamic_cast<TH1D*>(histograms["m_refpt_diff"])   ->Fill(tpu->refpt->at(jpu) - tnopu->refpt->at(jnopu),weight);
+         dynamic_cast<TH1D*>(histograms["m_refpdgid_diff"])->Fill(diff_pdgid,weight);
 
-         //2D histo npv vs. rho with 15<offset<15.5
-         if (offset > 15 && offset < 15.5)  histograms["p_npvVsRho_offset_15_15h"]->Fill(tpu->rho,tpu->npv);
          if (idet == 0) {
-            dynamic_cast<TH3F*>(histograms["p_rho_npv_refpt_BB"])               ->Fill(tpu->rho,tpu->npv,tpu->refpt->at(jpu));
-            dynamic_cast<TProfile3D*>(histograms["p_offsetOA_rho_npv_refpt_BB"])->Fill(tpu->rho,tpu->npv,tpu->refpt->at(jpu),offsetOA);
+            dynamic_cast<TH3F*>(histograms["p_rho_npv_refpt_BB"])               ->Fill(tpu->rho,tpu->npv,tpu->refpt->at(jpu),weight);
+            dynamic_cast<TProfile3D*>(histograms["p_offsetOA_rho_npv_refpt_BB"])->Fill(tpu->rho,tpu->npv,tpu->refpt->at(jpu),offsetOA,weight);
          }
 
          //Break into detector regions and PF candidate types
@@ -1103,92 +1275,92 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
          }
          for (int iPF=0;iPF<NPFcat;iPF++) {
             hname = Form("p_offResVsrefpt_%s_%s",detectorAbbreviation.Data(),PFstr[iPF].Data());
-            histograms[hname]->Fill(tpu->refpt->at(jpu),offset_PFcat[iPF]);
+            dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset_PFcat[iPF],weight);
             hname = Form("p_offResOtnpuVsrefpt_%s_%s",detectorAbbreviation.Data(),PFstr[iPF].Data());
-            histograms[hname]->Fill(tpu->refpt->at(jpu),offset_PFcat[iPF]/tpu->tnpus->at(iIT));
+            dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset_PFcat[iPF]/tpu->tnpus->at(iIT),weight);
             hname = Form("prof_offResVsrefpt_%s_%s",detectorAbbreviation.Data(),PFstr[iPF].Data());
-            histograms[hname]->Fill(tpu->refpt->at(jpu),offset_PFcat[iPF]);
+            dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset_PFcat[iPF],weight);
             hname = Form("prof_offResOtnpuVsrefpt_%s_%s",detectorAbbreviation.Data(),PFstr[iPF].Data());
-            histograms[hname]->Fill(tpu->refpt->at(jpu),offset_PFcat[iPF]/tpu->tnpus->at(iIT));
+            dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset_PFcat[iPF]/tpu->tnpus->at(iIT),weight);
          }
          hname = Form("p_offResVsrefpt_%s_all",detectorAbbreviation.Data());
-         dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset);
+         dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset,weight);
          hname = Form("p_offResOtnpuVsrefpt_%s_all",detectorAbbreviation.Data());
-         dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset/tpu->tnpus->at(iIT));
+         dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset/tpu->tnpus->at(iIT),weight);
          hname = Form("prof_offResVsrefpt_%s_all",detectorAbbreviation.Data());
-         dynamic_cast<TProfile*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset);
+         dynamic_cast<TProfile*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset,weight);
          hname = Form("prof_offResOtnpuVsrefpt_%s_all",detectorAbbreviation.Data());
-         dynamic_cast<TProfile*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset/tpu->tnpus->at(iIT));
+         dynamic_cast<TProfile*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset/tpu->tnpus->at(iIT),weight);
       }
 
       //Break into detector regions
       hname = Form("p_resVsrefpt_%s",detectorAbbreviation.Data());
-      histograms[hname]->Fill(tpu->refpt->at(jpu),resp);
+      dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),resp,weight);
       hname = Form("np_resVsrefpt_%s",detectorAbbreviation.Data());
-      histograms[hname]->Fill(tpu->refpt->at(jpu),respNopu);
+      dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),respNopu,weight);
 
       //TNPU
       hname = Form("p_resVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),itnpu_low,itnpu_high);
-      histograms[hname]->Fill(tpu->refpt->at(jpu),resp);
+      dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),resp,weight);
       hname = Form("p_offresVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),itnpu_low,itnpu_high);
-      histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
+      dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset,weight);
       hname = Form("p_offresVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
-      histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
+      dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset,weight);
       hname = Form("p_nopuresVsrefpt_%s_tnpu%i_%i",detectorAbbreviation.Data(),itnpu_low,itnpu_high);
-      histograms[hname]->Fill(tpu->refpt->at(jpu),respNopu);
+      dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),respNopu,weight);
 
       //NPU
       hname = Form("p_resVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),inpu_low,inpu_high);
-      histograms[hname]->Fill(tpu->refpt->at(jpu),resp);
+      dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),resp,weight);
       hname = Form("p_offresVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),inpu_low,inpu_high);
-      histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
+      dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset,weight);
       hname = Form("p_offresVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
-      histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
+      dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset,weight);
       hname = Form("p_nopuresVsrefpt_%s_npu%i_%i",detectorAbbreviation.Data(),inpu_low,inpu_high);
-      histograms[hname]->Fill(tpu->refpt->at(jpu),respNopu);
+      dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),respNopu,weight);
 
       if(!reduceHistograms) {
          //NPV
          hname = Form("p_resVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
-         histograms[hname]->Fill(tpu->refpt->at(jpu),resp);
+         dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),resp,weight);
          hname = Form("p_offresVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
-         histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
+         dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset,weight);
          hname = Form("p_offresOrefptVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
-         histograms[hname]->Fill(tpu->refpt->at(jpu),offsetOrefpt);
+         dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offsetOrefpt,weight);
          hname = Form("p_offresVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
-         histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
+         dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset,weight);
          hname = Form("p_resnopuVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
-         histograms[hname]->Fill(tpu->refpt->at(jpu),respTonopu);
+         dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),respTonopu,weight);
          hname = Form("p_nopuresVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
-         histograms[hname]->Fill(tpu->refpt->at(jpu),respNopu);
+         dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),respNopu,weight);
          hname = Form("p_offAfterOoffBeforeVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
-         histograms[hname]->Fill(tpu->refpt->at(jpu),offset/offset_raw);
+         dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset/offset_raw,weight);
    
          //RHO
          hname = Form("p_resVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
-         histograms[hname]->Fill(tpu->refpt->at(jpu),resp);
+         dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),resp,weight);
          hname = Form("p_offresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
-         histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
+         dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset,weight);
          hname = Form("p_offresOrefptVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
-         histograms[hname]->Fill(tpu->refpt->at(jpu),offsetOrefpt);
+         dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offsetOrefpt,weight);
          hname = Form("p_offresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),0,((NBinsNpvRhoNpu-1)*npvRhoNpuBinWidth)+npvRhoNpuBinWidth-1);
-         histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
+         dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset,weight);
          hname = Form("p_resnopuVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
-         histograms[hname]->Fill(tpu->refpt->at(jpu),respTonopu);
+         dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),respTonopu,weight);
          hname = Form("p_nopuresVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
-         histograms[hname]->Fill(tpu->refpt->at(jpu),respNopu);
+         dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),respNopu,weight);
          hname = Form("p_offAfterOoffBeforeVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
-         histograms[hname]->Fill(tpu->refpt->at(jpu),offset/offset_raw);
+         dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset/offset_raw,weight);
    
          //OTHER
          hname = Form("p_resVsnpu_%s_pt%.1f_%.1f",detectorAbbreviation.Data(),
                       vpt[JetInfo::getBinIndex(tpu->refpt->at(jpu),vpt,NPtBins)],vpt[JetInfo::getBinIndex(tpu->refpt->at(jpu),vpt,NPtBins)+1]);
          if(tpu->refpt->at(jpu)>10.0) {
-            histograms[hname]->Fill(tpu->npus->at(iIT),resp);
+            dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->npus->at(iIT),resp,weight);
          }
          for (unsigned int ipdgid=0; ipdgid<pdgid_indecies.size(); ipdgid++) {
             hname = Form("p_offresVsrefpt_%s_pdgid_%s",detectorAbbreviation.Data(),pdgidstr[ipdgid].Data());
-            histograms[hname]->Fill(tpu->refpt->at(jpu),offset);
+            dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset,weight);
          }
       }
 
@@ -1205,19 +1377,19 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
          detectorAbbreviation.ToLower();
          avg_offset_det[det]  /= njet_det[det];
          hname = Form("p_npvVsOff_%s",detectorAbbreviation.Data());
-         histograms[hname]->Fill(avg_offset_det[det],tpu->npv);
+         dynamic_cast<TH2D*>(histograms[hname])->Fill(avg_offset_det[det],tpu->npv,weight);
          hname = Form("p_rhoVsOff_%s",detectorAbbreviation.Data());
-         histograms[hname]->Fill(avg_offset_det[det],tpu->rho);
+         dynamic_cast<TH2D*>(histograms[hname])->Fill(avg_offset_det[det],tpu->rho,weight);
       }
    }
    if(!reduceHistograms) {
-      histograms["p_npvVsoff"]      ->Fill(avg_offset,tpu->npv);
-      histograms["p_rhoVsoff"]      ->Fill(avg_offset,tpu->rho);
-      histograms["p_rhoVsRho"]      ->Fill(tpu->rho,tpu->rho);
-      histograms["p_npvVsNpv"]      ->Fill(tpu->npv,tpu->npv);
-      histograms["p_tnpuVsTnpu"]    ->Fill(tpu->tnpus->at(iIT),tpu->tnpus->at(iIT));
-      histograms["p_npuVsNpu"]    ->Fill(tpu->npus->at(iIT),tpu->npus->at(iIT));
-      histograms["p_matchedjet_off"]->Fill(avg_offset,jetMap.size());
+      dynamic_cast<TH2F*>(histograms["p_npvVsoff"])          ->Fill(avg_offset,tpu->npv,weight);
+      dynamic_cast<TH2F*>(histograms["p_rhoVsoff"])          ->Fill(avg_offset,tpu->rho,weight);
+      dynamic_cast<TProfile*>(histograms["p_rhoVsRho"])      ->Fill(tpu->rho,tpu->rho,weight);
+      dynamic_cast<TProfile*>(histograms["p_npvVsNpv"])      ->Fill(tpu->npv,tpu->npv,weight);
+      dynamic_cast<TProfile*>(histograms["p_tnpuVsTnpu"])    ->Fill(tpu->tnpus->at(iIT),tpu->tnpus->at(iIT),weight);
+      dynamic_cast<TProfile*>(histograms["p_npuVsNpu"])      ->Fill(tpu->npus->at(iIT),tpu->npus->at(iIT),weight);
+      dynamic_cast<TProfile*>(histograms["p_matchedjet_off"])->Fill(avg_offset,jetMap.size(),weight);
    }
 
    //=========================================================
@@ -1228,8 +1400,8 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
 }
 
 //______________________________________________________________________________
-void MatchEventsAndJets::WriteOutput(){
-   cout << endl << "Writing file " << fout->GetName() << " ... " << flush;
+void MatchEventsAndJets::WriteOutput(string outputPath, bool writeJetMap){
+   cout << "Writing file " << fout->GetName() << " ... " << flush;
    fout->cd();
    for(map<TString, THnSparse*>::const_iterator it=hsparse.begin(); it!=hsparse.end();it++) {
       it->second->Write();
@@ -1237,14 +1409,26 @@ void MatchEventsAndJets::WriteOutput(){
    fout->Write();
    fout->Close();
    cout << "DONE" << endl;
+
+   if(writeJetMap) {
+      cout << endl << "Saving the jetMapTree to a file for later use ... " << flush;
+      string outputFilename = "matchedEventsMaps_"+algo1+"_"+algo2+".root";
+      if (algo1 == algo2)
+         outputFilename = "matchedEventsMaps_"+algo1+".root";
+      outputFilename = outputPath+outputFilename;
+      TFile* mapFile = TFile::Open(outputFilename.c_str(),"UPDATE");
+      jetMapTree->Write();
+      mapFile->Close();
+      cout << "DONE" << endl << endl;
+   }
 }
 
 //______________________________________________________________________________
 void MatchEventsAndJets::Report() {
    cout << "Event-matching report" << endl
-        << "\t Number of events skipped because no PU sample had more than 1 NPV: " << noPUNpvGTOneEventCounter << endl
-        << "\t Total number of unique events in first  sample: " << tpu->fChain->GetEntries() << endl
-        << "\t Total number of unique events in second sample: " << tnopu->fChain->GetEntries() << endl
+        << "\t Number of events skipped because the NoPU sample had more than 1 NPV: " << noPUNpvGTOneEventCounter << endl
+        << "\t Total number of unique events in first  sample: " << mapTreePU.size() << endl
+        << "\t Total number of unique events in second sample: " << mapTreeNoPU.size() << endl
         << "\t Number of matched events we ran over " << nevs << endl;
 
    //cout << "THnSparse::Debug::Avg OffsetOverA of bin 8500: " << avg_debug/entries_debug << endl;
@@ -1259,24 +1443,35 @@ int main(int argc,char**argv)
 {
    CommandLine cl;
    if (!cl.parse(argc,argv)) return 0;
-   TString samplePU          = cl.getValue<TString> ("samplePU");
-   TString sampleNoPU        = cl.getValue<TString> ("sampleNoPU");
-   TString basepath          = cl.getValue<TString> ("basepath", "/fdata/hepx/store/user/aperloff/");
-   TString algo1             = cl.getValue<TString> ("algo1",                               "ak5pf");
-   TString algo2             = cl.getValue<TString> ("algo2",                               "ak5pf");
-   bool    iftest            = cl.getValue<bool>    ("iftest",                                false);
-   int     maxEvts           = cl.getValue<int>     ("maxEvts",                               40000);
-   bool    ApplyJEC          = cl.getValue<bool>    ("ApplyJEC",                              false);
-   string  JECpar            = cl.getValue<string>  ("JECpar",               "parameters_ak5pf.txt");
-   TString outputPath        = cl.getValue<TString> ("outputPath",                             "./");
-   TString readEvtMaps       = cl.getValue<TString> ("readEvtMaps",                              "");
-   TString treeName          = cl.getValue<TString> ("treeName",                                "t");
-   int     npvRhoNpuBinWidth = cl.getValue<int>     ("npvRhoNpuBinWidth",                         5);
-   int     NBinsNpvRhoNpu    = cl.getValue<int>     ("NBinsNpvRhoNpu",                            6);
-   vector<int> vptBins       = cl.getVector<int>    ("vptBins",       "14:::18:::20:::24:::28:::30");  
-   bool    reduceHistograms  = cl.getValue<bool>    ("reduceHistograms",                       true);
-   bool    verbose           = cl.getValue<bool>    ("verbose",                               false);
+   string       samplePU          = cl.getValue<string>  ("samplePU");
+   string       sampleNoPU        = cl.getValue<string>  ("sampleNoPU");
+   string       basepath          = cl.getValue<string>  ("basepath", "/fdata/hepx/store/user/aperloff/");
+   string       algo1             = cl.getValue<string>  ("algo1",                               "ak5pf");
+   string       algo2             = cl.getValue<string>  ("algo2",                               "ak5pf");
+   bool         iftest            = cl.getValue<bool>    ("iftest",                                false);
+   int          maxEvts           = cl.getValue<int>     ("maxEvts",                               40000);
+   unsigned int nrefmax           = cl.getValue<int>     ("nrefmax",                                   0);
+   bool         useweight         = cl.getValue<bool>    ("useweight",                             false);
+   bool         pThatReweight     = cl.getValue<bool>    ("pThatReweight",                         false);
+   double       bias2SelectionRef = cl.getValue<double>  ("bias2SelectionRef",                        15);
+   double       bias2SelectionPow = cl.getValue<double>  ("bias2SelectionPow",                       6.0);
+   string       MCPUReWeighting   = cl.getValue<string>  ("MCPUReWeighting",                          "");
+   string       MCPUHistoName     = cl.getValue<string>  ("MCPUHistoName",                      "pileup");
+   string       DataPUReWeighting = cl.getValue<string>  ("DataPUReWeighting",                        "");
+   string       DataPUHistoName   = cl.getValue<string>  ("DataPUHistoName",                    "pileup");
+   bool         ApplyJEC          = cl.getValue<bool>    ("ApplyJEC",                              false);
+   string       JECpar            = cl.getValue<string>  ("JECpar",               "parameters_ak5pf.txt");
+   string       outputPath        = cl.getValue<string>  ("outputPath",                             "./");
+   string       readEvtMaps       = cl.getValue<string>  ("readEvtMaps",                              "");
+   string       treeName          = cl.getValue<string>  ("treeName",                                "t");
+   int          npvRhoNpuBinWidth = cl.getValue<int>     ("npvRhoNpuBinWidth",                         5);
+   int          NBinsNpvRhoNpu    = cl.getValue<int>     ("NBinsNpvRhoNpu",                            6);
+   vector<int>  vptBins           = cl.getVector<int>    ("vptBins",       "14:::18:::20:::24:::28:::30");
+   bool         reduceHistograms  = cl.getValue<bool>    ("reduceHistograms",                       true);
+   bool         verbose           = cl.getValue<bool>    ("verbose",                               false);
+   bool         help              = cl.getValue<bool>    ("help",                                  false);
 
+   if (help) {cl.print(); return 0;}
    if (!cl.check()) return 0;
    cl.print();
 
@@ -1284,17 +1479,33 @@ int main(int argc,char**argv)
    m_benchmark->Reset();
    m_benchmark->Start("event");
 
+   //
+   // Do some additional sanity checks
+   //
+
+   // Check that if pThatReweight is set then useweight is also set
+   if(pThatReweight && !useweight) {
+      cout << "ERROR::jet_synchtest_x Can't reweight the pThat spectrum without first using the existing"
+           << " weights to return to an unmodified spectrum. Set the \"useweight\" option to true." << endl;
+           return -1;
+   }
+
    gEnv->SetValue("TFile.AsyncPrefetching", 1);
 
-   if(outputPath.IsNull()) outputPath = string (gSystem->pwd())+"/";
-   if(!outputPath.EndsWith("/")) outputPath+="/";
-   if(!basepath.EndsWith("/")) basepath+="/";
+   if(outputPath.empty()) outputPath = string(gSystem->pwd())+"/";
+   if(outputPath.back() != '/') outputPath+='/';
+   if(basepath.back() != '/') basepath+='/';
 
    MatchEventsAndJets* mej = new MatchEventsAndJets(algo1,algo2,iftest);
    mej->SetMaxEvts(maxEvts);
+   mej->SetNRefMax(nrefmax);
+   mej->SetWeightParameters(useweight,pThatReweight,bias2SelectionRef,bias2SelectionPow);
+   mej->SetupLumiWeights((DataPUReWeighting.empty())? "" : basepath+DataPUReWeighting,
+                         (MCPUReWeighting.empty()) ? "" : basepath+MCPUReWeighting,
+                         DataPUHistoName,MCPUHistoName);
    mej->OpenInputFiles(basepath+samplePU,basepath+sampleNoPU);
    mej->GetNtuples(treeName);
-   if(readEvtMaps.IsNull())
+   if(readEvtMaps.empty())
       mej->MakeMatchedEventsMaps(treeName,outputPath);
    else
       mej->ReadMatchedEventsMaps(readEvtMaps);
@@ -1307,8 +1518,8 @@ int main(int argc,char**argv)
    mej->SetNpvRhoNpuValues(NBinsNpvRhoNpu,npvRhoNpuBinWidth);
    mej->SetVptBins(vptBins);
    mej->DeclareHistograms(reduceHistograms);
-   mej->LoopOverEvents(verbose,reduceHistograms);
-   mej->WriteOutput();
+   mej->LoopOverEvents(verbose,reduceHistograms,readEvtMaps);
+   mej->WriteOutput(outputPath,readEvtMaps.empty());
    mej->Report();
 
    m_benchmark->Stop("event");
