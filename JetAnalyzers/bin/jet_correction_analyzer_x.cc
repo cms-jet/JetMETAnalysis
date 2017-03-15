@@ -17,7 +17,7 @@
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
 #include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
-#include "xrootd/XrdCl/XrdClFileSystem.hh"
+//#include "xrootd/XrdCl/XrdClFileSystem.hh" //Won't work until 81X
 
 #include "TROOT.h"
 #include "TSystem.h"
@@ -127,12 +127,13 @@ int main(int argc,char**argv)
    TString         suffix            = cl.getValue<TString>      ("suffix",               "");
    vector<int>     levels            = cl.getVector<int>         ("levels",               "");
    bool            useTags           = cl.getValue<bool>         ("useTags",            true);
-   bool            L1FastJet         = cl.getValue<bool>         ("L1FastJet",         false);
+   bool            L1FastJet         = cl.getValue<bool>         ("L1FastJet",          true);
    vector<string>  postfix           = cl.getVector<string>      ("postfix",              "");
    bool            doflavor          = cl.getValue<bool>         ("doflavor",          false);
    bool            doTProfileMDF     = cl.getValue<bool>         ("doTProfileMDF",     false);
    bool            reduceHistograms  = cl.getValue<bool>         ("reduceHistograms",   true);
    bool            useweight         = cl.getValue<bool>         ("useweight",         false);
+   float           pThatReweight     = cl.getValue<float>        ("pThatReweight",     -9999);
    float           xsection          = cl.getValue<float>        ("xsection",            0.0);
    float           luminosity        = cl.getValue<float>        ("luminosity",          1.0);
    int             pdgid             = cl.getValue<int>          ("pdgid",                 0);
@@ -145,6 +146,9 @@ int main(int argc,char**argv)
    double          etamax            = cl.getValue<double>       ("etamax",                0);
    double          dphimin           = cl.getValue<double>       ("dphimin",               0);
    unsigned int    nrefmax           = cl.getValue<unsigned int> ("nrefmax",               0);
+   int             nbinsrelrsp       = cl.getValue<int>          ("nbinsrelrsp",         200);
+   float           relrspmin         = cl.getValue<float>        ("relrspmin",           0.0);
+   float           relrspmax         = cl.getValue<float>        ("relrspmax",           2.0);
    unsigned int    evtmax            = cl.getValue<unsigned int> ("evtmax",                0);
    bool            printnpu          = cl.getValue<bool>         ("printnpu",          false);
    int             itlow             = cl.getValue<int>          ("itlow",                 0);
@@ -176,6 +180,13 @@ int main(int argc,char**argv)
    // Do some additional check
    //
 
+   // Check that if pThatReweight is set then useweight is also set
+   if(pThatReweight!=-9999 && useweight==false) {
+      cout << "ERROR::jet_correction_analyzer_x Can't reweight the pThat spectrum without first using the existing"
+           << " weights to return to an unmodified spectrum. Set the \"useweight\" option to true." << endl;
+           return -1;
+   }
+
    // Check that the size of the drmax values matches that of the algs
    if(drmax.size()>0 && algs.size()!=drmax.size()) {
       cout << "ERROR::jet_correction_analyzer_x The size of the drmax vector must match the size of the algs vector" << endl;
@@ -186,11 +197,11 @@ int main(int argc,char**argv)
    // Some useful quantities
    //
    const char pusources[3][10] = {"EOOT","IT","LOOT"};
-   double vresp[NRespBins+1];
-   double vcorr[NRespBins+1];
-   for(int i=0; i<=NRespBins; i++) {
-      vresp[i] = (i*((RespHigh-RespLow)/(double)NRespBins));
-      vcorr[i] = (i*((CorrHigh-CorrLow)/(double)NRespBins));
+   double vresp[nbinsrelrsp+1];
+   double vcorr[nbinsrelrsp+1];
+   for(int i=0; i<=nbinsrelrsp; i++) {
+      vresp[i] = (i*((relrspmax-relrspmin)/(double)nbinsrelrsp));
+      vcorr[i] = (i*((CorrHigh-CorrLow)/(double)nbinsrelrsp));
    }
    double vrho[NRhoBins+1];
    for(int i=0; i<=NRhoBins; i++) {
@@ -251,6 +262,8 @@ int main(int argc,char**argv)
          }
          file_count = chain->GetListOfFiles()->GetEntries();
       }
+      /*
+      //Won't work until 81X
       else if(!url_string.empty()) {
          chain = new TChain((algs[a]+"/t").c_str());
          XrdCl::DirectoryList *response;
@@ -265,6 +278,7 @@ int main(int argc,char**argv)
             }
          }
       }
+      */
       else {
          cout<<"\tAdding "<<inputFilePath+"/"+inputFilename+"*.root"<<endl;
          chain = new TChain((algs[a]+"/t").c_str());
@@ -277,7 +291,7 @@ int main(int argc,char**argv)
       if (0==chain) { cout<<"no tree/chain found."<<endl; continue; }
       JRAEvent* JRAEvt = new JRAEvent(chain,85);
       chain->SetBranchStatus("*",0);
-      vector<string> branch_names = {"nref","refpt","refeta","jtpt","jteta","jtphi",
+      vector<string> branch_names = {"nref","refpt","refeta","jtpt","jteta","jtphi","jtarea",
                                      "bxns","npus","tnpus","sumpt_lowpt","refdrjt",
                                      "refpdgid","npv","rho","rho_hlt","pthat","weight"};
       for(auto n : branch_names) {
@@ -397,13 +411,13 @@ int main(int argc,char**argv)
          if(veta_coarse[ieta]<0) continue;
          else {
             TString hname = Form("RelRspVsRefPt_JetEta%sto%s",eta_boundaries_coarse[ieta],eta_boundaries_coarse[ieta+1]);
-            RelRspVsRefPt.push_back(new TH2F(hname,hname,NPtBins,vpt,NRespBins,RespLow,RespHigh));
+            RelRspVsRefPt.push_back(new TH2F(hname,hname,NPtBins,vpt,nbinsrelrsp,relrspmin,relrspmax));
             RelRspVsRefPt.back()->Sumw2();
          }
       }
-      RespVsEtaVsPt = new TH3F("RespVsEtaVsPt","RespVsEtaVsPt",NPtBins,vpt,NETA,veta,NRespBins,vresp);
+      RespVsEtaVsPt = new TH3F("RespVsEtaVsPt","RespVsEtaVsPt",NPtBins,vpt,NETA,veta,nbinsrelrsp,vresp);
       RespVsEtaVsPt->Sumw2();
-      ScaleVsEtaVsPt = new TH3F("ScaleVsEtaVsPt","ScaleVsEtaVsPt",NPtBins,vpt,NETA,veta,NRespBins,vcorr);
+      ScaleVsEtaVsPt = new TH3F("ScaleVsEtaVsPt","ScaleVsEtaVsPt",NPtBins,vpt,NETA,veta,nbinsrelrsp,vcorr);
       ScaleVsEtaVsPt->Sumw2();  
       if(!reduceHistograms) {
          RespVsPtProfile = new TProfile("RespVsPtProfile","RespVsPtProfile",NPtBins,vpt);
@@ -444,7 +458,7 @@ int main(int argc,char**argv)
       for(int i=0;i<NPtBins;i++)
       {
          sprintf(name,"RelRspVsJetEta_RefPt%sto%s",Pt[i],Pt[i+1]);
-         RelRspVsJetEta[i] = new TH2F(name,name,NETA,veta,NRespBins,RespLow,RespHigh);
+         RelRspVsJetEta[i] = new TH2F(name,name,NETA,veta,nbinsrelrsp,relrspmin,relrspmax);
          if(!reduceHistograms) {
             sprintf(name,"RelContributions_RefPt%sto%s",Pt[i],Pt[i+1]);
             RelContributions[i] = new TH1F(name,name,1999,1,2000);
@@ -603,6 +617,22 @@ int main(int argc,char**argv)
             if(JetCorrector) {
                JetCorrector->setJetPt(pt);
                JetCorrector->setJetEta(eta);
+               if (TString(JetInfo::get_correction_levels(levels,L1FastJet)).Contains("L1FastJet")) {
+                  if (JRAEvt->jtarea->at(iref)!=0)
+                     JetCorrector->setJetA(JRAEvt->jtarea->at(iref));
+                  else if (jetInfo.coneSize>0)
+                     JetCorrector->setJetA(TMath::Pi()*TMath::Power(jetInfo.coneSize/10.0,2));
+                  else {
+                     cout << "WARNING::Unknown jet area. Skipping event." << endl;
+                     continue;
+                  }
+
+                  if (jetInfo.isHLT())
+                     JetCorrector->setRho(JRAEvt->rho_hlt);
+                  else
+                     JetCorrector->setRho(JRAEvt->rho);
+               }
+               if(!L1FastJet) JetCorrector->setNPV(JRAEvt->npv);
             }
             float scale = (JetCorrector) ? JetCorrector->getCorrection() : 1.0;
 
@@ -625,6 +655,8 @@ int main(int argc,char**argv)
                double LumiWeight = LumiWeights_.weight(JRAEvt->tnpus->at(iIT));
                weight *= LumiWeight;
             }
+            if(pThatReweight!=-9999) weight*=pow(pthat/15.,pThatReweight);
+
 
             if(evt_fill) {pThatDistribution->Fill(pthat,weight); evt_fill=false;}
             //-4 to cut off the negative side of the detector
