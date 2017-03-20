@@ -71,6 +71,8 @@ public:
    void   LoopOverEvents(bool verbose, bool reduceHistograms, string readJetMap);
    void   FillJetMap();
    void   FillRecToRecThroughGenMap();
+   bool   GetJetMap(string readJetMap);
+   bool   JetMapTreeFound() {return jetMapTreeFound;}
    void   ReadJetMap(int ientry, string readJetMap);
    bool   FillHistograms(bool reduceHistograms);
    void   WriteOutput(string outputPath, bool writeJetMap);
@@ -140,6 +142,7 @@ private:
    double               bias2SelectionPow;
    edm::LumiReWeighting LumiWeights_;
    bool                 LumiWeightsSet_;
+   bool                 jetMapTreeFound;
 
    //Debug
    bool iftest;
@@ -778,6 +781,11 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
 
 //______________________________________________________________________________
 void MatchEventsAndJets::LoopOverEvents(bool verbose, bool reduceHistograms, string readJetMap) {
+   //First just figure out if the jetMapTree exists, assuming readJetMap is set.
+   //It might be that the program failed after the event mapping, so the event maps exist, but not the jet maps
+   //In this case the event maps should be read, but the jet maps should be recreated.
+   jetMapTreeFound = (readJetMap.empty()) ? false : GetJetMap(readJetMap);
+
    cout << endl << "Looping over the mapped events:" << endl << "\tprogress:" << endl;
    ull nentries = mapTreePU.size();
    int jetMapIndex = -1;
@@ -813,7 +821,7 @@ void MatchEventsAndJets::LoopOverEvents(bool verbose, bool reduceHistograms, str
       // Create the mapping of matched jets.
       // key is PU, value is for NoPU
       //if(!readJetMap) FillJetMap();
-      if(readJetMap.empty()) {
+      if(readJetMap.empty() || !jetMapTreeFound) {
          FillRecToRecThroughGenMap();
       }
       else {
@@ -882,6 +890,8 @@ void MatchEventsAndJets::FillJetMap() {
 //______________________________________________________________________________
 void MatchEventsAndJets::FillRecToRecThroughGenMap() {
    jetMap.clear();
+   if(!recoJetIndexPU) recoJetIndexPU = new vector<int>;
+   if(!recoJetIndexNoPU) recoJetIndexNoPU = new vector<int>;
    recoJetIndexPU->clear();
    recoJetIndexNoPU->clear();
    if (nrefmax>0) tpu->nref = std::min((unsigned)tpu->nref,nrefmax);
@@ -916,31 +926,39 @@ void MatchEventsAndJets::FillRecToRecThroughGenMap() {
 }//FillRecToRecThroughGenMap
 
 //______________________________________________________________________________
-void MatchEventsAndJets::ReadJetMap(int ientry, string readJetMap) {
+bool MatchEventsAndJets::GetJetMap(string readJetMap) {
    //Retrieve the tree from a file
+   cout << endl << "\tReading matched jets tree:" << endl
+        << "\t\tfile: " << readJetMap << endl;
+
+   TDirectory* curDir = gDirectory;
+   TFile* mapFile = TFile::Open(readJetMap.c_str(),"READ");
+
+   auto inTreePointer = (TTree*)mapFile->Get("jetMapTree");
+   if(inTreePointer) {
+      jetMapTree = (TTree*)inTreePointer->Clone();
+      cout << "\t\tjetMapTree:" << endl
+           << "\t\t\tnevts: " << jetMapTree->GetEntries() << endl;
+   }
+   else {
+      cout << "\t\tWARNING::MatchEventsAndJets::GetJetMap Could not retrieve the jetMapTree pointer from " << readJetMap << endl;
+      return false;
+   }
+   jetMapTree->SetDirectory(0);
+   jetMapTree->SetBranchAddress("recoJetIndexPU",  &recoJetIndexPU);
+   jetMapTree->SetBranchAddress("recoJetIndexNoPU",&recoJetIndexNoPU);
+
+   mapFile->Close();
+   curDir->cd();
+   return true;
+}
+
+//______________________________________________________________________________
+void MatchEventsAndJets::ReadJetMap(int ientry, string readJetMap) {
+   //Just a small sanity check
    if(!jetMapTree) {
-      cout << "\tReading matched jets tree:" << endl
-           << "\t\tfile: " << readJetMap << endl;
-
-      TDirectory* curDir = gDirectory;
-      TFile* mapFile = TFile::Open(readJetMap.c_str(),"READ");
-
-      auto inTreePointer = (TTree*)mapFile->Get("jetMapTree");
-      if(inTreePointer) {
-         jetMapTree = (TTree*)inTreePointer->Clone();
-         cout << "\t\tjetMapTree:" << endl
-              << "\t\t\tnevts: " << jetMapTree->GetEntries() << endl;
-      }
-      else {
-         cout << "ERROR::MatchEventsAndJets::ReadJetMap Could not retrieve the jetMapTree pointer from " << readJetMap << endl;
-         std::terminate();
-      }
-      jetMapTree->SetDirectory(0);
-      jetMapTree->SetBranchAddress("recoJetIndexPU",  &recoJetIndexPU);
-      jetMapTree->SetBranchAddress("recoJetIndexNoPU",&recoJetIndexNoPU);
-
-      mapFile->Close();
-      curDir->cd();
+      cout << "ERROR::MatchEventsAndJets::ReadJetMap At this point the jetMapTree should have been retrieved from " << readJetMap << endl;
+      std::terminate();
    }
 
    //Create the map based on the vectors from the jetMapTree
@@ -1519,7 +1537,7 @@ int main(int argc,char**argv)
    mej->SetVptBins(vptBins);
    mej->DeclareHistograms(reduceHistograms);
    mej->LoopOverEvents(verbose,reduceHistograms,readEvtMaps);
-   mej->WriteOutput(outputPath,readEvtMaps.empty());
+   mej->WriteOutput(outputPath,readEvtMaps.empty()||!mej->JetMapTreeFound());
    mej->Report();
 
    m_benchmark->Stop("event");
