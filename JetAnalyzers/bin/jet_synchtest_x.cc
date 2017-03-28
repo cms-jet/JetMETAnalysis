@@ -51,7 +51,7 @@ public:
    void   getMaxDeltaR();
    double getMaxDeltaR(string algName);
    void   SetMaxEvts(int me) {maxEvts = me;}
-   void   SetNRefMax(unsigned int nrm) {nrefmax = nrm;}
+   void   SetNRefMax(int nrm) {nrefmax = nrm;}
    void   SetDoNotSaveFlag(bool dns) {doNotSaveFlag = dns;}
    void   SetWeightParameters(bool useweight_, bool pThatReweight_, double bias2SelectionRef_, double bias2SelectionPow_);
    void   SetupLumiWeights(string dataFile, string mcFile, string dataHist, string mcHist);
@@ -119,7 +119,7 @@ private:
 
    //Loop
    vector<int>          vptBins;
-   unsigned int         nrefmax;
+   int                  nrefmax;
    int                  nevs;
    int                  NBinsNpvRhoNpu;
    int                  npvRhoNpuBinWidth;
@@ -854,7 +854,7 @@ void MatchEventsAndJets::FillJetMap() {
          }
       }
    }
-   if (nrefmax > 0 && nrefmax < j1o.size()) j1o.resize(nrefmax);
+   if (nrefmax > 0 && nrefmax < (int)j1o.size()) j1o.resize(nrefmax);
 
    for (int j1=0; j1 < tpu->nref; j1++){
       for (int j2=0; j2 < tnopu->nref; j2++){
@@ -897,7 +897,7 @@ void MatchEventsAndJets::FillRecToRecThroughGenMap() {
    if(!recoJetIndexNoPU) recoJetIndexNoPU = new vector<int>;
    recoJetIndexPU->clear();
    recoJetIndexNoPU->clear();
-   if (nrefmax>0) tpu->nref = std::min((unsigned)tpu->nref,nrefmax);
+   if (nrefmax>=0) tpu->nref = std::min((int)tpu->nref,nrefmax);
    for (int iRefPU=0; iRefPU < tpu->nref; iRefPU++) {
       int j1 = iRefPU;
       int j2 = -1;
@@ -967,7 +967,7 @@ void MatchEventsAndJets::ReadJetMap(int ientry, string readJetMap) {
    //Create the map based on the vectors from the jetMapTree
    jetMapTree->GetEntry(ientry);
    jetMap.clear();
-   for(unsigned int i = 0; i<recoJetIndexPU->size() && i<nrefmax; i++) {
+   for(unsigned int i = 0; i<recoJetIndexPU->size() && ((nrefmax>=0)?i<(unsigned)nrefmax:true); i++) {
       if(recoJetIndexPU->at(i) >= 0 && recoJetIndexNoPU->at(i) >= 0 &&
          recoJetIndexPU->at(i) < tpu->nref && recoJetIndexNoPU->at(i) < tnopu->nref &&
          tpu->refdrjt->at(recoJetIndexPU->at(i)) < maxDeltaR &&
@@ -1471,7 +1471,7 @@ int main(int argc,char**argv)
    string       algo2             = cl.getValue<string>  ("algo2",                               "ak5pf");
    bool         iftest            = cl.getValue<bool>    ("iftest",                                false);
    int          maxEvts           = cl.getValue<int>     ("maxEvts",                               40000);
-   unsigned int nrefmax           = cl.getValue<int>     ("nrefmax",                                   0);
+   int          nrefmax           = cl.getValue<int>     ("nrefmax",                                  -1);
    bool         useweight         = cl.getValue<bool>    ("useweight",                             false);
    bool         pThatReweight     = cl.getValue<bool>    ("pThatReweight",                         false);
    double       bias2SelectionRef = cl.getValue<double>  ("bias2SelectionRef",                        15);
