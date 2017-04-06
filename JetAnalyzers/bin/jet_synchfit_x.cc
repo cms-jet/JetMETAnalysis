@@ -22,6 +22,7 @@
 #include "TFitResultPtr.h"
 #include "TCanvas.h"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
+#include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
 #include "JetMETAnalysis/JetAnalyzers/interface/REStyle.h"
 
 
@@ -564,7 +565,7 @@ int main(int argc,char**argv){
    }// eta bins
    
    // Create the txt file from the fitResults vector
-   TString txtFilename = outputDir+era+"_L1FastJet_"+algo12+".txt";
+   TString txtFilename = outputDir+era+"_L1FastJet_"+((algo1.EqualTo(algo2)) ? JetInfo(algo12).alias : algo12)+".txt";
    createTxtFile(txtFilename, fitResults);
    
    // Create the canvas with all parameters vs eta.
