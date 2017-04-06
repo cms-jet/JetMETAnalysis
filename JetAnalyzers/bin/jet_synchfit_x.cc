@@ -144,13 +144,16 @@ bool getInputProfiles(TString inputFilename, TProfile3D *& prof,
 // This method creates a new fit function and fits it to the graph
 TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, string functionType, int iEta, const TProfile3D * prof){
    static vector<double> pari;
+   static bool pari_set = false;
    static vector<pair<double,double> > pari_lim;
    TF2* f4 = 0;
    TString function;
 
    if(functionType=="standard") {
-      if(iEta==1)
+      if(!pari_set) {
          pari = {-0.5,0.5,0.1};
+         pari_set = true;
+      }
       function = "[0]+([1]*x)*(1+[2]*log(y))";
    }
    //simplistic
@@ -260,13 +263,17 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, string functionType, i
       //modified Monkey Saddle
       //static vector<double> pari = {5.0,-0.05,-10.0,3.0,3.0,-10.0,2.0};
       //static vector<double> pari = {5.0,-10.0,-0.35,0.0,50.0,-4.0,150.0};
-      if(iEta==1)
+      if(!pari_set) {
          pari = {0.0,0.33,1500.0,35.0,1.0,2.0,};
+         pari_set = true;
+      }
    }
    else if(functionType=="puppi") {
-      if(iEta==1)
+      if(!pari_set) {
          pari = {18,-1.5,-0.35,0.0,1.0};
          //pari = {-0.5,0.5,0.1,0.0,1.0};
+         pari_set = true;
+      }
       function = "[0]+([1]*x)*(1+[2]*log(y))+(1/([3]*log(y)+[4]))";
    }
    else if(functionType=="other") {
@@ -284,8 +291,10 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, string functionType, i
       //-(x*y)*Exp[-(x^2 + y^2)] //pedro
    }
    else if(functionType=="standard+taylorExpansion") {
-      if(iEta==1)
+      if(!pari_set) {
          pari = {-0.5,0.5,0.1};
+         pari_set = true;
+      }
       //Taylor expanded version
       function = "[0]+([1]*(x-11))*(1+[2]*(log(y)-1.47))";
    }
@@ -319,7 +328,7 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, string functionType, i
       }
   }
   else {
-      f4->SetParLimits(0,-5,25);
+      f4->SetParLimits(0,-10,25);
       f4->SetParLimits(1,0,10);
       f4->SetParLimits(2,-2,5);
   }
