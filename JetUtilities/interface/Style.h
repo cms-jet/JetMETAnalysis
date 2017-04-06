@@ -148,8 +148,16 @@ CMS_lumi( TPad* pad, int iPeriod, int iPosX, bool verbose )
   float cmsTextFont   = 61;  // default is helvetic-bold
 
   bool writeExtraText = true;//false;
-  TString extraText   = "Simulation";
-  TString extraText2   = "Preliminary"; // For Simulation Preliminary on two lines
+  TString extraText, extraText2, extraText3;
+  if(iPeriod==15) {
+     extraText   = "Phase-2";
+     extraText2  = "Simulation"; // For Simulation Preliminary on two lines
+     extraText3  = "Preliminary";
+  }
+  else {
+     extraText   = "Simulation";
+     extraText2   = "Preliminary"; // For Simulation Preliminary on two lines
+  }
   float extraTextFont = 52;  // default is helvetica-italics
 
   // text sizes and text offsets with respect to the top frame
@@ -329,6 +337,9 @@ CMS_lumi( TPad* pad, int iPeriod, int iPosX, bool verbose )
           if (extraText2!="") // For Simulation Preliminary
             latex.DrawLatex(posX_, posY_-relExtraDY*cmsTextSize*t
                             - relExtraDY*extraTextSize*t, extraText2);
+          if (extraText3!="") // For Simulation Preliminary
+             latex.DrawLatex(posX_, posY_-relExtraDY*cmsTextSize*t
+                             - 2*relExtraDY*extraTextSize*t, extraText3);
         }
      }
   }
@@ -343,7 +354,7 @@ CMS_lumi( TPad* pad, int iPeriod, int iPosX, bool verbose )
      latex.SetTextSize(extraTextSize*t);
      latex.SetTextAlign(align_);
      if(extraText2!="") {
-       latex.DrawLatex(posX_, posY_, extraText+" "+extraText2);
+       latex.DrawLatex(posX_, posY_, extraText+" "+extraText2+" "+extraText3);
      }
      else {
        latex.DrawLatex(posX_, posY_, extraText);
