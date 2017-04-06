@@ -549,6 +549,9 @@ void L2Creator::loopOverEtaBins() {
             gabscor->Write();
             ofile->Write();
         }
+        else if (ipt==hl_jetpt.nobjects(1)-1 && ((vabsrsp_eta.back())->GetN()==0 || (vabscor_eta.back())->GetN()==0)) {
+            vabscor_eta_spline.push_back(nullptr);
+        }
     }
 }
 
@@ -577,6 +580,8 @@ bool L2Creator::checkFormulaEvaluator() {
         if(vabscor_eta_spline.size()>0) {
             //Load the spline function
             spline = vabscor_eta_spline[ieta];
+            //If the spline is a nullptr then skip this ieta as it indicates that the abscor graph wasn't filled
+            if (spline==nullptr) continue;
             root_func = spline->getFullFunction();
         }
         else {
@@ -601,7 +606,7 @@ bool L2Creator::checkFormulaEvaluator() {
             double  ptmin = gcor->GetX()[0];
             double  ptmax = gcor->GetX()[gcor->GetN()-1];
 
-            double pt_limit = 0.0;
+            double pt_limit = 70.0;
             //For eta-dependent spline clipping
             if      (abs(eta_avg) < 0.6091) pt_limit = 3000;
             else if (abs(eta_avg) < 0.9571) pt_limit = 2700;
@@ -636,17 +641,42 @@ bool L2Creator::checkFormulaEvaluator() {
                 //
                 // Need the actual pT value to determine the spline section and load the appropriate parameters.
                 //
-                if(vabscor_eta_spline.size()>0)
+                int spline_section = -1;
+                pair<double,double> spline_section_bounds;
+                if(vabscor_eta_spline.size()>0) {
                     root_func = spline->setParameters(spline->getSection(ipt));
+                    spline_section = spline->getSection(ipt);
+                    spline_section_bounds = spline->getSectionBounds(spline_section);
+                }
 
                 //
                 // Do the comparison
                 //
                 if(abs(fe_value-std::max(0.0001,root_func->Eval(ipt)))>0.0006) {
                     cout << "ERROR::L2Creator::checkFormulaEvaluator TF1 and FormulaEvaluator do not agree!" << endl
-                         << "pT: " << ipt << " eta: " << eta_avg 
-                         << " TF1: " << std::setprecision(8) << root_func->Eval(ipt) 
-                         << " FormulaEvaluator: " << std::setprecision(8) << fe_value << endl;
+                         << "pT: " << ipt << " eta: " << eta_avg << endl
+                         << " TF1: " << std::setprecision(8) << root_func->Eval(ipt) << endl
+                         << " TF1: "; root_func->Print();
+                    cout << " TF1: ";
+                    for(int ipar=0; ipar<root_func->GetNpar(); ipar++) {
+                       cout << " " << root_func->GetParameter(ipar) << " "; 
+                    }
+                    cout << endl;
+                    if(spline_section>-1) {
+                       cout << " TF1: section=" << spline_section << endl
+                            << " TF1: section bounds=(" << spline_section_bounds.first << "," 
+                            << spline_section_bounds.second << ")" << endl;
+                    }                        
+                    cout << " FormulaEvaluator: " << std::setprecision(8) << fe_value << endl
+                         << " FormulaEvaluator: " << L2JetPar->definitions().formula() << endl
+                         << " FormulaEvaluator: ";
+                    vector<float> parVar = {(float)eta_avg,(float)ipt};
+                    int bi = L2JetPar->binIndex(parVar);
+                    for(unsigned int ipar=0; ipar<L2JetPar->record(bi).nParameters(); ipar++) {
+                       cout << " " << L2JetPar->record(bi).parameter(ipar) << " ";
+                    }
+                    cout << endl;
+                    L2JetPar->printScreen();
                     return false;
                 }
             }
@@ -739,7 +769,8 @@ void L2Creator::makeCanvas(string makeCanvasVariable) {
         // Draw the graph and TF1 fit
         // Create a legend entry for that graph
         //
-        graphs[igraph]->GetFunction("fit")->SetLineColor(igraph%nperpad+1);
+        if(graphs[igraph]->GetFunction("fit"))
+            graphs[igraph]->GetFunction("fit")->SetLineColor(igraph%nperpad+1);
         tdrDraw(graphs[igraph],"P",kFullCircle,igraph%nperpad+1,kSolid,igraph%nperpad+1);
         pos = gname.find(makeCanvasVariable.substr(makeCanvasVariable.find(":")+1));
         vleg.back()->AddEntry(graphs[igraph],gname.substr(pos+makeCanvasVariable.substr(makeCanvasVariable.find(":")+1).length()).c_str(),"l");
@@ -767,7 +798,7 @@ void L2Creator::makeCanvas(string makeCanvasVariable) {
         //
         if(vabscor_eta_spline.size()>0) {
             PiecewiseSpline* spline = vabscor_eta_spline[igraph];
-            for(int isection=0; isection<spline->getNSections(); isection++) {
+            for(int isection=0; spline && isection<spline->getNSections(); isection++) {
                 pair<double,double> bounds = spline->getSectionBounds(isection);
                 TF1* spline_func = (TF1*)spline->setParameters(isection)->Clone("tmp_func");
                 spline_func->SetRange(bounds.first,bounds.second);
@@ -1279,6 +1310,7 @@ void L2Creator::writeTextFileForCurrentAlgorithm_spline() {
     TString txtfilename = outputDir + era + "_L2Relative_" + ji->getAlias() + ".txt";
     ofstream fout(txtfilename);
     fout.setf(ios::right); 
+    bool head_printed = false;
 
     //For eta-dependent spline clipping
     int pt_limit = 70;
@@ -1293,22 +1325,24 @@ void L2Creator::writeTextFileForCurrentAlgorithm_spline() {
         if(frelcor!=0) {
             string function = spline->getFullFormula();
 
-            if(ieta==0)
+            if(!head_printed) {
                 fout<<"{2 JetEta JetPt 1 JetPt max(0.0001,"<<function<<") Correction L2Relative}"<<endl;
+                head_printed = true;
+            }
 
             double  etamin  = hl_jetpt.minimum(0,ieta);
             double  etamax  = hl_jetpt.maximum(0,ieta);
 
             //For eta-dependent spline clipping
-            if      ( (etamax>0 && etamax < 0.6091) || (etamin<0 && etamin > -0.6091) ) pt_limit = 3000;
-            else if ( (etamax>0 && etamax < 0.9571) || (etamin<0 && etamin > -0.9571) ) pt_limit = 2700;
-            else if ( (etamax>0 && etamax < 1.3051) || (etamin<0 && etamin > -1.3051) ) pt_limit = 2000;
-            else if ( (etamax>0 && etamax < 2.0431) || (etamin<0 && etamin > -2.0431) ) pt_limit = 1400;
-            else if ( (etamax>0 && etamax < 2.51  ) || (etamin<0 && etamin > -2.51  ) ) pt_limit = 900;
-            else if ( (etamax>0 && etamax < 2.9641) || (etamin<0 && etamin > -2.9641) ) pt_limit = 500;
-            else if ( (etamax>0 && etamax < 3.6641) || (etamin<0 && etamin > -3.6641) ) pt_limit = 300;
-            else if ( (etamax>0 && etamax < 4.0131) || (etamin<0 && etamin > -4.0131) ) pt_limit = 200;
-            else if ( (etamax>0 && etamax < 4.5381) || (etamin<0 && etamin > -4.5381) ) pt_limit = 100;
+            if      ( (etamax>0 && etamax < 0.6091) || (etamin<0 && etamax > -0.6091) ) pt_limit = 3000;
+            else if ( (etamax>0 && etamax < 0.9571) || (etamin<0 && etamax > -0.9571) ) pt_limit = 2700;
+            else if ( (etamax>0 && etamax < 1.3051) || (etamin<0 && etamax > -1.3051) ) pt_limit = 2000;
+            else if ( (etamax>0 && etamax < 2.0431) || (etamin<0 && etamax > -2.0431) ) pt_limit = 1400;
+            else if ( (etamax>0 && etamax < 2.51  ) || (etamin<0 && etamax > -2.51  ) ) pt_limit = 900;
+            else if ( (etamax>0 && etamax < 2.9641) || (etamin<0 && etamax > -2.9641) ) pt_limit = 500;
+            else if ( (etamax>0 && etamax < 3.6641) || (etamin<0 && etamax > -3.6641) ) pt_limit = 300;
+            else if ( (etamax>0 && etamax < 4.0131) || (etamin<0 && etamax > -4.0131) ) pt_limit = 200;
+            else if ( (etamax>0 && etamax < 4.5381) || (etamin<0 && etamax > -4.5381) ) pt_limit = 100;
 
             bool abovePtLimit = false;
             bool lastLine = false;
