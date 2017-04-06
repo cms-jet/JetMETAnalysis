@@ -655,7 +655,7 @@ bool L2Creator::checkFormulaEvaluator() {
                 if(abs(fe_value-std::max(0.0001,root_func->Eval(ipt)))>0.0006) {
                     cout << "ERROR::L2Creator::checkFormulaEvaluator TF1 and FormulaEvaluator do not agree!" << endl
                          << "pT: " << ipt << " eta: " << eta_avg << endl
-                         << " TF1: " << std::setprecision(8) << root_func->Eval(ipt) << endl
+                         << " TF1: " << std::setprecision(10) << root_func->Eval(ipt) << endl
                          << " TF1: "; root_func->Print();
                     cout << " TF1: ";
                     for(int ipar=0; ipar<root_func->GetNpar(); ipar++) {
@@ -667,7 +667,7 @@ bool L2Creator::checkFormulaEvaluator() {
                             << " TF1: section bounds=(" << spline_section_bounds.first << "," 
                             << spline_section_bounds.second << ")" << endl;
                     }                        
-                    cout << " FormulaEvaluator: " << std::setprecision(8) << fe_value << endl
+                    cout << " FormulaEvaluator: " << std::setprecision(10) << fe_value << endl
                          << " FormulaEvaluator: " << L2JetPar->definitions().formula() << endl
                          << " FormulaEvaluator: ";
                     vector<float> parVar = {(float)eta_avg,(float)ipt};
@@ -1291,13 +1291,13 @@ void L2Creator::writeTextFileForCurrentAlgorithm() {
             double  etamax  = hl_jetpt.maximum(0,ieta);
             double  ptmin = grelcor->GetX()[0];
             double  ptmax = grelcor->GetX()[grelcor->GetN()-1];
-            fout<<setw(11)<<etamin
-            <<setw(11)<<etamax
-                <<setw(11)<<(int)(frelcor->GetNpar()+2) //Number of parameters + 2 
-                <<setw(12)<<ptmin
-                <<setw(12)<<ptmax;
+            fout<<setw(8)<<etamin
+                <<setw(8)<<etamax
+                <<setw(8)<<(int)(frelcor->GetNpar()+2) //Number of parameters + 2 
+                <<setw(8)<<ptmin
+                <<setw(8)<<ptmax;
                 for(int p=0; p<frelcor->GetNpar(); p++) {
-                    fout<<setw(13)<<frelcor->GetParameter(p);
+                   fout<<setw(17)<<setprecision(10)<<frelcor->GetParameter(p);
                 }
                 fout<<endl;
         }
@@ -1373,13 +1373,13 @@ void L2Creator::writeTextFileForCurrentAlgorithm_spline() {
                 }
 
                 //For expediency of Summer16_25nsV5_MC do eta-dependent clipping
-                fout<<setw(15)<<etamin<<setw(15)<<etamax
-                    <<setw(15)<<bounds.first<<setw(15)<<(lastLine ? 6500 : bounds.second)
-                    <<setw(15)<<(int)(spline->getNpar()+2) //Number of parameters + 2 
-                    <<setw(15)<<bounds.first<<setw(15)<<(abovePtLimit ? pt_limit : bounds.second);
+                fout<<setw(8)<<etamin<<setw(8)<<etamax
+                    <<setw(8)<<bounds.first<<setw(8)<<(lastLine ? 6500 : bounds.second)
+                    <<setw(8)<<(int)(spline->getNpar()+2) //Number of parameters + 2 
+                    <<setw(8)<<bounds.first<<setw(8)<<(abovePtLimit ? pt_limit : bounds.second);
                 TF1* spline_func = spline->setParameters(isection);
                 for(int p=0; p<spline->getNpar(); p++) {
-                    fout<<setw(15)<<spline_func->GetParameter(p);
+                   fout<<setw(17)<<setprecision(10)<<spline_func->GetParameter(p);
                 }
                 fout<<endl;
             } 
