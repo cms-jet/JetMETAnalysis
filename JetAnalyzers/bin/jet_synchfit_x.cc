@@ -22,6 +22,7 @@
 #include "TFitResultPtr.h"
 #include "TCanvas.h"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
+#include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
 #include "JetMETAnalysis/JetAnalyzers/interface/REStyle.h"
 
 
@@ -391,32 +392,22 @@ void createTxtFile(TString txtFilename, const vector<FitRes> & fitResults){
    for (unsigned int l=0; l<fitResults.size() ; l++){
       
       // for each fit print this header ...
-      outF<<std::setw(11)<<fitResults[l].etalowedge
-          <<std::setw(11)<<fitResults[l].etaupedge
-         //<<std::setw(11)<<9
-          <<std::setw(11)<<(int)(fitResults[l].fit->GetNpar()+6)
-         //<<std::setw(12)<<fitResults[l].fit->GetYmin()<<std::setw(12)<<fitResults[l].fit->GetYmax()
-         //<<std::setw(12)<<0<<std::setw(12)<<10
-         //<<std::setw(12)<<fitResults[l].fit->GetXmin()<<std::setw(12)<<fitResults[l].fit->GetXmax();
-          <<std::setw(12)<<fitResults[l].fit->GetXmin()<<std::setw(12)<<fitResults[l].fit->GetXmax()
-          <<std::setw(12)<<fitResults[l].fit->GetYmin()<<std::setw(12)<<fitResults[l].fit->GetYmax()
-          <<std::setw(12)<<0<<std::setw(12)<<10;
-      
+      outF<<std::setw(8)<<fitResults[l].etalowedge
+          <<std::setw(8)<<fitResults[l].etaupedge
+          <<std::setw(8)<<(int)(fitResults[l].fit->GetNpar()+6)
+          <<std::setw(8)<<fitResults[l].fit->GetXmin()<<std::setw(12)<<fitResults[l].fit->GetXmax()
+          <<std::setw(8)<<fitResults[l].fit->GetYmin()<<std::setw(12)<<fitResults[l].fit->GetYmax()
+          <<std::setw(8)<<0<<std::setw(12)<<10;
       
       // ... followed by the parameters
       for(int p=0; p<fitResults[l].fit->GetNpar(); p++) {
-         outF<<std::setw(13)<<fitResults[l].fit->GetParameter(p);
+         outF<<std::setw(17)<<std::setprecision(10)<<fitResults[l].fit->GetParameter(p);
       }
       outF<<std::endl;
-      //outF<<std::setw(13)<<fitResults[l].fit->GetParameter(0)
-      //    <<std::setw(13)<<fitResults[l].fit->GetParameter(1)
-      //    <<std::setw(13)<<fitResults[l].fit->GetParameter(2)<<std::endl;
-      
    }//for fit results
-   
+
    // Close the stream
    outF.close();
-   
 }//createTxtFile
 
 
@@ -573,7 +564,7 @@ int main(int argc,char**argv){
    }// eta bins
    
    // Create the txt file from the fitResults vector
-   TString txtFilename = outputDir+era+"_L1FastJet_"+algo12+".txt";
+   TString txtFilename = outputDir+era+"_L1FastJet_"+((algo1.EqualTo(algo2)) ? JetInfo(algo12).alias : algo12)+".txt";
    createTxtFile(txtFilename, fitResults);
    
    // Create the canvas with all parameters vs eta.
