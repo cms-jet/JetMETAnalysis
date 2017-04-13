@@ -5,6 +5,7 @@
 #include "TTree.h"
 #include "TLatex.h"
 #include "TPaveText.h"
+#include "TLine.h"
 
 #include "JetMETAnalysis/JetUtilities/interface/JRAEvent.h"
 #include "JetMETAnalysis/JetUtilities/interface/Style.h"
@@ -21,6 +22,13 @@ using std::min;
 using std::setw;
 
 static int canvasNumber = 0;
+
+void eraseBins(TProfile* p, double threshold) {
+   for(int iBin=1; iBin<=p->GetNbinsX(); iBin++) {
+      if(p->GetBinContent(iBin)>threshold)
+         p->SetBinContent(iBin,-9999);
+   }
+}
 
 void loadbar2(unsigned int x, unsigned int n, unsigned int w = 50) {
   if ( (x != n) && (x % (n/100) != 0) ) return;
@@ -59,6 +67,10 @@ void plotProfiles(vector<TProfile*> profs, TString yAxisTitle, TProfile* pNoPU, 
   frame->GetYaxis()->SetRangeUser(0.7,2.0);
   frame->GetYaxis()->SetTitle(yAxisTitle);
   TCanvas * c = tdrCanvas(cn,frame,15,11,true);
+  TLine *l = new TLine(20.0,1.0,2000.0,1.0);
+  l->SetLineStyle(kDashed);
+  l->SetLineColor(kBlack);
+  l->Draw("same");
 
   //Format the noPU profile
   if(pNoPU) {
@@ -71,8 +83,15 @@ void plotProfiles(vector<TProfile*> profs, TString yAxisTitle, TProfile* pNoPU, 
   //Plot the profiles
   //TLegend * leg = new TLegend(0.5,0.437,0.875,0.762);
   //TLegend * leg = tdrLeg(0.345,0.427,0.825,0.91);
-  TLegend * leg = tdrLeg(0.455,0.427,0.885,0.91);
-  leg->AddEntry((TObject*)0,"TTbar RelVal","");
+  //TLegend * leg = tdrLeg(0.455,0.427,0.885,0.91);
+  TLegend * leg;
+  if(suffix.Contains("puppi"))
+     leg = tdrLeg(0.32,0.427,0.885,0.91);
+  else if(suffix.Contains("chs"))
+     leg = tdrLeg(0.37,0.427,0.885,0.91);
+  else
+     leg = tdrLeg(0.49,0.427,0.885,0.91);
+  leg->AddEntry((TObject*)0,"QCD Monte Carlo","");
   if(suffix.Contains("puppi"))
      leg->AddEntry((TObject*)0,"Anti-k_{T} R=0.4, PF+PUPPI","");
   else if(suffix.Contains("chs"))
@@ -97,6 +116,7 @@ void plotProfiles(vector<TProfile*> profs, TString yAxisTitle, TProfile* pNoPU, 
     }else
       profs[p]->Draw("same");
     */
+    eraseBins(profs[p],1.73);
     tdrDraw(profs[p],"",kFullCircle,col,kSolid,col);
 
     leg->AddEntry(profs[p],profs[p]->GetTitle(),"lpe");
@@ -169,22 +189,22 @@ void simpleResponsePlots(TString algo = "ak4pf", TString PU = "", TString sample
   canvasNumber = 0;
   setTDRStyle();
   
-  TString basepath = "/uscms_data/d2/aperloff/YOURWORKINGAREA/JEC/gitty/CMSSW_8_1_0_pre8/src/JetMETAnalysis/JetAnalyzers/test/JEC/81X/";
+  TString basepath = "root://cmseos.fnal.gov//store/user/lpcjme/noreplica/QCD_Flat_Pt-15to7000_TuneCUETP8M1_14TeV_pythia8/";
 
-  TFile *file0 = TFile::Open(basepath+"JRA_"+sample+"_PU"+PU+".root"); // ak5pfchs RD
-  TFile *file1 = TFile::Open(basepath+"JRA_"+sample+"_PU"+PU+"_jecl1.root"); //ak5pfchsl1 RD
-  TFile *file2 = TFile::Open(basepath+"JRA_"+sample+"_NoPU.root"); // ak5pfchs NoPU RD
-  TFile *file3 = TFile::Open(basepath+"JRA_"+sample+"_PU"+PU+"_jecl1l2l3.root"); // ak5pfchsl1l2l3 RD
-  TFile *file4 = TFile::Open(basepath+"JRA_"+sample+"_NoPU"+PU+"_jecl2l3.root"); // ak5pfchsl2l3 NoPU RD
+  TFile *file0 = TFile::Open(basepath+"PU200/170403_040528/JRA.root"); // ak5pfchs RD
+  TFile *file1 = TFile::Open(basepath+"PU200/170403_040528/JRA_jecl1.root"); //ak5pfchsl1 RD
+  TFile *file2 = TFile::Open(basepath+"NoPU/170403_040452/JRA.root"); // ak5pfchs NoPU RD
+  TFile *file3 = TFile::Open(basepath+"PU200/170403_040528/JRA_jecl1l2l3.root"); // ak5pfchsl1l2l3 RD
+  TFile *file4 = TFile::Open(basepath+"NoPU/170403_040452/JRA_jecl2l3.root"); // ak5pfchsl2l3 NoPU RD
   TFile *outFile = new TFile("simpleResponsePlots_"+algo+".root","RECREATE");
 
   // Vector of npu
   vector<int> npu;
   pair<int,int> puBounds;
-  if(PU.Contains("200")) puBounds = make_pair(170,240);
-  else if(PU.Contains("140")) puBounds = make_pair(110,180);
+  if(PU.Contains("200")) puBounds = make_pair(160,250);
+  else if(PU.Contains("140")) puBounds = make_pair(100,190);
   else puBounds = make_pair(0,50);
-  for (int n=puBounds.first; n<puBounds.second; n+=10)  
+  for (int n=puBounds.first; n<puBounds.second; n+=20)  
     npu.push_back(n);
   vector<int> npuNoPU;
   //npuNoPU.push_back(1);
@@ -235,7 +255,7 @@ void simpleResponsePlots(TString algo = "ak4pf", TString PU = "", TString sample
   
   // Plot the profiles
   outFile->cd();
-  plotProfiles(profs,"Response",profs_NoPU[0],algo);
+  plotProfiles(profs,"Uncorrected Response",profs_NoPU[0],algo);
   plotProfiles(profsl1,"Pileup-Corrected Response",profs_NoPU[0],algo);
   plotProfiles(profsl123,"Corrected Response",profsl2l3_NoPU[0],algo);
 
