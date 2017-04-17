@@ -13,6 +13,7 @@
 #include <fstream>
 #include <assert.h>
 #include <algorithm>
+#include <cstdio>
 
 #include "TSystem.h"
 #include "TFile.h"
@@ -94,7 +95,7 @@ TGraphErrors * getGraph(string nameTitle, TH1D * prof, TH1D * profPt, const TH1D
 
 // This method creates the txt file for the corrections
 ofstream createTxtFile(string txtFilename, string function);
-void writeToTxtFile(ofstream& outF, const FitRes& fitResult);
+void writeToTxtFile(ofstream& outF, const FitRes& fitResult, bool verbose = false);
 
 // This method creates canvases showing the spline fits
 TCanvas* createCanvas(const vector<TGraphErrors*>& graphs, const vector<FitRes>& fitResults,
@@ -176,6 +177,7 @@ int main(int argc,char**argv){
     cout << "DONE" << endl;
 
     // The vector to save the results of all fits
+    vector<FitRes> fitResultsGraph;
     vector<FitRes> fitResults;
     vector<TGraphErrors*> graphs;
     int nperpad(5);
@@ -187,6 +189,9 @@ int main(int argc,char**argv){
 
     // Loop over all etas
     for (int iEta = 1; iEta <= prof->GetAxis(0)->GetNbins(); iEta++){
+        // Reset fitResults vector for each eta
+        fitResults.clear();
+
         if(debug && (iEta<42 || iEta>43)) continue;
         cout<< "Analyzing ieta="<<iEta<<" eta="<<prof->GetAxis(0)->GetBinCenter(iEta) << endl
             << "****************************" << endl;
@@ -194,10 +199,10 @@ int main(int argc,char**argv){
         for (int iRho = 1; iRho <= prof->GetAxis(1)->GetNbins(); iRho+=rebinRho){
             cout<< "\tAnalyzing irho="<<iRho<<" rho="<<prof->GetAxis(1)->GetBinCenter(iRho) << endl
             << "\t****************************" << endl;
-      
+
             if( (iRho%nperpad==1) || iRho==1) {
                 graphs.clear();
-                fitResults.clear();
+                fitResultsGraph.clear();
             }
 
             // Create the graph
@@ -292,8 +297,8 @@ int main(int argc,char**argv){
                 fitres.rhoupedge  = prof->GetAxis(1)->GetBinUpEdge(iRho+(rebinRho-1));
                 fitres.pspline    = pspline;
                 fitres.igraph     = graphs.size();
+                fitResultsGraph.push_back(fitres);
                 fitResults.push_back(fitres);
-                writeToTxtFile(outF, fitres);
             }
 
             // Save the graph to file
@@ -304,11 +309,20 @@ int main(int argc,char**argv){
             graphs.push_back(graph);
             if( (iRho%nperpad==0) || iRho>=prof->GetAxis(1)->GetNbins() ) {
                 fout->cd("canvases");
-                createCanvas(graphs,fitResults,outputDir,string(algo12),formats)->Write();
+                createCanvas(graphs,fitResultsGraph,outputDir,string(algo12),formats)->Write();
                 fout->cd();
             }
+        }// all rho bins
 
-        }// rho bins
+        // write the to the text file all of the results for each eta bin
+        // Need to do it here so that we can fin the last rho bin and reset its upper bound
+        unsigned int nFR = fitResults.size();
+        for(unsigned int iFR=0; iFR<nFR; iFR++) {
+            if(iFR == nFR-1)
+                fitResults[iFR].rhoupedge = 200;
+            writeToTxtFile(outF, fitResults[iFR], ((iFR==0)?true:false));
+        }// rho bins with filled graphs
+
     }// eta bins
 
     if(drawParaCoord) {
@@ -614,13 +628,18 @@ TGraphErrors * getGraph(string nameTitle, TH1D * prof, TH1D * profPt, const TH1D
             profPt ->GetBinError   (irefpt)  > 0.1 ){
         
             // get the relevant values
+            int    n    = graph ->GetN();
             double pt   = profPt->GetBinContent(irefpt);
             double pte  = profPt->GetBinError  (irefpt);
             double ooa  = prof  ->GetBinContent(irefpt);
             double ooae = prof  ->GetBinError  (irefpt);
             
+            // make sure that is the average x value of the last point is the same as this point that we do not allow them to overlap
+            // we want a function that is continuous and continuously differentiable
+            // in this case shift this next point by a very tiny value
+            if (n>0 && graph->GetX()[n-1]==pt) pt+=0.0001;
+
             // Store the values
-            double n = graph->GetN();
             graph->SetPoint(n, pt, ooa);
             graph->SetPointError(n, pte, ooae);
         }//if
@@ -649,8 +668,8 @@ ofstream createTxtFile(string txtFilename, string function) {
 
 //______________________________________________________________________________
 // Write one eta and rho line in the text file
-void writeToTxtFile(ofstream& outF, const FitRes& fitResult) {
-    cout << "\t\tjet_l1_correction_x::writeToTxtFile Writting to the text file ... " << flush;
+void writeToTxtFile(ofstream& outF, const FitRes& fitResult, bool verbose) {
+    if(verbose) cout << "\tjet_l1_correction_x::writeToTxtFile Writting to the text file ... " << flush;
 
     //For eta-dependent spline clipping
     int pt_limit = 70;
@@ -676,7 +695,7 @@ void writeToTxtFile(ofstream& outF, const FitRes& fitResult) {
         //When you go beyond a range of validity the default behavior is to return to the correction value at the closest bound to the range of validity
         //When you go outside a bin boundary (i.e. the program cannot find the bin you are supposed to be in) then the default behavior is to return 1.0
         //This will protext against that happening when the pT is just above where the last MC bin is.
-        //6500 is chosen ass that is the 2015-2017 beam energy.
+        //6500 is chosen as that is the 2015-2017 beam energy.
 
         if(isection==fitResult.pspline->getNSections()-1) lastLine = true;
         if(bounds.second >= pt_limit) {
@@ -699,7 +718,7 @@ void writeToTxtFile(ofstream& outF, const FitRes& fitResult) {
         outF<<endl;
     }
 
-   cout << "DONE" << endl;  
+   if(verbose) cout << "DONE" << endl;  
 }
 
 //______________________________________________________________________________
