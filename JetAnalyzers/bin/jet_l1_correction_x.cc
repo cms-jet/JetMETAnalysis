@@ -11,6 +11,7 @@
 #include <vector>
 #include <iomanip>
 #include <fstream>
+#include <sstream>
 #include <assert.h>
 #include <algorithm>
 #include <cstdio>
@@ -55,6 +56,12 @@ using namespace std;
 // declare global variables
 ////////////////////////////////////////////////////////////////////////////////
 bool projThenDiv;
+const float ABS_ERROR_MIN = 0.000001;
+const float REL_ERROR_MAX = 0.5;
+const float REL_ERROR_MIN = 0.01;
+const float PT_CONT_MIN = 0;
+const float PT_ERROR_MIN = 0.1;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // declare classes and structs
@@ -76,6 +83,10 @@ struct FitRes {
 // This method tries to obtain all the relevant TProfiles from the inputFilename
 // It returns true if successfull
 bool getInputHistograms(TString inputFilename, THnSparseF *& prof, THnSparseF *& profPt, THnSparseF *& profRho, bool useNPU);
+
+// This method returns the maximum rho value for all eta by looping through the barrel region and checking the minimum requirements
+// to add a point to the graphs. If at least 4 entries will be added to a graph, then this becomes the next highest rho.
+pair<float,float> find_rho_bounds(THnSparseF *& prof, THnSparseF *& profPt, THnSparseF *& profEntries, int rebinRho);
 
 // This is a helper function to the divideHistogram function
 // It tests if certain conditions are met before division can occur
@@ -146,11 +157,15 @@ int main(int argc,char**argv){
     string algo12 = algo1+"_"+algo2;
     if (algo1 == algo2) algo12 = algo1;
    
+    vector<int> vdebug = {7,42,43,44,82};
+
     // Open the input file and retrieve all relevant TProfile3D's
     TString inputFilename = inputDir+"output_"+algo12+".root";
     THnSparseF *prof=0, *profPt=0, *profEntries=0;
     if(!getInputHistograms(inputFilename, prof, profPt, profEntries, useNPU))
         return -1;
+
+    pair<float,float> rho_bounds = find_rho_bounds(prof,profPt,profEntries,rebinRho);
 
     // Divide O/A and pT histograms to get <O/A> and <pT> (i.e. sum(O/A)/nentries = <O/A>)
     if(!projThenDiv) {
@@ -192,7 +207,7 @@ int main(int argc,char**argv){
         // Reset fitResults vector for each eta
         fitResults.clear();
 
-        if(debug && (iEta<42 || iEta>43)) continue;
+        if(debug && std::find(vdebug.begin(), vdebug.end(), iEta) == vdebug.end()) continue;
         cout<< "Analyzing ieta="<<iEta<<" eta="<<prof->GetAxis(0)->GetBinCenter(iEta) << endl
             << "****************************" << endl;
 
@@ -318,7 +333,44 @@ int main(int argc,char**argv){
         // Need to do it here so that we can fin the last rho bin and reset its upper bound
         unsigned int nFR = fitResults.size();
         for(unsigned int iFR=0; iFR<nFR; iFR++) {
-            if(iFR == nFR-1)
+            //Add in missing upper rho bins so that all eta are symmetric with respect to rho
+            if(iFR == nFR-1 && fitResults[iFR].rhoupedge<rho_bounds.second) {
+                FitRes tmp = fitResults[iFR];
+                tmp.rholowedge = tmp.rhoupedge;
+                tmp.rhoupedge += rebinRho;
+                fitResults.emplace_back(tmp);
+                nFR = fitResults.size();
+            }
+            //Add in the missing lower rho bins so that all eta are symmetric with respect to rho
+            else if(iFR == 0 && fitResults[iFR].rholowedge>rho_bounds.first) {
+                //Find the end of the first rho bin
+                unsigned rho_end=0;
+                for(unsigned int jFR=0; jFR<nFR; jFR++) {
+                    if(fitResults[jFR].rholowedge!=fitResults[jFR+1].rholowedge) {
+                        rho_end=jFR;
+                        break;
+                    }
+                }
+                vector<FitRes> tmp(fitResults.begin(),fitResults.begin()+rho_end+1);
+                for(unsigned int tFR=0; tFR<tmp.size(); tFR++) {
+                    tmp[tFR].rhoupedge = tmp[tFR].rholowedge;
+                    tmp[tFR].rholowedge -= rebinRho;
+                }
+                fitResults.insert(fitResults.begin(),tmp.begin(),tmp.end());
+                nFR = fitResults.size();
+                iFR--;
+                continue;
+            }
+            //Add in missing rho bins which are in the middle of a set of rho bins (per eta)
+            //Copy the paramters from the next lowest rho bin
+            else if(iFR!=nFR-1 && fitResults[iFR].rhoupedge!=fitResults[iFR+1].rholowedge) {
+                FitRes tmp = fitResults[iFR];
+                tmp.rholowedge = tmp.rhoupedge;
+                tmp.rhoupedge += rebinRho;
+                fitResults.insert(fitResults.begin()+iFR+1,tmp);
+                nFR = fitResults.size();
+            }
+            else if(iFR == nFR-1)
                 fitResults[iFR].rhoupedge = 200;
             writeToTxtFile(outF, fitResults[iFR], ((iFR==0)?true:false));
         }// rho bins with filled graphs
@@ -382,6 +434,70 @@ bool getInputHistograms(TString inputFilename, THnSparseF *& prof, THnSparseF *&
 
     // if everything went well just return true.
     return true;  
+}
+
+//______________________________________________________________________________
+// This method returns the maximum rho value for all eta by looping through the barrel region and checking the minimum requirements
+// to add a point to the graphs. If at least 4 entries will be added to a graph, then this becomes the next highest rho.
+pair<float,float> find_rho_bounds(THnSparseF *& prof, THnSparseF *& profPt, THnSparseF *& profEntries, int rebinRho) {
+    cout << "jet_l1_correction_x::find_rho_bounds()  finding the maximum rho bin ... " << endl;
+    float min_rho = 9999, max_rho = 0, max_eta = -9999, min_eta = -9999;
+    int skipRho = 25, counter = 0, max_counter = 0, min_counter = 0, current_index = 0, total_to_check = (52-31)*(prof->GetAxis(1)->GetNbins()-skipRho);
+    stringstream ss;
+    for (int iEta = 31; iEta <= 52; iEta++){
+        for (int iRho = 1; iRho <= prof->GetAxis(1)->GetNbins(); iRho+=rebinRho){
+            if(iRho==5) iRho+=skipRho;
+            ss.str("");
+            ss << "\tProgress: (iEta,iRho,counter,min_rho,max_rho)=(" << iEta << "," << iRho << "," << counter << "," << min_rho << "," << max_rho << ") ";
+            current_index = (iEta-31)*(prof->GetAxis(1)->GetNbins()-skipRho)+((iRho<10) ? iRho : iRho-skipRho)+1;
+            loadbar2(current_index,total_to_check,50,ss.str());
+            counter = 0;
+            prof->GetAxis(0)->SetRange(iEta,iEta);
+            prof->GetAxis(1)->SetRange(iRho,iRho+(rebinRho-1));
+            profPt->GetAxis(0)->SetRange(iEta,iEta);
+            profPt->GetAxis(1)->SetRange(iRho,iRho+(rebinRho-1));
+            profEntries->GetAxis(0)->SetRange(iEta,iEta);
+            profEntries->GetAxis(1)->SetRange(iRho,iRho+(rebinRho-1));
+            TH1D* prof_proj = prof->Projection(3,"E"); //(x,option)=(refpt,calc errors);
+            TH1D* profPt_proj = profPt->Projection(3,"E"); //(x,option)=(refpt,calc errors);
+            TH1D* profEntries_proj = profEntries->Projection(3,"E"); //(x,option)=(refpt,calc errors);
+            prof_proj->Divide(profEntries_proj);
+            profPt_proj->Divide(profEntries_proj);
+            for (int irefpt = 1; irefpt <= prof_proj->GetXaxis()->GetNbins() ; irefpt++){
+                if (profEntries_proj->GetBinContent (irefpt) &&
+                    prof_proj->GetBinError      (irefpt)  > ABS_ERROR_MIN &&
+                    (fabs(prof_proj->GetBinError(irefpt)/prof_proj->GetBinContent(irefpt)))<REL_ERROR_MAX &&
+                    (fabs(prof_proj->GetBinError(irefpt)/prof_proj->GetBinContent(irefpt)))>REL_ERROR_MIN &&
+                    profPt_proj ->GetBinContent (irefpt)  > PT_CONT_MIN &&
+                    profPt_proj ->GetBinError   (irefpt)  > PT_ERROR_MIN ) {
+                    counter++;
+                }
+            }
+            if(counter>=5 && max_rho<prof->GetAxis(1)->GetBinUpEdge(iRho+(rebinRho-1))) {
+                max_rho = prof->GetAxis(1)->GetBinUpEdge(iRho+(rebinRho-1));
+                max_counter = counter;
+                max_eta = prof->GetAxis(0)->GetBinCenter(iEta);
+            }
+            if(counter>=5 && min_rho>prof->GetAxis(1)->GetBinLowEdge(iRho+(rebinRho-1))) {
+                min_rho = prof->GetAxis(1)->GetBinLowEdge(iRho+(rebinRho-1));
+                min_counter = counter;
+                min_eta = prof->GetAxis(0)->GetBinCenter(iEta);
+            }
+
+            delete prof_proj;
+            delete profPt_proj;
+            delete profEntries_proj;
+        }
+    }
+    cout << endl << "Minimum rho: " << min_rho << endl
+         << "\tOccured at eta = " << min_eta << " with " << min_counter << " entries" << endl;
+    cout << "Maximum rho: " << max_rho << endl
+         << "\tOccured at eta = " << max_eta << " with " << max_counter << " entries" << endl;
+    if(min_rho==1) {
+        cout << "Changing minimum rho to be 0 because most likely this value occurs outside of the checked eta range." << endl;
+        min_rho = 0;
+    }
+    return make_pair(min_rho,max_rho);
 }
 
 //______________________________________________________________________________
@@ -535,11 +651,11 @@ TGraphErrors * getGraph(int iEta, int iRho, const THnSparseF * prof,
             nEvt += profEntries->GetBinContent(Gbin);
             // avoid points with empty content or too small error
             if (profEntries->GetBinContent (Gbin) &&
-                prof->GetBinError      (Gbin)  > 0.000001 &&
-                (fabs(prof->GetBinError(Gbin)/prof->GetBinContent(Gbin)))<0.5 &&// 0.3 ==> 0.5
-                (fabs(prof->GetBinError(Gbin)/prof->GetBinContent(Gbin)))>0.01 &&// 0.05 ==> 0.01
-                profPt ->GetBinContent (Gbin)  > 0 &&
-                profPt ->GetBinError   (Gbin)  > 0.1 ){
+                prof->GetBinError      (Gbin)  > ABS_ERROR_MIN &&
+                (fabs(prof->GetBinError(Gbin)/prof->GetBinContent(Gbin)))<REL_ERROR_MAX &&// 0.3 ==> 0.5
+                (fabs(prof->GetBinError(Gbin)/prof->GetBinContent(Gbin)))>REL_ERROR_MIN &&// 0.05 ==> 0.01
+                profPt ->GetBinContent (Gbin)  > PT_CONT_MIN &&
+                profPt ->GetBinError   (Gbin)  > PT_ERROR_MIN ){
             
                 // get the relevant values
                 double pt   = profPt->GetBinContent(Gbin);
@@ -577,11 +693,11 @@ TGraphErrors * getGraph(string nameTitle, const TH2D * prof, const TH2D * profPt
             nEvt += profEntries->GetBinContent(imu,irefpt);
             // avoid points with empty content or too small error
             if (profEntries->GetBinContent (imu,irefpt) &&
-                prof->GetBinError      (imu,irefpt)  > 0.000001 &&
-                (fabs(prof->GetBinError(imu,irefpt)/prof->GetBinContent(imu,irefpt)))<0.5 &&// 0.3 ==> 0.5
-                (fabs(prof->GetBinError(imu,irefpt)/prof->GetBinContent(imu,irefpt)))>0.01 &&// 0.05 ==> 0.01
-                profPt ->GetBinContent (imu,irefpt)  > 0 &&
-                profPt ->GetBinError   (imu,irefpt)  > 0.1 ){
+                prof->GetBinError      (imu,irefpt)  > ABS_ERROR_MIN &&
+                (fabs(prof->GetBinError(imu,irefpt)/prof->GetBinContent(imu,irefpt)))<REL_ERROR_MAX &&// 0.3 ==> 0.5
+                (fabs(prof->GetBinError(imu,irefpt)/prof->GetBinContent(imu,irefpt)))>REL_ERROR_MIN &&// 0.05 ==> 0.01
+                profPt ->GetBinContent (imu,irefpt)  > PT_CONT_MIN &&
+                profPt ->GetBinError   (imu,irefpt)  > PT_ERROR_MIN ){
             
                 // get the relevant values
                 double pt   = profPt->GetBinContent(imu,irefpt);
@@ -621,11 +737,11 @@ TGraphErrors * getGraph(string nameTitle, TH1D * prof, TH1D * profPt, const TH1D
         nEvt += profEntries->GetBinContent(irefpt);
         // avoid points with empty content or too small error
         if (profEntries->GetBinContent (irefpt) &&
-            prof->GetBinError      (irefpt)  > 0.000001 &&
-            (fabs(prof->GetBinError(irefpt)/prof->GetBinContent(irefpt)))<0.5 &&// 0.3 ==> 0.5
-            (fabs(prof->GetBinError(irefpt)/prof->GetBinContent(irefpt)))>0.01 &&// 0.05 ==> 0.01
-            profPt ->GetBinContent (irefpt)  > 0 &&
-            profPt ->GetBinError   (irefpt)  > 0.1 ){
+            prof->GetBinError      (irefpt)  > ABS_ERROR_MIN &&
+            (fabs(prof->GetBinError(irefpt)/prof->GetBinContent(irefpt)))<REL_ERROR_MAX &&// 0.3 ==> 0.5
+            (fabs(prof->GetBinError(irefpt)/prof->GetBinContent(irefpt)))>REL_ERROR_MIN &&// 0.05 ==> 0.01
+            profPt ->GetBinContent (irefpt)  > PT_CONT_MIN &&
+            profPt ->GetBinError   (irefpt)  > PT_ERROR_MIN ){
         
             // get the relevant values
             int    n    = graph ->GetN();
@@ -730,7 +846,7 @@ TCanvas* createCanvas(const vector<TGraphErrors*>& graphs, const vector<FitRes>&
     frame->GetXaxis()->SetMoreLogLabels();
     frame->GetXaxis()->SetNoExponent();
     frame->GetXaxis()->SetTitle("p_{T}^{reco} (GeV)");
-    frame->GetYaxis()->SetRangeUser(0.0,20.0);
+    frame->GetYaxis()->SetRangeUser(0.0,40.0);
     frame->GetYaxis()->SetTitle("Offset/A");
 
     string gname = string(graphs[0]->GetName());
@@ -791,7 +907,7 @@ TCanvas* createCanvas(const vector<TGraphErrors*>& graphs, const vector<FitRes>&
         //
         // Draw the splines for each graph, if they exist
         //
-        if(fitResults.size()>0 && fitResults[igraph].igraph == igraph) {
+        if(fitResults.size()>0 && graphs[igraph]->GetN()>=5 && fitResults[igraph].igraph == igraph) {
             PiecewiseSpline* spline = fitResults[igraph].pspline;
             for(int isection=0; isection<spline->getNSections(); isection++) {
                 pair<double,double> bounds = spline->getSectionBounds(isection);
