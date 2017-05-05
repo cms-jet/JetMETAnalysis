@@ -86,7 +86,7 @@ bool getInputHistograms(TString inputFilename, THnSparseF *& prof, THnSparseF *&
 
 // This method returns the maximum rho value for all eta by looping through the barrel region and checking the minimum requirements
 // to add a point to the graphs. If at least 4 entries will be added to a graph, then this becomes the next highest rho.
-pair<float,float> find_rho_bounds(THnSparseF *& prof, THnSparseF *& profPt, THnSparseF *& profEntries, int rebinRho);
+pair<float,float> find_rho_bounds(THnSparseF *& prof, THnSparseF *& profPt, THnSparseF *& profEntries, int rebinEta, int rebinRho);
 
 // This is a helper function to the divideHistogram function
 // It tests if certain conditions are met before division can occur
@@ -135,6 +135,7 @@ int main(int argc,char**argv){
     string         algo1         = cl.getValue<string> ("algo1",           "ak5pf");
     string         algo2         = cl.getValue<string> ("algo2",           "ak5pf");
     bool           useNPU        = cl.getValue<bool>   ("useNPU",            false);
+    int            rebinEta      = cl.getValue<int>    ("rebinEta",              1);
     int            rebinRho      = cl.getValue<int>    ("rebinRho",              1);
     string         era           = cl.getValue<string> ("era",             "<era>");
     vector<string> formats       = cl.getVector<string>("formats",              "");
@@ -203,7 +204,7 @@ int main(int argc,char**argv){
     ofstream outF = createTxtFile(txtFilename,spline_function);
 
     // Loop over all etas
-    for (int iEta = 1; iEta <= prof->GetAxis(0)->GetNbins(); iEta++){
+    for (int iEta = 1; iEta <= prof->GetAxis(0)->GetNbins(); iEta+=rebinEta){
         // Reset fitResults vector for each eta
         fitResults.clear();
 
@@ -221,11 +222,11 @@ int main(int argc,char**argv){
             }
 
             // Create the graph
-            prof->GetAxis(0)->SetRange(iEta,iEta);
+            prof->GetAxis(0)->SetRange(iEta,iEta+(rebinEta-1));
             prof->GetAxis(1)->SetRange(iRho,iRho+(rebinRho-1));
-            profPt->GetAxis(0)->SetRange(iEta,iEta);
+            profPt->GetAxis(0)->SetRange(iEta,iEta+(rebinEta-1));
             profPt->GetAxis(1)->SetRange(iRho,iRho+(rebinRho-1));
-            profEntries->GetAxis(0)->SetRange(iEta,iEta);
+            profEntries->GetAxis(0)->SetRange(iEta,iEta+(rebinEta-1));
             profEntries->GetAxis(1)->SetRange(iRho,iRho+(rebinRho-1));
             TH1* prof_proj = nullptr;
             TH1* profPt_proj = nullptr;
@@ -247,7 +248,7 @@ int main(int argc,char**argv){
             //profPt_proj->Rebin2D(4,1);
             //profEntries_proj->Rebin2D(4,1);
 
-            pair<float,float> etaBoundaries = make_pair(prof->GetAxis(0)->GetBinLowEdge(iEta),prof->GetAxis(0)->GetBinUpEdge(iEta));
+            pair<float,float> etaBoundaries = make_pair(prof->GetAxis(0)->GetBinLowEdge(iEta),prof->GetAxis(0)->GetBinUpEdge(iEta+(rebinEta-1)));
             pair<float,float> rhoBoundaries = make_pair(prof->GetAxis(1)->GetBinLowEdge(iRho),prof->GetAxis(1)->GetBinUpEdge(iRho+(rebinRho-1)));
             stringstream ss;
             ss << "OffOAVsJetPt_JetEta" <<  etaBoundaries.first << "to" <<  etaBoundaries.second << "_Rho" << rhoBoundaries.first << "to" << rhoBoundaries.second;
@@ -307,7 +308,7 @@ int main(int argc,char**argv){
                 // Put this fit result in the vector fitResults
                 FitRes fitres;
                 fitres.etalowedge = prof->GetAxis(0)->GetBinLowEdge(iEta);
-                fitres.etaupedge  = prof->GetAxis(0)->GetBinUpEdge(iEta);
+                fitres.etaupedge  = prof->GetAxis(0)->GetBinUpEdge(iEta+(rebinEta-1));
                 fitres.rholowedge = prof->GetAxis(1)->GetBinLowEdge(iRho);
                 fitres.rhoupedge  = prof->GetAxis(1)->GetBinUpEdge(iRho+(rebinRho-1));
                 fitres.pspline    = pspline;
@@ -439,12 +440,12 @@ bool getInputHistograms(TString inputFilename, THnSparseF *& prof, THnSparseF *&
 //______________________________________________________________________________
 // This method returns the maximum rho value for all eta by looping through the barrel region and checking the minimum requirements
 // to add a point to the graphs. If at least 4 entries will be added to a graph, then this becomes the next highest rho.
-pair<float,float> find_rho_bounds(THnSparseF *& prof, THnSparseF *& profPt, THnSparseF *& profEntries, int rebinRho) {
+pair<float,float> find_rho_bounds(THnSparseF *& prof, THnSparseF *& profPt, THnSparseF *& profEntries, int rebinEta, int rebinRho) {
     cout << "jet_l1_correction_x::find_rho_bounds()  finding the maximum rho bin ... " << endl;
     float min_rho = 9999, max_rho = 0, max_eta = -9999, min_eta = -9999;
     int skipRho = 25, counter = 0, max_counter = 0, min_counter = 0, current_index = 0, total_to_check = (52-31)*(prof->GetAxis(1)->GetNbins()-skipRho);
     stringstream ss;
-    for (int iEta = 31; iEta <= 52; iEta++){
+    for (int iEta = 31; iEta <= 52; iEta+=rebinEta){
         for (int iRho = 1; iRho <= prof->GetAxis(1)->GetNbins(); iRho+=rebinRho){
             if(iRho==5) iRho+=skipRho;
             ss.str("");
@@ -452,11 +453,11 @@ pair<float,float> find_rho_bounds(THnSparseF *& prof, THnSparseF *& profPt, THnS
             current_index = (iEta-31)*(prof->GetAxis(1)->GetNbins()-skipRho)+((iRho<10) ? iRho : iRho-skipRho)+1;
             loadbar2(current_index,total_to_check,50,ss.str());
             counter = 0;
-            prof->GetAxis(0)->SetRange(iEta,iEta);
+            prof->GetAxis(0)->SetRange(iEta,iEta+(rebinEta-1));
             prof->GetAxis(1)->SetRange(iRho,iRho+(rebinRho-1));
-            profPt->GetAxis(0)->SetRange(iEta,iEta);
+            profPt->GetAxis(0)->SetRange(iEta,iEta+(rebinEta-1));
             profPt->GetAxis(1)->SetRange(iRho,iRho+(rebinRho-1));
-            profEntries->GetAxis(0)->SetRange(iEta,iEta);
+            profEntries->GetAxis(0)->SetRange(iEta,iEta+(rebinEta-1));
             profEntries->GetAxis(1)->SetRange(iRho,iRho+(rebinRho-1));
             TH1D* prof_proj = prof->Projection(3,"E"); //(x,option)=(refpt,calc errors);
             TH1D* profPt_proj = profPt->Projection(3,"E"); //(x,option)=(refpt,calc errors);
@@ -476,12 +477,12 @@ pair<float,float> find_rho_bounds(THnSparseF *& prof, THnSparseF *& profPt, THnS
             if(counter>=5 && max_rho<prof->GetAxis(1)->GetBinUpEdge(iRho+(rebinRho-1))) {
                 max_rho = prof->GetAxis(1)->GetBinUpEdge(iRho+(rebinRho-1));
                 max_counter = counter;
-                max_eta = prof->GetAxis(0)->GetBinCenter(iEta);
+                max_eta = prof->GetAxis(0)->GetBinCenter(iEta+(rebinEta-1));
             }
             if(counter>=5 && min_rho>prof->GetAxis(1)->GetBinLowEdge(iRho+(rebinRho-1))) {
                 min_rho = prof->GetAxis(1)->GetBinLowEdge(iRho+(rebinRho-1));
                 min_counter = counter;
-                min_eta = prof->GetAxis(0)->GetBinCenter(iEta);
+                min_eta = prof->GetAxis(0)->GetBinCenter(iEta+(rebinEta-1));
             }
 
             delete prof_proj;
