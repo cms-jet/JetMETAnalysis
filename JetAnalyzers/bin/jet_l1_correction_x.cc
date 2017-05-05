@@ -166,7 +166,7 @@ int main(int argc,char**argv){
     if(!getInputHistograms(inputFilename, prof, profPt, profEntries, useNPU))
         return -1;
 
-    pair<float,float> rho_bounds = find_rho_bounds(prof,profPt,profEntries,rebinRho);
+    pair<float,float> rho_bounds = find_rho_bounds(prof,profPt,profEntries,rebinEta,rebinRho);
 
     // Divide O/A and pT histograms to get <O/A> and <pT> (i.e. sum(O/A)/nentries = <O/A>)
     if(!projThenDiv) {
