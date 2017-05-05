@@ -105,8 +105,9 @@ TGraphErrors * getGraph(string nameTitle, const TH2D * prof, const TH2D * profPt
 TGraphErrors * getGraph(string nameTitle, TH1D * prof, TH1D * profPt, const TH1D * profEntries);
 
 // This method creates the txt file for the corrections
-ofstream createTxtFile(string txtFilename, string function);
-void writeToTxtFile(ofstream& outF, const FitRes& fitResult, bool verbose = false);
+ofstream createTxtFile(string txtFilename, string function, bool forTesting = false);
+void writeToTxtFile(ofstream& outF, const FitRes& fitResult,
+                    bool forTesting = false, bool verbose = false);
 
 // This method creates canvases showing the spline fits
 TCanvas* createCanvas(const vector<TGraphErrors*>& graphs, const vector<FitRes>& fitResults,
@@ -141,6 +142,7 @@ int main(int argc,char**argv){
     vector<string> formats       = cl.getVector<string>("formats",              "");
     bool           drawParaCoord = cl.getValue<bool>   ("drawParaCoord",     false);
                    projThenDiv   = cl.getValue<bool>   ("projThenDiv",        true);
+    bool           forTesting    = cl.getValue<bool>   ("forTesting",        false);
     bool           debug         = cl.getValue<bool>   ("debug",             false);
 
     if (!cl.check()) return 0;
@@ -201,7 +203,7 @@ int main(int argc,char**argv){
     // Create the txt file and the function describing the chosen spline type (Akima)
     string txtFilename = outputDir+era+"_L1FastJet_"+algo12+".txt";
     string spline_function = "[0]+((x-[1])*([2]+((x-[1])*([3]+((x-[1])*[4])))))";
-    ofstream outF = createTxtFile(txtFilename,spline_function);
+    ofstream outF = createTxtFile(txtFilename,spline_function,forTesting);
 
     // Loop over all etas
     for (int iEta = 1; iEta <= prof->GetAxis(0)->GetNbins(); iEta+=rebinEta){
@@ -373,7 +375,7 @@ int main(int argc,char**argv){
             }
             else if(iFR == nFR-1)
                 fitResults[iFR].rhoupedge = 200;
-            writeToTxtFile(outF, fitResults[iFR], ((iFR==0)?true:false));
+            writeToTxtFile(outF, fitResults[iFR], forTesting, ((iFR==0)?true:false));
         }// rho bins with filled graphs
 
     }// eta bins
@@ -770,13 +772,17 @@ TGraphErrors * getGraph(string nameTitle, TH1D * prof, TH1D * profPt, const TH1D
 
 //______________________________________________________________________________
 // This method creates the txt file for the corrections
-ofstream createTxtFile(string txtFilename, string function) {
+ofstream createTxtFile(string txtFilename, string function, bool forTesting) {
     cout << "jet_l1_correction_x::createTxtFile Writting the text file " << txtFilename << " ... " << flush;
     // Create the stream 
     ofstream outF(txtFilename);
    
     // Produce the first line
-    TString fname = Form("{3 JetEta Rho JetPt 2 JetPt JetA max(0.0001,1-y*(%s)/x)",function.c_str());
+    string fname;
+    if(forTesting)
+       fname = "{3 JetEta Rho JetPt 1 JetPt 1";
+    else
+       fname = Form("{3 JetEta Rho JetPt 2 JetPt JetA max(0.0001,1-y*(%s)/x)",function.c_str());
     outF << fname <<" Correction L1FastJet}"<<endl;
 
     cout << "DONE" << endl;
@@ -785,7 +791,7 @@ ofstream createTxtFile(string txtFilename, string function) {
 
 //______________________________________________________________________________
 // Write one eta and rho line in the text file
-void writeToTxtFile(ofstream& outF, const FitRes& fitResult, bool verbose) {
+void writeToTxtFile(ofstream& outF, const FitRes& fitResult, bool forTesting, bool verbose) {
     if(verbose) cout << "\tjet_l1_correction_x::writeToTxtFile Writting to the text file ... " << flush;
 
     //For eta-dependent spline clipping
@@ -820,17 +826,20 @@ void writeToTxtFile(ofstream& outF, const FitRes& fitResult, bool verbose) {
             lastLine = true;
         }
 
-        //For expediency of Summer16_25nsV5_MC do eta-dependent clipping
+        //Still using eta dependent clipping
+        int npar = forTesting ? 2 : (int)(fitResult.pspline->getNpar()+4);
         outF<<setw(15)<<fitResult.etalowedge<<setw(15)<<fitResult.etaupedge
             <<setw(15)<<fitResult.rholowedge<<setw(15)<<fitResult.rhoupedge
             <<setw(15)<<bounds.first<<setw(15)<<(lastLine ? 6500 : bounds.second)
-            <<setw(15)<<(int)(fitResult.pspline->getNpar()+4) //Number of parameters + 4 for the JetPt and JetA boundaries
-            <<setw(15)<<bounds.first<<setw(15)<<(abovePtLimit ? pt_limit : bounds.second)
-            <<setw(15)<<0<<setw(15)<<10; //Area boundaries
+            <<setw(15)<<npar //Number of parameters + 4 for the JetPt and JetA boundaries
+            <<setw(15)<<bounds.first<<setw(15)<<(abovePtLimit ? pt_limit : bounds.second);
+        if(!forTesting) {
+           outF<<setw(15)<<0<<setw(15)<<10; //Area boundaries
 
-        TF1* spline_func = fitResult.pspline->setParameters(isection);
-        for(int p=0; p<fitResult.pspline->getNpar(); p++) {
-            outF<<setw(15)<<spline_func->GetParameter(p);
+           TF1* spline_func = fitResult.pspline->setParameters(isection);
+           for(int p=0; p<fitResult.pspline->getNpar(); p++) {
+              outF<<setw(15)<<spline_func->GetParameter(p);
+           }
         }
         outF<<endl;
     }
