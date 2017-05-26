@@ -37,7 +37,7 @@ The following table documents all available configuration options and their rela
 | **Parameter**             | **Type**   | **Description** |
 |:--------------------------|:----------:|:----------------|
 | _srcRef_                  | *InputTag* | Input collection containing the reference objects. Anything compatible with *edm::View< reco::Candidate>*. |
-| _srcRefToJetMap_          | *InputTag | Match map associating references to jets. It is up to the plugin creating this map how references are associated to jets: by matching or back-to-back balancing. For balancing, the map must only contain one entry per event, otherwise the event is skipped. |
+| _srcRefToJetMap_          | *InputTag* | Match map associating references to jets. It is up to the plugin creating this map how references are associated to jets: by matching or back-to-back balancing. For balancing, the map must only contain one entry per event, otherwise the event is skipped. |
 | _nRefMax_                 | *uint32*   | By default (nRefMax=0), all references which are associated to jets via the map are considered. For nRefMax>0, only the nRefMax highest pT references are considered. |
 | _deltaRMax_               | *double*   | Maximum deltaR separation of reference-jet pairs to be considered matched. **Provide this parameter only for MATCHING mode, don't provide deltaPhiMin!** |
 | _deltaPhiMin_             | *double*   | Minimum deltaPhi separation of the reference-jet pair to be considered back-to-back. **Provide this parameter only for BALANCING mode, don't provide deltaRMax** |
