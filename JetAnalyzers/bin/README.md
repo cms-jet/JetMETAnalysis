@@ -1,4 +1,4 @@
-# Description of the executables provided in [JetMETAnalysis/JetMETAnalyzers](https://github.com/cms-jet/JetAnalyzers)
+# Description of the executables provided in [JetMETAnalysis/JetAnalyzers](https://github.com/cms-jet/JetAnalyzers)
 
 <!-- MarkdownTOC depth=2 -->
 
