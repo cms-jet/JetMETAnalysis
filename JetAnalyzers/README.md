@@ -59,8 +59,12 @@ to your configuration file, as demonstrated in [test/run_JRA_cfg.py](JetAnalyzer
 
   * *Alg*: ak (AntiKt), sc (SISCone), kt (kT), ca (Cambridge/Aachen), ic (IterativeCone)
   * *Size*: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
-  * *Type*: calo, pf, jpt, trk, tau
+  * *Type*: calo, pf, pfchs, puppi, jpt, trk, tau
   * *Jec*: \"\", l1, l2l3, l1l2l3, l1l2l3l5
+
+All of the algorithm names start with the clustering algorithm abbreviation (i.e. “ak” for the Anti-KT algorithm or “kt” for the KT algorithm). The next part of the name should be a number, indicating the clustering cone size of the algorithm used (i.e. 4 indicates a cone size of R = 0.4). The third part of the name is the jet type. The possible jet types are calorimeter (calo), particle flow (pf), particle flow + charged hadron subtraction (pfchs), particle flow + pileup per particle identification (puppi), or jet plus track (jpt). Finally, the correction levels you want apply to each collection are added to the end of the name. For the L1 pileup corrections, you have the option of using l1 for the L1FastJet corrections or l1off for the L1Offset corrections. The rest of the labels should be self explanatory and for the rule l+ <level number> (i.e. l2l3 for L2Relative and L3Absolute MC truth corrections).
+
+*NOTE:* All of this assumes that these corrections are either defined in the JetMETCorrections package or in the [JetCorrection_cff.py](https://github.com/cms-jet/JetMETAnalysis/blob/master/JetAnalyzers/python/JetCorrection_cff.py). A section on adding new correction may be written at another time if necessary.
 
 [addAlgorithm.py](JetAnalyzers/python/addAlgorithm.py) will create the entire sequence (and the corresponding path) for each algorithm and add it to the *process*. You can inspect this sequence as follows (assuming that *ak5calo* is one of the jet definitions in your configuration):
 ```
@@ -70,6 +74,12 @@ python -i run_JRA_cfg.py
 You can inspect every single component and its configuration that way using the python command line (don't forget to prepend *process.* every time!)
 
 An alternative to specifying each AlgSizeType[Jec] combination individually is to provide a set of algorithms, jet cone sizes, jet types, and JEC levels you want to analyze as lists. As demonstrated in [test/run_JRA_cfg.py](JetAnalyzers/test/run_JRA_cfg.py), there will be a series of loops that will analyzer all the combinations of AlgSizeType, prepending the various JEC levels to this list of AlgSizeType. Each of these combinations will then get passes to the *addAlgorithm* function.
+
+Another configurable parameter is the source of the JEC conditions. By default the option _conditionsSource_ is set to *"GT"*, which stands for _global tag_. However, one could also think about retrieving the conditions from an SQLite file (option *"SQLite"*) or a database (option *"DB"*). The later two options are useful when testing a set of JEC which have not been included in an official global tag. If using the SQLite option, make sure the era is set correctly as the era is the expected SQLite filename (without the extension). No matter where the code is retrieving the JEC conditions, the user will want to make sure a valid global tag is used because of the other CMS conditions used.
+
+*WARNING:* If the user requests correction/algorithms which are not in the SQLite file, the corrections will be taken from the global tag.
+
+*WARNING:* If the user list JetCorrectorParametersCollections which are not in the SQLite file, there will be an error.
 
 <a name="output"></a>
 ## Output
