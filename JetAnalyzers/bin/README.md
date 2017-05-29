@@ -199,12 +199,132 @@ jet_response_and_resolution_x -input jra.root -algs sc5calo,sc7calo
 
 <a name="jetsynchtestx"></a>
 ## jet_synchtest_x
+
+##### PURPOSE:
+Technically this is the first step in deriving the MC truth corrections after making an ntuple. The program matches events between two samples (originally envisioned to be samples with and without pileup) and then matches the reconstructed jets between those two samples. The primary reason for this is to calcualte the difference in pT between a jet that is in an environment where pileup was simulated and the same exact jet when there is no pileup. This then tells us the exact amount of pileup that would be added to this jet. The rest of the program is responsible for making other validation histograms.
+
+Like previously said, the program was initially envisioned to be used with two samples with and without pileup and with a single jet algorithm. However, there is nothing stopping someone from varying a different quantity during the sample generation. Furthemore, one could envision matching jets using two different algorithms.
+
+Yes, I know the name of this programs is not very descriptive and the naming scheme of the histograms inside the program is also pretty bad. Some day this will be fixed, but it is not the highest priority.
+
+##### PARAMETERS:
+
+| *Parameter*         | *Type*   | *Default*                          | *Description* |
+|:--------------------|:---------|:-----------------------------------|:--------------|
+| _samplePU_          | *string* |                                    | path/name of the sample which was simulated with pileup |
+| _sampleNoPU_        | *string* |                                    | path/name of the sample which was simulated without pileup |
+| _basepath_          | *string* | "/fdata/hepx/store/user/aperloff/" | path in common between the two samples |
+| _algo1_             | *string* | "ak5pf"                            | algorithm name to use from the sample with pileup |
+| _algo2_             | *string* | "ak5pf"                            | algorithm name to use from the sample without pileup |
+| _iftest_            | *bool*   | false                              | shortens the runtime by activating the maxEvts variable |
+| _maxEvts_           | *int*    | 40000                              | the number of entries in the ROOT trees to loop over (still must map all events) |
+| _nrefmax_           | *int*    | -1                                 | the maximum number of jets to use from each event |
+| _useweight_         | *bool*   | false                              | per-event weight from tree (branch: 'weight') |
+| _pThatReweight_     | *bool*   | false                              | reweight the event based on a different pThat weighting scheme |
+| _bias2SelectionRef_ | *double* | 15                                 | if pThatReweight is true, then use this value as the reference pThat |
+| _bias2SelectionPow_ | *double* | 6.0                                | if pThatReweight is true, then use this as the reweighting power |
+| _MCPUReWeighting_   | *string* | ""                                 | the file which contains the pileup distribution for the MC |
+| _MCPUHistoName_     | *string* | "pileup"                           | the histogram name for the MC based pileup distribution used for pileup reweighting |
+| _DataPUReWeighting_ | *string* | ""                                 | the file which contains the pileup distribution for the data |
+| _DataPUHistoName_   | *string* | "pileup"                           | the histogram name for the data based pileup distribution used for pileup reweighting |
+| _ApplyJEC_          | *bool*   | false                              | apply the L1FastJet JEC on-the-fly in order to check the resulting residual pileup |
+| _JECpar_            | *string* | "parameters_ak5pf.txt"             | the filename of the JEC to apply |
+| _outputPath_        | *string* | "./"                               | the path to the output ROOT file |
+| _readEvtMaps_       | *string* | ""                                 | the path to a file which contains pre-saved event-by-event mappings and jet-by-jet mappings |
+| _doNotSave_         | *bool*   | false                              | tells the program to not save the event-by-event and jet-by-jet mappings |
+| _treeName_          | *string* | "t"                                | name of the input TTrees |
+| _npvRhoNpuBinWidth_ | *int*    | 5                                  | the bin width of the NPV/Rrho/NPU/TNPU bins |
+| _NBinsNpvRhoNpu_    | *int*    | 6                                  | the number of bins of NPV/Rrho/NPU/TNPU |
+| _vptBins_           | *int*    | "14:::18:::20:::24:::28:::30"      | (depricated) no longer used in the code |
+| _reduceHistograms_  | *bool*   | true                               | reduces the number of histograms filled in each loop in order to save time |
+| _verbose_           | *bool*   | false                              | print additional messages to the screen |
+| _help_              | *bool*   | false                              | print a list of these options to the screen and exit the program |
+
+##### EXAMPLE:
+```
+jet_synchtest_x -samplePU JRA_PU.root -sampleNoPU JRA_NoPU.root -algo1 ak4pf -algo2 ak4pf
+```
+
 <a name="jetsynchfitx"></a>
 ## jet_synchfit_x
+
+##### PURPOSE:
+This code takes as input the output ROOT files from jet_synctest_x and outputs the L1FastJet JEC text files. The code takes three TProfile3D histograms whose binned coordinates are eta, refpt, and (t)npus and whose averaged values are OffsetOArea (the offset divided by the area of the jet), rho, and jtpt. From this the code constructs one TGraph2D per slice in eta where the coordinates are (jtpt, rho, OffsetOA) and the number of markers is determined by the number of filled (refpt,tnpu) bins. Then a function is fit to this graph and that becomes a single line in the text file. In other wods we are determining how Offset over area changes with jtpt and rho, which is the goal of the L1FastJet JEC.
+
+##### PARAMETERS:
+
+| *Parameter*    | *Type*   | *Default*   | *Description* |
+|:---------------|:---------|:------------|:--------------|
+| _inputDir_     | *string* | "./"        | directory containing the ouput of [jet_synchtest_x](https://github.com/cms-jet/JetMETAnalysis/blob/master/JetAnalyzers/bin/jet_synchtest_x.cc) |
+| _outputDir_    | *string* | "./"        | directory where the output files will be written |
+| _aalgo1_       | *string* | "ak5pf"     | algorithm name to use from the sample with pileup |
+| _aalgo2_       | *string* | "ak5pf"     | algorithm name to use from the sample without pileup |
+| _highPU_       | *bool*   | false       | increases the rho range in the graphs to be fit (from 50 to 200) |
+| _useNPU_       | *bool*   | false       | uses the graphs containing NPU rather than TNPU (useful for PhaseII samples) |
+| _functionType_ | *string* | "standard"  | the type of function to be used for the fit (i.e. standard, standard+taylorExpansion, puppi, other, modifiedHandkerchief, modifiedHandkerchief+rho, modifiedMonkeySaddle) |
+| _era_          | *string* | "<era>"     | the era to be prepended to the L1FastJet text files |
+
+##### EXAMPLE:
+```
+jet_synchfit_x -inputDir ./ -outputDir ./ -algo1 ak4pfchs -algo2 ak4pfchs -highPU false -useNPU false -functionType standard
+```
+
 <a name="jetsynchplotx"></a>
 ## jet_synchplot_x
+
+##### PURPOSE:
+This code formats, plots, and saves the histograms that were filled in [jet_synchtest_x](https://github.com/cms-jet/JetMETAnalysis/blob/master/JetAnalyzers/bin/jet_synchtest_x.cc).
+
+##### PARAMETERS:
+
+| *Parameter*         | *Type*     | *Default*  | *Description* |
+|:--------------------|:-----------|:-----------|:--------------|
+| _inputDir_          | *string*   | "./"       | directory of the input ROOT file (output of [jet_synchtest_x](https://github.com/cms-jet/JetMETAnalysis/blob/master/JetAnalyzers/bin/jet_synchtest_x.cc)) |
+| _algo1_             | *string*   | "ak5pf"    | algorithm name to use from the sample with pileup |
+| _algo2_             | *string*   | "ak5pf"    | algorithm name to use from the sample without pileup |
+| _outDir_            | *string*   | "./images" | directory to save the output files |
+| _outputFormat_      | *VTString* | ".eps"     | list of formats used to save the canvases |
+| _fixedRange_        | *bool*       | true       | fix the range of the residual offset plots to (-3,3) or let the range float |
+| _tdr_               | *bool*       | false      | use the TDR format |
+| _npvRhoNpuBinWidth_ | *int*        | 5          | the bin width of the NPV/Rrho/NPU/TNPU bins (same as [jet_synchtest_x](https://github.com/cms-jet/JetMETAnalysis/blob/master/JetAnalyzers/bin/jet_synchtest_x.cc)) |
+| _NBinsNpvRhoNpu_    | *int*        | 6          | the number of bins of NPV/Rrho/NPU/TNPU (same as [jet_synchtest_x](https://github.com/cms-jet/JetMETAnalysis/blob/master/JetAnalyzers/bin/jet_synchtest_x.cc)) |
+| _binOffset_         | *int*        | 0          | the number of bins to skip if you know some of them will be empty |
+| _minNpvRhoNpu_      | *int*        | 0          | mainly used for the legend, the minimum value of NPV/Rho/NPU/TNPU to plot |
+| _maxNpvRhoNpu_      | *int*        | 159        | mainly used for the legend, the maximum value of NPV/Rho/NPU/TNPU to plot |
+
+##### EXAMPLE:
+```
+jet_synchplot_x -inputDir ./ -algo1 ak4pfchs -algo2 ak4pfchs -outDir ./ -outputFormat .eps .png -fixedRange false -tdr true -npvRhoNpuBinWidth 10 -NBinsNpvRhoNpu 6
+```
+
 <a name="jetl1correctionx"></a>
 ## jet_l1_correction_x
+
+##### PURPOSE:
+This is a new piece of code under development which would replace jet_synchfit_x. Instead of fitting a TF2D to a TGraph2D (3D problem) this code would take in four THnSparse histograms filled using [jet_synchtest_x](https://github.com/cms-jet/JetMETAnalysis/blob/master/JetAnalyzers/bin/jet_synchtest_x.cc) and make many, many 1D histograms (one for each eta and rho bin). Then it would use an Akima spline to "fit" the offset over area vs jtpt points. This will produce a much large L1FastJet text file, but will also reduce the complexity of the problem and should make for a more accurate pileup reduction. This code has been tested and the code CMSSW JEC code has been significantly improved to allow for these much larger text files. The next step is to test whether or not this scheme actually improves the pileup mitigation.
+
+##### PARAMETERS:
+
+| *Parameter*    | *Type*     | *Default*  | *Description* |
+|:---------------|:-----------|:-----------|:--------------|
+| _inputDir_     | *string*   | "./"       | directory of the input ROOT file (output of [jet_synchtest_x](https://github.com/cms-jet/JetMETAnalysis/blob/master/JetAnalyzers/bin/jet_synchtest_x.cc)) | 
+| _outputDir_    | *string*   | "./"       | directory to save the output files |
+| _algo1_        | *string*   | "ak5pf"    | algorithm name to use from the sample with pileup |
+| _algo2_        | *string*   | "ak5pf"    | algorithm name to use from the sample without pileup |
+| _useNPU_       | *bool*     | false      | uses the graphs containing NPU rather than TNPU (useful for PhaseII samples) |
+| _rebinEta_     | *int*      | 1          | rebin the eta dimension before looping |
+| _rebinRho_     | *int*      | 1          | rebin the rho dimension before looping |
+| _era_          | *string*   | "<era>"    | the era to be prepended to the L1FastJet text files |
+| _formats_      | *vstring*  | ""         | list of formats used to save the validation canvases |
+| _drawParaCoord_| *bool*     | false      | draw the parallel coordinate chart to check THnSparse histograms |
+| _projThenDiv_  | *bool*     | true       | project the histograms to select a single slice in eta/rho space and then divide by the entries saved in a separate THnSparse (setting this to false works, but is not recommended) |
+| _forTesting_   | *bool*     | false      | make a text file of reduced complexity and size for testing purposes |
+| _debug_        | *bool*     | false      | run the code over a muched reduces region of phase space in order to test its functionality quickly |
+
+##### EXAMPLE:
+```
+jet_l1_correction_x -inputDir ./ -outputDir ./ -algo1 ak4pfchs -algo2 ak4pfchs -useNPU false -era THnSparseTest_25nsV1_MC -rebinRho 1
+```
 
 <a name="jetl3correctionx"></a>
 ## jet_l3_correction_x
@@ -315,8 +435,120 @@ jet_l5_correction_x -input jra_f.root -era Jec11_V11
 
 <a name="jetcorrectionanalyzerx"></a>
 ## jet_correction_analyzer_x
+
+##### PURPOSE:
+This code produces the histograms necessary to plot the TDR style response/closure histograms. This code was originally developed in order to apply the JEC on-the-fly befor producing the closure histograms. However, it shares much of the same features as the combination of [jet_response_aanalyzer_x](https://github.com/cms-jet/JetMETAnalysis/blob/master/JetAnalyzers/bin/jet_response_analyzer_x.cc), [jet_response_and_resolution_x](https://github.com/cms-jet/JetMETAnalysis/blob/master/JetAnalyzers/bin/jet_response_and_resolution_x.cc), and [jet_apply_jec_x](https://github.com/cms-jet/JetMETAnalysis/blob/master/JetAnalyzers/bin/jet_apply_jec_x.cc). 
+
+##### PARAMETERS:
+
+| *Parameter*         | *Type*         | *Default* | *Description* |
+|:--------------------|:---------------|:----------|:--------------|
+| _algs_              | *vstring*      |           | list of algorithms to be considered. By default, all algorithms found in the input file are considered |
+| _path_              | *string*       |           | path to the JEC text files |
+| _era_               | *string*       |           | prefix for the input JEC text files (e.g. Jec11_V11 for Jec11_V11_L5Flavor_qJ_AK5Calo.txt) |
+| _inputFilename_     | *string*       |           | name of the input ROOT file |
+| _inputFilePath_     | *string*       | ""        | path to the input ROOT file |
+| _fileList_          | *string*       | ""        | the name of a text file containing a list of ROOT files to use as input |
+| _url\_string_       | *string*       | ""        | the xrootd url pointing to the server containing the input files |
+| _outputDir_         | *TString*      | ""        | path to the directory where the output files will be located |
+| _suffix_            | *TString*      | ""        | suffix to append to the output ROOT filename |
+| _levels_            | *int*          | ""        | the JEC levels to apply (i.e. 1 2 3) |
+| _useTags_           | *bool*         | true      | use tags to find the JEC files as opposed to making the filenames on the fly |
+| _L1FastJet_         | *bool*         | true      | use the L1FastJet files as opposed to the L1Offset files (for historical reasons) |
+| _postfix_           | *string*       | ""        | a postfix appended to a JEC text filename |
+| _doflavor_          | *bool*         | false     | make the response plots for a given flavor (one at a time) |
+| _doTProfileMDF_     | *bool*         | false     | if false, the code will not fill the TProfileMDF in order to save time |
+| _reduceHistograms_  | *bool*         | true      | if true, fewer histograms will be filled in order to save time |
+| _useweight_         | *bool*         | false     | per-event weight from tree (branch: 'weight') will be considered unless xsection>0.0 (or branch not found) |
+| _pThatReweight_     | *float*        | -9999     | the power with which to reweight the pThat spectrum |
+| _xsection_          | *float*        | 0.0       | if >0.0, each (!) event will be weighted by xsecion / number of events |
+| _luminosity_        | *float*        | 1.0       | the luminosity to which the histograms will be normalized |
+| _pdgid_             | *int*          | 0         | the flavor of the jets used to draw the response (use 123 to use all light flavor jets) |
+| _drmax_             | *vdouble*      | ""        | deltaR(ref,jet) requirement in matching mode |
+| _ptmin_             | *double*       | 0         | the minimum pT of a jet |
+| _ptgenmin_          | *double*       | 0         | the minimum pTgen of a jet |
+| _ptrawmin_          | *double*       | 0         | the minimum uncorrected pT of a jet |
+| _pthatmin_          | *float*        | 0.0       | the minimum pThat to use |
+| _pthatmax_          | *float*        | -1.0      | the maximum pThat to use |
+| _etamax_            | *double*       | 0         | the maximum eta allowed for a jet |
+| _dphimin_           | *double*       | 0         | deltaPhi(ref,jet) requirement in balancing mode |
+| _nrefmax_           | *unsigned int* | 0         | if not set to 0, only the leading nrefmax references are considered |
+| _nbinsrelrsp_       | *int*          | 200       | number of bins for relative response (pT(jet)/pT(ref)) distributions |
+| _relrspmin_         | *float*        | 0.0       | xmin for relative response distributions |
+| _relrspmax_         | *float*        | 2.0       | xmax for relative response distributions |
+| _evtmax_            | *unsigned int* | 0         | the maximum number of events to process |
+| _printnpu_          | *bool*         | false     | print the number of pileup events found in each event |
+| _itlow_             | *int*          | 0         | the lowest allowed value of in-time pileup |
+| _ithigh_            | *int*          | 100000    | the maximum allowed value of in-time pileup |
+| _earlyootlow_       | *int*          | 0         | the lowest allowed value of early out-of-time pileup |
+| _earlyoothigh_      | *int*          | 100000    | the maximum allowed value of early out-of-time pileup |
+| _lateootlow_        | *int*          | 0         | the lowest allowed value of late out-of-time pileup |
+| _lateoothigh_       | *int*          | 100000    | the maximum allowed value of laet out-of-time pileup |
+| _totalootlow_       | *int*          | 0         | the lowest allowed value of out-of-time pileup (early+late) |
+| _totaloothigh_      | *int*          | 100000    | the maximum allowed value of early-out-of-time pileup (early+late) |
+| _totallow_          | *int*          | 0         | the lowest allowed value of pileup (in-time+early+late) |
+| _totalhigh_         | *int*          | 100000    | the maximum allowed value of pileup (in-time+early+late) |
+| _weightfilename_    | *TString*      | ""        | the filename containing a histogram used to weight each entry based on the pT/eta or the jet |
+| _MCPUReWeighting_   | *TString*      | ""        | the file which contains the pileup distribution for the MC |
+| _DataPUReWeighting_ | *TString*      | ""        | the file which contains the pileup distribution for the data |
+| _mpv_               | *bool*         | false     | use the mean of a Gaussian fit to the response distribution as the response as opposed to the mean of the histogram itself (used to make resolution histograms) |
+| _readRespVsPileup_  | *TString*      | ""        | Read in the TProfileMDF histograms which were already made in a previous pass of this program |
+| _verbose_           | *bool*         | false     | increase the verbosity of the printouts |
+| _debug_             | *bool*         | false     | print out additional debugging information, other than the normal increased level of verbosity |
+
+##### EXAMPLES:
+```
+jet_correction_analyzer_x -inputFilename JRA.root -outputDir ./ -path ./ -era Summer16_25nsV5_MC -levels 2 3 -algs ak4pfchsl1 -drmax 0.2 -MCPUReWeighting MyMCPileupHistogram.root -DataPUReWeighting MyDataPileupHistogram.root
+```
+
 <a name="jetdrawclosurex"></a>
 ## jet_draw_closure_x
+
+##### PURPOSE:
+This program takes the output from [jet_correction_analyzer_x](https://github.com/cms-jet/JetMETAnalysis/blob/master/JetAnalyzers/bin/jet_correction_analyzer_x.cc) and makes a properly formated response/closure plot. The program is able to make response vs pT and response vs eta plots as well as to do the ratio between the closure from multiple eras/files. Additionally, it is able to produce a plot of the flavor responses, though the format of this is still up for debate. The utility of this program is that it is compliant with the TDR style. However, the same basic functionality (drawing a response vs pT/eta) histogram can be reporoduced by [jet_response_and_resolution_x](https://github.com/cms-jet/JetMETAnalysis/blob/master/JetAnalyzers/bin/jet_response_and_resolution_x.cc) and [jet_inspect_graphs_x](https://github.com/cms-jet/JetMETAnalysis/blob/master/JetUtilities/bin/jet_inspect_graphs_x.cc).
+
+##### PARAMETERS:
+This is a complete list of the options available. However, not all options will be used depending upon the type of response canvases being produced (depends on which "do" options are chosen).
+
+| *Parameter*          | *Type*     | *Default*             | *Description* |
+|:---------------------|:-----------|:----------------------|:--------------|
+| _help_               | *bool*     | false                 | print the options and then exit the program |
+| _doPt_               | *bool*     | false                 | draw response vs pT |
+| _doEta_              | *bool*     | false                 | draw response vs eta |
+| _doRatioPt_          | *bool*     | false                 | draw the ratio of response vs pT |
+| _doRatioEta_         | *bool*     | false                 | draw the ratio of response vs eta |
+| _doFlavorDifference_ | *bool*     | false                 | draw the difference in response for various jet flavors |
+| _ptcl_               | *bool*     | false                 | use the abbreviation ptcl rather than pT^{GEN} |
+| _algs_               | *VTString* | ""                    | list of algorithms to be considered. By default, all algorithms found in the input file are considered |
+| _path_               | *TString*  | ""                    | path to the input files |
+| _filename_           | *TString*  | "Closure"             | input filename prefix (rest of the filename combin from the algroithms chosen) |
+| _outputDir_          | *TString*  | "./"                  | directory in which to save the output files |
+| _outputFilename_     | *TString*  | ""                    | overrides the filename of the output file |
+| _outputFormat_       | *VTString* | ".png:::.eps"         | list of formats used to save the ouput canvases |
+| _flavor_             | *TString*  | ""                    | used as a suffix to the input and output files |
+| _nsigma_             | *double*   | 1.5                   | the number of sigma to be using in a Gaussian fit of the response histograms (if the histogram metric is chosen to be the mode) |
+| _draw\_guidelines_   | *bool*     | true                  | draw the +/-1\% guidelines |
+| _CMEnergy_           | *double*   | 13000                 | center of mass energy used to calcualate the maximum range in eta for a given pT |
+| _histMet_            | *TString*  | "mu_h"                | the histogram metric used to calculate the response (options are mu_h, mu_f, mpv, and median) |
+| _filepath1_          | *string*   |                       | input file containing the histograms used as the numerator for the ratio plots |
+| _filepath2_          | *string*   |                       | input file containing the histograms used as the denominator for the ratio plots |
+| _algo_               | *string*   | "algo"                | the algorithm used when making the ratio plots |
+| _numerator_          | *string*   | "53X"                 | label for the numerator of the ratio plot |
+| _denominator_        | *string*   | "52X"                 | label for the denominator of the ratio plot |
+| _eta\_max_           | *double*   | 4.7                   | maximum eta value for the ratio plot |
+| _doflavor_           | *bool*     | false                 | do the ratio by flavor (not fully implemented yet) |
+| _draw\_residual_     | *bool*     | true                  | draw a separate residual pad |
+| _basepath_           | *TString*  |                       | path to the input ROOT file |
+| _filenames_          | *VTString* | "l5.root"             | name of the input ROOT file |
+| _object_             | *TString*  | AbsRspVsRefPt:JetEta" | the base name of the histograms to be read in |
+| _flavorDiff_         | *bool*     | true                  | plot the difference in flavor response as opposed to the absolute response |
+| _flavor1_            | *VTString* | "ud"                  | the variable flavor |
+| _flavor2_            | *VTString* | "g"                   | the reference flavor whose response will be subtracted off the variable flavor |
+
+##### EXAMPLES:
+```
+jet_draw_closure_x -doPt true -doEta false -doRatioPt false -doRatioEta false -doFlavorDifference false -ptcl false -algs ak4pfchsl1 -path ./ -histMet median -outputDir ./
+```
 
 <a name="jetapplyjecx"></a>
 ## jet_apply_jec_x
