@@ -22,6 +22,7 @@
 #include "TFitResultPtr.h"
 #include "TCanvas.h"
 #include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
+#include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
 #include "JetMETAnalysis/JetAnalyzers/interface/REStyle.h"
 
 
@@ -144,13 +145,16 @@ bool getInputProfiles(TString inputFilename, TProfile3D *& prof,
 // This method creates a new fit function and fits it to the graph
 TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, string functionType, int iEta, const TProfile3D * prof){
    static vector<double> pari;
+   static bool pari_set = false;
    static vector<pair<double,double> > pari_lim;
    TF2* f4 = 0;
    TString function;
 
    if(functionType=="standard") {
-      if(iEta==1)
+      if(!pari_set) {
          pari = {-0.5,0.5,0.1};
+         pari_set = true;
+      }
       function = "[0]+([1]*x)*(1+[2]*log(y))";
    }
    //simplistic
@@ -260,13 +264,17 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, string functionType, i
       //modified Monkey Saddle
       //static vector<double> pari = {5.0,-0.05,-10.0,3.0,3.0,-10.0,2.0};
       //static vector<double> pari = {5.0,-10.0,-0.35,0.0,50.0,-4.0,150.0};
-      if(iEta==1)
+      if(!pari_set) {
          pari = {0.0,0.33,1500.0,35.0,1.0,2.0,};
+         pari_set = true;
+      }
    }
    else if(functionType=="puppi") {
-      if(iEta==1)
+      if(!pari_set) {
          pari = {18,-1.5,-0.35,0.0,1.0};
          //pari = {-0.5,0.5,0.1,0.0,1.0};
+         pari_set = true;
+      }
       function = "[0]+([1]*x)*(1+[2]*log(y))+(1/([3]*log(y)+[4]))";
    }
    else if(functionType=="other") {
@@ -284,8 +292,10 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, string functionType, i
       //-(x*y)*Exp[-(x^2 + y^2)] //pedro
    }
    else if(functionType=="standard+taylorExpansion") {
-      if(iEta==1)
+      if(!pari_set) {
          pari = {-0.5,0.5,0.1};
+         pari_set = true;
+      }
       //Taylor expanded version
       function = "[0]+([1]*(x-11))*(1+[2]*(log(y)-1.47))";
    }
@@ -319,7 +329,7 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, string functionType, i
       }
   }
   else {
-      f4->SetParLimits(0,-5,25);
+      f4->SetParLimits(0,-10,25);
       f4->SetParLimits(1,0,10);
       f4->SetParLimits(2,-2,5);
   }
@@ -382,32 +392,22 @@ void createTxtFile(TString txtFilename, const vector<FitRes> & fitResults){
    for (unsigned int l=0; l<fitResults.size() ; l++){
       
       // for each fit print this header ...
-      outF<<std::setw(11)<<fitResults[l].etalowedge
-          <<std::setw(11)<<fitResults[l].etaupedge
-         //<<std::setw(11)<<9
-          <<std::setw(11)<<(int)(fitResults[l].fit->GetNpar()+6)
-         //<<std::setw(12)<<fitResults[l].fit->GetYmin()<<std::setw(12)<<fitResults[l].fit->GetYmax()
-         //<<std::setw(12)<<0<<std::setw(12)<<10
-         //<<std::setw(12)<<fitResults[l].fit->GetXmin()<<std::setw(12)<<fitResults[l].fit->GetXmax();
-          <<std::setw(12)<<fitResults[l].fit->GetXmin()<<std::setw(12)<<fitResults[l].fit->GetXmax()
-          <<std::setw(12)<<fitResults[l].fit->GetYmin()<<std::setw(12)<<fitResults[l].fit->GetYmax()
-          <<std::setw(12)<<0<<std::setw(12)<<10;
-      
+      outF<<std::setw(8)<<fitResults[l].etalowedge
+          <<std::setw(8)<<fitResults[l].etaupedge
+          <<std::setw(8)<<(int)(fitResults[l].fit->GetNpar()+6)
+          <<std::setw(8)<<fitResults[l].fit->GetXmin()<<std::setw(12)<<fitResults[l].fit->GetXmax()
+          <<std::setw(8)<<fitResults[l].fit->GetYmin()<<std::setw(12)<<fitResults[l].fit->GetYmax()
+          <<std::setw(8)<<0<<std::setw(12)<<10;
       
       // ... followed by the parameters
       for(int p=0; p<fitResults[l].fit->GetNpar(); p++) {
-         outF<<std::setw(13)<<fitResults[l].fit->GetParameter(p);
+         outF<<std::setw(17)<<std::setprecision(10)<<fitResults[l].fit->GetParameter(p);
       }
       outF<<std::endl;
-      //outF<<std::setw(13)<<fitResults[l].fit->GetParameter(0)
-      //    <<std::setw(13)<<fitResults[l].fit->GetParameter(1)
-      //    <<std::setw(13)<<fitResults[l].fit->GetParameter(2)<<std::endl;
-      
    }//for fit results
-   
+
    // Close the stream
    outF.close();
-   
 }//createTxtFile
 
 
@@ -564,7 +564,7 @@ int main(int argc,char**argv){
    }// eta bins
    
    // Create the txt file from the fitResults vector
-   TString txtFilename = outputDir+era+"_L1FastJet_"+algo12+".txt";
+   TString txtFilename = outputDir+era+"_L1FastJet_"+((algo1.EqualTo(algo2)) ? JetInfo(algo12).alias : algo12)+".txt";
    createTxtFile(txtFilename, fitResults);
    
    // Create the canvas with all parameters vs eta.
