@@ -14,8 +14,7 @@
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 #include "../XrdVersion.hh"
-#if __has_include("../XrdCl/XrdClFileSystem.hh") && XrdMajorVNUM(XrdVNUMBER)>4 && \
-     XrdMinorVNUM(XrdVNUMBER)>0 && XrdPatchVNUM(XrdVNUMBER)>4
+#if __has_include("../XrdCl/XrdClFileSystem.hh")
 #include "../XrdCl/XrdClFileSystem.hh"
 #define has_xrdcl 1
 #else
