@@ -186,6 +186,37 @@ ak8PUPPIL2L3Corrector = ak4PUPPIL2L3Corrector.clone( correctors = ['ak8PUPPIL2Re
 ak9PUPPIL2L3Corrector = ak4PUPPIL2L3Corrector.clone( correctors = ['ak9PUPPIL2RelativeCorrector','ak9PUPPIL3AbsoluteCorrector'])
 ak10PUPPIL2L3Corrector = ak4PUPPIL2L3Corrector.clone( correctors = ['ak10PUPPIL2RelativeCorrector','ak10PUPPIL3AbsoluteCorrector'])
 
+ak1PUPPIL2L3CorrectorChain = cms.Sequence(
+    ak1PUPPIL2RelativeCorrector * ak1PUPPIL3AbsoluteCorrector * ak1PUPPIL2L3Corrector
+)
+ak2PUPPIL2L3CorrectorChain = cms.Sequence(
+    ak2PUPPIL2RelativeCorrector * ak2PUPPIL3AbsoluteCorrector * ak2PUPPIL2L3Corrector
+)
+ak3PUPPIL2L3CorrectorChain = cms.Sequence(
+    ak3PUPPIL2RelativeCorrector * ak3PUPPIL3AbsoluteCorrector * ak3PUPPIL2L3Corrector
+)
+ak4PUPPIL2L3CorrectorChain = cms.Sequence(
+    ak4PUPPIL2RelativeCorrector * ak4PUPPIL3AbsoluteCorrector * ak4PUPPIL2L3Corrector
+)
+ak5PUPPIL2L3CorrectorChain = cms.Sequence(
+    ak5PUPPIL2RelativeCorrector * ak5PUPPIL3AbsoluteCorrector * ak5PUPPIL2L3Corrector
+)
+ak6PUPPIL2L3CorrectorChain = cms.Sequence(
+    ak6PUPPIL2RelativeCorrector * ak6PUPPIL3AbsoluteCorrector * ak6PUPPIL2L3Corrector
+)
+ak7PUPPIL2L3CorrectorChain = cms.Sequence(
+    ak7PUPPIL2RelativeCorrector * ak7PUPPIL3AbsoluteCorrector * ak7PUPPIL2L3Corrector
+)
+ak8PUPPIL2L3CorrectorChain = cms.Sequence(
+    ak8PUPPIL2RelativeCorrector * ak8PUPPIL3AbsoluteCorrector * ak8PUPPIL2L3Corrector
+)
+ak9PUPPIL2L3CorrectorChain = cms.Sequence(
+    ak9PUPPIL2RelativeCorrector * ak9PUPPIL3AbsoluteCorrector * ak9PUPPIL2L3Corrector
+)
+ak10PUPPIL2L3CorrectorChain = cms.Sequence(
+    ak10PUPPIL2RelativeCorrector * ak10PUPPIL3AbsoluteCorrector * ak10PUPPIL2L3Corrector
+)
+
 ak1PUPPIL1FastL2L3Corrector = ak1PUPPIL2L3Corrector.clone()
 ak1PUPPIL1FastL2L3Corrector.correctors.insert(0,'ak1PUPPIL1FastjetCorrector')
 ak2PUPPIL1FastL2L3Corrector = ak2PUPPIL2L3Corrector.clone()

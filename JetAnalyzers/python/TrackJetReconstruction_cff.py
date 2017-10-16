@@ -11,10 +11,11 @@ trackWithVertexRefSelector.src = cms.InputTag("tracksForJets")
 
 trackJetSequence = cms.Sequence(tracksForJets + trackWithVertexRefSelector + trackRefsForJets)
 
-ak5TrackJets.UseOnlyVertexTracks = False
-ak5TrackJets.UseOnlyOnePV = False
-ak5TrackJets.DxyTrVtxMax = 0.2
-ak5TrackJets.DzTrVtxMax = 1.0
+ak4TrackJets.UseOnlyVertexTracks = False
+ak4TrackJets.UseOnlyOnePV = False
+ak4TrackJets.DxyTrVtxMax = 0.2
+ak4TrackJets.DzTrVtxMax = 1.0
+'''
 kt4TrackJets.UseOnlyVertexTracks = False
 kt4TrackJets.UseOnlyOnePV = False
 kt4TrackJets.DxyTrVtxMax = 0.2
@@ -23,3 +24,4 @@ sisCone5TrackJets.UseOnlyVertexTracks = False
 sisCone5TrackJets.UseOnlyOnePV = False
 sisCone5TrackJets.DxyTrVtxMax = 0.2
 sisCone5TrackJets.DzTrVtxMax = 1.0
+'''

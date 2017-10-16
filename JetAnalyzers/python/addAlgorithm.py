@@ -21,13 +21,13 @@ from JetMETAnalysis.JetAnalyzers.JetCorrection_cff     import *
 from RecoTauTag.TauTagTools.tauDecayModes_cfi          import *
 from CommonTools.PileupAlgos.Puppi_cff import *
 
-stdClusteringAlgorithms = ['ak','kt']
-stdJetTypes = ['calo','pf','pfchs','puppi']
+stdClusteringAlgorithms = ['ak'] #Options: {ak,kt}
+stdJetTypes = ['calo','pf','pfchs','puppi'] #Options: {'calo','pf','pfchs','puppi'}
 stdCorrectionLevels = {
     'l1'     : 'L1',
     'l2l3'   : 'L2L3',
     'l1l2l3' : 'L1FastL2L3'
-}
+} #Options{l1,l2l3,l1l2l3}
 
 stdGenJetsDict = {}
 genJetsDict = {}
@@ -73,7 +73,7 @@ recJetsDict['ak4jpt']        = ('ak4JPTJets',           ak4JPTJets)
 corrJetsDict['ak4jptl1']     = ('ak4JPTJetsL1',         ak4JPTJetsL1)
 corrJetsDict['ak4jptl2l3']   = ('ak4JPTJetsL2L3',       ak4JPTJetsL2L3)
 corrJetsDict['ak4jptl1l2l3'] = ('ak4JPTJetsL1FastL2L3', ak4JPTJetsL1FastL2L3)
-
+'''
 ## Extra TRK Jet Collections
 stdGenJetsDict['ak5trk'] = 'ak5GenJets'
 stdGenJetsDict['ak7trk'] = 'ak7GenJets'
@@ -95,7 +95,7 @@ corrJetsDict['kt4pfl2l3'  ] = ('kt4PFJetsL2L3',       kt4PFJetsL2L3),
 corrJetsDict['kt6pfl2l3'  ] = ('kt6PFJetsL2L3',       kt6PFJetsL2L3),
 corrJetsDict['kt4pfl1l2l3'] = ('kt4PFJetsL1FastL2L3', kt4PFJetsL1FastL2L3),
 corrJetsDict['kt6pfl1l2l3'] = ('kt6PFJetsL1FastL2L3', kt6PFJetsL1FastL2L3),
-
+'''
 ## Extra Tau Collections
 stdGenJetsDict['ak5tauHPSall'] = 'tauGenJetsSelectorAllHadrons'
 genJetsDict['ak5tauHPSall']    = ('tauGenJetsSelectorAllHadrons', tauGenJetsSelectorAllHadrons)
@@ -292,7 +292,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
         process.load('JetMETAnalysis.JetAnalyzers.JetCorrection_cff')
         (corrLabel, corrJets) = corrJetsDict[alg_size_type_corr]
         setattr(process, corrLabel, corrJets)
-        sequence = cms.Sequence(corrJets * sequence)
+        sequence = cms.Sequence(eval(corrLabel.replace("Jets","")+"CorrectorChain") * corrJets * sequence)
 
     ## add pu density calculation
     if not correctl1 and not correctl1off:

@@ -20,13 +20,14 @@ from JetMETAnalysis.JetAnalyzers.TrackJetReconstruction_cff import *
 #!
 #! GEN JET PRODUCERS
 #!
-ak1GenJets      = ak5GenJets.clone  ( rParam=0.1 )
-ak2GenJets      = ak5GenJets.clone  ( rParam=0.2 )
-ak3GenJets      = ak5GenJets.clone  ( rParam=0.3 )
-ak6GenJets      = ak5GenJets.clone  ( rParam=0.6 )
-ak7GenJets      = ak5GenJets.clone  ( rParam=0.7 )
-ak9GenJets      = ak5GenJets.clone  ( rParam=0.9 )
-ak10GenJets     = ak5GenJets.clone  ( rParam=1.0 )
+ak1GenJets      = ak4GenJets.clone  ( rParam=0.1 )
+ak2GenJets      = ak4GenJets.clone  ( rParam=0.2 )
+ak3GenJets      = ak4GenJets.clone  ( rParam=0.3 )
+ak5GenJets      = ak4GenJets.clone  ( rParam=0.5 )
+ak6GenJets      = ak4GenJets.clone  ( rParam=0.6 )
+ak7GenJets      = ak4GenJets.clone  ( rParam=0.7 )
+ak9GenJets      = ak4GenJets.clone  ( rParam=0.9 )
+ak10GenJets     = ak4GenJets.clone  ( rParam=1.0 )
 
 #!
 #! GEN JETS WITHOUT NEUTRINOS
@@ -34,6 +35,7 @@ ak10GenJets     = ak5GenJets.clone  ( rParam=1.0 )
 ak1GenJetsNoNu  = ak1GenJets.clone ( src = 'genParticlesForJetsNoNu' )
 ak2GenJetsNoNu  = ak2GenJets.clone ( src = 'genParticlesForJetsNoNu' )
 ak3GenJetsNoNu  = ak3GenJets.clone ( src = 'genParticlesForJetsNoNu' )
+ak5GenJetsNoNu  = ak5GenJets.clone ( src = 'genParticlesForJetsNoNu' )
 ak6GenJetsNoNu  = ak6GenJets.clone ( src = 'genParticlesForJetsNoNu' )
 ak7GenJetsNoNu  = ak7GenJets.clone ( src = 'genParticlesForJetsNoNu' )
 ak9GenJetsNoNu  = ak9GenJets.clone ( src = 'genParticlesForJetsNoNu' )
@@ -53,30 +55,34 @@ ak10GenJetsNoMuNoNu = ak10GenJets.clone( src = 'genParticlesForJetsNoMuNoNu' )
 #!
 #! HLT JETS
 #!
-ak5CaloHLTJets   = ak5CaloJets.clone( src = 'hltAntiKT5CaloJets' )
-ak5PFHLTJets     = ak5PFJets.clone( src = 'hltAntiKT5PFJets' )
-ak5PFCHSHLTJets  = ak5PFJets.clone( src = 'hltAntiKT5PFJetsNoPUPixelVert' )
+ak5CaloHLTJets   = ak4CaloJets.clone( rParam=0.5, src = 'hltAntiKT5CaloJets' )
+ak5PFHLTJets     = ak4PFJets.clone( rParam=0.5, src = 'hltAntiKT5PFJets' )
+ak5PFCHSHLTJets  = ak4PFJets.clone( rParam=0.5, src = 'hltAntiKT5PFJetsNoPUPixelVert' )
 
 #!
 #! CALO JETS
 #!
-ak1CaloJets     = ak5CaloJets.clone ( rParam=0.1 )
-ak2CaloJets     = ak5CaloJets.clone ( rParam=0.2 )
-ak3CaloJets     = ak5CaloJets.clone ( rParam=0.3 )
-ak6CaloJets     = ak5CaloJets.clone ( rParam=0.6 )
-ak8CaloJets     = ak5CaloJets.clone ( rParam=0.8 )
-ak9CaloJets     = ak5CaloJets.clone ( rParam=0.9 )
-ak10CaloJets    = ak5CaloJets.clone ( rParam=1.0 )
+ak1CaloJets     = ak4CaloJets.clone ( rParam=0.1 )
+ak2CaloJets     = ak4CaloJets.clone ( rParam=0.2 )
+ak3CaloJets     = ak4CaloJets.clone ( rParam=0.3 )
+ak5CaloJets     = ak4CaloJets.clone ( rParam=0.5 )
+ak6CaloJets     = ak4CaloJets.clone ( rParam=0.6 )
+ak7CaloJets     = ak4CaloJets.clone ( rParam=0.7 )
+ak8CaloJets     = ak4CaloJets.clone ( rParam=0.8 )
+ak9CaloJets     = ak4CaloJets.clone ( rParam=0.9 )
+ak10CaloJets    = ak4CaloJets.clone ( rParam=1.0 )
 
 #!
 #! PF JETS
 #!
-ak1PFJets       = ak5PFJets.clone   ( rParam=0.1 )
-ak2PFJets       = ak5PFJets.clone   ( rParam=0.2 )
-ak3PFJets       = ak5PFJets.clone   ( rParam=0.3 )
-ak6PFJets       = ak5PFJets.clone   ( rParam=0.6 )
-ak9PFJets       = ak5PFJets.clone   ( rParam=0.9 )
-ak10PFJets      = ak5PFJets.clone   ( rParam=1.0 )
+ak1PFJets       = ak4PFJets.clone   ( rParam=0.1 )
+ak2PFJets       = ak4PFJets.clone   ( rParam=0.2 )
+ak3PFJets       = ak4PFJets.clone   ( rParam=0.3 )
+ak5PFJets       = ak4PFJets.clone   ( rParam=0.5 )
+ak6PFJets       = ak4PFJets.clone   ( rParam=0.6 )
+ak7PFJets       = ak4PFJets.clone   ( rParam=0.7 )
+ak9PFJets       = ak4PFJets.clone   ( rParam=0.9 )
+ak10PFJets      = ak4PFJets.clone   ( rParam=1.0 )
 
 #!
 #! PF JETS CHS
@@ -113,6 +119,7 @@ ak5CaloHLTJets   = ak5CaloJets.clone( src = 'hltAntiKT5CaloJets' )
 ak5PFHLTJets     = ak5PFJets.clone( src = 'hltAntiKT5PFJets' )
 ak5PFCHSHLTJets  = ak5PFJets.clone( src = 'hltAntiKT5PFJetsNoPUPixelVert' )
 
+'''
 ####################
 # KT JET PRODUCERS #
 ####################
@@ -336,3 +343,4 @@ ic5CaloJets = iterativeCone5CaloJets.clone()
 sc5PFJets = sisCone5PFJets.clone()
 sc7PFJets = sisCone7PFJets.clone()
 ic5PFJets = iterativeCone5PFJets.clone()
+'''
