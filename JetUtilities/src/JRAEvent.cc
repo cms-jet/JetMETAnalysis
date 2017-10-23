@@ -75,6 +75,9 @@ void JRAEvent::MakeTree(TTree* tree)
    fChain->Branch("beta", &beta, "beta/F");
    fChain->Branch("betaStar", &betaStar, "betaStar/F");
    fChain->Branch("weight", &weight, "weight/F");
+   fChain->Branch("refpvz", &refpvz, "refpvz/F");
+   fChain->Branch("pudensity", &pudensity, "pudensity/F");
+   fChain->Branch("gpudensity", &gpudensity, "gpudensity/F");
    fChain->Branch("npv", &npv, "npv/L");
    fChain->Branch("run", &run, "run/L");
    fChain->Branch("lumi", &lumi, "lumi/L");
@@ -172,6 +175,9 @@ void JRAEvent::Init(TTree *tree)
    fChain->SetBranchAddress("beta", &beta, &b_beta);
    fChain->SetBranchAddress("betaStar", &betaStar, &b_betaStar);
    fChain->SetBranchAddress("weight", &weight, &b_weight);
+   fChain->SetBranchAddress("refpvz", &refpvz, &b_refpvz);
+   fChain->SetBranchAddress("pudensity", &pudensity, &b_pudensity);
+   fChain->SetBranchAddress("gpudensity", &gpudensity, &b_gpudensity);
    fChain->SetBranchAddress("npv", &npv, &b_npv);
    fChain->SetBranchAddress("run", &run, &b_run);
    fChain->SetBranchAddress("lumi", &lumi, &b_lumi);

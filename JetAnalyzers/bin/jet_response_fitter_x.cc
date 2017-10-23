@@ -446,7 +446,7 @@ void fit_gaussian(TH1F*& hrsp,
   double norm  = hrsp->GetMaximumStored();
   double peak  = mean;
   int nbins = 50;//100;
-  TSpectrum *spec = new TSpectrum(4);
+  TSpectrum *spec = new TSpectrum(8);
   if(nbins < 100) spec->Search(hrsp,6,"nobackground nodraw goff"); //turn off background removal when nbins too small
   else spec->Search(hrsp,6,"nodraw goff");
   Double_t* xpos = spec->GetPositionX();

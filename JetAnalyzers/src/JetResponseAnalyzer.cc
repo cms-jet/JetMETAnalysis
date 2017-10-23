@@ -29,6 +29,7 @@ JetResponseAnalyzer::JetResponseAnalyzer(const edm::ParameterSet& iConfig)
   //, srcPFCandidates_      (consumes<vector<reco::PFCandidate> >(iConfig.getParameter<edm::InputTag>("srcPFCandidates")))
   , srcPFCandidates_        (consumes<PFCandidateView>(iConfig.getParameter<edm::InputTag>("srcPFCandidates")))
   , srcPFCandidatesAsFwdPtr_(consumes<std::vector<edm::FwdPtr<reco::PFCandidate> > >(iConfig.getParameter<edm::InputTag>("srcPFCandidates")))
+  , srcGenParticles_        (consumes<vector<reco::GenParticle> >(iConfig.getParameter<edm::InputTag>("srcGenParticles")))
   , jecLabel_      (iConfig.getParameter<std::string>                 ("jecLabel"))
   , doComposition_ (iConfig.getParameter<bool>                   ("doComposition"))
   , doFlavor_      (iConfig.getParameter<bool>                        ("doFlavor"))
@@ -46,7 +47,7 @@ JetResponseAnalyzer::JetResponseAnalyzer(const edm::ParameterSet& iConfig)
 {
   if (iConfig.exists("deltaRMax")) {
     doBalancing_=false;
-    deltaRMax_=iConfig.getParameter<double>("deltaRMax");
+     deltaRMax_=iConfig.getParameter<double>("deltaRMax");
   }
   else if (iConfig.exists("deltaPhiMin")) {
     doBalancing_=true;
@@ -133,7 +134,7 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
   edm::Handle<reco::VertexCollection>            vtx;
   edm::Handle<PFCandidateView>                   pfCandidates;
   edm::Handle<std::vector<edm::FwdPtr<reco::PFCandidate> > >  pfCandidatesAsFwdPtr;
-
+  edm::Handle<vector<reco::GenParticle> >        genParticles;
 
   // Jet CORRECTOR
   jetCorrector_ = (jecLabel_.empty()) ? 0 : JetCorrector::getJetCorrector(jecLabel_,iSetup);
@@ -184,13 +185,35 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
   JRAEvt_->lumi = iEvent.id().luminosityBlock();
   JRAEvt_->evt = iEvent.id().event();
 
+  // GENERATED PV INFORMATION & PU DENSITY
+  JRAEvt_->refpvz = -1000.0;
+  iEvent.getByToken(srcGenParticles_, genParticles);
+  for (size_t i = 0; i < genParticles->size(); ++i) {
+     const reco::GenParticle & genIt = (*genParticles)[i];
+     if ( genIt.isHardProcess() ) {
+        JRAEvt_->refpvz = genIt.vz();
+        break;
+     }
+  }
+  int zbin = getBin(abs(JRAEvt_->refpvz),&vz.at(0),vz.size()-1);
+
   // MC PILEUP INFORMATION
   if (iEvent.getByToken(srcPileupInfo_,puInfos)) {
      for(unsigned int i=0; i<puInfos->size(); i++) {
+        JRAEvt_->bxns->push_back((*puInfos)[i].getBunchCrossing());
         JRAEvt_->npus->push_back((*puInfos)[i].getPU_NumInteractions());
         JRAEvt_->tnpus->push_back((*puInfos)[i].getTrueNumInteractions());
-        //zpositions_.push_back((*puInfos)[i].getPU_zpositions());
-        JRAEvt_->bxns->push_back((*puInfos)[i].getBunchCrossing());
+        if((*puInfos)[i].getBunchCrossing() == 0) {
+           unsigned int nzpositions = (*puInfos)[i].getPU_zpositions().size();
+           JRAEvt_->pudensity = 0;
+           JRAEvt_->gpudensity = 0;
+           for (unsigned int j=0; j<nzpositions; ++j) {
+              JRAEvt_->zpositions->push_back((*puInfos)[i].getPU_zpositions()[j]);
+              if (abs(JRAEvt_->zpositions->back()-JRAEvt_->refpvz)<0.1) JRAEvt_->pudensity++; //N_PU/mm
+              if (getBin(abs(JRAEvt_->zpositions->back()),&vz.at(0),vz.size()-1)==zbin) JRAEvt_->gpudensity++;
+           }
+           JRAEvt_->gpudensity/=(20.0*(vz[zbin+1]-vz[zbin]));
+        }
         int sumptlowpttemp = 0;
         int sumpthighpttemp = 0;
         int ntrkslowpttemp = 0;
@@ -464,7 +487,7 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
   tree_->Fill();
   
   return;
-}
+  }
 
 //______________________________________________________________________________
 JRAEvent::Flavor JetResponseAnalyzer::getFlavor(reco::PFCandidate::ParticleType id) {
@@ -484,6 +507,22 @@ JRAEvent::Flavor JetResponseAnalyzer::getFlavor(reco::PFCandidate::ParticleType 
         return JRAEvent::egamma_HF;
     else
         return JRAEvent::X;
+}
+
+//______________________________________________________________________________
+int JetResponseAnalyzer::getBin(double x, const double boundaries[], int length)
+{
+   int i;
+   int n = length;
+   if (n<=0) return -1;
+   if (x<boundaries[0] || x>=boundaries[n])
+      return -1;
+   for(i=0;i<n;i++)
+   {
+      if (x>=boundaries[i] && x<boundaries[i+1])
+         return i;
+   }
+   return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

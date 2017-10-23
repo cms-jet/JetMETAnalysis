@@ -47,4 +47,5 @@
 <bin   name="jet_draw_jer_plots_minimal_x"     file="jet_draw_jer_plots_minimal_x.cc" />
 <!--<bin   name="DelphesNtupleToJRANtuple_x"       file="DelphesNtupleToJRANtuple_x.cc" />-->
 <!--<bin   name="JRAtoPUNtuple_x"                  file="JRAtoPUNtuple_x.cc" />-->
-<bin   name="compareJEC"          file="compareJEC.C" />
+<bin   name="compareJEC"                       file="compareJEC.C" />
+<bin   name="jet_add_pudensity_x"              file="jet_add_pudensity_x.cc"/>

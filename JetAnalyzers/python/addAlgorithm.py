@@ -507,7 +507,8 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
                          srcRhoHLT         = cms.InputTag(''),
                          srcVtx            = cms.InputTag('offlinePrimaryVertices'),
 						 srcJetToUncorJetMap = cms.InputTag(jetToUncorJet.label(), 'rec2gen'),
-                         srcPFCandidates   = cms.InputTag('')
+                         srcPFCandidates   = cms.InputTag(''),
+                         srcGenParticles   = cms.InputTag('genParticles')
                         )
     if doProducer:
         jraAnalyzer = 'JetResponseAnalyzerProducer'
@@ -520,7 +521,8 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
                      srcRhoHLT         = cms.InputTag(''),
                      srcVtx            = cms.InputTag('offlinePrimaryVertices'),
                      srcJetToUncorJetMap = cms.InputTag(jetToUncorJet.label(), 'rec2gen'),
-                     srcPFCandidates   = cms.InputTag('')
+                     srcPFCandidates   = cms.InputTag(''),
+                     srcGenParticles   = cms.InputTag('genParticles')
                      )
 
     if type == 'CaloHLT':

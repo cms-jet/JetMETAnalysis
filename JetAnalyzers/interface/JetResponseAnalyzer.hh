@@ -26,6 +26,7 @@
 #include "DataFormats/Common/interface/Handle.h"
 #include "DataFormats/Candidate/interface/CandidateFwd.h"
 #include "DataFormats/Candidate/interface/CandMatchMap.h"
+#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 #include "DataFormats/ParticleFlowCandidate/interface/PFCandidate.h"
 #include "DataFormats/JetReco/interface/JPTJet.h"
 #include "DataFormats/JetReco/interface/CaloJet.h"
@@ -58,6 +59,7 @@
 using namespace std;
 
 typedef edm::View<reco::PFCandidate> PFCandidateView;
+const vector<double> vz = {0.0,1.7,2.6,3.0,3.5,4.2,5.2,6.0,7.5,9.0,12.0};
 
 ////////////////////////////////////////////////////////////////////////////////
 // class definition
@@ -77,6 +79,8 @@ private:
   void beginJob();
   void beginEvent() {JRAEvt_->clear();}
   void analyze(const edm::Event& iEvent,const edm::EventSetup& iSetup);
+  // get the bin number according to the vector of bin edges
+  int  getBin(double x, const double boundaries[], int length);
   void endEvent() {;}
   void endJob() {;}
 
@@ -99,6 +103,7 @@ private:
   //edm::EDGetTokenT<vector<reco::PFCandidate> > srcPFCandidates_;
   edm::EDGetTokenT<PFCandidateView> srcPFCandidates_;
   edm::EDGetTokenT<std::vector<edm::FwdPtr<reco::PFCandidate> > > srcPFCandidatesAsFwdPtr_;
+  edm::EDGetTokenT<vector<reco::GenParticle> > srcGenParticles_;
 
   std::string   jecLabel_;
   

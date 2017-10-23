@@ -66,6 +66,9 @@ public :
    Float_t          beta;
    Float_t          betaStar;
    Float_t          weight;
+   Float_t          refpvz;
+   Float_t          pudensity;
+   Float_t          gpudensity;
    Long64_t         npv;
    Long64_t         run;
    Long64_t         lumi;
@@ -123,6 +126,9 @@ public :
    TBranch        *b_beta;   //!
    TBranch        *b_betaStar;   //!
    TBranch        *b_weight;   //!
+   TBranch        *b_refpvz;   //!
+   TBranch        *b_pudensity;   //!
+   TBranch        *b_gpudensity;   //!
    TBranch        *b_npv;   //!
    TBranch        *b_run;   //!
    TBranch        *b_lumi;   //!

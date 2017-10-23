@@ -57,6 +57,7 @@ int main(int argc,char**argv)
   bool           dophirsp      = cl.getValue<bool>   ("dophirsp",          false);
   bool           domu          = cl.getValue<bool>   ("domu",              false);
   bool           dorho         = cl.getValue<bool>   ("dorho",             false);
+  bool           dopudensity   = cl.getValue<bool>   ("dopudensity",       false);
   vector<string> flavors       = cl.getVector<string>("flavors",              "");
   vector<string> algs          = cl.getVector<string>("algs",                 "");
   bool           fitres        = cl.getValue<bool>   ("fitres",             true);
@@ -112,6 +113,7 @@ int main(int argc,char**argv)
   const string s_sigma="sqrt([0]*abs([0])/(x*x) + [1]*[1]*pow(x,[3]) + [2]*[2])";
   const string s_sigma_calo="sqrt([0]*[0]/(x*x) + [1]*[1]*pow(x,[3]) + [2]*[2])";
   const string s_sigma_angle="[0]+[1]*exp(-x/[2])";
+  const string s_sigma_density="[0]+([1]*x)";
   //const string s_sigma="sqrt(((TMath::Sign(1,[0])*sq([0]/x))+(sq([1])*(x^([3]-1))))+sq([2]))";
   const string s_aone ="[0]";
   const string s_atwo ="[0]*x**[1]";
@@ -124,8 +126,27 @@ int main(int argc,char**argv)
   //
   vector<string> variables;
   if (dorelrsp) {
-    if (domu) variables.push_back("RelRsp:JetEta:Mu:RefPt");
-    else if (dorho) variables.push_back("RelRsp:JetEta:Rho:RefPt");
+    if (domu) {
+        variables.push_back("RelRsp:JetEta:Mu:RefPt");
+        variables.push_back("RelRsp:JetEta@0:Mu#2:RefPt");
+        variables.push_back("RelRsp:JetEta@1.3:Mu#2:RefPt");
+        variables.push_back("RelRsp:JetEta@2.5:Mu#2:RefPt");
+        variables.push_back("RelRsp:JetEta@3:Mu#2:RefPt");
+    }
+    else if (dorho) {
+       variables.push_back("RelRsp:JetEta:Rho:RefPt");
+       variables.push_back("RelRsp:JetEta@0:Rho#2:RefPt");
+       variables.push_back("RelRsp:JetEta@1.3:Rho#2:RefPt");
+       variables.push_back("RelRsp:JetEta@2.5:Rho#2:RefPt");
+       variables.push_back("RelRsp:JetEta@3:Rho#2:RefPt");
+    }
+    else if (dopudensity) {
+       variables.push_back("RelRsp:JetEta:RhoPU:RefPt");
+       variables.push_back("RelRsp:JetEta@0:RhoPU#2:RefPt");
+       variables.push_back("RelRsp:JetEta@1.3:RhoPU#2:RefPt");
+       variables.push_back("RelRsp:JetEta@2.5:RhoPU#2:RefPt");
+       variables.push_back("RelRsp:JetEta@3:RhoPU#2:RefPt");
+    }
     else{
       variables.push_back("RelRsp:RefPt");
       variables.push_back("RelRsp:JetEta");
@@ -238,7 +259,7 @@ int main(int argc,char**argv)
     }
 
     // for each algorithm use a JERWriter (PtResolution=true)
-    JERWriter resolutions(alg,fera,fprefix,true, domu || dorho, writeHeader, indirectProf);
+    JERWriter resolutions(alg,fera,fprefix,true, domu || dorho || dopudensity, writeHeader, indirectProf);
 
     TDirectory* idir = (TDirectory*)ifile->Get(alg.c_str());
     if (0==idir) { cout<<"No dir "<<alg<<" found"<<endl; return 0; }
@@ -490,6 +511,9 @@ int main(int argc,char**argv)
       if(hlrsp.quantity().find("EtaRsp")!=string::npos ||
          hlrsp.quantity().find("PhiRsp")!=string::npos) {
          fnc = new TF1("fit",s_sigma_angle.c_str(),xmin,xmax);
+      }
+      else if(xvar.find("RhoPU")!=string::npos) {
+         fnc = new TF1("fit",s_sigma_density.c_str(),xmin,xmax);
       }
       else if(alg.find("calo")!=string::npos) {
          fnc = new TF1("fit",s_sigma_calo.c_str(),xmin,xmax);

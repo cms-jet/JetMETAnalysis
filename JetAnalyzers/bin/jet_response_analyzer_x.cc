@@ -130,6 +130,7 @@ int main(int argc,char**argv)
   vector<float>  binsy             = cl.getVector<float> ("binsy",                      "");
   vector<float>  binsmu            = cl.getVector<float> ("binsmu",                     "");
   vector<float>  binsrho           = cl.getVector<float> ("binsrho",                    "");
+  vector<float>  binspudensity     = cl.getVector<float> ("binspudensity",              "");
   string         treename          = cl.getValue<string> ("treename",                  "t");
   string         output            = cl.getValue<string> ("output",             "jra.root");
   bool           useweight         = cl.getValue<bool>   ("useweight",               false);
@@ -159,7 +160,9 @@ int main(int argc,char**argv)
   bool           dorefpt           = cl.getValue<bool>   ("dorefpt",                  true);
   bool           domu              = cl.getValue<bool>   ("domu",                    false);
   bool           dorho             = cl.getValue<bool>   ("dorho",                   false);
+  bool           dopudensity       = cl.getValue<bool>   ("dopudensity",             false);
   bool           NpuNotMu          = cl.getValue<bool>   ("NpuNotMu",                false);
+  bool           GRhoPU            = cl.getValue<bool>   ("GRhoPU",                  false);
   int            nbinsrelrsp       = cl.getValue<int>    ("nbinsrelrsp",                50);
   float          relrspmin         = cl.getValue<float>  ("relrspmin",                 0.0);
   float          relrspmax         = cl.getValue<float>  ("relrspmax",                 2.0);
@@ -198,8 +201,9 @@ int main(int argc,char**argv)
   gEnv->SetValue("TFile.AsyncPrefetching", 1);
 
   bool dorelrsp=(nbinsrelrsp>0);
-  if(domu)  domu   = binsmu.size()>=2;
-  if(dorho) dorho  = binsrho.size()>=2;
+  if(domu)        domu        = binsmu.size()>=2;
+  if(dorho)       dorho       = binsrho.size()>=2;
+  if(dopudensity) dopudensity = binspudensity.size()>=2;
   bool doabsrsp=false; //(nbinsabsrsp>0);
   bool doetarsp=false; //(nbinsetarsp>0);
   bool dophirsp=false; //(nbinsphirsp>0);
@@ -305,7 +309,8 @@ int main(int argc,char**argv)
     tree->SetBranchStatus("*",0);
     vector<string> branch_names = {"nref","weight","rho","refpdgid","refpt",
                                    "refeta","refphi","jtpt","jteta","jtphi",
-                                   "jty","refdxjt","bxns","npus","tnpus","pthat"};
+                                   "jty","refdxjt","bxns","npus","tnpus",
+                                   "pthat","pudensity","gpudensity"};
     for(auto n : branch_names) {
         if(n=="refpdgid") {
             if(!doflavor) continue;
@@ -378,12 +383,15 @@ int main(int argc,char**argv)
     vector<TH1F***>  jetPtVsJetEtaJetPt;
     vector<TH1F****> jetPtVsJetEtaMuJetPt;
     vector<TH1F****> jetPtVsJetEtaRhoJetPt;
+    vector<TH1F****> jetPtVsJetEtaRhoPUJetPt;
     vector<TH1F***>  refPtVsJetEtaRefPt;
     vector<TH1F****> refPtVsJetEtaMuRefPt;
     vector<TH1F****> refPtVsJetEtaRhoRefPt;
+    vector<TH1F****> refPtVsJetEtaRhoPURefPt;
     vector<TH1F***>  jetPtVsJetEtaRefPt;
     vector<TH1F****> jetPtVsJetEtaMuRefPt;
     vector<TH1F****> jetPtVsJetEtaRhoRefPt;
+    vector<TH1F****> jetPtVsJetEtaRhoPURefPt;
     vector<TH1F***>  jetPtVsJetYJetPt;
     vector<TH1F***>  refPtVsJetYRefPt;
     vector<TH1F***>  jetPtVsJetYRefPt;
@@ -403,9 +411,11 @@ int main(int argc,char**argv)
     vector<TH1F***>  relRspVsJetEtaJetPt;
     vector<TH1F****> relRspVsJetEtaMuJetPt;
     vector<TH1F****> relRspVsJetEtaRhoJetPt;
+    vector<TH1F****> relRspVsJetEtaRhoPUJetPt;
     vector<TH1F***>  relRspVsJetEtaRefPt;
     vector<TH1F****> relRspVsJetEtaMuRefPt;
     vector<TH1F****> relRspVsJetEtaRhoRefPt;
+    vector<TH1F****> relRspVsJetEtaRhoPURefPt;
     vector<TH1F***>  relRspVsJetYJetPt;
     vector<TH1F***>  relRspVsJetYRefPt;
     
@@ -817,19 +827,24 @@ int main(int argc,char**argv)
         TH1F***  jetPtJetPt(0);
         TH1F**** jetPtMuJetPt(0);
         TH1F**** jetPtRhoJetPt(0);
+        TH1F**** jetPtRhoPUJetPt(0);
         TH1F***  refPtRefPt(0);
         TH1F**** refPtMuRefPt(0);
         TH1F**** refPtRhoRefPt(0);
+        TH1F**** refPtRhoPURefPt(0);
         TH1F***  jetPtRefPt(0);
         TH1F**** jetPtMuRefPt(0);
         TH1F**** jetPtRhoRefPt(0);
+        TH1F**** jetPtRhoPURefPt(0);
         TH1F***  pThatRefPt(0);
         TH1F***  relRspJetPt(0);
         TH1F**** relRspMuJetPt(0);
         TH1F**** relRspRhoJetPt(0);
+        TH1F**** relRspRhoPUJetPt(0);
         TH1F***  relRspRefPt(0);
         TH1F**** relRspMuRefPt(0);
         TH1F**** relRspRhoRefPt(0);
+        TH1F**** relRspRhoPURefPt(0);
         TH1F***  absRspJetPt(0);
         TH1F***  absRspRefPt(0);
         TH1F***  etaRspJetPt(0);
@@ -860,6 +875,15 @@ int main(int argc,char**argv)
                 jetPtRhoJetPt[irho][ipt]=new TH1F*[flavors.size()];
             }
           }
+          if (dopudensity) {
+            jetPtRhoPUJetPt = new TH1F***[binspudensity.size()-1];
+            for (unsigned int irhopu=0;irhopu<binspudensity.size()-1;irhopu++){
+
+              jetPtRhoPUJetPt[irhopu] = new TH1F**[binspt.size()];
+              for (unsigned int ipt=0;ipt<binspt.size()-1;ipt++)
+                jetPtRhoPUJetPt[irhopu][ipt]=new TH1F*[flavors.size()];
+            }
+          }
         }
 	
         if (dorefpt) {
@@ -885,6 +909,15 @@ int main(int argc,char**argv)
                 refPtRhoRefPt[irho][ipt]=new TH1F*[flavors.size()];
             }
           }
+          if (dopudensity) {
+            refPtRhoPURefPt = new TH1F***[binspudensity.size()-1];
+            for (unsigned int irhopu=0;irhopu<binspudensity.size()-1;irhopu++){
+
+              refPtRhoPURefPt[irhopu] = new TH1F**[binspt.size()];
+              for (unsigned int ipt=0;ipt<binspt.size()-1;ipt++)
+                refPtRhoPURefPt[irhopu][ipt]=new TH1F*[flavors.size()];
+            }
+          }
         }
 	
         if (dorefpt) {
@@ -908,6 +941,15 @@ int main(int argc,char**argv)
               jetPtRhoRefPt[irho] = new TH1F**[binspt.size()];
               for (unsigned int ipt=0;ipt<binspt.size()-1;ipt++)
                 jetPtRhoRefPt[irho][ipt]=new TH1F*[flavors.size()];
+            }
+          }
+          if (dopudensity) {
+            jetPtRhoPURefPt = new TH1F***[binspudensity.size()-1];
+            for (unsigned int irhopu=0;irhopu<binspudensity.size()-1;irhopu++){
+
+              jetPtRhoPURefPt[irhopu] = new TH1F**[binspt.size()];
+              for (unsigned int ipt=0;ipt<binspt.size()-1;ipt++)
+                jetPtRhoPURefPt[irhopu][ipt]=new TH1F*[flavors.size()];
             }
           }
         }
@@ -941,6 +983,15 @@ int main(int argc,char**argv)
                 relRspRhoJetPt[irho][ipt]=new TH1F*[flavors.size()];
             }
           }
+          if (dopudensity) {
+            relRspRhoPUJetPt=new TH1F***[binspudensity.size()-1];
+            for (unsigned int irhopu=0;irhopu<binspudensity.size()-1;irhopu++){
+
+              relRspRhoPUJetPt[irhopu] = new TH1F**[binspt.size()-1];
+              for (unsigned int ipt=0;ipt<binspt.size()-1;ipt++)
+                relRspRhoPUJetPt[irhopu][ipt]=new TH1F*[flavors.size()];
+            }
+          }
         }
 	
         if (dorelrsp&&dorefpt) {
@@ -964,6 +1015,15 @@ int main(int argc,char**argv)
               relRspRhoRefPt[irho] = new TH1F**[binspt.size()-1];
               for (unsigned int ipt=0;ipt<binspt.size()-1;ipt++)
                 relRspRhoRefPt[irho][ipt]=new TH1F*[flavors.size()];
+            }
+          }
+          if (dopudensity) {
+            relRspRhoPURefPt=new TH1F***[binspudensity.size()-1];
+            for (unsigned int irhopu=0;irhopu<binspudensity.size()-1;irhopu++){
+
+              relRspRhoPURefPt[irhopu] = new TH1F**[binspt.size()-1];
+              for (unsigned int ipt=0;ipt<binspt.size()-1;ipt++)
+                relRspRhoPURefPt[irhopu][ipt]=new TH1F*[flavors.size()];
             }
           }
         }
@@ -1086,6 +1146,46 @@ int main(int argc,char**argv)
             }
           }
         }
+        if (dopudensity){
+
+          for (unsigned int irhopu=0;irhopu<binspudensity.size()-1;irhopu++){
+            string rhoPUSuffix=get_suffix("RhoPU",irhopu,binspudensity);
+
+            for (unsigned int ipt=0;ipt<binspt.size()-1;ipt++) {
+
+              string hname; float ptmin=binspt[ipt]; float ptmax=binspt[ipt+1];
+
+              string jetPtSuffix=get_suffix("JetPt",ipt,binspt);
+              string refPtSuffix=get_suffix("RefPt",ipt,binspt);
+
+              for (unsigned int iflv=0;iflv<flavors.size();iflv++) {
+
+                if (dorefpt){
+                  hname=flavors[iflv]+"JetPt_"+jetEtaSuffix+"_"+rhoPUSuffix+"_"+refPtSuffix;
+                  jetPtRhoPURefPt[irhopu][ipt][iflv]=new TH1F(hname.c_str(),";p_{T}",3*nbinspt, 0, 3.0*ptmax);
+
+                  hname=flavors[iflv]+"RefPt_"+jetEtaSuffix+"_"+rhoPUSuffix+"_"+refPtSuffix;
+                  refPtRhoPURefPt[irhopu][ipt][iflv]=new TH1F(hname.c_str(),";p_{T}^{ref}",nbinspt,ptmin,ptmax);
+
+                  if (dorelrsp){
+                    hname=flavors[iflv]+"RelRsp_"+jetEtaSuffix+"_"+rhoPUSuffix+"_"+refPtSuffix;
+                    relRspRhoPURefPt[irhopu][ipt][iflv]=new TH1F(hname.c_str(),";p_{T}/p_{T}^{ref}",nbinsrelrsp,relrspmin,relrspmax);
+                  }
+                }
+                if (dojetpt){
+                  hname=flavors[iflv]+"JetPt_"+jetEtaSuffix+"_"+rhoPUSuffix+"_"+jetPtSuffix;
+                  jetPtRhoPUJetPt[irhopu][ipt][iflv]=new TH1F(hname.c_str(),";p_{T}",nbinspt, ptmin, ptmax);
+
+                  if (dorelrsp){
+                    hname=flavors[iflv]+"RelRsp_"+jetEtaSuffix+"_"+rhoPUSuffix+"_"+jetPtSuffix;
+                    relRspRhoPUJetPt[irhopu][ipt][iflv]=new TH1F(hname.c_str(),";p_{T}/p_{T}^{ref}",nbinsrelrsp,relrspmin,relrspmax);
+                  }
+                }
+              }
+            }
+          }
+        }
+
         for (unsigned int ipt=0;ipt<binspt.size()-1;ipt++) {
 
           string hname; float ptmin=binspt[ipt]; float ptmax=binspt[ipt+1];
@@ -1177,28 +1277,33 @@ int main(int argc,char**argv)
             }
           }
         }
-        if (dojetpt)                  jetPtVsJetEtaJetPt    .push_back(jetPtJetPt);
-        if (dojetpt&&domu)            jetPtVsJetEtaMuJetPt  .push_back(jetPtMuJetPt);
-        if (dojetpt&&dorho)           jetPtVsJetEtaRhoJetPt .push_back(jetPtRhoJetPt);
-        if (dorefpt)                  refPtVsJetEtaRefPt    .push_back(refPtRefPt);
-        if (dorefpt&&domu)            refPtVsJetEtaMuRefPt  .push_back(refPtMuRefPt);
-        if (dorefpt&&dorho)           refPtVsJetEtaRhoRefPt .push_back(refPtRhoRefPt);
-        if (dorefpt)                  jetPtVsJetEtaRefPt    .push_back(jetPtRefPt);
-        if (dorefpt&&domu)            jetPtVsJetEtaMuRefPt  .push_back(jetPtMuRefPt);
-        if (dorefpt&&dorho)           jetPtVsJetEtaRhoRefPt .push_back(jetPtRhoRefPt);
-        if (dorefpt)                  pThatVsJetEtaRefPt    .push_back(pThatRefPt);
-        if (dorelrsp&&dojetpt)        relRspVsJetEtaJetPt   .push_back(relRspJetPt);
-        if (dorelrsp&&dojetpt&&domu)  relRspVsJetEtaMuJetPt .push_back(relRspMuJetPt);
-        if (dorelrsp&&dojetpt&&dorho) relRspVsJetEtaRhoJetPt.push_back(relRspRhoJetPt);
-        if (dorelrsp&&dorefpt)        relRspVsJetEtaRefPt   .push_back(relRspRefPt);
-        if (dorelrsp&&dorefpt&&domu)  relRspVsJetEtaMuRefPt .push_back(relRspMuRefPt);
-        if (dorelrsp&&dorefpt&&dorho) relRspVsJetEtaRhoRefPt.push_back(relRspRhoRefPt);
-        if (doabsrsp&&dojetpt)        absRspVsJetEtaJetPt   .push_back(absRspJetPt);
-        if (doabsrsp&&dorefpt)        absRspVsJetEtaRefPt   .push_back(absRspRefPt);
-        if (doetarsp&&dojetpt)        etaRspVsJetEtaJetPt   .push_back(etaRspJetPt);
-        if (doetarsp&&dorefpt)        etaRspVsJetEtaRefPt   .push_back(etaRspRefPt);
-        if (dophirsp&&dojetpt)        phiRspVsJetEtaJetPt   .push_back(phiRspJetPt);
-        if (dophirsp&&dorefpt)        phiRspVsJetEtaRefPt   .push_back(phiRspRefPt);
+        if (dojetpt)                        jetPtVsJetEtaJetPt      .push_back(jetPtJetPt);
+        if (dojetpt&&domu)                  jetPtVsJetEtaMuJetPt    .push_back(jetPtMuJetPt);
+        if (dojetpt&&dorho)                 jetPtVsJetEtaRhoJetPt   .push_back(jetPtRhoJetPt);
+        if (dojetpt&&dopudensity)           jetPtVsJetEtaRhoPUJetPt .push_back(jetPtRhoPUJetPt);
+        if (dorefpt)                        refPtVsJetEtaRefPt      .push_back(refPtRefPt);
+        if (dorefpt&&domu)                  refPtVsJetEtaMuRefPt    .push_back(refPtMuRefPt);
+        if (dorefpt&&dorho)                 refPtVsJetEtaRhoRefPt   .push_back(refPtRhoRefPt);
+        if (dorefpt&&dopudensity)           refPtVsJetEtaRhoPURefPt .push_back(refPtRhoPURefPt);
+        if (dorefpt)                        jetPtVsJetEtaRefPt      .push_back(jetPtRefPt);
+        if (dorefpt&&domu)                  jetPtVsJetEtaMuRefPt    .push_back(jetPtMuRefPt);
+        if (dorefpt&&dorho)                 jetPtVsJetEtaRhoRefPt   .push_back(jetPtRhoRefPt);
+        if (dorefpt&&dopudensity)           jetPtVsJetEtaRhoPURefPt .push_back(jetPtRhoPURefPt);
+        if (dorefpt)                        pThatVsJetEtaRefPt      .push_back(pThatRefPt);
+        if (dorelrsp&&dojetpt)              relRspVsJetEtaJetPt     .push_back(relRspJetPt);
+        if (dorelrsp&&dojetpt&&domu)        relRspVsJetEtaMuJetPt   .push_back(relRspMuJetPt);
+        if (dorelrsp&&dojetpt&&dorho)       relRspVsJetEtaRhoJetPt  .push_back(relRspRhoJetPt);
+        if (dorelrsp&&dojetpt&&dopudensity) relRspVsJetEtaRhoPUJetPt.push_back(relRspRhoPUJetPt);
+        if (dorelrsp&&dorefpt)              relRspVsJetEtaRefPt     .push_back(relRspRefPt);
+        if (dorelrsp&&dorefpt&&domu)        relRspVsJetEtaMuRefPt   .push_back(relRspMuRefPt);
+        if (dorelrsp&&dorefpt&&dorho)       relRspVsJetEtaRhoRefPt  .push_back(relRspRhoRefPt);
+        if (dorelrsp&&dorefpt&&dopudensity) relRspVsJetEtaRhoPURefPt.push_back(relRspRhoPURefPt);
+        if (doabsrsp&&dojetpt)              absRspVsJetEtaJetPt     .push_back(absRspJetPt);
+        if (doabsrsp&&dorefpt)              absRspVsJetEtaRefPt     .push_back(absRspRefPt);
+        if (doetarsp&&dojetpt)              etaRspVsJetEtaJetPt     .push_back(etaRspJetPt);
+        if (doetarsp&&dorefpt)              etaRspVsJetEtaRefPt     .push_back(etaRspRefPt);
+        if (dophirsp&&dojetpt)              phiRspVsJetEtaJetPt     .push_back(phiRspJetPt);
+        if (dophirsp&&dorefpt)              phiRspVsJetEtaRefPt     .push_back(phiRspRefPt);
       }
     }
     
@@ -1353,6 +1458,8 @@ int main(int argc,char**argv)
         tree->GetEntry(ientry);
 
         float mu = (NpuNotMu) ? JRAEvt->npus->at(itInd) : JRAEvt->tnpus->at(itInd);
+        float rho = JRAEvt->rho;
+        float rhoPU = (GRhoPU) ? JRAEvt->gpudensity : JRAEvt->pudensity;
         float pthat = JRAEvt->pthat;
         bool evt_fill = true;
 
@@ -1555,8 +1662,9 @@ int main(int argc,char**argv)
 
           if (dojetpt) {
             fill_histo(pt,weight,eta,pt,binseta,binspt,jetPtVsJetEtaJetPt);
-            if (domu)  fill_histo(pt, weight, eta, mu,  pt, binseta, binsmu,  binspt, jetPtVsJetEtaMuJetPt);
-            if (dorho) fill_histo(pt, weight, eta, JRAEvt->rho, pt, binseta, binsrho, binspt, jetPtVsJetEtaRhoJetPt);
+            if (domu)        fill_histo(pt, weight, eta, mu,  pt, binseta, binsmu,  binspt, jetPtVsJetEtaMuJetPt);
+            if (dorho)       fill_histo(pt, weight, eta, rho, pt, binseta, binsrho, binspt, jetPtVsJetEtaRhoJetPt);
+            if (dopudensity) fill_histo(pt, weight, eta, rhoPU, pt, binseta, binspudensity, binspt, jetPtVsJetEtaRhoPUJetPt);
 
             fill_histo(pt,weight,y,pt,
                        binsy,binspt,jetPtVsJetYJetPt);
@@ -1565,8 +1673,9 @@ int main(int argc,char**argv)
               fill_histo(pdgid,pt,flavorWeight,
                          eta,pt,binseta,binspt,jetPtVsJetEtaJetPt,
                          noabsflavors);
-              if (domu)  fill_histo(pdgid,pt, flavorWeight, eta, mu,  pt, binseta, binsmu,  binspt, jetPtVsJetEtaMuJetPt,  noabsflavors);
-              if (dorho) fill_histo(pdgid,pt, flavorWeight, eta, JRAEvt->rho, pt, binseta, binsrho, binspt, jetPtVsJetEtaRhoJetPt, noabsflavors);
+              if (domu)        fill_histo(pdgid,pt, flavorWeight, eta, mu,  pt, binseta, binsmu,  binspt, jetPtVsJetEtaMuJetPt,  noabsflavors);
+              if (dorho)       fill_histo(pdgid,pt, flavorWeight, eta, rho, pt, binseta, binsrho, binspt, jetPtVsJetEtaRhoJetPt, noabsflavors);
+              if (dopudensity) fill_histo(pdgid,pt, flavorWeight, eta, rhoPU, pt, binseta, binspudensity, binspt, jetPtVsJetEtaRhoPUJetPt, noabsflavors);
 
               fill_histo(pdgid,pt,flavorWeight,
                          y,pt,binsy,binspt,jetPtVsJetYJetPt,
@@ -1576,24 +1685,28 @@ int main(int argc,char**argv)
 
           if (dorefpt) {
             fill_histo(refpt,weight,eta,refpt,binseta,binspt,refPtVsJetEtaRefPt);
-            if (domu)  fill_histo(refpt, weight, eta, mu,  refpt, binseta, binsmu,  binspt, refPtVsJetEtaMuRefPt);
-            if (dorho) fill_histo(refpt, weight, eta, JRAEvt->rho, refpt, binseta, binsrho, binspt, refPtVsJetEtaRhoRefPt);
+            if (domu)        fill_histo(refpt, weight, eta, mu,  refpt, binseta, binsmu,  binspt, refPtVsJetEtaMuRefPt);
+            if (dorho)       fill_histo(refpt, weight, eta, rho, refpt, binseta, binsrho, binspt, refPtVsJetEtaRhoRefPt);
+            if (dopudensity) fill_histo(refpt, weight, eta, rhoPU, refpt, binseta, binspudensity, binspt, refPtVsJetEtaRhoPURefPt);
 
             fill_histo(pt,weight,eta,refpt,binseta,binspt,jetPtVsJetEtaRefPt);
-            if (domu)  fill_histo(pt, weight, eta, mu,  refpt, binseta, binsmu,  binspt, jetPtVsJetEtaMuRefPt);
-            if (dorho) fill_histo(pt, weight, eta, JRAEvt->rho, refpt, binseta, binsrho, binspt, jetPtVsJetEtaRhoRefPt);
+            if (domu)        fill_histo(pt, weight, eta, mu,  refpt, binseta, binsmu,  binspt, jetPtVsJetEtaMuRefPt);
+            if (dorho)       fill_histo(pt, weight, eta, rho, refpt, binseta, binsrho, binspt, jetPtVsJetEtaRhoRefPt);
+            if (dopudensity) fill_histo(pt, weight, eta, rhoPU, refpt, binseta, binspudensity, binspt, jetPtVsJetEtaRhoPURefPt);
 
             if(evt_fill) {fill_histo(pthat,weight,eta,refpt,binseta,binspt,pThatVsJetEtaRefPt); if(!doflavor) {evt_fill=false;}}
             fill_histo(refpt,weight,y,refpt,binsy,binspt,refPtVsJetYRefPt);
             fill_histo(pt,weight,y,refpt,binsy,binspt,jetPtVsJetYRefPt);
             if (doflavor) {
               fill_histo(pdgid,refpt,flavorWeight,eta,refpt,binseta,binspt,refPtVsJetEtaRefPt,noabsflavors);
-              if (domu)  fill_histo(pdgid, refpt, flavorWeight, eta, mu,  refpt, binseta, binsmu,  binspt, refPtVsJetEtaMuRefPt,  noabsflavors);
-              if (dorho) fill_histo(pdgid, refpt, flavorWeight, eta, JRAEvt->rho, refpt, binseta, binsrho, binspt, refPtVsJetEtaRhoRefPt, noabsflavors);
+              if (domu)       fill_histo(pdgid, refpt, flavorWeight, eta, mu,  refpt, binseta, binsmu,  binspt, refPtVsJetEtaMuRefPt,  noabsflavors);
+              if (dorho)      fill_histo(pdgid, refpt, flavorWeight, eta, rho, refpt, binseta, binsrho, binspt, refPtVsJetEtaRhoRefPt, noabsflavors);
+              if (dopudensity) fill_histo(pdgid, refpt, flavorWeight, eta, rhoPU, refpt, binseta, binspudensity, binspt, refPtVsJetEtaRhoPURefPt, noabsflavors);
 
               fill_histo(pdgid,pt,flavorWeight,eta,refpt,binseta,binspt,jetPtVsJetEtaRefPt,noabsflavors);
-              if (domu)  fill_histo(pdgid, pt, flavorWeight, eta, mu,  refpt, binseta, binsmu,  binspt, jetPtVsJetEtaMuRefPt,  noabsflavors);
-              if (dorho) fill_histo(pdgid, pt, flavorWeight, eta, JRAEvt->rho, refpt, binseta, binsrho, binspt, jetPtVsJetEtaRhoRefPt, noabsflavors);
+              if (domu)        fill_histo(pdgid, pt, flavorWeight, eta, mu,  refpt, binseta, binsmu,  binspt, jetPtVsJetEtaMuRefPt,  noabsflavors);
+              if (dorho)       fill_histo(pdgid, pt, flavorWeight, eta, rho, refpt, binseta, binsrho, binspt, jetPtVsJetEtaRhoRefPt, noabsflavors);
+              if (dopudensity) fill_histo(pdgid, pt, flavorWeight, eta, rhoPU, refpt, binseta, binspudensity, binspt, jetPtVsJetEtaRhoPURefPt, noabsflavors);
 
               fill_histo(pdgid,refpt,flavorWeight,y,refpt,binsy,binspt,refPtVsJetYRefPt,noabsflavors);
               fill_histo(pdgid,pt,flavorWeight,y,refpt,binsy,binspt,jetPtVsJetYRefPt,noabsflavors);
@@ -1632,16 +1745,18 @@ int main(int argc,char**argv)
 	  
             if (dojetpt) {
               fill_histo(relrsp,weight,eta,pt,binseta,binspt,relRspVsJetEtaJetPt);
-              if (domu)  fill_histo(relrsp, weight, eta, mu,  pt, binseta, binsmu,  binspt, relRspVsJetEtaMuJetPt);
-              if (dorho) fill_histo(relrsp, weight, eta, JRAEvt->rho, pt, binseta, binsrho, binspt, relRspVsJetEtaRhoJetPt);
+              if (domu)        fill_histo(relrsp, weight, eta, mu,  pt, binseta, binsmu,  binspt, relRspVsJetEtaMuJetPt);
+              if (dorho)       fill_histo(relrsp, weight, eta, rho, pt, binseta, binsrho, binspt, relRspVsJetEtaRhoJetPt);
+              if (dopudensity) fill_histo(relrsp, weight, eta, rhoPU, pt, binseta, binspudensity, binspt, relRspVsJetEtaRhoPUJetPt);
 
               fill_histo(relrsp,weight,y,pt,
                          binsy,binspt,relRspVsJetYJetPt);
               if (doflavor) {
                 fill_histo(pdgid,relrsp,flavorWeight,eta,pt,
                            binseta,binspt,relRspVsJetEtaJetPt,noabsflavors);
-                if (domu)  fill_histo(pdgid,relrsp, flavorWeight, eta, mu,  pt, binseta, binsmu,  binspt, relRspVsJetEtaMuJetPt,  noabsflavors);
-                if (dorho) fill_histo(pdgid,relrsp, flavorWeight, eta, JRAEvt->rho, pt, binseta, binsrho, binspt, relRspVsJetEtaRhoJetPt, noabsflavors);
+                if (domu)        fill_histo(pdgid,relrsp, flavorWeight, eta, mu,  pt, binseta, binsmu,  binspt, relRspVsJetEtaMuJetPt,  noabsflavors);
+                if (dorho)       fill_histo(pdgid,relrsp, flavorWeight, eta, rho, pt, binseta, binsrho, binspt, relRspVsJetEtaRhoJetPt, noabsflavors);
+                if (dopudensity) fill_histo(pdgid,relrsp, flavorWeight, eta, rhoPU, pt, binseta, binspudensity, binspt, relRspVsJetEtaRhoPUJetPt, noabsflavors);
 
                 fill_histo(pdgid,relrsp,flavorWeight,y,pt,
                            binsy,binspt,relRspVsJetYJetPt,noabsflavors);
@@ -1649,16 +1764,18 @@ int main(int argc,char**argv)
             }
             if (dorefpt) {
               fill_histo(relrsp,weight,eta,refpt,binseta,binspt,relRspVsJetEtaRefPt);
-              if (domu)  fill_histo(relrsp, weight, eta, mu,  refpt, binseta, binsmu,  binspt, relRspVsJetEtaMuRefPt);
-              if (dorho) fill_histo(relrsp, weight, eta, JRAEvt->rho, refpt, binseta, binsrho, binspt, relRspVsJetEtaRhoRefPt);
+              if (domu)        fill_histo(relrsp, weight, eta, mu,  refpt, binseta, binsmu,  binspt, relRspVsJetEtaMuRefPt);
+              if (dorho)       fill_histo(relrsp, weight, eta, rho, refpt, binseta, binsrho, binspt, relRspVsJetEtaRhoRefPt);
+              if (dopudensity) fill_histo(relrsp, weight, eta, rhoPU, refpt, binseta, binspudensity, binspt, relRspVsJetEtaRhoPURefPt);
 
               fill_histo(relrsp,weight,y,refpt,
                          binsy,binspt,relRspVsJetYRefPt);
               if (doflavor) {
                 fill_histo(pdgid,relrsp,flavorWeight,eta,refpt,
                            binseta,binspt,relRspVsJetEtaRefPt,noabsflavors);
-                if (domu)  fill_histo(pdgid,relrsp, flavorWeight, eta, mu,  refpt, binseta, binsmu,  binspt, relRspVsJetEtaMuRefPt,  noabsflavors);
-                if (dorho) fill_histo(pdgid,relrsp, flavorWeight, eta, JRAEvt->rho, refpt, binseta, binsrho, binspt, relRspVsJetEtaRhoRefPt, noabsflavors);
+                if (domu)        fill_histo(pdgid,relrsp, flavorWeight, eta, mu,  refpt, binseta, binsmu,  binspt, relRspVsJetEtaMuRefPt,  noabsflavors);
+                if (dorho)       fill_histo(pdgid,relrsp, flavorWeight, eta, rho, refpt, binseta, binsrho, binspt, relRspVsJetEtaRhoRefPt, noabsflavors);
+                if (dopudensity) fill_histo(pdgid,relrsp, flavorWeight, eta, rhoPU, refpt, binseta, binspudensity, binspt, relRspVsJetEtaRhoPURefPt, noabsflavors);
 
                 fill_histo(pdgid,relrsp,flavorWeight,y,refpt,
                            binsy,binspt,relRspVsJetYRefPt,noabsflavors);
