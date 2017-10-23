@@ -17,7 +17,12 @@
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
 #include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
-//#include "xrootd/XrdCl/XrdClFileSystem.hh" //Won't work until 81X
+#if __has_include("xrootd/XrdCl/XrdClFileSystem.hh")
+#include "xrootd/XrdCl/XrdClFileSystem.hh"
+#define has_xrdcl 1
+#else
+#define has_xrdcl 0
+#endif
 
 #include "TROOT.h"
 #include "TSystem.h"
@@ -262,23 +267,22 @@ int main(int argc,char**argv)
          }
          file_count = chain->GetListOfFiles()->GetEntries();
       }
-      /*
-      //Won't work until 81X
-      else if(!url_string.empty()) {
-         chain = new TChain((algs[a]+"/t").c_str());
-         XrdCl::DirectoryList *response;
-         XrdCl::DirListFlags::Flags flags = XrdCl::DirListFlags::None;
-         XrdCl::URL url(url_string);
-         XrdCl::FileSystem fs(url);
-         fs.DirList(inputFilePath,flags,response);
-         for(auto iresp=response->Begin(); iresp!=response->End(); iresp++) {
-            if((*iresp)->GetName().find(".root")!=std::string::npos) {
-               cout << "\tAdding " << url_string << inputFilePath << (*iresp)->GetName() << endl;
-               file_count = chain->Add((url_string+inputFilePath+(*iresp)->GetName()).c_str());
+      #if(has_xrdcl)
+         else if(!url_string.empty()) {
+            chain = new TChain((algs[a]+"/t").c_str());
+            XrdCl::DirectoryList *response;
+            XrdCl::DirListFlags::Flags flags = XrdCl::DirListFlags::None;
+            XrdCl::URL url(url_string);
+            XrdCl::FileSystem fs(url);
+            fs.DirList(inputFilePath,flags,response);
+            for(auto iresp=response->Begin(); iresp!=response->End(); iresp++) {
+               if((*iresp)->GetName().find(".root")!=std::string::npos) {
+                  cout << "\tAdding " << url_string << inputFilePath << (*iresp)->GetName() << endl;
+                  file_count = chain->Add((url_string+inputFilePath+(*iresp)->GetName()).c_str());
+               }
             }
          }
-      }
-      */
+      #endif
       else {
          cout<<"\tAdding "<<inputFilePath+"/"+inputFilename+"*.root"<<endl;
          chain = new TChain((algs[a]+"/t").c_str());

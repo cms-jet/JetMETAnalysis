@@ -68,19 +68,17 @@ if conditionsSource != "GT":
 #!
 process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1000))
 
-#######
-# QCD #
-#######
-process.load("JetMETAnalysis.JetAnalyzers.QCD_PY8_RunIISpring16DR80_PUFlat0to50_cff")
-##############
-# QCD (NoPU) #
-##############
-#process.load("JetMETAnalysis.JetAnalyzers.QCD_PY8_RunIISpring16DR80_NoPU_cff")
-
-qcdFiles = cms.untracked.vstring(
-	'root://cmsxrootd.fnal.gov//store/mc/RunIIFall15DR76/QCD_Pt-15to7000_TuneCUETP8M1_Flat_13TeV_pythia8/AODSIM/PU25nsData2015v1_magnetOn_76X_mcRun2_asymptotic_v12-v1/20000/022F2CE9-6FA3-E511-BA9D-D4AE5269DC07.root',
-    )
-#process.source = cms.Source("PoolSource", fileNames = qcdFiles )
+##############################################
+# External Input File (most likely from DAS) #
+##############################################
+try:
+    process.load("JetMETAnalysis.JetAnalyzers.<filename without extension>")
+except ImportError:
+    print "Couldn't open the external list of files from DAS. If you just checkout out the JetResponseAnalyzer package you will need to make this file yourself. Currently Falling back to opening the list hard-coded in run_JRA_cfg.py. This is not a bad action as long as it is what you intended to have happen."
+    inputFiles = cms.untracked.vstring(
+	    'root://cmsxrootd.fnal.gov//store/mc/<path to root file>/<filename>.root',
+	    )
+    process.source = cms.Source("PoolSource", fileNames = inputFiles )
 
 
 #!
@@ -102,7 +100,7 @@ else:
 #! NEEDED FOR PFCHS
 #!
 process.load('CommonTools.ParticleFlow.pfNoPileUpJME_cff')
-process.pfPileUp.checkClosestZVertex = False
+process.pfPileUpJME.checkClosestZVertex = False
 
 
 #!

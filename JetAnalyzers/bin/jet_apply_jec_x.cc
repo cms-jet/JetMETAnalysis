@@ -13,6 +13,13 @@
 #include "JetMETAnalysis/JetUtilities/interface/JRAEvent.h"
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
+#include "../XrdVersion.hh"
+#if __has_include("../XrdCl/XrdClFileSystem.hh")
+#include "../XrdCl/XrdClFileSystem.hh"
+#define has_xrdcl 1
+#else
+#define has_xrdcl 0
+#endif
 
 #include "TSystem.h"
 #include "TEnv.h"
@@ -20,11 +27,12 @@
 #include "TFile.h"
 #include "TDirectory.h"
 #include "TTree.h"
+#include "TChain.h"
+#include "TChainElement.h"
 #include "TKey.h"
 #include "TString.h"
 
 #include <cstdlib>
-//#include <stdexcept>
 #include <algorithm>
 #include <iostream>
 #include <sstream>
@@ -43,6 +51,9 @@ using namespace std;
 /// returns the postfix associated with a specific level and algorithm
 string getPostfix(vector<string> postfix, string alg, int level);
 
+/// set the TDirectory/TTree name for all TCHainElements once the appropriate algorithm is chosen
+void setChainElementNames(TChain* c, string dirTreeName);
+
 ////////////////////////////////////////////////////////////////////////////////
 // main
 ////////////////////////////////////////////////////////////////////////////////
@@ -53,30 +64,28 @@ int main(int argc,char**argv)
   CommandLine cl;
   if (!cl.parse(argc,argv)) return 0;
   
-  string         input     = cl.getValue<string>  ("input");
-  string         era       = cl.getValue<string>  ("era");
-  vector<int>    levels    = cl.getVector<int>    ("levels");
-  string         output    = cl.getValue<string>  ("output",       "");
-  string         jecpath   = cl.getValue<string>  ("jecpath",      "");
-  vector<string> algs      = cl.getVector<string> ("algs",         "");
-  bool           L1FastJet = cl.getValue<bool>    ("L1FastJet", false);
-  vector<string> postfix   = cl.getVector<string> ("postfix",      "");
-  bool           useTags   = cl.getValue<bool>    ("useTags",    true);
-  bool           saveitree = cl.getValue<bool>    ("saveitree",  true);
-  bool           debug     = cl.getValue<bool>    ("debug",     false);
+  string         input      = cl.getValue<string>  ("input");
+  string         era        = cl.getValue<string>  ("era");
+  vector<int>    levels     = cl.getVector<int>    ("levels");
+  string         url_string = cl.getValue<string>  ("url_string",   "");
+  string         output     = cl.getValue<string>  ("output",       "");
+  string         jecpath    = cl.getValue<string>  ("jecpath",      "");
+  vector<string> algs       = cl.getVector<string> ("algs",         "");
+  bool           L1FastJet  = cl.getValue<bool>    ("L1FastJet", false);
+  vector<string> postfix    = cl.getVector<string> ("postfix",      "");
+  bool           useTags    = cl.getValue<bool>    ("useTags",    true);
+  bool           saveitree  = cl.getValue<bool>    ("saveitree",  true);
+  bool           debug      = cl.getValue<bool>    ("debug",     false);
+  bool           help       = cl.getValue<bool>    ("help",      false);
   
   if(!cl.check()) return 0;
   cl.print();
+  if(help) return 0;
   
   //
   // Speed up loading of data from the input file
   //
   gEnv->SetValue("TFile.AsyncPrefetching", 1);
-  
-  if (output.empty()) {
-    output=input.substr(0,input.find(".root"))+"_jec.root";
-    cout<<"Write output to "<<output<<endl;
-  }
   
   if (jecpath.empty()) {
     string cmssw_base(getenv("CMSSW_BASE"));
@@ -87,16 +96,49 @@ int main(int argc,char**argv)
       jecpath = cmssw_release_base + "/src/CondFormats/JetMETObjects/data";
     if (stat(jecpath.c_str(),&st)!=0) {
       cout<<"ERROR: tried to set jecpath but failed, abort."<<endl;
-      return 0;
+      return -1;
     }
     else cout<<"jecpath set to "<<jecpath<<endl;
   }
   
-  TFile* ifile = TFile::Open(input.c_str(),"READ");
-  if (!ifile) { cout<<"Can't open file "<<input<<endl; return 0; }
+  TChain* ichain = new TChain();
+  TFile* ifile = nullptr;
+  if (url_string.empty()) {
+    ichain->Add(input.c_str());
+    ifile = TFile::Open(input.c_str(),"READ");
+    if (!ifile) { cout<<"Can't open file "<<input<<endl; return -2; }
+    if (output.empty()) output=input.substr(0,input.find(".root"))+"_jec.root";
+  }
+  #if(has_xrdcl)
+    else {
+      int file_count(0);
+      XrdCl::DirectoryList *response;
+      XrdCl::DirListFlags::Flags flags = XrdCl::DirListFlags::None;
+      XrdCl::URL url(url_string);
+      XrdCl::FileSystem fs(url);
+      fs.DirList(input,flags,response);
+      for(auto iresp=response->Begin(); iresp!=response->End(); iresp++) {
+        if((*iresp)->GetName().find(".root")!=std::string::npos) {
+           cout << "\tAdding " << url_string << input << (*iresp)->GetName() << endl;
+           file_count = ichain->Add((url_string+input+(*iresp)->GetName()).c_str());
+        }
+      }
+      TChainElement* chEl = (TChainElement*)ichain->GetListOfFiles()->First();
+      ifile = TFile::Open(chEl->GetTitle(),"READ");
+      if (file_count==0){ cout<<"No files found! Aborting."<<endl; return -3; }
+      if (output.empty()) {
+        output = chEl->GetTitle();
+        output = output.substr(output.rfind("/")+1,output.find(".root")-output.rfind("/")-1)+"_jec.root";
+      }
+    }
+  #else
+    cout << "Can't find the header file \"xrootd/XrdCl/XrdClFileSystem.hh\" and thus can't use xrootd." << endl;
+    return -4;
+  #endif
 
   TFile* ofile = TFile::Open(output.c_str(),"RECREATE");
   if (!ofile) { cout<<"Can't open file "<<output<<endl; return 0; }
+  else { cout<<"Write output to "<<output<<endl; }
   
   if (algs.size()==0) {
     TIter nextDir(ifile->GetListOfKeys());
@@ -111,6 +153,7 @@ int main(int argc,char**argv)
   for (unsigned int ialg=0;ialg<algs.size();++ialg) {
     string alg=algs[ialg];
     JetInfo jetInfo(algs[ialg]);
+    setChainElementNames(ichain,alg+"/t");
     
     TDirectory* idir=(TDirectory*)ifile->Get(alg.c_str());
     if (0==idir) { cout<<"No dir "<<alg<<" found"<<endl; return 0; }
@@ -156,35 +199,35 @@ int main(int argc,char**argv)
       }
     if (debug) cout << "DONE" << endl;
     
-    TTree*      itree=(TTree*)idir->Get("t");    
+    //TTree*      itree=(TTree*)idir->Get("t");    
     TDirectory* odir;
     if(saveitree) {
       if (debug) cout << "Cloning and writing the input tree ... " << flush;
       odir =(TDirectory*)ofile->mkdir(idir->GetName()); odir->cd();
-      itree->CloneTree()->Write();
+      ichain->CloneTree()->Write();
       if (debug) cout << "DONE" << endl;
     }
     
     stringstream ssodirname; ssodirname<<jetInfo.abbreviation;
     for (unsigned int i=0;i<levels.size();i++) ssodirname<<"l"<<levels[i];
     odir=(TDirectory*)ofile->mkdir(ssodirname.str().c_str()); odir->cd();
-    itree->SetBranchStatus("jtpt",0);
-    itree->SetBranchStatus("jte", 0);
+    ichain->SetBranchStatus("jtpt",0);
+    ichain->SetBranchStatus("jte", 0);
     if (debug) cout << "Cloning the input tree to the output tree ... " << flush;
-    TTree*      otree = (debug) ? itree->CloneTree(10000) : itree->CloneTree(-1,"fast");
+    TTree*      otree = (debug) ? ichain->CloneTree(10000) : ichain->CloneTree(-1,"fast");
     if (debug) cout << "DONE" << endl;
-    itree->SetBranchStatus("jtpt",1);
-    itree->SetBranchStatus("jte", 1);
-    JRAEvent* JRAEvt = new JRAEvent(itree,85);
+    ichain->SetBranchStatus("jtpt",1);
+    ichain->SetBranchStatus("jte", 1);
+    JRAEvent* JRAEvt = new JRAEvent(ichain,85);
     TBranch* b_jtpt=otree->Branch("jtpt", "vector<Float_t>", &JRAEvt->jtpt);
     TBranch* b_jte =otree->Branch("jte", "vector<Float_t>", &JRAEvt->jte);
 
     if (debug) cout << "Starting event loop ... " << endl;
-    int nevt = (debug) ? 10000 : itree->GetEntries();
+    int nevt = (debug) ? 10000 : ichain->GetEntries();
     for (int ievt=0;ievt<nevt;ievt++) {
        if (ievt % 100000 == 0)
           cout<<ievt<<endl;
-       itree->GetEntry(ievt);
+       ichain->GetEntry(ievt);
        for (unsigned int ijt=0;ijt<JRAEvt->nref;ijt++) {
           corrector->setJetPt(JRAEvt->jtpt->at(ijt));
           corrector->setJetE(JRAEvt->jte->at(ijt));
@@ -213,10 +256,12 @@ int main(int argc,char**argv)
        b_jte ->Fill();
     }
     otree->Write();
-    delete itree;
+    //delete itree;
     delete otree;
   }
   
+  //delete the input TChain
+  delete ichain;
   // close files
   ifile->Close();
   delete ifile;
@@ -241,4 +286,14 @@ string getPostfix(vector<string> postfix, string alg, int level)
         return postfix[ipostfix+2];
     }
   return "";
+}
+
+//______________________________________________________________________________
+void setChainElementNames(TChain* c, string dirTreeName) {
+  TObjArray *fileElements=c->GetListOfFiles();
+  TIter next(fileElements);
+  TChainElement *chEl=0;
+  while (( chEl=(TChainElement*)next() )) {
+    chEl->SetName(dirTreeName.c_str());
+  }
 }

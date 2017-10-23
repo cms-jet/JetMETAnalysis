@@ -11,8 +11,10 @@
 #include <vector>
 #include <iomanip>
 #include <fstream>
+#include <sstream>
 #include <assert.h>
 #include <algorithm>
+#include <cstdio>
 
 #include "TSystem.h"
 #include "TFile.h"
@@ -54,6 +56,12 @@ using namespace std;
 // declare global variables
 ////////////////////////////////////////////////////////////////////////////////
 bool projThenDiv;
+const float ABS_ERROR_MIN = 0.000001;
+const float REL_ERROR_MAX = 0.5;
+const float REL_ERROR_MIN = 0.01;
+const float PT_CONT_MIN = 0;
+const float PT_ERROR_MIN = 0.1;
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // declare classes and structs
@@ -76,6 +84,10 @@ struct FitRes {
 // It returns true if successfull
 bool getInputHistograms(TString inputFilename, THnSparseF *& prof, THnSparseF *& profPt, THnSparseF *& profRho, bool useNPU);
 
+// This method returns the maximum rho value for all eta by looping through the barrel region and checking the minimum requirements
+// to add a point to the graphs. If at least 4 entries will be added to a graph, then this becomes the next highest rho.
+pair<float,float> find_rho_bounds(THnSparseF *& prof, THnSparseF *& profPt, THnSparseF *& profEntries, int rebinEta, int rebinRho);
+
 // This is a helper function to the divideHistogram function
 // It tests if certain conditions are met before division can occur
 bool checkConsistency(const THnSparseF *h1, const THnSparseF *h2, const char *tag);
@@ -93,8 +105,9 @@ TGraphErrors * getGraph(string nameTitle, const TH2D * prof, const TH2D * profPt
 TGraphErrors * getGraph(string nameTitle, TH1D * prof, TH1D * profPt, const TH1D * profEntries);
 
 // This method creates the txt file for the corrections
-ofstream createTxtFile(string txtFilename, string function);
-void writeToTxtFile(ofstream& outF, const FitRes& fitResult);
+ofstream createTxtFile(string txtFilename, string function, bool forTesting = false);
+void writeToTxtFile(ofstream& outF, const FitRes& fitResult,
+                    bool forTesting = false, bool verbose = false);
 
 // This method creates canvases showing the spline fits
 TCanvas* createCanvas(const vector<TGraphErrors*>& graphs, const vector<FitRes>& fitResults,
@@ -123,11 +136,13 @@ int main(int argc,char**argv){
     string         algo1         = cl.getValue<string> ("algo1",           "ak5pf");
     string         algo2         = cl.getValue<string> ("algo2",           "ak5pf");
     bool           useNPU        = cl.getValue<bool>   ("useNPU",            false);
+    int            rebinEta      = cl.getValue<int>    ("rebinEta",              1);
     int            rebinRho      = cl.getValue<int>    ("rebinRho",              1);
     string         era           = cl.getValue<string> ("era",             "<era>");
     vector<string> formats       = cl.getVector<string>("formats",              "");
     bool           drawParaCoord = cl.getValue<bool>   ("drawParaCoord",     false);
                    projThenDiv   = cl.getValue<bool>   ("projThenDiv",        true);
+    bool           forTesting    = cl.getValue<bool>   ("forTesting",        false);
     bool           debug         = cl.getValue<bool>   ("debug",             false);
 
     if (!cl.check()) return 0;
@@ -145,11 +160,15 @@ int main(int argc,char**argv){
     string algo12 = algo1+"_"+algo2;
     if (algo1 == algo2) algo12 = algo1;
    
+    vector<int> vdebug = {7,42,43,44,82};
+
     // Open the input file and retrieve all relevant TProfile3D's
     TString inputFilename = inputDir+"output_"+algo12+".root";
     THnSparseF *prof=0, *profPt=0, *profEntries=0;
     if(!getInputHistograms(inputFilename, prof, profPt, profEntries, useNPU))
         return -1;
+
+    pair<float,float> rho_bounds = find_rho_bounds(prof,profPt,profEntries,rebinEta,rebinRho);
 
     // Divide O/A and pT histograms to get <O/A> and <pT> (i.e. sum(O/A)/nentries = <O/A>)
     if(!projThenDiv) {
@@ -176,6 +195,7 @@ int main(int argc,char**argv){
     cout << "DONE" << endl;
 
     // The vector to save the results of all fits
+    vector<FitRes> fitResultsGraph;
     vector<FitRes> fitResults;
     vector<TGraphErrors*> graphs;
     int nperpad(5);
@@ -183,29 +203,32 @@ int main(int argc,char**argv){
     // Create the txt file and the function describing the chosen spline type (Akima)
     string txtFilename = outputDir+era+"_L1FastJet_"+algo12+".txt";
     string spline_function = "[0]+((x-[1])*([2]+((x-[1])*([3]+((x-[1])*[4])))))";
-    ofstream outF = createTxtFile(txtFilename,spline_function);
+    ofstream outF = createTxtFile(txtFilename,spline_function,forTesting);
 
     // Loop over all etas
-    for (int iEta = 1; iEta <= prof->GetAxis(0)->GetNbins(); iEta++){
-        if(debug && (iEta<42 || iEta>43)) continue;
+    for (int iEta = 1; iEta <= prof->GetAxis(0)->GetNbins(); iEta+=rebinEta){
+        // Reset fitResults vector for each eta
+        fitResults.clear();
+
+        if(debug && std::find(vdebug.begin(), vdebug.end(), iEta) == vdebug.end()) continue;
         cout<< "Analyzing ieta="<<iEta<<" eta="<<prof->GetAxis(0)->GetBinCenter(iEta) << endl
             << "****************************" << endl;
 
         for (int iRho = 1; iRho <= prof->GetAxis(1)->GetNbins(); iRho+=rebinRho){
             cout<< "\tAnalyzing irho="<<iRho<<" rho="<<prof->GetAxis(1)->GetBinCenter(iRho) << endl
             << "\t****************************" << endl;
-      
+
             if( (iRho%nperpad==1) || iRho==1) {
                 graphs.clear();
-                fitResults.clear();
+                fitResultsGraph.clear();
             }
 
             // Create the graph
-            prof->GetAxis(0)->SetRange(iEta,iEta);
+            prof->GetAxis(0)->SetRange(iEta,iEta+(rebinEta-1));
             prof->GetAxis(1)->SetRange(iRho,iRho+(rebinRho-1));
-            profPt->GetAxis(0)->SetRange(iEta,iEta);
+            profPt->GetAxis(0)->SetRange(iEta,iEta+(rebinEta-1));
             profPt->GetAxis(1)->SetRange(iRho,iRho+(rebinRho-1));
-            profEntries->GetAxis(0)->SetRange(iEta,iEta);
+            profEntries->GetAxis(0)->SetRange(iEta,iEta+(rebinEta-1));
             profEntries->GetAxis(1)->SetRange(iRho,iRho+(rebinRho-1));
             TH1* prof_proj = nullptr;
             TH1* profPt_proj = nullptr;
@@ -227,7 +250,7 @@ int main(int argc,char**argv){
             //profPt_proj->Rebin2D(4,1);
             //profEntries_proj->Rebin2D(4,1);
 
-            pair<float,float> etaBoundaries = make_pair(prof->GetAxis(0)->GetBinLowEdge(iEta),prof->GetAxis(0)->GetBinUpEdge(iEta));
+            pair<float,float> etaBoundaries = make_pair(prof->GetAxis(0)->GetBinLowEdge(iEta),prof->GetAxis(0)->GetBinUpEdge(iEta+(rebinEta-1)));
             pair<float,float> rhoBoundaries = make_pair(prof->GetAxis(1)->GetBinLowEdge(iRho),prof->GetAxis(1)->GetBinUpEdge(iRho+(rebinRho-1)));
             stringstream ss;
             ss << "OffOAVsJetPt_JetEta" <<  etaBoundaries.first << "to" <<  etaBoundaries.second << "_Rho" << rhoBoundaries.first << "to" << rhoBoundaries.second;
@@ -287,13 +310,13 @@ int main(int argc,char**argv){
                 // Put this fit result in the vector fitResults
                 FitRes fitres;
                 fitres.etalowedge = prof->GetAxis(0)->GetBinLowEdge(iEta);
-                fitres.etaupedge  = prof->GetAxis(0)->GetBinUpEdge(iEta);
+                fitres.etaupedge  = prof->GetAxis(0)->GetBinUpEdge(iEta+(rebinEta-1));
                 fitres.rholowedge = prof->GetAxis(1)->GetBinLowEdge(iRho);
                 fitres.rhoupedge  = prof->GetAxis(1)->GetBinUpEdge(iRho+(rebinRho-1));
                 fitres.pspline    = pspline;
                 fitres.igraph     = graphs.size();
+                fitResultsGraph.push_back(fitres);
                 fitResults.push_back(fitres);
-                writeToTxtFile(outF, fitres);
             }
 
             // Save the graph to file
@@ -304,11 +327,57 @@ int main(int argc,char**argv){
             graphs.push_back(graph);
             if( (iRho%nperpad==0) || iRho>=prof->GetAxis(1)->GetNbins() ) {
                 fout->cd("canvases");
-                createCanvas(graphs,fitResults,outputDir,string(algo12),formats)->Write();
+                createCanvas(graphs,fitResultsGraph,outputDir,string(algo12),formats)->Write();
                 fout->cd();
             }
+        }// all rho bins
 
-        }// rho bins
+        // write the to the text file all of the results for each eta bin
+        // Need to do it here so that we can fin the last rho bin and reset its upper bound
+        unsigned int nFR = fitResults.size();
+        for(unsigned int iFR=0; iFR<nFR; iFR++) {
+            //Add in missing upper rho bins so that all eta are symmetric with respect to rho
+            if(iFR == nFR-1 && fitResults[iFR].rhoupedge<rho_bounds.second) {
+                FitRes tmp = fitResults[iFR];
+                tmp.rholowedge = tmp.rhoupedge;
+                tmp.rhoupedge += rebinRho;
+                fitResults.emplace_back(tmp);
+                nFR = fitResults.size();
+            }
+            //Add in the missing lower rho bins so that all eta are symmetric with respect to rho
+            else if(iFR == 0 && fitResults[iFR].rholowedge>rho_bounds.first) {
+                //Find the end of the first rho bin
+                unsigned rho_end=0;
+                for(unsigned int jFR=0; jFR<nFR; jFR++) {
+                    if(fitResults[jFR].rholowedge!=fitResults[jFR+1].rholowedge) {
+                        rho_end=jFR;
+                        break;
+                    }
+                }
+                vector<FitRes> tmp(fitResults.begin(),fitResults.begin()+rho_end+1);
+                for(unsigned int tFR=0; tFR<tmp.size(); tFR++) {
+                    tmp[tFR].rhoupedge = tmp[tFR].rholowedge;
+                    tmp[tFR].rholowedge -= rebinRho;
+                }
+                fitResults.insert(fitResults.begin(),tmp.begin(),tmp.end());
+                nFR = fitResults.size();
+                iFR--;
+                continue;
+            }
+            //Add in missing rho bins which are in the middle of a set of rho bins (per eta)
+            //Copy the paramters from the next lowest rho bin
+            else if(iFR!=nFR-1 && fitResults[iFR].rhoupedge!=fitResults[iFR+1].rholowedge) {
+                FitRes tmp = fitResults[iFR];
+                tmp.rholowedge = tmp.rhoupedge;
+                tmp.rhoupedge += rebinRho;
+                fitResults.insert(fitResults.begin()+iFR+1,tmp);
+                nFR = fitResults.size();
+            }
+            else if(iFR == nFR-1)
+                fitResults[iFR].rhoupedge = 200;
+            writeToTxtFile(outF, fitResults[iFR], forTesting, ((iFR==0)?true:false));
+        }// rho bins with filled graphs
+
     }// eta bins
 
     if(drawParaCoord) {
@@ -368,6 +437,70 @@ bool getInputHistograms(TString inputFilename, THnSparseF *& prof, THnSparseF *&
 
     // if everything went well just return true.
     return true;  
+}
+
+//______________________________________________________________________________
+// This method returns the maximum rho value for all eta by looping through the barrel region and checking the minimum requirements
+// to add a point to the graphs. If at least 4 entries will be added to a graph, then this becomes the next highest rho.
+pair<float,float> find_rho_bounds(THnSparseF *& prof, THnSparseF *& profPt, THnSparseF *& profEntries, int rebinEta, int rebinRho) {
+    cout << "jet_l1_correction_x::find_rho_bounds()  finding the maximum rho bin ... " << endl;
+    float min_rho = 9999, max_rho = 0, max_eta = -9999, min_eta = -9999;
+    int skipRho = 25, counter = 0, max_counter = 0, min_counter = 0, current_index = 0, total_to_check = (52-31)*(prof->GetAxis(1)->GetNbins()-skipRho);
+    stringstream ss;
+    for (int iEta = 31; iEta <= 52; iEta+=rebinEta){
+        for (int iRho = 1; iRho <= prof->GetAxis(1)->GetNbins(); iRho+=rebinRho){
+            if(iRho==5) iRho+=skipRho;
+            ss.str("");
+            ss << "\tProgress: (iEta,iRho,counter,min_rho,max_rho)=(" << iEta << "," << iRho << "," << counter << "," << min_rho << "," << max_rho << ") ";
+            current_index = (iEta-31)*(prof->GetAxis(1)->GetNbins()-skipRho)+((iRho<10) ? iRho : iRho-skipRho)+1;
+            loadbar2(current_index,total_to_check,50,ss.str());
+            counter = 0;
+            prof->GetAxis(0)->SetRange(iEta,iEta+(rebinEta-1));
+            prof->GetAxis(1)->SetRange(iRho,iRho+(rebinRho-1));
+            profPt->GetAxis(0)->SetRange(iEta,iEta+(rebinEta-1));
+            profPt->GetAxis(1)->SetRange(iRho,iRho+(rebinRho-1));
+            profEntries->GetAxis(0)->SetRange(iEta,iEta+(rebinEta-1));
+            profEntries->GetAxis(1)->SetRange(iRho,iRho+(rebinRho-1));
+            TH1D* prof_proj = prof->Projection(3,"E"); //(x,option)=(refpt,calc errors);
+            TH1D* profPt_proj = profPt->Projection(3,"E"); //(x,option)=(refpt,calc errors);
+            TH1D* profEntries_proj = profEntries->Projection(3,"E"); //(x,option)=(refpt,calc errors);
+            prof_proj->Divide(profEntries_proj);
+            profPt_proj->Divide(profEntries_proj);
+            for (int irefpt = 1; irefpt <= prof_proj->GetXaxis()->GetNbins() ; irefpt++){
+                if (profEntries_proj->GetBinContent (irefpt) &&
+                    prof_proj->GetBinError      (irefpt)  > ABS_ERROR_MIN &&
+                    (fabs(prof_proj->GetBinError(irefpt)/prof_proj->GetBinContent(irefpt)))<REL_ERROR_MAX &&
+                    (fabs(prof_proj->GetBinError(irefpt)/prof_proj->GetBinContent(irefpt)))>REL_ERROR_MIN &&
+                    profPt_proj ->GetBinContent (irefpt)  > PT_CONT_MIN &&
+                    profPt_proj ->GetBinError   (irefpt)  > PT_ERROR_MIN ) {
+                    counter++;
+                }
+            }
+            if(counter>=5 && max_rho<prof->GetAxis(1)->GetBinUpEdge(iRho+(rebinRho-1))) {
+                max_rho = prof->GetAxis(1)->GetBinUpEdge(iRho+(rebinRho-1));
+                max_counter = counter;
+                max_eta = prof->GetAxis(0)->GetBinCenter(iEta+(rebinEta-1));
+            }
+            if(counter>=5 && min_rho>prof->GetAxis(1)->GetBinLowEdge(iRho+(rebinRho-1))) {
+                min_rho = prof->GetAxis(1)->GetBinLowEdge(iRho+(rebinRho-1));
+                min_counter = counter;
+                min_eta = prof->GetAxis(0)->GetBinCenter(iEta+(rebinEta-1));
+            }
+
+            delete prof_proj;
+            delete profPt_proj;
+            delete profEntries_proj;
+        }
+    }
+    cout << endl << "Minimum rho: " << min_rho << endl
+         << "\tOccured at eta = " << min_eta << " with " << min_counter << " entries" << endl;
+    cout << "Maximum rho: " << max_rho << endl
+         << "\tOccured at eta = " << max_eta << " with " << max_counter << " entries" << endl;
+    if(min_rho==1) {
+        cout << "Changing minimum rho to be 0 because most likely this value occurs outside of the checked eta range." << endl;
+        min_rho = 0;
+    }
+    return make_pair(min_rho,max_rho);
 }
 
 //______________________________________________________________________________
@@ -521,11 +654,11 @@ TGraphErrors * getGraph(int iEta, int iRho, const THnSparseF * prof,
             nEvt += profEntries->GetBinContent(Gbin);
             // avoid points with empty content or too small error
             if (profEntries->GetBinContent (Gbin) &&
-                prof->GetBinError      (Gbin)  > 0.000001 &&
-                (fabs(prof->GetBinError(Gbin)/prof->GetBinContent(Gbin)))<0.5 &&// 0.3 ==> 0.5
-                (fabs(prof->GetBinError(Gbin)/prof->GetBinContent(Gbin)))>0.01 &&// 0.05 ==> 0.01
-                profPt ->GetBinContent (Gbin)  > 0 &&
-                profPt ->GetBinError   (Gbin)  > 0.1 ){
+                prof->GetBinError      (Gbin)  > ABS_ERROR_MIN &&
+                (fabs(prof->GetBinError(Gbin)/prof->GetBinContent(Gbin)))<REL_ERROR_MAX &&// 0.3 ==> 0.5
+                (fabs(prof->GetBinError(Gbin)/prof->GetBinContent(Gbin)))>REL_ERROR_MIN &&// 0.05 ==> 0.01
+                profPt ->GetBinContent (Gbin)  > PT_CONT_MIN &&
+                profPt ->GetBinError   (Gbin)  > PT_ERROR_MIN ){
             
                 // get the relevant values
                 double pt   = profPt->GetBinContent(Gbin);
@@ -563,11 +696,11 @@ TGraphErrors * getGraph(string nameTitle, const TH2D * prof, const TH2D * profPt
             nEvt += profEntries->GetBinContent(imu,irefpt);
             // avoid points with empty content or too small error
             if (profEntries->GetBinContent (imu,irefpt) &&
-                prof->GetBinError      (imu,irefpt)  > 0.000001 &&
-                (fabs(prof->GetBinError(imu,irefpt)/prof->GetBinContent(imu,irefpt)))<0.5 &&// 0.3 ==> 0.5
-                (fabs(prof->GetBinError(imu,irefpt)/prof->GetBinContent(imu,irefpt)))>0.01 &&// 0.05 ==> 0.01
-                profPt ->GetBinContent (imu,irefpt)  > 0 &&
-                profPt ->GetBinError   (imu,irefpt)  > 0.1 ){
+                prof->GetBinError      (imu,irefpt)  > ABS_ERROR_MIN &&
+                (fabs(prof->GetBinError(imu,irefpt)/prof->GetBinContent(imu,irefpt)))<REL_ERROR_MAX &&// 0.3 ==> 0.5
+                (fabs(prof->GetBinError(imu,irefpt)/prof->GetBinContent(imu,irefpt)))>REL_ERROR_MIN &&// 0.05 ==> 0.01
+                profPt ->GetBinContent (imu,irefpt)  > PT_CONT_MIN &&
+                profPt ->GetBinError   (imu,irefpt)  > PT_ERROR_MIN ){
             
                 // get the relevant values
                 double pt   = profPt->GetBinContent(imu,irefpt);
@@ -607,20 +740,25 @@ TGraphErrors * getGraph(string nameTitle, TH1D * prof, TH1D * profPt, const TH1D
         nEvt += profEntries->GetBinContent(irefpt);
         // avoid points with empty content or too small error
         if (profEntries->GetBinContent (irefpt) &&
-            prof->GetBinError      (irefpt)  > 0.000001 &&
-            (fabs(prof->GetBinError(irefpt)/prof->GetBinContent(irefpt)))<0.5 &&// 0.3 ==> 0.5
-            (fabs(prof->GetBinError(irefpt)/prof->GetBinContent(irefpt)))>0.01 &&// 0.05 ==> 0.01
-            profPt ->GetBinContent (irefpt)  > 0 &&
-            profPt ->GetBinError   (irefpt)  > 0.1 ){
+            prof->GetBinError      (irefpt)  > ABS_ERROR_MIN &&
+            (fabs(prof->GetBinError(irefpt)/prof->GetBinContent(irefpt)))<REL_ERROR_MAX &&// 0.3 ==> 0.5
+            (fabs(prof->GetBinError(irefpt)/prof->GetBinContent(irefpt)))>REL_ERROR_MIN &&// 0.05 ==> 0.01
+            profPt ->GetBinContent (irefpt)  > PT_CONT_MIN &&
+            profPt ->GetBinError   (irefpt)  > PT_ERROR_MIN ){
         
             // get the relevant values
+            int    n    = graph ->GetN();
             double pt   = profPt->GetBinContent(irefpt);
             double pte  = profPt->GetBinError  (irefpt);
             double ooa  = prof  ->GetBinContent(irefpt);
             double ooae = prof  ->GetBinError  (irefpt);
             
+            // make sure that is the average x value of the last point is the same as this point that we do not allow them to overlap
+            // we want a function that is continuous and continuously differentiable
+            // in this case shift this next point by a very tiny value
+            if (n>0 && graph->GetX()[n-1]==pt) pt+=0.0001;
+
             // Store the values
-            double n = graph->GetN();
             graph->SetPoint(n, pt, ooa);
             graph->SetPointError(n, pte, ooae);
         }//if
@@ -634,13 +772,17 @@ TGraphErrors * getGraph(string nameTitle, TH1D * prof, TH1D * profPt, const TH1D
 
 //______________________________________________________________________________
 // This method creates the txt file for the corrections
-ofstream createTxtFile(string txtFilename, string function) {
+ofstream createTxtFile(string txtFilename, string function, bool forTesting) {
     cout << "jet_l1_correction_x::createTxtFile Writting the text file " << txtFilename << " ... " << flush;
     // Create the stream 
     ofstream outF(txtFilename);
    
     // Produce the first line
-    TString fname = Form("{3 JetEta Rho JetPt 2 JetPt JetA max(0.0001,1-y*(%s)/x)",function.c_str());
+    string fname;
+    if(forTesting)
+       fname = "{3 JetEta Rho JetPt 1 JetPt 1";
+    else
+       fname = Form("{3 JetEta Rho JetPt 2 JetPt JetA max(0.0001,1-y*(%s)/x)",function.c_str());
     outF << fname <<" Correction L1FastJet}"<<endl;
 
     cout << "DONE" << endl;
@@ -649,8 +791,8 @@ ofstream createTxtFile(string txtFilename, string function) {
 
 //______________________________________________________________________________
 // Write one eta and rho line in the text file
-void writeToTxtFile(ofstream& outF, const FitRes& fitResult) {
-    cout << "\t\tjet_l1_correction_x::writeToTxtFile Writting to the text file ... " << flush;
+void writeToTxtFile(ofstream& outF, const FitRes& fitResult, bool forTesting, bool verbose) {
+    if(verbose) cout << "\tjet_l1_correction_x::writeToTxtFile Writting to the text file ... " << flush;
 
     //For eta-dependent spline clipping
     int pt_limit = 70;
@@ -676,7 +818,7 @@ void writeToTxtFile(ofstream& outF, const FitRes& fitResult) {
         //When you go beyond a range of validity the default behavior is to return to the correction value at the closest bound to the range of validity
         //When you go outside a bin boundary (i.e. the program cannot find the bin you are supposed to be in) then the default behavior is to return 1.0
         //This will protext against that happening when the pT is just above where the last MC bin is.
-        //6500 is chosen ass that is the 2015-2017 beam energy.
+        //6500 is chosen as that is the 2015-2017 beam energy.
 
         if(isection==fitResult.pspline->getNSections()-1) lastLine = true;
         if(bounds.second >= pt_limit) {
@@ -684,22 +826,25 @@ void writeToTxtFile(ofstream& outF, const FitRes& fitResult) {
             lastLine = true;
         }
 
-        //For expediency of Summer16_25nsV5_MC do eta-dependent clipping
+        //Still using eta dependent clipping
+        int npar = forTesting ? 2 : (int)(fitResult.pspline->getNpar()+4);
         outF<<setw(15)<<fitResult.etalowedge<<setw(15)<<fitResult.etaupedge
             <<setw(15)<<fitResult.rholowedge<<setw(15)<<fitResult.rhoupedge
             <<setw(15)<<bounds.first<<setw(15)<<(lastLine ? 6500 : bounds.second)
-            <<setw(15)<<(int)(fitResult.pspline->getNpar()+4) //Number of parameters + 4 for the JetPt and JetA boundaries
-            <<setw(15)<<bounds.first<<setw(15)<<(abovePtLimit ? pt_limit : bounds.second)
-            <<setw(15)<<0<<setw(15)<<10; //Area boundaries
+            <<setw(15)<<npar //Number of parameters + 4 for the JetPt and JetA boundaries
+            <<setw(15)<<bounds.first<<setw(15)<<(abovePtLimit ? pt_limit : bounds.second);
+        if(!forTesting) {
+           outF<<setw(15)<<0<<setw(15)<<10; //Area boundaries
 
-        TF1* spline_func = fitResult.pspline->setParameters(isection);
-        for(int p=0; p<fitResult.pspline->getNpar(); p++) {
-            outF<<setw(15)<<spline_func->GetParameter(p);
+           TF1* spline_func = fitResult.pspline->setParameters(isection);
+           for(int p=0; p<fitResult.pspline->getNpar(); p++) {
+              outF<<setw(15)<<spline_func->GetParameter(p);
+           }
         }
         outF<<endl;
     }
 
-   cout << "DONE" << endl;  
+   if(verbose) cout << "DONE" << endl;  
 }
 
 //______________________________________________________________________________
@@ -711,7 +856,7 @@ TCanvas* createCanvas(const vector<TGraphErrors*>& graphs, const vector<FitRes>&
     frame->GetXaxis()->SetMoreLogLabels();
     frame->GetXaxis()->SetNoExponent();
     frame->GetXaxis()->SetTitle("p_{T}^{reco} (GeV)");
-    frame->GetYaxis()->SetRangeUser(0.0,20.0);
+    frame->GetYaxis()->SetRangeUser(0.0,40.0);
     frame->GetYaxis()->SetTitle("Offset/A");
 
     string gname = string(graphs[0]->GetName());
@@ -772,7 +917,7 @@ TCanvas* createCanvas(const vector<TGraphErrors*>& graphs, const vector<FitRes>&
         //
         // Draw the splines for each graph, if they exist
         //
-        if(fitResults.size()>0 && fitResults[igraph].igraph == igraph) {
+        if(fitResults.size()>0 && graphs[igraph]->GetN()>=5 && fitResults[igraph].igraph == igraph) {
             PiecewiseSpline* spline = fitResults[igraph].pspline;
             for(int isection=0; isection<spline->getNSections(); isection++) {
                 pair<double,double> bounds = spline->getSectionBounds(isection);
