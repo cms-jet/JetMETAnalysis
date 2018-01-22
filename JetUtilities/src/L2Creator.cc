@@ -155,15 +155,15 @@ void L2Creator::loopOverAlgorithms(string makeCanvasVariable) {
         //
         odir = (TDirectoryFile*)ofile->mkdir(alg.c_str());
         odir->cd();
-     
+
         //
         // Load the input histograms from jra.root or jra_f.root (or other name if reset by user)
         //
-        hl_rsp.load_objects(idir,"RelRsp:JetEta:RefPt");     
+        hl_rsp.load_objects(idir,"RelRsp:JetEta:RefPt");
         hl_refpt.load_objects(idir,"RefPt:JetEta:RefPt");
         hl_jetpt.load_objects(idir,"JetPt:JetEta:RefPt");
-     
-     
+
+
         //
         // Absolute response/correction as a function of pT for each eta bin
         // Needed for both L2 only corrections and L2L3 corrections
@@ -186,7 +186,7 @@ void L2Creator::loopOverAlgorithms(string makeCanvasVariable) {
             writeTextFileForCurrentAlgorithm_spline();
         else
             writeTextFileForCurrentAlgorithm();
-        
+
         //
         // Check that the FormulaEvaluator returns the same value as the TF1 used to create the fit
         // This is necessary because several times in the past the FormulaEvaluator has returned strange values
@@ -232,7 +232,7 @@ void L2Creator::loopOverEtaBins() {
         // only add points to the graphs if the current histo is not empty
         // the current setting might be a little high
         //
-        if (hrsp->GetEntries() > 4) {//hrsp->Integral()!=0) { 
+        if (hrsp->GetEntries() > 4) {//hrsp->Integral()!=0) {
 
             //TF1*  frsp    = (TF1*)hrsp->GetListOfFunctions()->Last();
             //std::cout << "hrspName = " << hrsp->GetName() << ": frsp = " << frsp << std::endl;
@@ -278,16 +278,16 @@ void L2Creator::loopOverEtaBins() {
             double abscor = 0.0;
             double eabscor = 0.0;
 
-            if (absrsp > 0) {  
+            if (absrsp > 0) {
                 abscor  =1.0/absrsp;
                 eabscor = abscor*abscor*epeak;
-            } 
-            if ((abscor>0) && (absrsp>0) && (eabscor>1e-5) && (eabscor/abscor<0.5) && (eabsrsp>1e-4) && (eabsrsp/absrsp<0.5)) { 
+            }
+            if ((abscor>0) && (absrsp>0) && (eabscor>1e-5) && (eabscor/abscor<0.5) && (eabsrsp>1e-4) && (eabsrsp/absrsp<0.5)) {
                 int n = vabsrsp_eta.back()->GetN();
                 vabsrsp_eta.back()->SetPoint     (n,refpt, absrsp);
                 vabsrsp_eta.back()->SetPointError(n,erefpt,eabsrsp);
                 vabscor_eta.back()->SetPoint     (n,jetpt, abscor);
-                vabscor_eta.back()->SetPointError(n,ejetpt,eabscor);      
+                vabscor_eta.back()->SetPointError(n,ejetpt,eabscor);
             }
             else cout << "absrsp " << absrsp << " and eabsrsp " << eabsrsp << " and abscor " << abscor << " and eabscor " << eabscor << endl;
         }
@@ -300,11 +300,11 @@ void L2Creator::loopOverEtaBins() {
             TGraphErrors* gabsrsp = vabsrsp_eta.back();
             TGraphErrors* gabscor = vabscor_eta.back();
             TF1*          fabscor(0);
-            int npoints = gabscor->GetN(); 
+            int npoints = gabscor->GetN();
             double xmin(1.0),xmax(100.0);
             if (npoints > 0) {
             //
-            // we don't want to fit for pt less than 5 GeV as even a corrected calo jet of 10 
+            // we don't want to fit for pt less than 5 GeV as even a corrected calo jet of 10
             // will be at least 5 Gev in raw energy.
             //
             //xmin = gabscor->GetX()[0];
@@ -377,7 +377,7 @@ void L2Creator::loopOverEtaBins() {
                         setOfflinePFParameters(gabscor, fabscor,xmin,xmax);
 
                         if(l2pffit.Contains("spline",TString::kIgnoreCase)) {
-                            vabscor_eta_spline.back()->setPartialFunction(fabscor);   
+                            vabscor_eta_spline.back()->setPartialFunction(fabscor);
                         }
                     }
                 }
@@ -529,7 +529,7 @@ void L2Creator::loopOverEtaBins() {
             gErrorIgnoreLevel = kBreak;
             perform_smart_fit(gabscor,fabscor,maxFitIter);
             gErrorIgnoreLevel = origIgnoreLevel;
-            
+
             if (alg.find("pf")!=string::npos) {
                 if (alg.find("HLT")!=string::npos) {
                     ((TF1*)gabscor->GetListOfFunctions()->First())->FixParameter(7,fabscor->Eval(fabscor->GetParameter(6)));
@@ -542,7 +542,7 @@ void L2Creator::loopOverEtaBins() {
             //
             if(gabscor->GetListOfFunctions()->GetSize()>0)
                 gabscor->GetListOfFunctions()->First()->ResetBit(TF1::kNotDraw);
-            gabsrsp->SetMarkerStyle(20); 
+            gabsrsp->SetMarkerStyle(20);
             gabscor->SetMarkerStyle(20);
             odir->cd();
             gabsrsp->Write();
@@ -659,14 +659,14 @@ bool L2Creator::checkFormulaEvaluator() {
                          << " TF1: "; root_func->Print();
                     cout << " TF1: ";
                     for(int ipar=0; ipar<root_func->GetNpar(); ipar++) {
-                       cout << " " << root_func->GetParameter(ipar) << " "; 
+                       cout << " " << root_func->GetParameter(ipar) << " ";
                     }
                     cout << endl;
                     if(spline_section>-1) {
                        cout << " TF1: section=" << spline_section << endl
-                            << " TF1: section bounds=(" << spline_section_bounds.first << "," 
+                            << " TF1: section bounds=(" << spline_section_bounds.first << ","
                             << spline_section_bounds.second << ")" << endl;
-                    }                        
+                    }
                     cout << " FormulaEvaluator: " << std::setprecision(10) << fe_value << endl
                          << " FormulaEvaluator: " << L2JetPar->definitions().formula() << endl
                          << " FormulaEvaluator: ";
@@ -702,7 +702,7 @@ f->Eval(10.0)
 }
 
 //______________________________________________________________________________
-void L2Creator::makeCanvas(string makeCanvasVariable) {    
+void L2Creator::makeCanvas(string makeCanvasVariable) {
     //
     // Delete any canvases that may still exist from other algorithms
     //
@@ -830,7 +830,7 @@ bool L2Creator::getL3Rsp() {
         cout<<"Failed to rerieve L3 correction for "<<alg<<", skip"<<endl;
         return false;
     }
-    
+
     gl3rsp = (TGraphErrors*)l3dir->Get("L3RspVsRefPt");
     fl3rsp = (TF1*)gl3rsp->GetListOfFunctions()->First();
     if (0==fl3rsp) {
@@ -909,7 +909,7 @@ TString L2Creator::getOfflinePFFunction() {
     //}
     else {
         cout << "ERROR::getOfflinePFFunction::Unknown PF function choice." << endl;
-        return "";      
+        return "";
     }
 }
 
@@ -925,7 +925,7 @@ void L2Creator::setOfflinePFParameters(TGraphErrors* gabscor, TF1* fabscor, doub
         //Original function
     }
 
-    if(l2pffit.EqualTo("standard",TString::kIgnoreCase) || l2pffit.EqualTo("standard+spline3",TString::kIgnoreCase) || 
+    if(l2pffit.EqualTo("standard",TString::kIgnoreCase) || l2pffit.EqualTo("standard+spline3",TString::kIgnoreCase) ||
        l2pffit.EqualTo("standard+spline5",TString::kIgnoreCase) || l2pffit.EqualTo("standard+splineAkima",TString::kIgnoreCase) ||
        l2pffit.EqualTo("standard+splineSteffen",TString::kIgnoreCase)) {
         fabscor->SetParameter(0,0.5);
@@ -1073,10 +1073,10 @@ Double_t L2Creator::findPeak(TGraphErrors* gabscor, int ipeak, int npeaks, int r
 
 //______________________________________________________________________________
 void L2Creator::doRelCorFits() {
-    string fnc_as_str = (ji->getAbbreviation().find("trk")!=string::npos) ? 
+    string fnc_as_str = (ji->getAbbreviation().find("trk")!=string::npos) ?
        "[0]+[1]*log10(x)+[2]*pow(log10(x),2)+[3]*pow(log10(x),3)+[4]*pow(x/500.0,3)" :
        "[0]+[1]*log10(x)+[2]*pow(log10(x),2)+[3]*pow(log10(x),3)+[4]*pow(log10(x),4)";
-     
+
     vector<unsigned int> indices;
     TH1F* hjetpt(0);
     hl_jetpt.begin_loop();
@@ -1106,7 +1106,7 @@ void L2Creator::doRelCorFits() {
             if (relcor > 5)
                 cout<<"WARNING !!! suspicious point: "<<hjetpt->GetName()
             <<", jet pt = "<<jetpt<<", ref pt = "<<refpt<<" "<<endl;
-            else { 
+            else {
                 int n=vrelcor_eta.back()->GetN();
                 vrelcor_eta.back()->SetPoint(n,jetpt,relcor);
             }
@@ -1144,7 +1144,7 @@ void L2Creator::doRelCorFits() {
 
             grelcor->Fit(frelcor,"QRB0");
             grelcor->GetListOfFunctions()->First()->ResetBit(TF1::kNotDraw);
-            grelcor->SetMarkerStyle(20); 
+            grelcor->SetMarkerStyle(20);
             grelcor->Write();
         }
     }
@@ -1185,7 +1185,7 @@ double L2Creator::findNext(double xvalue,TGraph* g, bool highest, bool debug) {
 
     if(debug) cout << "\tEnding value: " << next << endl;
 
-    return next; 
+    return next;
 }
 
 //______________________________________________________________________________
@@ -1194,7 +1194,7 @@ void L2Creator::perform_smart_fit(TGraphErrors * gabscor, TF1 * fabscor, int max
     int fitIter = 0, bestIter = 0;
     double bestRChi2 = 0.0;
     vector<TFitResultPtr> fitResultPtrs;
-    do {         
+    do {
         //
         // do the fit, get the results and the parameters of the fitted function
         //
@@ -1234,16 +1234,16 @@ void L2Creator::perform_smart_fit(TGraphErrors * gabscor, TF1 * fabscor, int max
     //
     if(l2pffit.EqualTo("spline3",TString::kIgnoreCase) || l2pffit.EqualTo("spline5",TString::kIgnoreCase) ||
        l2pffit.EqualTo("splineAkima",TString::kIgnoreCase) || l2pffit.EqualTo("splineSteffen",TString::kIgnoreCase))
-        return;        
-      
+        return;
+
     //
     // warn if the fit diverges from graph at low pt
     //
     //if (fabscor->Integral(0,10) > 60)
     //if(abs(gabscor->GetY()[0]-fabscor->Eval(gabscor->GetX()[0]))>0.05)
     //   cout << "\t***ERROR***, fit for histo " << gabscor->GetName() << " diverges at low pt" << endl;
-    
-    //   
+
+    //
     // check for failed fits
     // a chi2 of zero is symptomatic of a failed fit.
     //
@@ -1252,7 +1252,7 @@ void L2Creator::perform_smart_fit(TGraphErrors * gabscor, TF1 * fabscor, int max
             <<" which has a reduced chi2="<<bestRChi2
             <<" after "<<fitIter<<" iterations. "<<endl;
     }
-  
+
     //
     // check for large reduced chi2's
     // above 10 is a plain error; between 5 and 10 is a warning
@@ -1262,7 +1262,7 @@ void L2Creator::perform_smart_fit(TGraphErrors * gabscor, TF1 * fabscor, int max
             cout<<"\t***ERROR***,";
         else
             cout<<"\tWARNING,";
-    
+
         cout<<" fit for histo "<<gabscor->GetName()
             <<" has a reduced chi2="<<bestRChi2
             <<" after "<<fitIter<<" iterations"<<endl;
@@ -1273,12 +1273,12 @@ void L2Creator::perform_smart_fit(TGraphErrors * gabscor, TF1 * fabscor, int max
 void L2Creator::writeTextFileForCurrentAlgorithm() {
     TString txtfilename = outputDir + era + "_L2Relative_" + ji->getAlias() + ".txt";
     ofstream fout(txtfilename);
-    fout.setf(ios::right); 
+    fout.setf(ios::right);
 
     unsigned int vector_size = 0;
     if(l2l3) vector_size = vabscor_eta.size(); //For L2L3 Corrections Together
     else vector_size = vrelcor_eta.size(); //For L2 & L3 Corrections Separate
-    for (unsigned int ieta=0;ieta<vector_size;ieta++) { 
+    for (unsigned int ieta=0;ieta<vector_size;ieta++) {
         TGraph* grelcor;
         if(l2l3) grelcor = vabscor_eta[ieta]; //For L2L3 Corrections Together
         else grelcor = vrelcor_eta[ieta]; //For L2 & L3 Corrections Separate
@@ -1291,11 +1291,10 @@ void L2Creator::writeTextFileForCurrentAlgorithm() {
             double  etamax  = hl_jetpt.maximum(0,ieta);
             double  ptmin = grelcor->GetX()[0];
             double  ptmax = grelcor->GetX()[grelcor->GetN()-1];
-            fout<<setw(8)<<etamin
-                <<setw(8)<<etamax
-                <<setw(8)<<(int)(frelcor->GetNpar()+2) //Number of parameters + 2 
-                <<setw(8)<<ptmin
-                <<setw(8)<<ptmax;
+            fout<<setw(8)<<etamin<<setw(8)<<etamax
+                <<setw(6)<<(int)(frelcor->GetNpar()+2) //Number of parameters + 2
+                <<setw(12)<<setprecision(8)<<ptmin
+                <<setw(12)<<setprecision(8)<<ptmax;
                 for(int p=0; p<frelcor->GetNpar(); p++) {
                    fout<<setw(17)<<setprecision(10)<<frelcor->GetParameter(p);
                 }
@@ -1309,7 +1308,7 @@ void L2Creator::writeTextFileForCurrentAlgorithm() {
 void L2Creator::writeTextFileForCurrentAlgorithm_spline() {
     TString txtfilename = outputDir + era + "_L2Relative_" + ji->getAlias() + ".txt";
     ofstream fout(txtfilename);
-    fout.setf(ios::right); 
+    fout.setf(ios::right);
     bool head_printed = false;
 
     //For eta-dependent spline clipping
@@ -1317,7 +1316,7 @@ void L2Creator::writeTextFileForCurrentAlgorithm_spline() {
 
     unsigned int vector_size = 0;
     vector_size = vabscor_eta.size();
-    for (unsigned int ieta=0;ieta<vector_size;ieta++) { 
+    for (unsigned int ieta=0;ieta<vector_size;ieta++) {
         TGraph* grelcor;
         grelcor = vabscor_eta[ieta];
         TF1* frelcor = (TF1*)grelcor->GetListOfFunctions()->Last();
@@ -1373,16 +1372,18 @@ void L2Creator::writeTextFileForCurrentAlgorithm_spline() {
                 }
 
                 //For expediency of Summer16_25nsV5_MC do eta-dependent clipping
-                fout<<setw(8)<<etamin<<setw(8)<<etamax
-                    <<setw(8)<<bounds.first<<setw(8)<<(lastLine ? 6500 : bounds.second)
-                    <<setw(8)<<(int)(spline->getNpar()+2) //Number of parameters + 2 
-                    <<setw(8)<<bounds.first<<setw(8)<<(abovePtLimit ? pt_limit : bounds.second);
+                fout<<setw(8) <<etamin<<setw(8)<<etamax
+                    <<setw(10)<<setprecision(6)<<(isection ? bounds.first : 0.001)
+                    <<setw(10)<<setprecision(6)<<(lastLine ? 6500 : bounds.second)
+                    <<setw(6)<<(int)(spline->getNpar()+2) //Number of parameters + 2
+                    <<setw(12)<<setprecision(8)<<bounds.first
+                    <<setw(12)<<setprecision(8)<<(abovePtLimit ? pt_limit : bounds.second);
                 TF1* spline_func = spline->setParameters(isection);
                 for(int p=0; p<spline->getNpar(); p++) {
                    fout<<setw(17)<<setprecision(10)<<spline_func->GetParameter(p);
                 }
                 fout<<endl;
-            } 
+            }
         }
     }
     fout.close();
