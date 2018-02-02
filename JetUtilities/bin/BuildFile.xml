@@ -12,5 +12,3 @@
 </bin>
 <bin   name="jet_add_histos_x" file="jet_add_histos_x.cc">
 </bin>
-<bin   name="test_jet_corrector_x" file="test_jet_corrector_x.cc">
-</bin>

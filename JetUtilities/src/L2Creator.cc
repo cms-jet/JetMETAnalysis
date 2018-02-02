@@ -232,7 +232,7 @@ void L2Creator::loopOverEtaBins() {
         // only add points to the graphs if the current histo is not empty
         // the current setting might be a little high
         //
-        if (hrsp->GetEntries() > 4) {//hrsp->Integral()!=0) {
+        if (hrsp->GetEntries() > 400) {//hrsp->Integral()!=0) {
 
             //TF1*  frsp    = (TF1*)hrsp->GetListOfFunctions()->Last();
             //std::cout << "hrspName = " << hrsp->GetName() << ": frsp = " << frsp << std::endl;
@@ -1313,6 +1313,7 @@ void L2Creator::writeTextFileForCurrentAlgorithm_spline() {
 
     //For eta-dependent spline clipping
     int pt_limit = 70;
+    int pt_clip = 8;
 
     unsigned int vector_size = 0;
     vector_size = vabscor_eta.size();
@@ -1345,6 +1346,7 @@ void L2Creator::writeTextFileForCurrentAlgorithm_spline() {
 
             bool abovePtLimit = false;
             bool lastLine = false;
+            bool firstline = true;
 
             for(int isection=0; isection<spline->getNSections(); isection++) {
                 if(lastLine) continue;
@@ -1364,7 +1366,7 @@ void L2Creator::writeTextFileForCurrentAlgorithm_spline() {
                 //if(isection==spline->getNSections()-1) {
                 //    bounds.second = 6500;
                 //}
-
+                if(bounds.second < pt_clip) continue;
                 if(isection==spline->getNSections()-1) lastLine = true;
                 if(bounds.second >= pt_limit) {
                     abovePtLimit = true;
@@ -1373,16 +1375,17 @@ void L2Creator::writeTextFileForCurrentAlgorithm_spline() {
 
                 //For expediency of Summer16_25nsV5_MC do eta-dependent clipping
                 fout<<setw(8) <<etamin<<setw(8)<<etamax
-                    <<setw(10)<<setprecision(6)<<(isection ? bounds.first : 0.001)
+                    <<setw(10)<<setprecision(6)<<(firstline ? 0.001 : bounds.first)
                     <<setw(10)<<setprecision(6)<<(lastLine ? 6500 : bounds.second)
                     <<setw(6)<<(int)(spline->getNpar()+2) //Number of parameters + 2
-                    <<setw(12)<<setprecision(8)<<bounds.first
+                    <<setw(12)<<setprecision(8)<<(firstline ? pt_clip : bounds.first)
                     <<setw(12)<<setprecision(8)<<(abovePtLimit ? pt_limit : bounds.second);
                 TF1* spline_func = spline->setParameters(isection);
                 for(int p=0; p<spline->getNpar(); p++) {
                    fout<<setw(17)<<setprecision(10)<<spline_func->GetParameter(p);
                 }
                 fout<<endl;
+                firstline = false;
             }
         }
     }

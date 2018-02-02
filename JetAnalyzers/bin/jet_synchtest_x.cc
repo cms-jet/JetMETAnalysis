@@ -124,7 +124,7 @@ private:
    int                  NBinsNpvRhoNpu;
    int                  npvRhoNpuBinWidth;
    int                  iIT;
-   int                  inpv;  
+   int                  inpv;
    int                  inpv_low;
    int                  inpv_high;
    int                  irho;
@@ -339,9 +339,10 @@ void MatchEventsAndJets::WriteMatchedEventsMaps(map<evtid, pair<ull,ull>, evtid>
       outputFilename = "matchedEventsMaps_"+algo1+".root";
    outputFilename = outputPath+outputFilename;
    string name = "mapTree";
-   cout << "\tWriting " << name+(noPU ? "NoPU" : "PU") << " to " << outputFilename << " ... " << flush; 
+   cout << "\tWriting " << name+(noPU ? "NoPU" : "PU") << " to " << outputFilename << " ... " << flush;
    string option = (noPU ? "UPDATE" : "RECREATE");
    TFile* mapFile = TFile::Open(outputFilename.c_str(),option.c_str());
+   mapFile->cd();
    mapFile->WriteObject(&mapTree,(name+(noPU ? "NoPU" : "PU")).c_str());
    mapFile->Write();
    mapFile->Close();
@@ -440,7 +441,7 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
    histograms["g_GenWeight"]   = new TH1D("g_GenWeight", "g_GenWeight;log_{10}(GenWeight);Events", 1000,-48,2);
    histograms["g_pThatWeight"] = new TH1D("g_pThatWeight;log_{10}(pThatWeight);Events","g_pThatWeight", 1000,-48,2);
    histograms["g_weight"]      = new TH1D("g_weight","g_weight;log_{10}(EvtWeight);Events", 1000,-48,2);
-   histograms["g_pthat"]       = new TH1D("g_pthat","g_pthat;#hat{p}_{T}^{PU};Events",(int)vpt[NPtBins]/10.0,vpt[0],vpt[NPtBins]);   
+   histograms["g_pthat"]       = new TH1D("g_pthat","g_pthat;#hat{p}_{T}^{PU};Events",(int)vpt[NPtBins]/10.0,vpt[0],vpt[NPtBins]);
    if(!reduceHistograms) {
       histograms["g_nj"]       = new TH2D("g_nj","g_nj",30,0,30,30,0,30);
       histograms["g_npv"]      = new TH2D("g_npv","g_npv",50,0,50,50,0,50);
@@ -795,6 +796,7 @@ void MatchEventsAndJets::LoopOverEvents(bool verbose, bool reduceHistograms, str
    for (IT::const_iterator it = mapTreePU.begin(); it != mapTreePU.end(); ++it) {
 
       if (iftest && nevs >= maxEvts) return;
+      // if (nevs >= 10000000) return;
 
       //if (nevs%10000==0) cout << "\t"<<nevs << endl;
       loadbar2(nevs+1,nentries,50,"\t\t");
@@ -830,7 +832,7 @@ void MatchEventsAndJets::LoopOverEvents(bool verbose, bool reduceHistograms, str
       else {
          jetMapIndex++;
          ReadJetMap(jetMapIndex,readJetMap);
-      }  
+      }
 
       if(FillHistograms(reduceHistograms)) nevs++;
 
@@ -908,7 +910,7 @@ void MatchEventsAndJets::FillRecToRecThroughGenMap() {
          }
       }
       if(j1 >= 0 && j2 >= 0 && j1 < tpu->nref && j2 < tnopu->nref &&
-         tpu->refdrjt->at(j1) < maxDeltaR && tnopu->refdrjt->at(j2) < maxDeltaR && 
+         tpu->refdrjt->at(j1) < maxDeltaR && tnopu->refdrjt->at(j2) < maxDeltaR &&
          fabs(tpu->refpt->at(j1) - tnopu->refpt->at(j2))<0.0001) {
          jetMap[j1] = j2;
       }
@@ -1186,8 +1188,8 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
    double avg_offset = 0;
    double avg_offset_det[NDetectorNames] = {0,0,0,0};
    double njet_det[NDetectorNames] = {0,0,0,0};
-   
-   // MATCHING HISTOS. 
+
+   // MATCHING HISTOS.
    // Loop over matched jets
    int jpu   = -1;
    int jnopu = -1;
@@ -1356,7 +1358,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
          dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),respNopu,weight);
          hname = Form("p_offAfterOoffBeforeVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
          dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset/offset_raw,weight);
-   
+
          //RHO
          hname = Form("p_resVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
          dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),resp,weight);
@@ -1372,7 +1374,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
          dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),respNopu,weight);
          hname = Form("p_offAfterOoffBeforeVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
          dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset/offset_raw,weight);
-   
+
          //OTHER
          hname = Form("p_resVsnpu_%s_pt%.1f_%.1f",detectorAbbreviation.Data(),
                       vpt[JetInfo::getBinIndex(tpu->refpt->at(jpu),vpt,NPtBins)],vpt[JetInfo::getBinIndex(tpu->refpt->at(jpu),vpt,NPtBins)+1]);
@@ -1389,7 +1391,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
       avg_offset_det[idet]+=offset;
       njet_det[idet]+=1.;
 
-   } // for matched jets 
+   } // for matched jets
 
    avg_offset /= jetMap.size();
    for (int det=0;det<NDetectorNames;det++) {

@@ -83,7 +83,7 @@ public:
 	void 				checkResponse();
 	pair<double,double> determineCanvasRange(double xmin, double xmax);
 	void 				makeCanvases();
-	void 				makeMergedCanvas();
+	void 				makeMergedCanvas(bool finemerge);
 	void 				writeToFile();
 	void 				makeClosure(const VARIABLES::Variable ivar = VARIABLES::refpt);
 
