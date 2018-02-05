@@ -89,14 +89,14 @@ public:
 
 private:
 	bool           	 				 objects_loaded, draw_guidelines;
-    double							 CMEnergy, nsigma;
+  double							 CMEnergy, nsigma;
 	TString        	 				 path, filename, outputDir, outputFilename, flavor, alg, histMet;
 	vector<TString>	 				 algs, outputFormat;
 	JetInfo							 *ji;
 	TFile							 *ifile, *ofile;
 	ObjectLoader<TH2F> 				 hl;
-    vector<TH1D*>                    h;
-    vector<TF1*>                     func;
+  vector<TH1D*>                    h;
+  vector<TF1*>                     func;
 	vector<TH1F*> 					 hClosure;
 	TF1				   				 *line, *linePlus, *lineMinus;
 	vector<pair<TCanvas*,TLegend*> > canvases_legends;
@@ -104,6 +104,7 @@ private:
 	VARIABLES::Variable 			 var;
 	TDirectoryFile					 *odir;
 	HistUtil::HistogramMetric        histogramMetric;
+  int statTh;
 };
 
 #endif

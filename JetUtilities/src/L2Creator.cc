@@ -46,6 +46,9 @@ L2Creator::L2Creator(CommandLine& cl) {
     histMet    = cl.getValue<string>  ("histMet",       "mu_h");
     histogramMetric = HistUtil::getHistogramMetricType(histMet);
 
+    ptclip     = cl.getValue<float>   ("ptclip",            0.);
+    statTh     = cl.getValue<int>     ("statTh",             4);
+
     if (!cl.partialCheck()) return;
     cl.print();
 }
@@ -232,7 +235,7 @@ void L2Creator::loopOverEtaBins() {
         // only add points to the graphs if the current histo is not empty
         // the current setting might be a little high
         //
-        if (hrsp->GetEntries() > 400) {//hrsp->Integral()!=0) {
+        if (hrsp->GetEntries() > statTh) {//hrsp->Integral()!=0) {
 
             //TF1*  frsp    = (TF1*)hrsp->GetListOfFunctions()->Last();
             //std::cout << "hrspName = " << hrsp->GetName() << ": frsp = " << frsp << std::endl;
@@ -1313,7 +1316,7 @@ void L2Creator::writeTextFileForCurrentAlgorithm_spline() {
 
     //For eta-dependent spline clipping
     int pt_limit = 70;
-    int pt_clip = 8;
+    float pt_clip = ptclip;
 
     unsigned int vector_size = 0;
     vector_size = vabscor_eta.size();

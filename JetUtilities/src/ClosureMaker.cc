@@ -57,6 +57,7 @@ ClosureMaker::ClosureMaker(CommandLine& cl) {
     histMet         = cl.getValue<TString>  ("histMet",             "mu_h");
     histogramMetric = HistUtil::getHistogramMetricType(string(histMet));
     bool help       = cl.getValue<bool>     ("help",                 false);
+    statTh          = cl.getValue<int>      ("statTh",                   4);
 
     if (help) {cl.print(); return;}
     if (!cl.partialCheck()) return;
@@ -343,7 +344,7 @@ void ClosureMaker::loopOverBins(TH2F* hvar, unsigned int iVarBin) {
                     varBins[ibin].c_str(),varBins[ibin+1].c_str());
         h.push_back(hvar->ProjectionY(name,ibin+1,ibin+1,"e"));
 
-        if (h.back()->GetEntries()>4) {
+        if (h.back()->GetEntries()> statTh) {
             if(histogramMetric==HistUtil::mu_f || histogramMetric==HistUtil::mpv) {
                 int nbins = 50;//100;
                 TSpectrum *spec = new TSpectrum(10);
