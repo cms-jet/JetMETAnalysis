@@ -12,6 +12,7 @@
 #include <iostream>
 
 #include "JetMETAnalysis/JetUtilities/interface/Style.h"
+#include "JetMETAnalysis/JetUtilities/interface/HistogramUtilities.hh"
 
 using namespace std;
 
@@ -358,13 +359,14 @@ TH1 * getMeanHistoFromHisto(TString cname, TString title, TH2 *off_in, double & 
       TH1 * aux= off_in->ProjectionY("_py",nb,nb);
       if (aux->GetEntries() > 0) {
 
-         TFitResultPtr fr = aux->Fit("gaus","0qS");
+         // TFitResultPtr fr = aux->Fit("gaus","0qS");
          //cout << cname << "sfsg1\tnb=" << nb << endl;
+         TF1* fr = HistUtil::fit_gaussian(aux, 1.5, 1.0, 10, false);
 
          // Skip if fit failed
-         if (fr.Get() && !fr->Status()){
-            double mean    = fr->Parameter(1);
-            double meanerr = fr->ParError(1);
+         if (fr){
+            double mean    = fr->GetParameter(1);
+            double meanerr = fr->GetParError(1);
             //double rms     = fr->Parameter(2);
             //double rmserr  = fr->ParError(2);
 
@@ -372,7 +374,6 @@ TH1 * getMeanHistoFromHisto(TString cname, TString title, TH2 *off_in, double & 
             if (val>maxy && meanerr<0.4) maxy=val;
             if (val<miny && meanerr<0.4) miny=val;
             valerr = meanerr;
-
          }
 
       }

@@ -14,7 +14,7 @@
 
 namespace HistUtil {
     //______________________________________________________________________________
-    // A routine that returns the string given the HistogramMetric 
+    // A routine that returns the string given the HistogramMetric
     string getHistogramMetricString(HistogramMetric type){
         if      (type == mu_h)    return "mu_h";
         else if (type == RMS_h)   return "RMS_h";
@@ -134,7 +134,7 @@ namespace HistUtil {
                  << "\tabs(high_edge-median): " << std::abs(high_edge-median) << endl
                  << "\tmedian-low_edge: " << median-low_edge << endl
                  << "\thigh_edge-median: " << high_edge-median << endl;
-        } 
+        }
         delete [] x;
         delete [] y;
         delete [] b;
@@ -228,14 +228,14 @@ namespace HistUtil {
                 //     c: Median bar width
                 if(debug) {
                     cout << "L_m = " << boundaries[ind[jl]] << endl
-                         << "N = " << 2.*sumTot2 << endl 
+                         << "N = " << 2.*sumTot2 << endl
                          << "F_(m-1) = " << sumToJl << endl
                          << "f_m = " << w[ind[jl]] << endl
                          << "c = " << (2.*(a[ind[jl]]-boundaries[ind[jl]])) << endl;
                 }
                 if (n%2 == 1)
                     median = boundaries[ind[jl]]+(((((2.*sumTot2)+1.)/2.)-sumToJl)/(w[ind[jl]]))*(2.*(a[ind[jl]]-boundaries[ind[jl]]));
-                else 
+                else
                     median = boundaries[ind[jl]]+(((sumTot2)-sumToJl)/(w[ind[jl]]))*(2.*(a[ind[jl]]-boundaries[ind[jl]]));
             } else {
                 // Traditional ROOT method
@@ -314,7 +314,7 @@ namespace HistUtil {
 
             if(!use_names)
                 delete h1;
-        } 
+        }
 
         return ret;
     }//getHistogramMetric2D
@@ -323,4 +323,106 @@ namespace HistUtil {
         return getHistogramMetric2D(getHistogramMetricType(type),hist,axis,names);
     }//getHistogramMetric2D
 
+    void adjust_fitrange(TH1* h,double& min,double& max)
+    {
+      int imin=1; while (h->GetBinLowEdge(imin)<min) imin++;
+      int imax=1; while (h->GetBinLowEdge(imax)<max) imax++;
+      while ((imax-imin)<8) {
+        if (imin>1) {imin--; min = h->GetBinCenter(imin); }
+        if (imax<h->GetNbinsX()-1) { imax++; max=h->GetBinCenter(imax); }
+      }
+    }//adjust fitting range
+
+    int number_filled_bins(TH1* h, double min, double max)
+    {
+      int first_bin = h->FindBin(min);
+      int last_bin  = h->FindBin(max);
+      int counter(0);
+
+      for(int ibin=first_bin; ibin<=last_bin; ibin++) {
+        if(h->GetBinContent(ibin)>0) counter++;
+      }
+
+      return counter;
+    }
+
+    TF1* fit_gaussian(TH1*& hrsp, const double nsigma, const double jtptmin, const int niter, const int verbose)
+    {
+      if (0==hrsp) {
+        cout<<"ERROR: Empty pointer to fit_gaussian()"<<endl;return 0;
+      }
+
+      string histname = hrsp->GetName();
+      double mean     = hrsp->GetMean();
+      double rms      = hrsp->GetRMS();
+
+      double norm  = hrsp->GetMaximumStored();
+      double peak  = mean;
+      int nbins = 50;//100;
+      TSpectrum *spec = new TSpectrum(8);
+      if(nbins < 100) spec->Search(hrsp,6,"nobackground nodraw goff"); //turn off background removal when nbins too small
+      else spec->Search(hrsp,6,"nodraw goff");
+      Double_t* xpos = spec->GetPositionX();
+      //Double_t* ypos = spec->GetPositionY();
+      Double_t p = xpos[0];
+      //Double_t ph = ypos[0];
+      //std::cout << "peak: " << p << std::endl;
+      //std::cout << "peak height: " << ph << std::endl;
+      peak = p;
+
+      double sigma = rms;
+
+      double xmin  = hrsp->GetXaxis()->GetXmin();
+      double xmax  = hrsp->GetXaxis()->GetXmax();
+      TF1* fitfnc(0); int fitstatus(-1);
+      for (int iiter=0;iiter<niter;iiter++) {
+        vector<double> vv;
+        vv.push_back(xmin);
+        vv.push_back(peak-nsigma*sigma);
+        double fitrange_min = *std::max_element(vv.begin(),vv.end());
+        double fitrange_max = std::min(xmax,peak+nsigma*sigma);
+        adjust_fitrange(hrsp,fitrange_min,fitrange_max);
+        fitfnc = new TF1("fgaus","gaus",fitrange_min,fitrange_max);
+        fitfnc->SetParNames("N","#mu","#sigma");
+        fitfnc->SetParameter(0,norm);
+        fitfnc->SetParameter(1,peak);
+        fitfnc->SetParameter(2,sigma);
+
+        //Total entries in hrsp could be >0, but the number of entries in the fit range <=1.
+        //In that case ROOT would print "Warning in <Fit>: Fit data is empty"
+        //So instead check that the number of entries (unweighted integral) in the fit range is >1
+        double entries_in_range = hrsp->Integral(hrsp->FindBin(fitrange_min),hrsp->FindBin(fitrange_max));
+        int filled_bins_in_range = number_filled_bins(hrsp,fitrange_min,fitrange_max);
+        if(entries_in_range<=1 || filled_bins_in_range<=1) {
+           if(verbose>0)
+             cout << "Warning in <Fit>: Fit data is empty" << endl
+                  << "hrsp->GetName(): " << histname << endl;
+           return 0;
+        }
+        else {
+           fitstatus = hrsp->Fit(fitfnc,"RQ0");
+        }
+        delete fitfnc;
+        fitfnc = hrsp->GetFunction("fgaus");
+        //fitfnc->ResetBit(TF1::kNotDraw);
+        if (fitfnc) {
+           norm  = fitfnc->GetParameter(0);
+           peak  = fitfnc->GetParameter(1);
+           sigma = fitfnc->GetParameter(2);
+        }
+      }
+      if(hrsp->GetFunction("fgaus")==0)
+        {
+          cout << "No function recorded in histogram " << hrsp->GetName() << endl;
+        }
+      if (0!=fitstatus){
+        cout<<"fit_gaussian() to "<<hrsp->GetName()
+            <<" failed. Fitstatus: "<<fitstatus
+            <<" - FNC deleted."<<endl;
+        hrsp->GetListOfFunctions()->Delete();
+        return 0;
+      }
+      TF1* returnf = dynamic_cast<TF1*>(hrsp->GetListOfFunctions()->Last());
+      return returnf;
+    }
 }// end of namespace HistUtil
