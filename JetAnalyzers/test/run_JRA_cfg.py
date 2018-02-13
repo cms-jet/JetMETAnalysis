@@ -76,11 +76,7 @@ try:
 except ImportError:
     print "Couldn't open the external list of files from DAS. If you just checkout out the JetResponseAnalyzer package you will need to make this file yourself. Currently Falling back to opening the list hard-coded in run_JRA_cfg.py. This is not a bad action as long as it is what you intended to have happen."
     inputFiles = cms.untracked.vstring(
-	    # 'root://cmsxrootd.fnal.gov//store/mc/<path to root file>/<filename>.root'
-        # 'root://cmsxrootd.fnal.gov//store/mc/RunIIFall17DRPremix/QCD_Pt-15to7000_TuneCP5_Flat_13TeV_pythia8/AODSIM/94X_mc2017_realistic_v10-v1/50000/00304636-1BDB-E711-B6F3-FA163ECE02A9.root',
-        # 'root://cmsxrootd.fnal.gov//store/mc/RunIIFall17DRPremix/QCD_Pt-15to7000_TuneCP5_Flat_13TeV_pythia8/AODSIM/94X_mc2017_realistic_v10-v1/50000/0036C92E-DFDB-E711-952A-008CFAFC05DE.root',
-		'root://cms-xrd-global.cern.ch//store/user/kirschen/QCD_Pt-15to7000_TuneCP5_Flat2017_13TeV_pythia8/crab_pickEvents/180201_223255/0000/pickevents_1.root'
-		# /afs/cern.ch/user/k/kirschen/public/forJERC/forMCTruthDebugging/pickevents_NoPU.root
+	    'root://cmsxrootd.fnal.gov//store/mc/<path to root file>/<filename>.root',
 	    )
     process.source = cms.Source("PoolSource", fileNames = inputFiles )
 
