@@ -386,10 +386,10 @@ void ClosureMaker::loopOverBins(TH2F* hvar, unsigned int iVarBin) {
                 continue;
             }
         }
-        else if(h.back()->GetEntries()<=4 && h.back()->GetEntries()>1) {
-            hClosure.back()->SetBinContent(ibin+1,h.back()->GetMean());
-            hClosure.back()->SetBinError(ibin+1,h.back()->GetMeanError());
-        }
+        // else if(h.back()->GetEntries()<=4 && h.back()->GetEntries()>1) {
+        //     hClosure.back()->SetBinContent(ibin+1,h.back()->GetMean());
+        //     hClosure.back()->SetBinError(ibin+1,h.back()->GetMeanError());
+        // }
         else {
             continue;
         }
