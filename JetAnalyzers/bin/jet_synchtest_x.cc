@@ -171,6 +171,10 @@ MatchEventsAndJets::MatchEventsAndJets() : algo1("ak5pf"), algo2("ak5pf"), iftes
    algo2JetInfo = JetInfo(algo2);
    getMaxDeltaR();
    LumiWeightsSet_ = false;
+   recoJetIndexPU = NULL;
+   recoJetIndexNoPU = NULL;
+   jetMapTree = NULL;
+   fValue = NULL;
 }
 
 //______________________________________________________________________________
@@ -186,6 +190,10 @@ MatchEventsAndJets::MatchEventsAndJets(string algo1_, string algo2_, bool iftest
    algo2JetInfo = JetInfo(algo2);
    getMaxDeltaR();
    LumiWeightsSet_ = false;
+   recoJetIndexPU = NULL;
+   recoJetIndexNoPU = NULL;
+   jetMapTree = NULL;
+   fValue = NULL;
 }
 
 //______________________________________________________________________________
