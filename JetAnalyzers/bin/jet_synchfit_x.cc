@@ -378,7 +378,10 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, string functionType, i
 //===========================================================================
 // This method creates the txt file for the corrections
 void createTxtFile(TString txtFilename, const vector<FitRes> & fitResults){
-   
+
+   if(fitResults.size() == 0)   // safety protection
+      return;
+
    // Create the stream 
    ofstream outF(txtFilename.Data());
    
@@ -415,6 +418,9 @@ void createTxtFile(TString txtFilename, const vector<FitRes> & fitResults){
 //===========================================================================
 void createPDFFile(TFile* fout, TString pdfFilename, const vector<FitRes> & fitResults){
    
+   if(fitResults.size() == 0)   // safety protection
+      return;
+
    // The number of parameters in the fit. 
    // Assume all fitResults element have the same number
    unsigned int nfitpars = fitResults[0].fit->GetNpar();
