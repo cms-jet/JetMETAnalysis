@@ -13,7 +13,7 @@ using std::remainder;
 const int r = 100;
 
 inline void loadbar2(unsigned int x, unsigned int n, unsigned int w = 50, string prefix = "") {
-   if ( (x != n) && (x % (n/100) != 0) ) return;
+   if ( (x != n) && ((n >= 100) && x % (n/100) != 0) ) return;
 
    float ratio  =  x/(float)n;
    int   c      =  ratio * w;
@@ -25,7 +25,7 @@ inline void loadbar2(unsigned int x, unsigned int n, unsigned int w = 50, string
 }
 
 inline void loadbar3(unsigned int x, unsigned int n, unsigned int w = 50, string prefix = "") {
-   if ( (x != n) && (x % (n/10000) != 0) ) return;
+   if ( (x != n) && ((n >= 10000) && x % (n/10000) != 0) ) return;
    //// round to nearest r
    //unsigned int ntmp = n/10000;
    //ntmp += r/2; // 1: Add r/2.

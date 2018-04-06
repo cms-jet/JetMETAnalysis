@@ -442,47 +442,48 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
         } 
      }
      
-    // PFCANDIDATE INFORMATION
-    //Dual handle idea from https://github.com/aperloff/cmssw/blob/CMSSW_7_6_X/RecoJets/JetProducers/plugins/VirtualJetProducer.cc
-    //Random-Cone algo from https://github.com/cihar29/OffsetAnalysis/blob/master/run_offset.py
-    //                  and https://github.com/cihar29/OffsetAnalysis/blob/master/plugins/OffsetAnalysis.cc
-    if (saveCandidates_ && isPFJet_) {
-        bool isView = iEvent.getByToken(srcPFCandidates_, pfCandidates);
-        if ( isView ) {
-            for (auto i_pf=pfCandidates->begin(); i_pf != pfCandidates->end(); ++i_pf) {
-                auto i_pfc = (i_pf);
-                JRAEvent::Flavor pf_id = getFlavor( i_pfc->particleId() );
-                if (pf_id == JRAEvent::X) continue;
-                JRAEvt_->pfcand_px ->push_back(i_pfc->px());
-                JRAEvt_->pfcand_py ->push_back(i_pfc->py());
-                JRAEvt_->pfcand_pt ->push_back(i_pfc->pt());
-                JRAEvt_->pfcand_eta->push_back(i_pfc->eta());
-                JRAEvt_->pfcand_phi->push_back(i_pfc->phi());
-                JRAEvt_->pfcand_e  ->push_back(i_pfc->energy());
-                JRAEvt_->pfcand_id ->push_back(pf_id);
-            }
-        }
-        else {
-            bool isPF = iEvent.getByToken(srcPFCandidatesAsFwdPtr_, pfCandidatesAsFwdPtr);
-            if ( isPF ) {
-                for (auto i_pf=pfCandidatesAsFwdPtr->begin(); i_pf != pfCandidatesAsFwdPtr->end(); ++i_pf) {
-                    auto i_pfc = (*i_pf);
-                    JRAEvent::Flavor pf_id = getFlavor( i_pfc->particleId() );
-                    if (pf_id == JRAEvent::X) continue;
-                    JRAEvt_->pfcand_px ->push_back(i_pfc->px());
-                    JRAEvt_->pfcand_py ->push_back(i_pfc->py());
-                    JRAEvt_->pfcand_pt ->push_back(i_pfc->pt());
-                    JRAEvt_->pfcand_eta->push_back(i_pfc->eta());
-                    JRAEvt_->pfcand_phi->push_back(i_pfc->phi());
-                    JRAEvt_->pfcand_e  ->push_back(i_pfc->energy());
-                    JRAEvt_->pfcand_id ->push_back(pf_id);
-                }
-            }
-        }
-    }
-
      JRAEvt_->nref++;
   }
+     
+  // PFCANDIDATE INFORMATION
+  //Dual handle idea from https://github.com/aperloff/cmssw/blob/CMSSW_7_6_X/RecoJets/JetProducers/plugins/VirtualJetProducer.cc
+  //Random-Cone algo from https://github.com/cihar29/OffsetAnalysis/blob/master/run_offset.py
+  //                  and https://github.com/cihar29/OffsetAnalysis/blob/master/plugins/OffsetAnalysis.cc
+  if (saveCandidates_ && isPFJet_) {
+      bool isView = iEvent.getByToken(srcPFCandidates_, pfCandidates);
+      if ( isView ) {
+          for (auto i_pf=pfCandidates->begin(); i_pf != pfCandidates->end(); ++i_pf) {
+              auto i_pfc = (i_pf);
+              JRAEvent::Flavor pf_id = getFlavor( i_pfc->particleId() );
+              if (pf_id == JRAEvent::X) continue;
+              JRAEvt_->pfcand_px ->push_back(i_pfc->px());
+              JRAEvt_->pfcand_py ->push_back(i_pfc->py());
+              JRAEvt_->pfcand_pt ->push_back(i_pfc->pt());
+              JRAEvt_->pfcand_eta->push_back(i_pfc->eta());
+              JRAEvt_->pfcand_phi->push_back(i_pfc->phi());
+              JRAEvt_->pfcand_e  ->push_back(i_pfc->energy());
+              JRAEvt_->pfcand_id ->push_back(pf_id);
+          }
+      }
+      else {
+          bool isPF = iEvent.getByToken(srcPFCandidatesAsFwdPtr_, pfCandidatesAsFwdPtr);
+          if ( isPF ) {
+              for (auto i_pf=pfCandidatesAsFwdPtr->begin(); i_pf != pfCandidatesAsFwdPtr->end(); ++i_pf) {
+                  auto i_pfc = (*i_pf);
+                  JRAEvent::Flavor pf_id = getFlavor( i_pfc->particleId() );
+                  if (pf_id == JRAEvent::X) continue;
+                  JRAEvt_->pfcand_px ->push_back(i_pfc->px());
+                  JRAEvt_->pfcand_py ->push_back(i_pfc->py());
+                  JRAEvt_->pfcand_pt ->push_back(i_pfc->pt());
+                  JRAEvt_->pfcand_eta->push_back(i_pfc->eta());
+                  JRAEvt_->pfcand_phi->push_back(i_pfc->phi());
+                  JRAEvt_->pfcand_e  ->push_back(i_pfc->energy());
+                  JRAEvt_->pfcand_id ->push_back(pf_id);
+              }
+          }
+      }
+  }
+
   
   tree_->Fill();
   
