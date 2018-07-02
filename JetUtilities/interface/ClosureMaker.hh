@@ -62,49 +62,48 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 class ClosureMaker {
 public:
-	ClosureMaker();
-	ClosureMaker(CommandLine& cl);
-
-	//
-	// member functions
-	//
-	void 				openInputFile();
-	void 				getHistograms(TDirectoryFile* idir);
-	void 				openOutputFile();
-	void 				closeFiles();
-	void 				makeLines();
-	void 				loopOverDirectories();
-	void 				loopOverAlgorithms();
-	void 				resetForNextAlgorithm();
-	void 				loopOverHistograms();
-	void 				etaClosureMergedPtBins(TDirectoryFile* idir);
-	void 				loopOverBins(TH2F* hvar, unsigned int iVarBin);
-    void 				adjust_fitrange(TH1* h,double& min,double& max);
-	void 				checkResponse();
-	pair<double,double> determineCanvasRange(double xmin, double xmax);
-	void 				makeCanvases();
-	void 				makeMergedCanvas(bool finemerge);
-	void 				writeToFile();
-	void 				makeClosure(const VARIABLES::Variable ivar = VARIABLES::refpt);
+  ClosureMaker();
+  ClosureMaker(CommandLine& cl);
+  //
+  // member functions
+  //
+  void                openInputFile();
+  void                getHistograms(TDirectoryFile* idir);
+  void                openOutputFile();
+  void                closeFiles();
+  void                makeLines();
+  void                loopOverDirectories();
+  void                loopOverAlgorithms();
+  void                resetForNextAlgorithm();
+  void                loopOverHistograms();
+  void                etaClosureMergedPtBins(TDirectoryFile* idir);
+  void                loopOverBins(TH2F* hvar, unsigned int iVarBin);
+  void                adjust_fitrange(TH1* h,double& min,double& max);
+  void                checkResponse();
+  pair<double,double> determineCanvasRange(double xmin, double xmax);
+  void                makeCanvases();
+  void                makeMergedCanvas(bool finemerge);
+  void                writeToFile();
+  void                makeClosure(const VARIABLES::Variable ivar = VARIABLES::refpt);
 
 private:
-	bool           	 				 objects_loaded, draw_guidelines;
-  double							 CMEnergy, nsigma;
-	TString        	 				 path, filename, outputDir, outputFilename, flavor, alg, histMet;
-	vector<TString>	 				 algs, outputFormat;
-	JetInfo							 *ji;
-	TFile							 *ifile, *ofile;
-	ObjectLoader<TH2F> 				 hl;
+  bool                             objects_loaded, draw_guidelines;
+  double                           CMEnergy, nsigma;
+  TString                          path, filename, outputDir, outputFilename, flavor, alg, histMet;
+  vector<TString>                  algs, outputFormat;
+  JetInfo                          *ji;
+  TFile                            *ifile, *ofile;
+  ObjectLoader<TH2F>               hl;
   vector<TH1D*>                    h;
   vector<TF1*>                     func;
-	vector<TH1F*> 					 hClosure;
-	TF1				   				 *line, *linePlus, *lineMinus;
-	vector<pair<TCanvas*,TLegend*> > canvases_legends;
-	vector<TPaveText*>				 pave;
-	VARIABLES::Variable 			 var;
-	TDirectoryFile					 *odir;
-	HistUtil::HistogramMetric        histogramMetric;
-  int statTh;
+  vector<TH1F*>                    hClosure;
+  TF1                              *line, *linePlus, *lineMinus;
+  vector<pair<TCanvas*,TLegend*> > canvases_legends;
+  vector<TPaveText*>               pave;
+  VARIABLES::Variable              var;
+  TDirectoryFile                   *odir;
+  HistUtil::HistogramMetric        histogramMetric;
+  int                              statTh;
 };
 
 #endif

@@ -31,23 +31,25 @@ L2Creator::L2Creator(CommandLine& cl) {
     //
     // evaluate command-line / configuration file options
     //
-    input      = cl.getValue<string>  ("input");
-    era        = cl.getValue<string>  ("era");
-    l3input    = cl.getValue<string>  ("l3input",    "l3.root");
-    output     = cl.getValue<TString> ("output",     "l2.root");
-    outputDir  = cl.getValue<TString> ("outputDir",       "./");
-    formats    = cl.getVector<string> ("formats",           "");
-    algs       = cl.getVector<string> ("algs",              "");
-    l2l3       = cl.getValue<bool>    ("l2l3",            true);
-    l2calofit  = cl.getValue<TString> ("l2calofit", "standard");
-    l2pffit    = cl.getValue<TString> ("l2pffit",   "standard");
-    delphes    = cl.getValue<bool>    ("delphes",        false);
-    maxFitIter = cl.getValue<int>     ("maxFitIter",        30);
-    histMet    = cl.getValue<string>  ("histMet",       "mu_h");
+    input           = cl.getValue<string>  ("input");
+    era             = cl.getValue<string>  ("era");
+    l3input         = cl.getValue<string>  ("l3input",    "l3.root");
+    output          = cl.getValue<TString> ("output",     "l2.root");
+    outputDir       = cl.getValue<TString> ("outputDir",       "./");
+    formats         = cl.getVector<string> ("formats",           "");
+    algs            = cl.getVector<string> ("algs",              "");
+    l2l3            = cl.getValue<bool>    ("l2l3",            true);
+    l2calofit       = cl.getValue<TString> ("l2calofit", "standard");
+    l2pffit         = cl.getValue<TString> ("l2pffit",   "standard");
+    delphes         = cl.getValue<bool>    ("delphes",        false);
+    maxFitIter      = cl.getValue<int>     ("maxFitIter",        30);
+    histMet         = cl.getValue<string>  ("histMet",       "mu_h");
     histogramMetric = HistUtil::getHistogramMetricType(histMet);
 
-    ptclip     = cl.getValue<float>   ("ptclip",            0.);
-    statTh     = cl.getValue<int>     ("statTh",             4);
+    ptclipcones     = cl.getVector<int>    ("ptclipcones",       "");
+    ptclips         = cl.getVector<float>  ("ptclips",           "");
+    ptclip          = cl.getValue<float>   ("ptclip",            0.);
+    statThreshold   = cl.getValue<int>     ("statThreshold",      4);
 
     if (!cl.partialCheck()) return;
     cl.print();
@@ -142,6 +144,20 @@ void L2Creator::loopOverAlgorithms(string makeCanvasVariable) {
         //
         ji = new JetInfo(alg);
 
+        // Set ptclip
+        if (ptclipcones.size() != 0){
+            if (ptclips.size() != ptclipcones.size()){
+                ptclips.resize(ptclipcones.size(),ptclip);
+                cout << "ptclips and ptclipcones have different size, ptclips is filled with default ptclip = " << ptclip <<endl;
+            }
+            for (unsigned conesit = 0; conesit < ptclipcones.size(); ++conesit) {
+                if (ji->getConeSize().Atoi() == ptclipcones[conesit]) {
+                    ptclip = ptclips[conesit];
+                    cout << "for " << alg << " ptclip is set to " << ptclip <<endl;
+                }
+            }
+        }
+
         //
         // Get the response from the l3 file only if l2l3 is set to false;
         //
@@ -235,7 +251,7 @@ void L2Creator::loopOverEtaBins() {
         // only add points to the graphs if the current histo is not empty
         // the current setting might be a little high
         //
-        if (hrsp->GetEntries() > statTh) {//hrsp->Integral()!=0) {
+        if (hrsp->GetEntries() > statThreshold) {//hrsp->Integral()!=0) {
 
             //TF1*  frsp    = (TF1*)hrsp->GetListOfFunctions()->Last();
             //std::cout << "hrspName = " << hrsp->GetName() << ": frsp = " << frsp << std::endl;
@@ -626,12 +642,12 @@ bool L2Creator::checkFormulaEvaluator() {
                 //
                 // Check that ipt is not outside [ptmin,ptmax]
                 //
-                if (ipt<ptmin || ipt>ptmax) continue;
+                if (ipt < ptmin || ipt > ptmax) continue;
 
                 //
                 // Check that the ipt is not outside the pt clipping area
                 //
-                if(ipt > pt_limit) continue;
+                if (ipt < ptclip || ipt > pt_limit) continue;
 
                 //
                 // Set the inputs for the FactorizedJetCorrector
@@ -1381,7 +1397,7 @@ void L2Creator::writeTextFileForCurrentAlgorithm_spline() {
                     <<setw(10)<<setprecision(6)<<(firstline ? 0.001 : bounds.first)
                     <<setw(10)<<setprecision(6)<<(lastLine ? 6500 : bounds.second)
                     <<setw(6)<<(int)(spline->getNpar()+2) //Number of parameters + 2
-                    <<setw(12)<<setprecision(8)<<(firstline ? pt_clip : bounds.first)
+                    <<setw(12)<<setprecision(8)<<( (firstline && pt_clip > bounds.first) ? pt_clip : bounds.first)
                     <<setw(12)<<setprecision(8)<<(abovePtLimit ? pt_limit : bounds.second);
                 TF1* spline_func = spline->setParameters(isection);
                 for(int p=0; p<spline->getNpar(); p++) {

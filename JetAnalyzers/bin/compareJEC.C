@@ -255,15 +255,9 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
   int maxTries = 7;
   string strPath;
   vector<string> paths = {"","CondFormats/JetMETObjects/data/"};
-  paths.push_back(string("/fdata/hepx/store/user/siluo/JEC/94X_Fall17/")+cid1+"/");
-  paths.push_back(string("/fdata/hepx/store/user/siluo/JEC/80X_Summer16/")+cid2+"/");
-  paths.push_back(string("/fdata/hepx/store/user/siluo/JEC/80X_stitch/")+cid3+"/");
-  // paths.push_back(string("/fdata/hepx/store/user/aperloff/JEC/80X_Summer16/")+cid1+"/");
-  // paths.push_back(string("/fdata/hepx/store/user/aperloff/JEC/80X_Summer16/")+cid2+"/");
-  // paths.push_back(string("/fdata/hepx/store/user/aperloff/JEC/80X_Summer16/")+cid3+"/");
-  paths.push_back(string("/home/sifuluo/jec/CMSSW_8_0_20/src/JetMETCorrections/JECDatabase/textFiles/")+cid1+"/");
-  paths.push_back(string("/home/sifuluo/jec/CMSSW_8_0_20/src/JetMETCorrections/JECDatabase/textFiles/")+cid2+"/");
-  paths.push_back(string("/home/sifuluo/jec/CMSSW_8_0_20/src/JetMETCorrections/JECDatabase/textFiles/")+cid3+"/");
+  paths.push_back(string("<path to folder where textfiles of JEC1 located>")+cid1+"/");
+  paths.push_back(string("<path to folder where textfiles of JEC2 located>")+cid2+"/");
+  paths.push_back(string("<path to folder where textfiles of JEC3 located>")+cid3+"/");
 
 
   // JEC1
