@@ -225,7 +225,7 @@ double getEtaPtUncert(JetCorrectionUncertainty *unc,
 void compareJEC(string payld1="Winter14_V8", string payld2="",         string payld3="",
                 string  algo1="AK5PFchs",    string  algo2="AK5PFchs", string algo3 ="AK5PFchs",
                 string  type1="DATA",        string  type2="DATA",     string type3 ="DATA",
-			bool l1=true, bool l2l3=true, bool res=true) {
+      bool l1=true, bool l2l3=true, bool res=true) {
 
   //gROOT->ProcessLine(".L tdrstyle_mod14_ia.C");
   setTDRStyle();
@@ -1102,12 +1102,4 @@ int main(int argc,char**argv)
   compareJEC("Fall17_25nsV1", "Summer16_25nsV5", "bias2SelectionPow_25nsV1", "AK4PFchs", "AK4PFchs", "AK4PFchs", "MC","MC","MC",    false, true,  false);
   compareJEC("Fall17_25nsV1", "Summer16_25nsV5", "bias2SelectionPow_25nsV1", "AK4PFchs", "AK4PFchs", "AK4PFchs", "MC","MC","MC",    true, false,  false);
 
-  // compareJEC("Summer16_25nsV5", "Summer16_25nsV4", "Spring16_25nsV6", "AK8PFchs", "AK8PFchs", "AK8PFchs", "MC","MC","MC",    false, true,  false);
-  // compareJEC("Summer16_25nsV5", "Summer16_25nsV4", "Spring16_25nsV6", "AK8PFchs", "AK8PFchs", "AK8PFchs", "MC","MC","MC",    true, false,  false);
-  //
-  // compareJEC("Summer16_25nsV5", "Summer16_25nsV4", "Spring16_25nsV6", "AK4PFPuppi", "AK4PFPuppi", "AK4PFPuppi", "MC","MC","MC",    false, true,  false);
-  // compareJEC("Summer16_25nsV5", "Summer16_25nsV4", "Spring16_25nsV6", "AK4PFPuppi", "AK4PFPuppi", "AK4PFPuppi", "MC","MC","MC",    true, false,  false);
-  //
-  // compareJEC("Summer16_25nsV5", "Summer16_25nsV4", "Spring16_25nsV6", "AK8PFPuppi", "AK8PFPuppi", "AK8PFPuppi", "MC","MC","MC",    false, true,  false);
-  // compareJEC("Summer16_25nsV5", "Summer16_25nsV4", "Spring16_25nsV6", "AK8PFPuppi", "AK8PFPuppi", "AK8PFPuppi", "MC","MC","MC",    true, false,  false);
 }

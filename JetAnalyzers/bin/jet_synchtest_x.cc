@@ -796,9 +796,7 @@ void MatchEventsAndJets::LoopOverEvents(bool verbose, bool reduceHistograms, str
    for (IT::const_iterator it = mapTreePU.begin(); it != mapTreePU.end(); ++it) {
 
       if (iftest && nevs >= maxEvts) return;
-      // if (nevs >= 10000000) return;
 
-      //if (nevs%10000==0) cout << "\t"<<nevs << endl;
       loadbar2(nevs+1,nentries,50,"\t\t");
 
       // if this entry does not exist on the second ntuple just skip this event
