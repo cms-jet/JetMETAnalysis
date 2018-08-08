@@ -22,7 +22,10 @@
 #include <iomanip>
 #include <fstream>
 #include <vector>
+#include <sys/stat.h>
+#include <unistd.h>
 
+#include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 #include "CondFormats/JetMETObjects/interface/JetCorrectionUncertainty.h"
@@ -30,7 +33,7 @@
 //#include "CondFormats/JetMETObjects/interface/SimpleJetCorrector.h"
 //#include "CondFormats/JetMETObjects/interface/SimpleJetCorrectionUncertainty.h"
 
-#include "FWCore/ParameterSet/interface/FileInPath.h"
+// #include "FWCore/ParameterSet/interface/FileInPath.h"
 
 #include "JetMETAnalysis/JetUtilities/interface/Style.h"
 
@@ -67,10 +70,10 @@ double getRho(double mu) {
   if(TString(_payld).Contains("RunISummer12") || TString(_payld).Contains("Winter14_") )  // Run1 53X MC
   {p[0]=-0.426 + ue; p[1]=0.504; p[2]=0.0005;}
 
-  if(TString(_payld).Contains("Run1Sub53X")) 
-  {p[0]=-0.350 + ue; p[1]=0.526; p[2]=0.001;} 
+  if(TString(_payld).Contains("Run1Sub53X"))
+  {p[0]=-0.350 + ue; p[1]=0.526; p[2]=0.001;}
 
-  if(TString(_payld).Contains("Run1Sub742")) 
+  if(TString(_payld).Contains("Run1Sub742"))
   {p[0]=-0.855 + ue; p[1]=0.461; p[2]=-0.001;}
 
   if(TString(_payld).Contains("50nsRunIISpring15") || TString(_payld).Contains("Summer15") || TString(_payld).Contains("RunIISpring15DR74_bx50") )
@@ -88,8 +91,8 @@ double getRho(double mu) {
   if( TString(_payld).Contains("Fall15_25ns") )
 //  {p[0]=0.404 + ue; p[1]=0.374; p[2]=0.0117;} ??
 //  {p[0]=-1.036 + ue; p[1]=0.705; p[2]=-0.0016;} ??
-      
-  {ue=0.; p[0]=1.084 + ue; p[1]=0.6075; p[2]=0.;}  // Alexx; 
+
+  {ue=0.; p[0]=1.084 + ue; p[1]=0.6075; p[2]=0.;}  // Alexx;
 
 //  if( TString(_payld).Contains("Summer15_25nsV5ch2") )
 //  {p[0]=-1.036 + ue; p[1]=0.705; p[2]=-0.0016;}
@@ -120,9 +123,9 @@ double getNPV(double mu) {
 // ------------------------------------------------------------
 void setEtaPtE(FactorizedJetCorrector *jec, double eta, double pt, double e,
                int mu) {
-  
+
   assert(jec);
-    
+
   int npv = getNPV(mu);
   double rho = getRho(mu);
 
@@ -143,11 +146,11 @@ void setEtaPtE(FactorizedJetCorrector *jec, double eta, double pt, double e,
   if(cone == "7") r=0.7 ;
   if(cone == "8") r=0.8 ;
   if(cone == "9") r=0.9 ;
-  double jeta = TMath::Pi()*r*r;                    
+  double jeta = TMath::Pi()*r*r;
 
   jec->setJetA(jeta);
   jec->setRho(rho);
-                      
+
   return;
 }
 
@@ -163,7 +166,7 @@ Double_t funcCorrPt(Double_t *x, Double_t *p) {
   double e = pt * cosh(eta);
   double mu = p[1];
   setEtaPtE(_thejec, eta, pt, e, mu);
-               
+
   return (_thejec->getCorrection() * pt);
 }
 
@@ -175,15 +178,15 @@ double getEtaPtE(FactorizedJetCorrector *jec, double eta, double pt, double e,
   setEtaPtE(jec, eta, pt, e, mu);
 
   // if using pTgen, need to iterate to solve ptreco
-  if (_useptgen) {  
+  if (_useptgen) {
 
     double ptgen = pt;
-    _thejec = jec; 
+    _thejec = jec;
     fCorrPt->SetParameters(eta, mu);
 
     // Find ptreco that gives pTreco*JEC = pTgen
     double ptreco = fCorrPt->GetX(ptgen,5,6500);
-    
+
     setEtaPtE(jec, eta, ptreco, e, mu);
 
   }
@@ -203,7 +206,7 @@ double getEtaPtUncert(JetCorrectionUncertainty *unc,
   unc->setJetEta(eta);
   unc->setJetPt(pt);
 
-  // if not using pTgen, need to solve it   
+  // if not using pTgen, need to solve it
   if (!_useptgen) {
 
     assert(jec);
@@ -211,7 +214,7 @@ double getEtaPtUncert(JetCorrectionUncertainty *unc,
     _thejec = jec;
     fCorrPt->SetParameters(eta, mu);
     double ptgen = fCorrPt->Eval(ptreco);
-  
+
     unc->setJetEta(eta);
     unc->setJetPt(ptgen);
   }
@@ -219,13 +222,19 @@ double getEtaPtUncert(JetCorrectionUncertainty *unc,
   return (unc->getUncertainty(true));
 } // getEtaPtUncert
 
+// Test if file of given path exists
+bool fileexist (const std::string& name) {
+  struct stat buffer;
+  return (stat (name.c_str(), &buffer) == 0);
+}
 
 // ------------------------------------------------------------ //
 
-void compareJEC(string payld1="Winter14_V8", string payld2="",         string payld3="",  
+void compareJEC(string path1 ="",            string path2 ="",         string path3 ="",
+                string payld1="Winter14_V8", string payld2="",         string payld3="",
                 string  algo1="AK5PFchs",    string  algo2="AK5PFchs", string algo3 ="AK5PFchs",
                 string  type1="DATA",        string  type2="DATA",     string type3 ="DATA",
-			bool l1=true, bool l2l3=true, bool res=true) {
+      bool l1=true, bool l2l3=true, bool res=true) {
 
   //gROOT->ProcessLine(".L tdrstyle_mod14_ia.C");
   setTDRStyle();
@@ -252,19 +261,17 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
   const char *cid3 = sid3.c_str();
   const char *a3 = algo3.c_str();
 
-  int maxTries = 7;
+  // int maxTries = 7;
   string strPath;
-  vector<string> paths = {"CondFormats/JetMETObjects/data/"};
-  paths.push_back(string("/fdata/hepx/store/user/aperloff/JEC/80X_Summer16/")+cid1+"/");
-  paths.push_back(string("/fdata/hepx/store/user/aperloff/JEC/80X_Summer16/")+cid2+"/");
-  paths.push_back(string("/fdata/hepx/store/user/aperloff/JEC/80X_Summer16/")+cid3+"/");
-  paths.push_back(string("/home/aperloff/JEC/CMSSW_8_0_20/src/JetMETCorrections/JECDatabase/textFiles/")+cid1+"/");
-  paths.push_back(string("/home/aperloff/JEC/CMSSW_8_0_20/src/JetMETCorrections/JECDatabase/textFiles/")+cid2+"/");
-  paths.push_back(string("/home/aperloff/JEC/CMSSW_8_0_20/src/JetMETCorrections/JECDatabase/textFiles/")+cid3+"/");
+  vector<string> paths;
+  paths.push_back(path1);
+  paths.push_back(path2);
+  paths.push_back(path3);
+
 
   // JEC1
   bool noL2L3_p1 = TString(payld1).Contains("Run1Sub") || TString(payld1).Contains("nsRunIISpring15") || TString(payld1).Contains("RC")  ;
-  // 
+  //
   //  noL2L3_p1 = true ; //ctmp
 
   JetCorrectionUncertainty  *jecUnc1   = 0;
@@ -281,16 +288,17 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
   //strVec.push_back(Form("%s_Uncertainty_%s.txt",cid1,a1));
 
   for(unsigned int istr=0;istr<strVec.size(); istr++) {
-     for(int count=0; count<maxTries; count++) {
-        try {
-           edm::FileInPath strFIP(paths[count]+strVec[istr]);
-           strPath = strFIP.fullPath();
-           break;
-        }
-        catch (edm::Exception ex) {
-           if(count==maxTries-1) throw ex;
-        }
-     }
+     // for(int count=0; count<maxTries; count++) {
+     //    try {
+     //      edm::FileInPath strFIP(paths[count]+strVec[istr]);
+     //      strPath = strFIP.fullPath();
+     //       break;
+     //    }
+     //    catch (edm::Exception ex) {
+     //       if(count==maxTries-1) throw ex;
+     //    }
+     // }
+     strPath = paths[0] + strVec[istr];
      if((type1=="MC" && istr!=3) || type1=="DATA")cout << strPath << endl << flush;
      if(istr==0)
         JetCorPar1L1 = new JetCorrectorParameters(strPath);
@@ -311,7 +319,7 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
   JetCorrectorParameters *JetCorPar2  =0;
   JetCorrectionUncertainty  *jecUnc2  =0;
   if(payld2 != ""){
-   bool noL2L3_p2 = TString(payld2).Contains("Run1Sub") || TString(payld2).Contains("nsRunIISpring15") || TString(payld2).Contains("RC") ;  
+   bool noL2L3_p2 = TString(payld2).Contains("Run1Sub") || TString(payld2).Contains("nsRunIISpring15") || TString(payld2).Contains("RC") ;
 
    strVec.erase(strVec.begin(),strVec.end());
    strVec.push_back(Form("%s_L1FastJet_%s.txt",cid2,a2));
@@ -322,16 +330,17 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
    //strVec.push_back(Form("%s_Uncertainty_%s.txt",cid2,a2));
 
    for(unsigned int istr=0;istr<strVec.size(); istr++) {
-     for(int count=0; count<maxTries; count++) {
-        try {
-           edm::FileInPath strFIP(paths[count]+strVec[istr]);
-           strPath = strFIP.fullPath();
-           break;
-        }
-        catch (edm::Exception ex) {
-           if(count==maxTries-1) throw ex;
-        }
-     }
+     // for(int count=0; count<maxTries; count++) {
+     //    try {
+     //      edm::FileInPath strFIP(paths[count]+strVec[istr]);
+     //      strPath = strFIP.fullPath();
+     //      break;
+     //    }
+     //    catch (edm::Exception ex) {
+     //       if(count==maxTries-1) throw ex;
+     //    }
+     // }
+     strPath = paths[1] + strVec[istr];
      if((type2=="MC" && istr!=3) || type2=="DATA")cout << strPath << endl << flush;
      if(istr==0)
         JetCorPar2L1 = new JetCorrectorParameters(strPath);
@@ -363,23 +372,24 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
     //strVec.push_back(Form("%s_Uncertainty_%s.txt",cid3,a3));
 
     for(unsigned int istr=0;istr<strVec.size(); istr++) {
-     for(int count=0; count<maxTries; count++) {
-        try {
-           edm::FileInPath strFIP(paths[count]+strVec[istr]);
-           strPath = strFIP.fullPath();
-           break;
-        }
-        catch (edm::Exception ex) {
-           if(count==maxTries-1) throw ex;
-        }
-     }
+     // for(int count=0; count<maxTries; count++) {
+     //    try {
+     //      edm::FileInPath strFIP(paths[count]+strVec[istr]);
+     //      strPath = strFIP.fullPath();
+     //       break;
+     //    }
+     //    catch (edm::Exception ex) {
+     //       if(count==maxTries-1) throw ex;
+     //    }
+     // }
+     strPath = paths[2] + strVec[istr];
      if((type2=="MC" && istr!=3) || type2=="DATA")cout << strPath << endl << flush;
      if(istr==0)
-        JetCorPar3L1 = new JetCorrectorParameters(strPath);      
+        JetCorPar3L1 = new JetCorrectorParameters(strPath);
      else if(istr==1)
-        JetCorPar3L2 = TString(payld3).Contains("Run1Sub") ? 0 : new JetCorrectorParameters(strPath); 
+        JetCorPar3L2 = TString(payld3).Contains("Run1Sub") ? 0 : new JetCorrectorParameters(strPath);
      else if(istr==2)
-        JetCorPar3L3 = TString(payld3).Contains("Run1Sub") ? 0 : new JetCorrectorParameters(strPath);   
+        JetCorPar3L3 = TString(payld3).Contains("Run1Sub") ? 0 : new JetCorrectorParameters(strPath);
      else if(istr==3)
         JetCorPar3 = (type3 == "MC" || TString(payld3).Contains("Run1Sub") ? 0 : new JetCorrectorParameters(strPath));
      else if(istr==4)
@@ -397,16 +407,16 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
 
   // JEC2
   vector<JetCorrectorParameters> vParam2;
-  FactorizedJetCorrector *JEC2 = 0 ; 
+  FactorizedJetCorrector *JEC2 = 0 ;
   if(payld2 != ""){
    if (l1)   vParam2.push_back(*JetCorPar2L1);
    if (l2l3) vParam2.push_back(*JetCorPar2L2);
    if (l2l3) vParam2.push_back(*JetCorPar2L3);
    if (res && type2 == "DATA")  vParam2.push_back(*JetCorPar2);
    JEC2 = new FactorizedJetCorrector(vParam2);
-  } 
+  }
   // JEC3
-  vector<JetCorrectorParameters> vParam3;    
+  vector<JetCorrectorParameters> vParam3;
   FactorizedJetCorrector *JEC3 = 0 ;
   if(payld3 != ""){
    if (l1)   vParam3.push_back(*JetCorPar3L1);
@@ -439,7 +449,7 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
 //     507, 592, 686, 790, 905, 1032, 1172, 1327, 1497, 1684, 1890, //1999};
 //     2000, 2238, 2500};//, 2787, 3103, 3450};
 
-    {10, 12, 15, 18, 21, 24, 
+    {10, 12, 15, 18, 21, 24,
      28, 32, 37, 43, 49, 56, 64, 74, 84,
      97, 114, 133, 153, 174, 196, 220, 245, 272, 300, 362, 430,
      507, 592, 686, 790, 905, 1032, 1172, 1327, 1497, 1684, 1890, //1999};
@@ -460,7 +470,7 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
   hpt->SetMinimum(0.);
   hpt->SetMaximum(2.);
 
-  if (_paper) {        
+  if (_paper) {
     if (l1 && !l2l3 && !res) h->SetYTitle("Pileup offset correction");
     if (!l1 && l2l3 && !res) h->SetYTitle("Simulated response correction");
     if (!l1 && !l2l3 && res) h->SetYTitle("Residual response correction");
@@ -469,7 +479,7 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
     if (!l1 && l2l3 && !res) hpt->SetYTitle("Simulated response correction");
     if (!l1 && !l2l3 && res) hpt->SetYTitle("Residual response correction");
     //
-    if (l1 && !l2l3 && !res) h->GetYaxis()->SetRangeUser(0.5,1.4); 
+    if (l1 && !l2l3 && !res) h->GetYaxis()->SetRangeUser(0.5,1.4);
     if (!l1 && l2l3 && !res) h->GetYaxis()->SetRangeUser(0.85,1.8); // 2.2
 
     if (!l1 && !l2l3 && res) h->GetYaxis()->SetRangeUser(0.85,1.4);
@@ -483,7 +493,7 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
     //
     if (l1 && !l2l3 && !res) hpt->GetYaxis()->SetRangeUser(0.5,1.4);
     if (!l1 && l2l3 && !res) hpt->GetYaxis()->SetRangeUser(0.85,2.2); // 1.4
- 
+
     if (!l1 && !l2l3 && res) hpt->GetYaxis()->SetRangeUser(0.85,1.4);
 
     if(_pt<20.){
@@ -524,7 +534,7 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
   TGraph *g2a_mn = new TGraph(0);
   TGraph *g2d_pl = new TGraph(0);
   TGraph *g2d_mn = new TGraph(0);
-    
+
   TGraphErrors *g3a_e = new TGraphErrors(0);
   TGraphErrors *g3d_e = new TGraphErrors(0);
   TGraph *g3a_pl = new TGraph(0);
@@ -535,7 +545,7 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
     double ptbins[] = {15., 30, 100, 1000, 4000};
 //  double ptbins[] = {1000, 2000, 3000, 3500, 4000};
 
-  const int npt = sizeof(ptbins)/sizeof(ptbins[0]); 
+  const int npt = sizeof(ptbins)/sizeof(ptbins[0]);
   TGraphErrors *g21s[npt];
 
   TMultiGraph *mg = new TMultiGraph();
@@ -554,7 +564,7 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
       for (int j = 0; j != npt; ++j) {
         TGraphErrors *g21 = g21s[j];
         double pt = ptbins[j];
-        double energy = pt*cosh(eta); 
+        double energy = pt*cosh(eta);
           if (energy < 6500.) {
 //        if (energy < 3000.) {
 
@@ -565,20 +575,20 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
                          + getEtaPtE(JEC1, -eta, pt, energy));
          _alg  = algo2;
          _payld=payld2;
-          if(i==1 && j==0) cout << _payld << ":  mu and rho " << _mu  << " " << getRho(_mu) << endl ; 
+          if(i==1 && j==0) cout << _payld << ":  mu and rho " << _mu  << " " << getRho(_mu) << endl ;
           double y2 = 0.5*(getEtaPtE(JEC2, +eta, pt, energy)
                          + getEtaPtE(JEC2, -eta, pt, energy));
 
           g21->SetPoint(g21->GetN(), eta, y2/y1);
         } // energy < 6500
       } // for j
-    } 
+    }
 
     // ***** Fixed pT, versus eta ******
-    { 
+    {
       double pt = _pt ;
-      double energy = pt*cosh(eta);   
-        
+      double energy = pt*cosh(eta);
+
       if (energy < 6500.) {
 //      if (energy < 3000.) {
 
@@ -625,7 +635,7 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
           y2 = JEC2 ? getEtaPtE(JEC2, +eta, pt, energy) : 0;
           _alg = algo3;
          _payld=payld3;
-          y3 = JEC3 ? getEtaPtE(JEC3, +eta, pt, energy) : 0; 
+          y3 = JEC3 ? getEtaPtE(JEC3, +eta, pt, energy) : 0;
         }
 
         double e1 = jecUnc1 ? getEtaPtUncert(jecUnc1, JEC1, eta, pt) : 0;
@@ -655,26 +665,26 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
 
 //  ......
 
-  for (int ieta = -49; ieta<=49; ieta++){ // Loop over eta bins: 
+  for (int ieta = -49; ieta<=49; ieta++){ // Loop over eta bins:
                                           // Only one eta value in the main plot
                                           // Many eta curves for the _validation_ plot
-    double eta = ieta*0.1 ; 
+    double eta = ieta*0.1 ;
     TGraph *gtmp = new TGraph(0);
 
     for (int i = 1; i != hpt->GetNbinsX()+1; ++i) { // Loop over pt-bins
-        
+
       double pt = hpt->GetBinCenter(i);
       double energy = pt*cosh(eta);
-        
+
       if (pt>0. && energy < 6500.) {
 //      if (pt>0. && energy < 3000.) {
 
-       
+
         // Asymmetric corrections now
         _alg  = algo1;
         _payld=payld1;
         double y1 = 0.5*(getEtaPtE(JEC1, +eta, pt, energy)
-                       + getEtaPtE(JEC1, -eta, pt, energy));  
+                       + getEtaPtE(JEC1, -eta, pt, energy));
         double y2(0);
         _alg  = algo2;
         _payld=payld2;
@@ -715,7 +725,7 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
         double e1 = jecUnc1 ? getEtaPtUncert(jecUnc1, JEC1, eta, pt) : 0;
         double e2 = jecUnc2 ? getEtaPtUncert(jecUnc2, JEC2, eta, pt) : 0;
 //        double e3 = jecUnc3 ? getEtaPtUncert(jecUnc3, JEC3, eta, pt) : 0;
-        if(ieta == _ieta){  
+        if(ieta == _ieta){
 //         cout << " pt y1 y2 " << pt << "     "   << y1 << "  " << y2 << endl ;
          g1d->SetPoint(g1d->GetN(), pt, y1);
          g2d->SetPoint(g2d->GetN(), pt, y2);
@@ -734,19 +744,19 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
         gtmp->SetPoint(gtmp->GetN(), pt, y1);
         if(l1 && !l2l3 && ! res) {
           if(y1>1.) {
-           cout << endl ;  
+           cout << endl ;
                cout << " L1: pt eta cor " << std::setw(7) << pt << "  " << std::setw(7) << eta << "     " << y1  ;
            if(y1 > 1.1)
-           cout << " < ============ " ; 
+           cout << " < ============ " ;
            cout << endl ;
           }
         }
       }
     } // END: loop over pt bins
     gtmp->SetLineWidth(2);
-//    gtmp->SetLineStyle( ieta>=0 ? 2 : 1); 
+//    gtmp->SetLineStyle( ieta>=0 ? 2 : 1);
     gtmp->SetLineColor(abs(ieta)/10+1);
-    if(ieta%10 ==0 && ieta>=0 && ieta<50) 
+    if(ieta%10 ==0 && ieta>=0 && ieta<50)
     leg10->AddEntry(gtmp,Form("%2.0f<|#eta|<%2.0f",0.1*abs(ieta),0.1*abs(ieta+10)),"l");
     mg->Add(gtmp,"l");
   } // END: loop over eta bins
@@ -790,20 +800,20 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
    g2a_pl->Draw("SAMEL");
    g2a_mn->SetLineColor(kRed-9);
    g2a_mn->SetLineStyle(kSolid);//kDotted);
-   g2a_mn->Draw("SAMEL"); 
+   g2a_mn->Draw("SAMEL");
   }
 
   if(JEC3){
-   g3a_e->SetFillStyle(3003);    
+   g3a_e->SetFillStyle(3003);
    g3a_e->SetFillColor(kGreen+2);
    g3a_e->Draw("SAME E3");
    g3a_pl->SetLineColor(kGreen-9);
    g3a_pl->SetLineStyle(kSolid);//kDotted);
-   g3a_pl->Draw("SAMEL");  
+   g3a_pl->Draw("SAMEL");
    g3a_mn->SetLineColor(kGreen-9);
    g3a_mn->SetLineStyle(kSolid);//kDotted);
    g3a_mn->Draw("SAMEL");
-  }                  
+  }
 
   g1a->SetMarkerStyle(kFullSquare);
   g1a->SetMarkerColor(kBlue);
@@ -819,14 +829,14 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
 
   if (JEC3){
    g3a->SetMarkerStyle(kOpenSquare);
-   g3a->SetMarkerColor(kGreen+2);   
+   g3a->SetMarkerColor(kGreen+2);
    g3a->SetLineColor(kGreen+2);
    g3a->Draw("SAMEPL");
   }
 
   TLatex *tex = new TLatex();
   tex->SetNDC();
-  tex->SetTextSize(0.045);   
+  tex->SetTextSize(0.045);
   tex->DrawLatex(0.19,0.75,Form("p_{T,%s} = %2.0f GeV",cgen,_pt));
   if (l1) tex->DrawLatex(0.19,0.68,Form("#LT#mu#GT = %1.1f",_mu));
 
@@ -846,8 +856,8 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
   if(chs2=="chs") chs2 = "+CHS" ;
   if(chs2=="Pup") chs2 = "+Puppi" ;
   if(pf2=="Ca")   {pf2=""; chs2 = "Calo" ;}
-  
-   
+
+
   string cone3 = algo3.substr(2, 1);
   string pf3   = algo3.substr(3, 2);
   string chs3  = algo3.substr(5, 3);
@@ -879,15 +889,15 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
       slg3 = payld3 ;
      } else {
       sheader     =payld1 ;
-      sheader_pdf ="_"+payld1; 
+      sheader_pdf ="_"+payld1;
      }
      if( (JEC2 && cone2 != cone1) || (JEC3 && cone3 !=cone1) ){
        if(slg1 != "") slg1 +=",  ";
        if(slg2 != "") slg2 +=",  ";
        if(slg3 != "") slg3 +=",  ";
        slg1 += "R = 0." + cone1 ;
-       slg2 += "R = 0." + cone2 ; 
-       slg3 += "R = 0." + cone3 ; 
+       slg2 += "R = 0." + cone2 ;
+       slg3 += "R = 0." + cone3 ;
       } else {
        if(sheader != "") sheader +=",  ";
        sheader  += "R = 0." + cone1 ;
@@ -897,7 +907,7 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
        if(slg1 != "") slg1 +=",  ";
        if(slg2 != "") slg2 +=",  ";
        if(slg3 != "") slg3 +=",  ";
-       slg1 += pf1 + chs1 ;  
+       slg1 += pf1 + chs1 ;
        slg2 += pf2 + chs2 ;
        slg3 += pf3 + chs3 ;
       } else {
@@ -917,7 +927,7 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
        sheader += type1 ;
        sheader_pdf += "_" + type1 ;
       }
-      cout << "string size " << sheader.size() << "  " << slg1.size() << " " << slg2.size() << endl ; 
+      cout << "string size " << sheader.size() << "  " << slg1.size() << " " << slg2.size() << endl ;
 
       if(sheader.size()>25 || slg1.size()>20 || slg2.size()>20 || slg3.size()>20 ) leg1a->SetTextSize(0.031);
       leg1a->SetTextSize(0.029);
@@ -929,7 +939,7 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
 /////      leg1a->AddEntry(g2a,"2016","LPF");
 
     }
-   
+
   gPad->RedrawAxis();
 
 
@@ -944,12 +954,12 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
     g1d_pl->SetLineColor(kBlue-9);
     g1d_pl->SetLineStyle(kSolid);
     g1d_pl->Draw("SAMEL");
-    g1d_mn->SetLineColor(kBlue-9);   
+    g1d_mn->SetLineColor(kBlue-9);
     g1d_mn->SetLineStyle(kSolid);
     g1d_mn->Draw("SAMEL");
-      
+
     if (JEC2) {
-     g2d_e->SetFillStyle(3003);   
+     g2d_e->SetFillStyle(3003);
      g2d_e->SetFillColor(kRed);
      g2d_e->Draw("SAME E3");
      g2d_pl->SetLineColor(kRed-9);
@@ -957,15 +967,15 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
      g2d_pl->Draw("SAMEL");
      g2d_mn->SetLineColor(kRed-9);
      g2d_mn->SetLineStyle(kSolid);
-     g2d_mn->Draw("SAMEL"); 
+     g2d_mn->Draw("SAMEL");
     }
 
     if (JEC3) {
      g3d_e->SetFillStyle(3003);
      g3d_e->SetFillColor(kGreen+2);
      g3d_e->Draw("SAME E3");
-     g3d_pl->SetLineColor(kGreen-9);  
-     g3d_pl->SetLineStyle(kSolid); 
+     g3d_pl->SetLineColor(kGreen-9);
+     g3d_pl->SetLineStyle(kSolid);
      g3d_pl->Draw("SAMEL");
      g3d_mn->SetLineColor(kGreen-9);
      g3d_mn->SetLineStyle(kSolid);
@@ -976,20 +986,20 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
     g1d->SetMarkerColor(kBlue);
     g1d->SetLineColor(kBlue);
     g1d->Draw("SAMEPL");
-    
+
     if (JEC2) {
      g2d->SetMarkerStyle(kFullCircle);
-     g2d->SetMarkerColor(kRed);   
+     g2d->SetMarkerColor(kRed);
      g2d->SetLineColor(kRed);
      g2d->Draw("SAMEPL");
     }
 
     if (JEC3) {
      g3d->SetMarkerStyle(kOpenSquare);
-     g3d->SetMarkerColor(kGreen+2); 
+     g3d->SetMarkerColor(kGreen+2);
      g3d->SetLineColor(kGreen+2);
      g3d->Draw("SAMEPL");
-    } 
+    }
 
 
 //    tex->DrawLatex(0.19,0.75,"|#eta| = 0");
@@ -1019,11 +1029,11 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
     h1ar->SetMaximum(1.55);
     h1ar->GetYaxis()->SetTitle(Form("%s%s%s%s (%s / %s)",cl1,cl2l3,cpl,cres,
                                    slg2.c_str(), slg1.c_str()));
-////    h1ar->GetYaxis()->SetTitle(Form("%s%s%s%s (80X / 76X)",cl1,cl2l3,cpl,cres ));              // this is tmp 
+////    h1ar->GetYaxis()->SetTitle(Form("%s%s%s%s (80X / 76X)",cl1,cl2l3,cpl,cres ));              // this is tmp
 
     h1ar->GetYaxis()->SetTitleSize(0.045);
-    h1ar->GetYaxis()->SetTitleOffset(1.7);   
-    
+    h1ar->GetYaxis()->SetTitleOffset(1.7);
+
 
     TLine *l = new TLine();
     l->SetLineStyle(kDashed);
@@ -1033,9 +1043,9 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
     l->DrawLine(0,1.02,5,1.02);
     l->DrawLine(0,0.98,5,0.98);
 
-    if (l1) tex->DrawLatex(0.19,0.68,Form("#LT#mu#GT = %1.1f",_mu));  
+    if (l1) tex->DrawLatex(0.19,0.68,Form("#LT#mu#GT = %1.1f",_mu));
 
-    
+
     TLegend *leg = tdrLeg(0.46, 0.57, 0.90, 0.88);
     if(sheader.size()>25) leg->SetTextSize(0.031);
 
@@ -1045,7 +1055,7 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
       gr->SetLineStyle(styles[i]);//i+1);
       gr->SetLineWidth(3);
       gr->Draw("SAME L");
-    
+
       leg->SetHeader(sheader.c_str());
       leg->AddEntry(gr,Form("p_{T,%s} = %1.0f GeV",
                             cgen,ptbins[i]),"L");
@@ -1054,7 +1064,7 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
    gPad->RedrawAxis();
    c1ar->SaveAs(Form("pdf/compareJECversions_%s%s_2over1_%s.pdf",cs,sheader_pdf.c_str(),cgen));
 
-  }                               
+  }
 
   {
     c10->cd();
@@ -1078,7 +1088,7 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
 
     tex->SetTextSize(0.040);
     tex->DrawLatex(0.19,0.89,
-    Form("%s  %s   R = 0.%s, %s%s", payld1.c_str(), type1.c_str(),  cone1.c_str(), pf1.c_str(), chs1.c_str()));    
+    Form("%s  %s   R = 0.%s, %s%s", payld1.c_str(), type1.c_str(),  cone1.c_str(), pf1.c_str(), chs1.c_str()));
 
     if (l1) tex->DrawLatex(0.19,0.68,Form("#LT#mu#GT = %1.1f",_mu));
 
@@ -1101,16 +1111,39 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
 //______________________________________________________________________________
 int main(int argc,char**argv)
 {
-  compareJEC("Summer16_25nsV5", "Summer16_25nsV4", "Spring16_25nsV6", "AK4PFchs", "AK4PFchs", "AK4PFchs", "MC","MC","MC",    false, true,  false);
-  compareJEC("Summer16_25nsV5", "Summer16_25nsV4", "Spring16_25nsV6", "AK4PFchs", "AK4PFchs", "AK4PFchs", "MC","MC","MC",    true, false,  false);
+  CommandLine cl;
+  if (!cl.parse(argc,argv)) return 0;
+  string         basepath   = cl.getValue<string>  ("basepath",          "/");
+  string         path1      = cl.getValue<string>  ("path1",              "");
+  string         path2      = cl.getValue<string>  ("path2",              "");
+  string         path3      = cl.getValue<string>  ("path3",              "");
+  vector<string> eras       = cl.getVector<string> ("eras",  "Fall17_25nsV1");
+  vector<string> algos      = cl.getVector<string> ("algos",         "AK4PF");
+  vector<string> types      = cl.getVector<string> ("types",              "");
+  bool           dummyl3    = cl.getValue<bool>    ("dummyl3",          true);
 
-  compareJEC("Summer16_25nsV5", "Summer16_25nsV4", "Spring16_25nsV6", "AK8PFchs", "AK8PFchs", "AK8PFchs", "MC","MC","MC",    false, true,  false);
-  compareJEC("Summer16_25nsV5", "Summer16_25nsV4", "Spring16_25nsV6", "AK8PFchs", "AK8PFchs", "AK8PFchs", "MC","MC","MC",    true, false,  false);
+  if(!cl.check()) return 0;
+  cl.print();
+  if (path1.substr(0,1) != "/") path1 = basepath + path1;
+  if (path2.substr(0,1) != "/") path2 = basepath + path2;
+  if (path3.substr(0,1) != "/") path3 = basepath + path3;
+  cout << "paths are: "<< endl << path1 <<endl<< path2<< endl<<path3<<endl;
+  vector<string> paths = {path1,path2,path3};
+  if (algos.size() != 3) algos.resize(3,algos[0]);
+  if (eras.size()  != 3) eras.resize(3,eras[0]);
+  if (types.size() != 3) types.resize(3,"MC");
 
-  compareJEC("Summer16_25nsV5", "Summer16_25nsV4", "Spring16_25nsV6", "AK4PFPuppi", "AK4PFPuppi", "AK4PFPuppi", "MC","MC","MC",    false, true,  false);
-  compareJEC("Summer16_25nsV5", "Summer16_25nsV4", "Spring16_25nsV6", "AK4PFPuppi", "AK4PFPuppi", "AK4PFPuppi", "MC","MC","MC",    true, false,  false);
+  if (dummyl3){
+    for (unsigned ip = 0; ip < paths.size(); ++ip){
+      ofstream l3f(Form("%s%s_%s_L3Absolute_%s.txt", paths[ip].c_str(), eras[ip].c_str(),types[ip].c_str(), algos[ip].c_str()));
+      l3f << "{1         JetEta              1          JetPt               1     Correction     L3Absolute}"<<endl;
+      l3f << "-5.191          5.191              2              1           10000              "<<endl;
+      l3f.close();
+    }
+  }
 
-  compareJEC("Summer16_25nsV5", "Summer16_25nsV4", "Spring16_25nsV6", "AK8PFPuppi", "AK8PFPuppi", "AK8PFPuppi", "MC","MC","MC",    false, true,  false);
-  compareJEC("Summer16_25nsV5", "Summer16_25nsV4", "Spring16_25nsV6", "AK8PFPuppi", "AK8PFPuppi", "AK8PFPuppi", "MC","MC","MC",    true, false,  false);
+
+  compareJEC(paths[0],paths[1],paths[2],eras[0],eras[1],eras[2],algos[0],algos[1],algos[2],types[0],types[1],types[2],false,true,false);
+  compareJEC(paths[0],paths[1],paths[2],eras[0],eras[1],eras[2],algos[0],algos[1],algos[2],types[0],types[1],types[2],true,false,false);
+
 }
-

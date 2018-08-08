@@ -5,7 +5,7 @@ import FWCore.ParameterSet.Config as cms
 #!
 # Conditions source options: GT, SQLite, DB
 conditionsSource = "GT"
-era = "Spring16_25nsV1_MC"
+era = "Fall17_25nsV1_MC"
 doProducer = False
 process = cms.Process("JRA")
 multithread = False
@@ -48,13 +48,13 @@ for k, v in algsizetype.iteritems():
 #! CONDITIONS (DELIVERING JEC BY DEFAULT!)
 #!
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff")
-process.GlobalTag.globaltag = cms.string('80X_mcRun2_asymptotic_v5_2016PixDynIneff')
+process.GlobalTag.globaltag = cms.string('94X_mc2017_realistic_v10')
 
 if conditionsSource != "GT":
     if conditionsSource == "DB":
         conditionsConnect = cms.string("frontier://FrontierPrep/CMS_COND_PHYSICSTOOLS")
     elif conditionsSource == "SQLite":
-	conditionsConnect = cms.string('sqlite_file:'+era+'.db')    
+	conditionsConnect = cms.string('sqlite_file:'+era+'.db')
 
     from CondCore.DBCommon.CondDBSetup_cfi import *
     process.jec = cms.ESSource("PoolDBESSource",CondDBSetup,

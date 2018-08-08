@@ -12,6 +12,7 @@
 #include <iostream>
 
 #include "JetMETAnalysis/JetUtilities/interface/Style.h"
+#include "JetMETAnalysis/JetUtilities/interface/HistogramUtilities.hh"
 
 using namespace std;
 
@@ -102,7 +103,7 @@ TCanvas * getCanvasFromFittingProcedure(TString cname , TProfile2D * prof, TStri
       int S_comp_ = cname.CompareTo("ParametersVsGenSumPtOA");	//cout <<S_comp_<<endl;
       int S_comp_2 = cname.CompareTo("ParametersOffOverAVsJetPt");// cout <<cname<<" "<<S_comp_2<<endl;
       TFitResultPtr fr;
-      if (! S_comp_) 
+      if (! S_comp_)
       {
          fr = hoff->Fit("pol2","0QS","",50,1800);
       }
@@ -114,7 +115,7 @@ TCanvas * getCanvasFromFittingProcedure(TString cname , TProfile2D * prof, TStri
       {
          fr = hoff->Fit("pol2","0QS","",5,35);
       }
-    
+
 
       // Skip if fit failed
       if (fr->Status()){
@@ -126,7 +127,7 @@ TCanvas * getCanvasFromFittingProcedure(TString cname , TProfile2D * prof, TStri
          cout<<" ERROR getCanvasFromFittingProcedure() NPAR != than fr->NPar()"<<endl;
          return 0;
       }
-    
+
       // plot the results
       for (unsigned int p=0;p<fr->NPar();p++){
          aux[p]->SetBinContent(eb,fr->Parameter(p));
@@ -147,12 +148,12 @@ TCanvas * getCanvasFromFittingProcedure(TString cname , TProfile2D * prof, TStri
       //clean up
       delete hoff;
 
-   }//for 
+   }//for
 
    // Close the file
    fout->Write();
    fout->Close();
-  
+
    // Put all histos into the canvas
    aux[0]->GetYaxis()->SetRangeUser(-8,8);
    aux[1]->GetYaxis()->SetRangeUser(-1.5,5);
@@ -164,7 +165,7 @@ TCanvas * getCanvasFromFittingProcedure(TString cname , TProfile2D * prof, TStri
    }
 
    return c;
-  
+
 }//getCanvasFromFittingProcedure
 
 
@@ -189,12 +190,12 @@ TH1 * getResolutionHistoFromHisto(TString cname, TString title, TH2 * histo_in){
       //double ptreferr =  0.5*(histo->GetXaxis()->GetBinLowEdge(nb)+histo->GetXaxis()->GetBinUpEdge(nb));
       double val = 0;
       double valerr = 0;
-    
+
       TH1 * aux = histo_in->ProjectionY("_py",nb,nb);
       if (aux->GetEntries() > 0) {
 
          TFitResultPtr fr = aux->Fit("gaus","0qS");
-           
+
          // Skip if fit failed
          if (fr.Get() && !fr->Status()){
             double mean    = fr->Parameter(1);
@@ -239,12 +240,12 @@ TH1 * getResolutionHistoFromHisto_v3(TString cname, TString title, TH2 * histo_i
       //double ptreferr =  0.5*(histo->GetXaxis()->GetBinLowEdge(nb)+histo->GetXaxis()->GetBinUpEdge(nb));
       double val = 0;
       double valerr = 0;
-    
+
       TH1 * aux = histo_in->ProjectionY("_py",nb,nb);
       if (aux->GetEntries() > 0) {
 
          TFitResultPtr fr = aux->Fit("gaus","0qS");
-           
+
          // Skip if fit failed
          if (!fr->Status()){
             //double mean    = fr->Parameter(1);
@@ -289,7 +290,7 @@ TH1 * getResolutionHistoFromHisto_v2(TString cname, TString title, TH2 * histo_i
       //double ptreferr =  0.5*(histo->GetXaxis()->GetBinLowEdge(nb)+histo->GetXaxis()->GetBinUpEdge(nb));
       double val = 0;
       double valerr = 0;
-    
+
       TH1 * aux = histo_in->ProjectionY("_py",nb,nb);
       TH1 * aux2= off_in->ProjectionY("_py",nb,nb);
       if (aux->GetEntries() > 0 && aux2->GetEntries()>0) {
@@ -345,7 +346,7 @@ TH1 * getMeanHistoFromHisto(TString cname, TString title, TH2 *off_in, double & 
    histo->Reset();
    //histo->Clear();
    histo->GetYaxis()->SetTitle(title);
-  
+
    // Now loop over the entries of prof and set the histo
    for (int nb = 1 ; nb <= histo->GetXaxis()->GetNbins() ; nb++){
 
@@ -353,18 +354,19 @@ TH1 * getMeanHistoFromHisto(TString cname, TString title, TH2 *off_in, double & 
       //double ptreferr =  0.5*(histo->GetXaxis()->GetBinLowEdge(nb)+histo->GetXaxis()->GetBinUpEdge(nb));
       double val = 0;
       double valerr = 0;
-    
+
 
       TH1 * aux= off_in->ProjectionY("_py",nb,nb);
       if (aux->GetEntries() > 0) {
 
-         TFitResultPtr fr = aux->Fit("gaus","0qS");
+         // TFitResultPtr fr = aux->Fit("gaus","0qS");
          //cout << cname << "sfsg1\tnb=" << nb << endl;
+         TF1* fr = HistUtil::fit_gaussian(aux, 1.5, 1.0, 10, false);
 
          // Skip if fit failed
-         if (fr.Get() && !fr->Status()){
-            double mean    = fr->Parameter(1);
-            double meanerr = fr->ParError(1);
+         if (fr){
+            double mean    = fr->GetParameter(1);
+            double meanerr = fr->GetParError(1);
             //double rms     = fr->Parameter(2);
             //double rmserr  = fr->ParError(2);
 
@@ -372,7 +374,6 @@ TH1 * getMeanHistoFromHisto(TString cname, TString title, TH2 *off_in, double & 
             if (val>maxy && meanerr<0.4) maxy=val;
             if (val<miny && meanerr<0.4) miny=val;
             valerr = meanerr;
-
          }
 
       }
@@ -406,7 +407,7 @@ TH1 * getMeanOverBinCenterHistoFromHisto(TString cname, TString title, TH2 *off_
    histo->Reset();
    //histo->Clear();
    histo->GetYaxis()->SetTitle(title);
-  
+
    // Now loop over the entries of prof and set the histo
    for (int nb = 1 ; nb <= histo->GetXaxis()->GetNbins() ; nb++){
 
@@ -414,7 +415,7 @@ TH1 * getMeanOverBinCenterHistoFromHisto(TString cname, TString title, TH2 *off_
       double ptreferr =  0.5*(histo->GetXaxis()->GetBinLowEdge(nb)+histo->GetXaxis()->GetBinUpEdge(nb));
       double val = 0;
       double valerr = 0;
-    
+
 
       TH1 * aux= off_in->ProjectionY("_py",nb,nb);
       if (aux->GetEntries() > 0) {
@@ -503,7 +504,7 @@ TCanvas * getCanvasResolution(TString cname, TString algo, TString title, vector
    cout<<"\t Doing fits for Resolution "<<cname<<endl;
    JetInfo ji(algo);
    algo.ToUpper();
-   
+
    int NPV_Rho;
    if (cname.Contains("npv",TString::kIgnoreCase))
       NPV_Rho = 1;
@@ -673,15 +674,15 @@ TCanvas * getResolutionNumDenom(TString cname, TString ctitle, TString algo, TH2
    histod->Clear();
    histod->GetYaxis()->SetTitle("<p_{T}^{noPU}/p_{T}^{GEN}>");
    histod->SetTitle(ctitle+" <p_{T}^{noPU}/p_{T}^{GEN}> vs. p_{T}^{GEN}");
-  
+
    //---to check, produce n/d
-  
+
    TH1 * histocheck = off->ProjectionX(cname);
    histocheck->Reset();
    histocheck->Clear();
    histocheck->GetYaxis()->SetTitle("#sigma(p_{T}^{PU}-p_{T}^{noPU})/<p_{T}^{noPU}/p_{T}^{GEN}>");
    histocheck->SetTitle(ctitle+" #sigma(p_{T}^{PU}-p_{T}^{noPU})/<p_{T}^{noPU}/p_{T}^{GEN}> vs. p_{T}^{GEN}");
-  
+
    double maxy1=0;
    double maxy2=0;
    double maxycheck=0;
@@ -717,7 +718,7 @@ TCanvas * getResolutionNumDenom(TString cname, TString ctitle, TString algo, TH2
             rmserr2  = fr2->ParError(2);
             val = rms2/mean;
             valerr = val * sqrt( pow(rmserr2/rms2,2) + pow(meanerr/mean,2));
-   		
+
             if (maxy1<mean)	maxy1=mean;
             if (maxy2<rms2)	maxy2=rms2;
             if (maxycheck<val) maxycheck = val;
@@ -740,7 +741,7 @@ TCanvas * getResolutionNumDenom(TString cname, TString ctitle, TString algo, TH2
    ccheck->cd();
    ccheck->SetLogx();
    histocheck->Draw("E");
-		
+
 
    histon->GetYaxis()->SetRangeUser(0,30);
    histod->GetYaxis()->SetRangeUser(0,maxy1*1.2);
@@ -749,7 +750,7 @@ TCanvas * getResolutionNumDenom(TString cname, TString ctitle, TString algo, TH2
    c->cd(2);
    histod->Draw("E");
    c->cd();
-    
+
    return c;
 }//getResolutionNumDenom
 
@@ -764,7 +765,7 @@ TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, vector<
    cout<<"\t Doing fits for Mean "<<cname<<endl;
    JetInfo ji(algo);
    algo.ToUpper();
-  
+
    int NPV_Rho;
    if (cname.Contains("npv",TString::kIgnoreCase))
       NPV_Rho = 1;
@@ -931,7 +932,7 @@ TCanvas * getGausMeanOffsetWithSum(TString cname, TString ctitle, TString algo, 
    //setHistoColor(hh,1);
    //hh->Draw("sameE");
    tdrDraw(hh,"E",kOpenCircle,1,kSolid,1);
-   
+
    TLegend* leg = (TLegend*)baseCanvas->GetPrimitive(cname+"_leg");
    int NPV_Rho;
    if (cname.Contains("npv",TString::kIgnoreCase))
@@ -971,8 +972,8 @@ TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo
 
    cout<<"\t Doing fits for Mean "<<cname<<endl;
    algo.ToUpper();
-  
-  
+
+
    TCanvas * c = new TCanvas(cname,cname);
    c->SetLogx();
 
@@ -1060,8 +1061,8 @@ TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, ve
 
    cout<<"\t Doing fits for Mean "<<cname<<endl;
    algo.ToUpper();
-  
-  
+
+
    TCanvas * c = new TCanvas(cname,cname);
    c->SetLogx();
    TLegend * leg = new TLegend(0.15,0.72,0.4,0.99);
@@ -1085,7 +1086,7 @@ TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, ve
    histo->Reset();
    //histo->Clear();
    histo->Sumw2();
-  
+
 
    double maxy = 0;
    double miny = 0;
@@ -1094,14 +1095,14 @@ TCanvas * getGausMeanOffsetScale(TString cname, TString ctitle, TString algo, ve
       TString hname = cname;
       hname += Form("_%i",j);
       hh[j] = getMeanHistoFromHisto(hname, ctitle, off[j], miny, maxy);
-      //hh[j]->Sumw2();    
+      //hh[j]->Sumw2();
       for (int nb = 1 ; nb <= histo->GetXaxis()->GetNbins() ; nb++)
       {
 
          histo->SetBinContent(nb,hh[j]->GetBinContent(scaleNo));
          histo->SetBinError(nb,hh[j]->GetBinError(scaleNo));
 
-      }    
+      }
 
       hh[j]->Divide(histo);
    }
@@ -1162,7 +1163,7 @@ TCanvas * getOffsetStack(TString cname, TString ctitle, TString algo, vector<TPr
    cout<<"\t Doing fits for Mean "<<cname<<endl;
    JetInfo ji(algo);
    algo.ToUpper();
-  
+
    int NPV_Rho;
    if (cname.Contains("npv",TString::kIgnoreCase))
       NPV_Rho = 1;
@@ -1407,7 +1408,7 @@ TCanvas * getOffsetStackWithSum(TString cname, TString ctitle, TString algo, vec
    hh->GetXaxis()->SetRangeUser(10.0,300.0);
    hh->GetYaxis()->SetRangeUser(0,0.8);
    hh->Draw("sameEX0");
-   
+
    TLegend* leg = (TLegend*)baseCanvas->GetPrimitive(cname+"_leg");
    int NPV_Rho;
    if (cname.Contains("npv",TString::kIgnoreCase))
@@ -1450,8 +1451,8 @@ TCanvas * getCanvasResolution_v2(TString cname, TString algo, TString title, vec
    cout<<"\t Doing fits for Resolution "<<cname<<endl;
    JetInfo ji(algo);
    algo.ToUpper();
-  
-  
+
+
    TCanvas * c = new TCanvas(cname,cname);
    c->SetLogx();
    TLegend * leg = new TLegend(0.2,0.56,0.45,0.85);
@@ -1606,9 +1607,9 @@ TH1 * getIntegralHistoFromHisto(TString cname, TString title,TProfile *off_in){
    for (int nb = 1 ; nb <= histo->GetXaxis()->GetNbins() ; nb++){
       double valerr;
       double val = off_in->IntegralAndError(nb,binmax,valerr);
-    
+
       //cout <<nb<<" "<<off_in->GetXaxis()->GetBinCenter(nb)<<" "<<off_in->GetBinContent(nb)<<" "<<val<<endl;
-    
+
       histo->SetBinContent(nb,val);
       histo->SetBinError(nb,valerr);
       if (val>maxy) maxy = val;
@@ -1635,8 +1636,8 @@ TCanvas * getCanvasAverage(TString cname, TString algo, TString title, vector<TP
    leg->SetFillColor(0);
    leg->SetBorderSize(0);
 
-   //vector<TH1*> hh(prof.size(),(TH1*)0);  
-   vector<TH1*> hh;  
+   //vector<TH1*> hh(prof.size(),(TH1*)0);
+   vector<TH1*> hh;
    for (unsigned int j=0;j<prof.size();j++){
       TString hname = cname;
       hname += Form("_%i",j);
@@ -1692,19 +1693,19 @@ TH1 * getAverageHistoFromHisto(TString cname, TString title,TProfile *off_in){
       double inte = off_in->IntegralAndError(nb,binmax,inteErr);
       double jetEneAvg = 0;
       double jetEneAvgErr = 0;
-    
+
       for (int nb2 = nb; nb2<=binmax;nb2++)
       {
          jetEneAvg += off_in->GetXaxis()->GetBinCenter(nb)*off_in->GetBinContent(nb);
          jetEneAvgErr += off_in->GetBinError(nb)*off_in->GetXaxis()->GetBinCenter(nb) + off_in->GetBinContent(nb)* 0.5*(off_in->GetXaxis()->GetBinWidth(nb));
       }
-    
+
       if (inte>0)
       {
          jetEneAvgErr = sqrt(inte*inte*jetEneAvgErr*jetEneAvgErr+jetEneAvg*jetEneAvg*inteErr*inteErr)/inteErr/inteErr;
-    
+
          jetEneAvg /= inte;
-    
+
          histo->SetBinContent(nb,jetEneAvg);
          histo->SetBinError(nb,jetEneAvgErr);
          if (jetEneAvg>maxy) maxy = jetEneAvg;
@@ -1777,7 +1778,7 @@ double findNonOverlappingYmax(TCanvas* c, vector<TH1*> hists, TLegend* leg, bool
 
    vcmin[0] = leg->GetY1NDC(); //legend always at the bottom
    vcmin[1] = tbound; //just compare to top of plot (margin + ticks) on the other side
-         
+
    //loop over histos
    double bh[2]; //height of highest bin + error (legend)
    bh[0] = bh[1] = 0;
@@ -1792,11 +1793,11 @@ double findNonOverlappingYmax(TCanvas* c, vector<TH1*> hists, TLegend* leg, bool
       for(int ibin = 1; ibin <= hists[s]->GetNbinsX(); ibin++) {
          if(hists[s]->GetBinLowEdge(ibin)<x1->GetXmin() || hists[s]->GetBinLowEdge(ibin)>=x1->GetXmax()) unseenBins++;
       }
-            
+
       for(int i = 0; i < 2; i++){ //check each side of plot
          //new bin #s for limited range
          int xbmin, xbmax;
-            
+
          xbmin = logxy.first
                ? x1->FindBin(x1->GetXmin()*pow(x1->GetXmax()/x1->GetXmin(), (ucmin[i] - pad->GetLeftMargin())/gx))
                : x1->FindBin((ucmin[i] - pad->GetLeftMargin())*(x1->GetXmax() - x1->GetXmin())/gx + x1->GetXmin());
@@ -1805,7 +1806,7 @@ double findNonOverlappingYmax(TCanvas* c, vector<TH1*> hists, TLegend* leg, bool
                ? x1->FindBin(x1->GetXmin()*pow(x1->GetXmax()/x1->GetXmin(), (ucmax[i] - pad->GetLeftMargin())/gx))
                : x1->FindBin((ucmax[i] - pad->GetLeftMargin())*(x1->GetXmax() - x1->GetXmin())/gx + x1->GetXmin());
          if(xbmax < hists[s]->GetNbinsX()) xbmax += 1; //include partial overlap
-         
+
          if(debug) {
             cout << "hist name = " << hists[s]->GetName() << endl
                  << "\tucmin[" << i << "] = " << ucmin[i] << endl

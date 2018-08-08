@@ -57,6 +57,7 @@ ClosureMaker::ClosureMaker(CommandLine& cl) {
     histMet         = cl.getValue<TString>  ("histMet",             "mu_h");
     histogramMetric = HistUtil::getHistogramMetricType(string(histMet));
     bool help       = cl.getValue<bool>     ("help",                 false);
+    statTh          = cl.getValue<int>      ("statTh",                   4);
 
     if (help) {cl.print(); return;}
     if (!cl.partialCheck()) return;
@@ -88,7 +89,7 @@ void ClosureMaker::openInputFile() {
         ifile = TFile::Open(path+filename+"_"+flavor+".root","READ");
     else
         ifile = TFile::Open(path+filename+".root","READ");
-    
+
     if(ifile == 0) {
         cout << "ERROR::ClosureMaker::openInputFiles() Could not open the file " << path << endl;
         std::terminate();
@@ -102,7 +103,7 @@ void ClosureMaker::getHistograms(TDirectoryFile* idir) {
     }
 
     if(var == VARIABLES::refpt || var == VARIABLES::ptclpt) {
-        hl.load_objects(idir,"RelRspVsRefPt:JetEta"); 
+        hl.load_objects(idir,"RelRspVsRefPt:JetEta");
         objects_loaded = true;
         if(hl.nobjects()!=NDetectorNames) {
             cout << "One or more of the histogram pointers from file " << path << " is NULL." << endl;
@@ -125,7 +126,7 @@ void ClosureMaker::getHistograms(TDirectoryFile* idir) {
 void ClosureMaker::openOutputFile() {
     //
     // Open/create the output directory and file
-    //   
+    //
     TString ofname = Form("%s/ClosureVs%s.root",outputDir.Data(),getVariableTitleString(var).c_str());
     if(!flavor.IsNull()) ofname = Form("%s/ClosureVs%s_%s.root",outputDir.Data(),
                                        getVariableTitleString(var).c_str(),flavor.Data());
@@ -209,7 +210,7 @@ void ClosureMaker::loopOverAlgorithms() {
         if (strcmp(dirKey->GetClassName(),"TDirectoryFile")!=0) continue;
         TDirectoryFile* idir = (TDirectoryFile*)dirKey->ReadObj();
         alg = idir->GetName(); if (!JetInfo::contains(algs,alg)) continue;
-        
+
         algIndex++;
         cout << alg << " ... " << endl;
 
@@ -258,7 +259,7 @@ void ClosureMaker::loopOverAlgorithms() {
         //
         makeCanvases();
         if(var == VARIABLES::refpt || var == VARIABLES::jtpt || var == VARIABLES::ptclpt) {
-            makeMergedCanvas();
+            makeMergedCanvas(false);
         }
 
         writeToFile();
@@ -343,7 +344,7 @@ void ClosureMaker::loopOverBins(TH2F* hvar, unsigned int iVarBin) {
                     varBins[ibin].c_str(),varBins[ibin+1].c_str());
         h.push_back(hvar->ProjectionY(name,ibin+1,ibin+1,"e"));
 
-        if (h.back()->GetEntries()>4) {
+        if (h.back()->GetEntries()> statTh) {
             if(histogramMetric==HistUtil::mu_f || histogramMetric==HistUtil::mpv) {
                 int nbins = 50;//100;
                 TSpectrum *spec = new TSpectrum(10);
@@ -385,10 +386,10 @@ void ClosureMaker::loopOverBins(TH2F* hvar, unsigned int iVarBin) {
                 continue;
             }
         }
-        else if(h.back()->GetEntries()<=4 && h.back()->GetEntries()>1) {
-            hClosure.back()->SetBinContent(ibin+1,h.back()->GetMean());
-            hClosure.back()->SetBinError(ibin+1,h.back()->GetMeanError());
-        }
+        // else if(h.back()->GetEntries()<=4 && h.back()->GetEntries()>1) {
+        //     hClosure.back()->SetBinContent(ibin+1,h.back()->GetMean());
+        //     hClosure.back()->SetBinError(ibin+1,h.back()->GetMeanError());
+        // }
         else {
             continue;
         }
@@ -421,7 +422,7 @@ void ClosureMaker::checkResponse() {
                 cout << "\tWARNING Closure for " << hClosure[ih]->GetName() << " at "
                      << hClosure[ih]->GetBinLowEdge(ibin) << " < "
                      << getVariableTitleString(var) << " < " << hClosure[ih]->GetBinLowEdge(ibin+1)
-                     <<" has relresp as low as " << binCont << " +/- " << binErr << endl;         
+                     <<" has relresp as low as " << binCont << " +/- " << binErr << endl;
             }
         }
     }
@@ -491,7 +492,7 @@ void ClosureMaker::makeCanvases() {
                                              tdrLeg(0.58,0.16,0.9,0.4)));
         if((var == VARIABLES::refpt || var == VARIABLES::jtpt || var == VARIABLES::ptclpt) && ih<3)
             canvases_legends.back().first->GetPad(0)->SetLogx();
-        
+
         //
         // Format and draw the pave
         //
@@ -533,10 +534,10 @@ void ClosureMaker::makeCanvases() {
 }
 
 //______________________________________________________________________________
-void ClosureMaker::makeMergedCanvas() {
+void ClosureMaker::makeMergedCanvas(bool finemerge = false) {
     TString name = Form("ClosureVs%s_Overview_%s",getVariableTitleString(var).c_str(),alg.Data());
     if(!flavor.IsNull()) name+="_"+flavor;
-
+    if (finemerge) name+="_Fine";
     //
     // Setup the frame, canvas, legend, and pave
     //
@@ -548,10 +549,11 @@ void ClosureMaker::makeMergedCanvas() {
         frame->GetXaxis()->SetLimits(XminCalo[0],Xmax[0]);
     frame->GetXaxis()->SetMoreLogLabels();
     frame->GetXaxis()->SetNoExponent();
-  pair<double,double> range = determineCanvasRange(frame->GetXaxis()->GetXmin(),frame->GetXaxis()->GetXmax());
-    //frame->GetYaxis()->SetRangeUser(0.95,1.05);
+    pair<double,double> range = determineCanvasRange(frame->GetXaxis()->GetXmin(),frame->GetXaxis()->GetXmax());
+    if (range.second - range.first > 0.2 && !finemerge) makeMergedCanvas(true);
+    if (finemerge) frame->GetYaxis()->SetRangeUser(0.95,1.05);
     //frame->GetYaxis()->SetRangeUser(0.35,1.35);
-  frame->GetYaxis()->SetRangeUser(range.first,range.second);
+    else frame->GetYaxis()->SetRangeUser(range.first,range.second);
     frame->GetXaxis()->SetTitle(getVariableAxisTitleString(var).c_str());
     frame->GetYaxis()->SetTitle("Response");
     canvases_legends.push_back(make_pair(tdrCanvas(name,frame,14,11,true),
@@ -635,5 +637,3 @@ void ClosureMaker::makeClosure(const VARIABLES::Variable ivar) {
     loopOverAlgorithms();
     closeFiles();
 }
-
-
