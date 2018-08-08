@@ -68,7 +68,7 @@ public:
     L2Creator();
     L2Creator(CommandLine& cl);
 
-    bool     checkFormulaEvaluator();
+    bool     checkFormulaEvaluator(float ptclip);
     void     closeFiles();
     /// check if a vector of strings contains a certain element
     bool     contains(const vector<string>& collection,const string& element);
@@ -92,7 +92,7 @@ public:
     void     setAndFitFLogAndFGaus(TGraphErrors* gabscor, TF1* flog, TF1* fgaus, double xmin);
     void     setOfflinePFParameters(TGraphErrors* gabscor, TF1* fabscor, double xmin, double xmax);
     void     writeTextFileForCurrentAlgorithm();
-    void     writeTextFileForCurrentAlgorithm_spline();
+    void     writeTextFileForCurrentAlgorithm_spline(float ptclip);
 
 private:
     string                    input, era, l3input, histMet;
@@ -116,9 +116,9 @@ private:
     vector<TGraphErrors*>     vabscor_eta;
     vector<TGraph*>           vrelcor_eta;
     vector<PiecewiseSpline*>  vabscor_eta_spline;
+    float                     ptclip;
     vector<int>               ptclipcones;
     vector<float>             ptclips;
-    float                     ptclip;
 };
 
 #endif

@@ -22,7 +22,10 @@
 #include <iomanip>
 #include <fstream>
 #include <vector>
+#include <sys/stat.h>
+#include <unistd.h>
 
+#include "JetMETAnalysis/JetUtilities/interface/CommandLine.h"
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
 #include "CondFormats/JetMETObjects/interface/JetCorrectorParameters.h"
 #include "CondFormats/JetMETObjects/interface/JetCorrectionUncertainty.h"
@@ -30,7 +33,7 @@
 //#include "CondFormats/JetMETObjects/interface/SimpleJetCorrector.h"
 //#include "CondFormats/JetMETObjects/interface/SimpleJetCorrectionUncertainty.h"
 
-#include "FWCore/ParameterSet/interface/FileInPath.h"
+// #include "FWCore/ParameterSet/interface/FileInPath.h"
 
 #include "JetMETAnalysis/JetUtilities/interface/Style.h"
 
@@ -219,10 +222,16 @@ double getEtaPtUncert(JetCorrectionUncertainty *unc,
   return (unc->getUncertainty(true));
 } // getEtaPtUncert
 
+// Test if file of given path exists
+bool fileexist (const std::string& name) {
+  struct stat buffer;
+  return (stat (name.c_str(), &buffer) == 0);
+}
 
 // ------------------------------------------------------------ //
 
-void compareJEC(string payld1="Winter14_V8", string payld2="",         string payld3="",
+void compareJEC(string path1 ="",            string path2 ="",         string path3 ="",
+                string payld1="Winter14_V8", string payld2="",         string payld3="",
                 string  algo1="AK5PFchs",    string  algo2="AK5PFchs", string algo3 ="AK5PFchs",
                 string  type1="DATA",        string  type2="DATA",     string type3 ="DATA",
       bool l1=true, bool l2l3=true, bool res=true) {
@@ -252,12 +261,12 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
   const char *cid3 = sid3.c_str();
   const char *a3 = algo3.c_str();
 
-  int maxTries = 7;
+  // int maxTries = 7;
   string strPath;
-  vector<string> paths = {"","CondFormats/JetMETObjects/data/"};
-  paths.push_back(string("<path to folder where textfiles of JEC1 located>")+cid1+"/");
-  paths.push_back(string("<path to folder where textfiles of JEC2 located>")+cid2+"/");
-  paths.push_back(string("<path to folder where textfiles of JEC3 located>")+cid3+"/");
+  vector<string> paths;
+  paths.push_back(path1);
+  paths.push_back(path2);
+  paths.push_back(path3);
 
 
   // JEC1
@@ -279,16 +288,17 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
   //strVec.push_back(Form("%s_Uncertainty_%s.txt",cid1,a1));
 
   for(unsigned int istr=0;istr<strVec.size(); istr++) {
-     for(int count=0; count<maxTries; count++) {
-        try {
-           edm::FileInPath strFIP(paths[count]+strVec[istr]);
-           strPath = strFIP.fullPath();
-           break;
-        }
-        catch (edm::Exception ex) {
-           if(count==maxTries-1) throw ex;
-        }
-     }
+     // for(int count=0; count<maxTries; count++) {
+     //    try {
+     //      edm::FileInPath strFIP(paths[count]+strVec[istr]);
+     //      strPath = strFIP.fullPath();
+     //       break;
+     //    }
+     //    catch (edm::Exception ex) {
+     //       if(count==maxTries-1) throw ex;
+     //    }
+     // }
+     strPath = paths[0] + strVec[istr];
      if((type1=="MC" && istr!=3) || type1=="DATA")cout << strPath << endl << flush;
      if(istr==0)
         JetCorPar1L1 = new JetCorrectorParameters(strPath);
@@ -320,16 +330,17 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
    //strVec.push_back(Form("%s_Uncertainty_%s.txt",cid2,a2));
 
    for(unsigned int istr=0;istr<strVec.size(); istr++) {
-     for(int count=0; count<maxTries; count++) {
-        try {
-           edm::FileInPath strFIP(paths[count]+strVec[istr]);
-           strPath = strFIP.fullPath();
-           break;
-        }
-        catch (edm::Exception ex) {
-           if(count==maxTries-1) throw ex;
-        }
-     }
+     // for(int count=0; count<maxTries; count++) {
+     //    try {
+     //      edm::FileInPath strFIP(paths[count]+strVec[istr]);
+     //      strPath = strFIP.fullPath();
+     //      break;
+     //    }
+     //    catch (edm::Exception ex) {
+     //       if(count==maxTries-1) throw ex;
+     //    }
+     // }
+     strPath = paths[1] + strVec[istr];
      if((type2=="MC" && istr!=3) || type2=="DATA")cout << strPath << endl << flush;
      if(istr==0)
         JetCorPar2L1 = new JetCorrectorParameters(strPath);
@@ -361,16 +372,17 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
     //strVec.push_back(Form("%s_Uncertainty_%s.txt",cid3,a3));
 
     for(unsigned int istr=0;istr<strVec.size(); istr++) {
-     for(int count=0; count<maxTries; count++) {
-        try {
-           edm::FileInPath strFIP(paths[count]+strVec[istr]);
-           strPath = strFIP.fullPath();
-           break;
-        }
-        catch (edm::Exception ex) {
-           if(count==maxTries-1) throw ex;
-        }
-     }
+     // for(int count=0; count<maxTries; count++) {
+     //    try {
+     //      edm::FileInPath strFIP(paths[count]+strVec[istr]);
+     //      strPath = strFIP.fullPath();
+     //       break;
+     //    }
+     //    catch (edm::Exception ex) {
+     //       if(count==maxTries-1) throw ex;
+     //    }
+     // }
+     strPath = paths[2] + strVec[istr];
      if((type2=="MC" && istr!=3) || type2=="DATA")cout << strPath << endl << flush;
      if(istr==0)
         JetCorPar3L1 = new JetCorrectorParameters(strPath);
@@ -1099,7 +1111,39 @@ void compareJEC(string payld1="Winter14_V8", string payld2="",         string pa
 //______________________________________________________________________________
 int main(int argc,char**argv)
 {
-  compareJEC("Fall17_25nsV1", "Summer16_25nsV5", "bias2SelectionPow_25nsV1", "AK4PFchs", "AK4PFchs", "AK4PFchs", "MC","MC","MC",    false, true,  false);
-  compareJEC("Fall17_25nsV1", "Summer16_25nsV5", "bias2SelectionPow_25nsV1", "AK4PFchs", "AK4PFchs", "AK4PFchs", "MC","MC","MC",    true, false,  false);
+  CommandLine cl;
+  if (!cl.parse(argc,argv)) return 0;
+  string         basepath   = cl.getValue<string>  ("basepath",          "/");
+  string         path1      = cl.getValue<string>  ("path1",              "");
+  string         path2      = cl.getValue<string>  ("path2",              "");
+  string         path3      = cl.getValue<string>  ("path3",              "");
+  vector<string> eras       = cl.getVector<string> ("eras",  "Fall17_25nsV1");
+  vector<string> algos      = cl.getVector<string> ("algos",         "AK4PF");
+  vector<string> types      = cl.getVector<string> ("types",              "");
+  bool           dummyl3    = cl.getValue<bool>    ("dummyl3",          true);
+
+  if(!cl.check()) return 0;
+  cl.print();
+  if (path1.substr(0,1) != "/") path1 = basepath + path1;
+  if (path2.substr(0,1) != "/") path2 = basepath + path2;
+  if (path3.substr(0,1) != "/") path3 = basepath + path3;
+  cout << "paths are: "<< endl << path1 <<endl<< path2<< endl<<path3<<endl;
+  vector<string> paths = {path1,path2,path3};
+  if (algos.size() != 3) algos.resize(3,algos[0]);
+  if (eras.size()  != 3) eras.resize(3,eras[0]);
+  if (types.size() != 3) types.resize(3,"MC");
+
+  if (dummyl3){
+    for (unsigned ip = 0; ip < paths.size(); ++ip){
+      ofstream l3f(Form("%s%s_%s_L3Absolute_%s.txt", paths[ip].c_str(), eras[ip].c_str(),types[ip].c_str(), algos[ip].c_str()));
+      l3f << "{1         JetEta              1          JetPt               1     Correction     L3Absolute}"<<endl;
+      l3f << "-5.191          5.191              2              1           10000              "<<endl;
+      l3f.close();
+    }
+  }
+
+
+  compareJEC(paths[0],paths[1],paths[2],eras[0],eras[1],eras[2],algos[0],algos[1],algos[2],types[0],types[1],types[2],false,true,false);
+  compareJEC(paths[0],paths[1],paths[2],eras[0],eras[1],eras[2],algos[0],algos[1],algos[2],types[0],types[1],types[2],true,false,false);
 
 }

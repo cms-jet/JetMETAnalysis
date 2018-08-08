@@ -46,9 +46,9 @@ L2Creator::L2Creator(CommandLine& cl) {
     histMet         = cl.getValue<string>  ("histMet",       "mu_h");
     histogramMetric = HistUtil::getHistogramMetricType(histMet);
 
-    ptclipcones     = cl.getVector<int>    ("ptclipcones",       "");
-    ptclips         = cl.getVector<float>  ("ptclips",           "");
     ptclip          = cl.getValue<float>   ("ptclip",            0.);
+    ptclipcones     = cl.getVector<int>    ("ptclipcones"        "");
+    ptclips         = cl.getVector<float>  ("ptclips"            "");
     statThreshold   = cl.getValue<int>     ("statThreshold",      4);
 
     if (!cl.partialCheck()) return;
@@ -143,21 +143,6 @@ void L2Creator::loopOverAlgorithms(string makeCanvasVariable) {
         // Make the JetInfo object
         //
         ji = new JetInfo(alg);
-
-        // Set ptclip
-        if (ptclipcones.size() != 0){
-            if (ptclips.size() != ptclipcones.size()){
-                ptclips.resize(ptclipcones.size(),ptclip);
-                cout << "ptclips and ptclipcones have different size, ptclips is filled with default ptclip = " << ptclip <<endl;
-            }
-            for (unsigned conesit = 0; conesit < ptclipcones.size(); ++conesit) {
-                if (ji->getConeSize().Atoi() == ptclipcones[conesit]) {
-                    ptclip = ptclips[conesit];
-                    cout << "for " << alg << " ptclip is set to " << ptclip <<endl;
-                }
-            }
-        }
-
         //
         // Get the response from the l3 file only if l2l3 is set to false;
         //
@@ -196,13 +181,28 @@ void L2Creator::loopOverAlgorithms(string makeCanvasVariable) {
             //
             doRelCorFits();
         }
-
+        // Set ptcliping
+        float ptcliping = ptclip;
+        if (ptclipcones.size() != 0 ){
+            if (ptclips.size() != ptclipcones.size() ){
+                if (ptclips.size() < ptclipcones.size()) cout << "ptclips have more less entries than ptclipcones, missing conesize now using default ptcliping = " << ptclip <<endl;
+                else cout << "ptclips have more entries than ptclipcones, discarding the redundance.";
+                ptclips.resize(ptclipcones.size(),ptcliping);
+            }
+            for (unsigned conesit = 0; conesit < ptclipcones.size(); ++conesit) {
+                if (ji->getConeSize().Atoi() == ptclipcones[conesit]) {
+                    ptcliping = ptclips[conesit];
+                    break;
+                }
+            }
+        }
+        cout << "for " << alg << " ptcliping is set to " << ptcliping <<endl;
         //
         // Write the L2 correction text file for the current algorithm
         // Don't need splines for the separated L2/L3 file because no splines are implemented for thos fits
         //
         if(l2l3 && (alg.find("pf")!=string::npos || alg.find("puppi")!=string::npos) && l2pffit.Contains("spline"))
-            writeTextFileForCurrentAlgorithm_spline();
+            writeTextFileForCurrentAlgorithm_spline(ptcliping);
         else
             writeTextFileForCurrentAlgorithm();
 
@@ -210,7 +210,7 @@ void L2Creator::loopOverAlgorithms(string makeCanvasVariable) {
         // Check that the FormulaEvaluator returns the same value as the TF1 used to create the fit
         // This is necessary because several times in the past the FormulaEvaluator has returned strange values
         //
-        assert(checkFormulaEvaluator());
+        assert(checkFormulaEvaluator(ptcliping));
 
         //
         // Draw several canvases of the graphs and associated fits
@@ -575,7 +575,7 @@ void L2Creator::loopOverEtaBins() {
 }
 
 //______________________________________________________________________________
-bool L2Creator::checkFormulaEvaluator() {
+bool L2Creator::checkFormulaEvaluator(float ptcliping) {
     vector<double> pt_to_check  = {10.0,30.0,100.0,500.0,1000.0,2000.0,3000.0,4000.0};
 
     unsigned int vector_size = 0;
@@ -647,7 +647,7 @@ bool L2Creator::checkFormulaEvaluator() {
                 //
                 // Check that the ipt is not outside the pt clipping area
                 //
-                if (ipt < ptclip || ipt > pt_limit) continue;
+                if (ipt < ptcliping || ipt > pt_limit) continue;
 
                 //
                 // Set the inputs for the FactorizedJetCorrector
@@ -1324,7 +1324,7 @@ void L2Creator::writeTextFileForCurrentAlgorithm() {
 }
 
 //______________________________________________________________________________
-void L2Creator::writeTextFileForCurrentAlgorithm_spline() {
+void L2Creator::writeTextFileForCurrentAlgorithm_spline(float ptcliping) {
     TString txtfilename = outputDir + era + "_L2Relative_" + ji->getAlias() + ".txt";
     ofstream fout(txtfilename);
     fout.setf(ios::right);
@@ -1332,7 +1332,6 @@ void L2Creator::writeTextFileForCurrentAlgorithm_spline() {
 
     //For eta-dependent spline clipping
     int pt_limit = 70;
-    float pt_clip = ptclip;
 
     unsigned int vector_size = 0;
     vector_size = vabscor_eta.size();
@@ -1385,7 +1384,7 @@ void L2Creator::writeTextFileForCurrentAlgorithm_spline() {
                 //if(isection==spline->getNSections()-1) {
                 //    bounds.second = 6500;
                 //}
-                if(bounds.second < pt_clip) continue;
+                if(bounds.second < ptcliping) continue;
                 if(isection==spline->getNSections()-1) lastLine = true;
                 if(bounds.second >= pt_limit) {
                     abovePtLimit = true;
@@ -1397,7 +1396,7 @@ void L2Creator::writeTextFileForCurrentAlgorithm_spline() {
                     <<setw(10)<<setprecision(6)<<(firstline ? 0.001 : bounds.first)
                     <<setw(10)<<setprecision(6)<<(lastLine ? 6500 : bounds.second)
                     <<setw(6)<<(int)(spline->getNpar()+2) //Number of parameters + 2
-                    <<setw(12)<<setprecision(8)<<( (firstline && pt_clip > bounds.first) ? pt_clip : bounds.first)
+                    <<setw(12)<<setprecision(8)<<( (firstline && ptcliping > bounds.first) ? ptcliping : bounds.first)
                     <<setw(12)<<setprecision(8)<<(abovePtLimit ? pt_limit : bounds.second);
                 TF1* spline_func = spline->setParameters(isection);
                 for(int p=0; p<spline->getNpar(); p++) {
