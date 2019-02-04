@@ -47,8 +47,6 @@ TGraph2DErrors * getGraph2D(int iEta, TProfile3D * prof,
     graph->SetTitle(Form("p_offOverA_RhoVsJetPt_%d Eta=%f-%f;Rho;p_{T}^{pu};OffsetOverArea",iEta,prof->GetXaxis()->GetBinLowEdge(iEta),prof->GetXaxis()->GetBinUpEdge(iEta)));
     int nEvt = 0;
     cout << "\tNBins (rho,pT):  (" << prof->GetYaxis()->GetNbins() << "," << prof->GetZaxis()->GetNbins() << ")" << endl;
-    //cout << "NBins rho:  " << prof->GetYaxis()->GetNbins() << endl;
-    //cout << "NBins pT:  " << prof->GetZaxis()->GetNbins() << endl;
 
     double nJets = prof->GetEntries();
 
@@ -84,14 +82,6 @@ TGraph2DErrors * getGraph2D(int iEta, TProfile3D * prof,
           graph->SetPoint(n, rho, pt, ooa);
           graph->SetPointError(n, rhoe, pte, ooae);
 
-          // if (iEta== 25 && ooa > 10 && ooa < 15)
-          //   cout<<"\t\titnpu: "<<itnpu<<" rho: "<<rho
-          //       <<" irefpt: "<<irefpt<<" pt: "<<pt
-          //       <<" ooa: "<<ooa<<" ooa error: "<<ooae
-          //       <<" bin entries: "<<prof->GetBinEntries(Gbin)
-          //       <<" bin effective entries: "<<prof->GetBinEffectiveEntries(Gbin)
-          //       <<endl;
-
         }//if
 
       } // irefpt
@@ -99,9 +89,7 @@ TGraph2DErrors * getGraph2D(int iEta, TProfile3D * prof,
     }// itnpu
 
     cout << "\tgraph has (Entries,Evts):  (" << graph->GetN() << "," << nEvt << ")" << endl;
-    //cout<<"\tgraph has "<<graph->GetN()<<" entries"<<"& # of Evts: " << nEvt<< endl;
 
-    // return it
     return graph;
 
 } // getGraph2D
@@ -282,7 +270,6 @@ void fitClosurePlots(TProfile3D * prof,
 
       for (unsigned irefpt = 0; irefpt<rhographs.size(); irefpt++){
         if (!rhographs[irefpt]->GetN()) continue;
-        // double ptpu = profPt->GetBinContent(iEta, itnpu, irefpt+1);
         rhographs[irefpt]->SetNameTitle(Form("ieta_%d_irefpt_%d",iEta,irefpt+1),Form("ieta_%d_irefpt_%d;#rho;ooa",iEta,irefpt+1));
         rhographs[irefpt]->Write();
       }
@@ -292,7 +279,6 @@ void fitClosurePlots(TProfile3D * prof,
 
       for (unsigned itnpu = 0; itnpu<ptpugraphs.size(); itnpu++){
         if (!ptpugraphs[itnpu]->GetN()) continue;
-        // double rho = profRho->GetBinContent(iEta, itnpu+1, 22);
         ptpugraphs[itnpu]->SetNameTitle(Form("ieta_%d_itnpu_%d",iEta,itnpu+1),Form("ieta_%d_itnpu_%d;p_{T}^{pu};ooa",iEta,itnpu+1));
         ptpugraphs[itnpu]->Write();
       }
@@ -302,7 +288,6 @@ void fitClosurePlots(TProfile3D * prof,
 
       for (unsigned irefpt = 0; irefpt<rho_residual_graphs.size(); irefpt++){
         if (!rho_residual_graphs[irefpt]->GetN()) continue;
-        // double ptpu = profPt->GetBinContent(iEta, itnpu, irefpt+1);
         rho_residual_graphs[irefpt]->SetNameTitle(Form("ieta_%d_irefpt_%d_residual",iEta,irefpt+1),Form("ieta_%d_irefpt_%d_residual;#rho;ooa",iEta+1,irefpt+1));
         rho_residual_graphs[irefpt]->Write();
       }
@@ -312,14 +297,12 @@ void fitClosurePlots(TProfile3D * prof,
 
       for (unsigned itnpu = 0; itnpu<ptpu_residual_graphs.size(); itnpu++){
         if (!ptpu_residual_graphs[itnpu]->GetN()) continue;
-        // double rho = profRho->GetBinContent(iEta, itnpu+1, 22);
         ptpu_residual_graphs[itnpu]->SetNameTitle(Form("ieta_%d_itnpu_%d_residual",iEta,itnpu+1),Form("ieta_%d_itnpu_%d_residual;p_{T}^{pu};ooa",iEta,itnpu+1));
         ptpu_residual_graphs[itnpu]->Write();
       }
 
     }// iEta
 
-    // cout<<"sfsg"<<endl;
 
     fout->cd("histograms/refpt");
 
@@ -417,15 +400,6 @@ bool getInputProfiles(TString inputFilename, TProfile3D *& prof,
       }
     }
 
-    // int yrebin = 5;
-    // int zrebin = 2;
-    //
-    // prof->Rebin3D(1,yrebin,zrebin);
-    // profPt->Rebin3D(1,yrebin,zrebin);
-    // profRho->Rebin3D(1,yrebin,zrebin);
-    // hist->Rebin3D(1,yrebin,zrebin);
-
-
     // if everything went well just return true.
     return true;
 
@@ -448,54 +422,48 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, string functionType, i
     function = "[0]+([1]*(x))*(1+[2]*log(y))";
   }
 
-  else if(functionType=="ak4") { //LATEST
+  else if(functionType=="ak4") {
     if(!pari_set) {
-      // pari = {13.9,0.74,0.004,-0.027,1,10};
       pari = {15,1,-1,5,0,0};
       pari_set = true;
     }
     function = "[0]+[1]*(x-20.0)+[2]*log(y/30.0)+[3]*pow(log(y/30.0),2)+[4]*(x-20.0)*log(y/30.0)+[5]*(x-20.0)*pow(log(y/30.0),2)";
   }
 
-  else if(functionType=="ak8") { //LATEST
+  else if(functionType=="ak8") {
     if(!pari_set) {
-      // pari = {13.9,0.74,0.004,-0.027,1,10};
       pari = {15,1,-1,5,0,0};
       pari_set = true;
     }
     function = "[0]+[1]*(x-20.0)+[2]*log(y/90.0)+[3]*pow(log(y/90.0),2)+[4]*(x-20.0)*log(y/90.0)+[5]*(x-20.0)*pow(log(y/90.0),2)";
   }
 
-  else if(functionType=="ak4_test") { //LATEST
+  else if(functionType=="ak4_test") {
     if(!pari_set) {
-      // pari = {13.9,0.74,0.004,-0.027,1,10};
       pari = {15,1,-1,5,0,0,0,0,0};
       pari_set = true;
     }
     function = "[0]+[1]*(x-20.0)+[2]*log(y/30.0)+[3]*pow(log(y/30.0),2)+[4]*(x-20.0)*log(y/30.0)+[5]*(x-20.0)*pow(log(y/30.0),2)+[6]*pow(x-20.0,2)+[7]*pow(x-20.0,2)*log(y/30.0)+[8]*pow(x-20.0,2)*pow(log(y/30.0),2)";
   }
 
-  else if(functionType=="ak8_test") { //LATEST
+  else if(functionType=="ak8_test") {
     if(!pari_set) {
-      // pari = {13.9,0.74,0.004,-0.027,1,10};
       pari = {15,1,-1,5,0,0,0,0,0};
       pari_set = true;
     }
     function = "[0]+[1]*(x-20.0)+[2]*log(y/90.0)+[3]*pow(log(y/90.0),2)+[4]*(x-20.0)*log(y/90.0)+[5]*(x-20.0)*pow(log(y/90.0),2)+[6]*pow(x-20.0,2)+[7]*pow(x-20.0,2)*log(y/90.0)+[8]*pow(x-20.0,2)*pow(log(y/90.0),2)";
   }
 
-  else if(functionType=="ak4_test2") { //LATEST
+  else if(functionType=="ak4_test2") {
     if(!pari_set) {
-      // pari = {13.9,0.74,0.004,-0.027,1,10};
       pari = {15,1,-1,5,0};
       pari_set = true;
     }
     function = "[0]*(x-2)*(1+[1]*(x-20.0))*(1+[2]*log(y/30.0))+([3]+[4]*log(y))";
   }
 
-  else if(functionType=="ak8_test2") { //LATEST
+  else if(functionType=="ak8_test2") {
     if(!pari_set) {
-      // pari = {13.9,0.74,0.004,-0.027,1,10};
       pari = {15,1,-1,5,0};
       pari_set = true;
     }
@@ -687,12 +655,6 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, string functionType, i
           f4->SetParameter(ipar,pari[ipar]);
         }
       }
-      //if (graph->GetN()<500)
-      //f4->FixParameter(2,0.05);
-
-      /*   if(fabs((prof->GetXaxis()->GetBinLowEdge(iEta)+ prof->GetXaxis()->GetBinLowEdge(iEta + 1))/2)>4.2){
-      f4->FixParameter(2,0);
-    }*/
 
     int nfits = 10;
     int counter=0;
@@ -740,9 +702,7 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, string functionType, i
     ofstream outF(txtFilename.Data());
 
     // Produce the first line
-    //TString fname = Form("{1 JetEta 3 JetPt JetA Rho max(0.0001,1-y*(%s)/x)",fitResults[0].fit->GetTitle());
     TString fname = Form("{1 JetEta 3 Rho JetPt JetA max(0.0001,1-(z/y)*(%s))",fitResults[0].fit->GetTitle());
-    //outF <<"{1 JetEta 3 JetPt JetA Rho max(0.0001,1-y*([0]+([1]*z)*(1+[2]*log(x)))/x)"
     outF << fname <<" Correction L1FastJet}"<<endl;
 
     // loop over the vector producing the eta lines
@@ -908,8 +868,6 @@ int main(int argc,char**argv){
     // Do the fitting
     TF2 * fitfunc = doGraphFitting(graph, highPU, functionType, iEta, prof);
     cout << "Fitted function" << endl << endl;
-
-    // if (!fitfunc) cout<<"NO FIT NO FIT NO FIT NO FIT NO FIT NO FIT NO FIT"<<endl;
 
     // Put this fit result in the vector fitResults
     FitRes fitres;

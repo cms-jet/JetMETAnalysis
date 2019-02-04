@@ -467,8 +467,6 @@ void MatchEventsAndJets::ReadMatchedEventsMaps(string pathToMaps) {
    evtid* evtID = new evtid();
    ull PUentry;
    ull NoPUentry;
-   // pair <ull,ull> dummy = make_pair(0,0);
-   // pair <ull,ull> entry = dummy;
 
    tree->SetBranchAddress("evtID",&evtID);
    tree->SetBranchAddress("PUentry",&PUentry);
@@ -701,13 +699,6 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
    hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->GetAxis(3)->SetTitle("p_{T}^{gen}");
    hsparse["p_entries_etaRhoVsTnpusVsJetPt"]->Sumw2();
    if (!fValue) fValue = new Double_t[4];
-   //if (!bins_debug) {
-   //   bins_debug = new Int_t[4];
-   //   bins_debug[0] = 11;
-   //   bins_debug[1] = 3;
-   //   bins_debug[2] = 6;
-   //   bins_debug[3] = 4;
-   //}
 
    //NPU
    histograms["p_offOverA_etaVsNpusVsJetPt"] = new TProfile3D("p_offOverA_etaVsNpusVsJetPt","p_offOverA_etaVsNpusVsJetPt;#eta_{j};npu;p_{T}^{gen};OffsetOverAre",NETA,veta,NNPU,vnpu,NPtBins,vpt);
@@ -1018,8 +1009,6 @@ void MatchEventsAndJets::FillRecToRecThroughGenMap() {
       if(j1 >= 0 && j2 >= 0 && j1 < tpu->nref && j2 < tnopu->nref &&
          tpu->refdrjt->at(j1) < maxDeltaR && tnopu->refdrjt->at(j2) < maxDeltaR &&
          fabs(tpu->refpt->at(j1) - tnopu->refpt->at(j2))<0.0001
-         // && (fabs(tpu->refpt->at(j1)-tpu->jtpt->at(j1))/tpu->refpt->at(j1)<0.15) && (fabs(tpu->refpt->at(j2)-tpu->jtpt->at(j2))/tpu->refpt->at(j2)<0.15) && tpu->refpt->at(j1)>30 && tpu->refpt->at(j2)>30
-         // && (!(tpu->refpt->at(j1)>30 && fabs(tpu->refeta->at(j1))<1.3) || tpu->refpt->at(j1)/tpu->jtpt->at(j1)<1.15 || tpu->jtpt->at(j1)/tpu->refpt->at(j1)<1.15)
          ) {
          jetMap[j1] = j2;
       }

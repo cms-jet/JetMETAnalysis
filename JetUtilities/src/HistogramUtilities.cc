@@ -363,11 +363,7 @@ namespace HistUtil {
       if(nbins < 100) spec->Search(hrsp,6,"nobackground nodraw goff"); //turn off background removal when nbins too small
       else spec->Search(hrsp,6,"nodraw goff");
       Double_t* xpos = spec->GetPositionX();
-      //Double_t* ypos = spec->GetPositionY();
       Double_t p = xpos[0];
-      //Double_t ph = ypos[0];
-      //std::cout << "peak: " << p << std::endl;
-      //std::cout << "peak height: " << ph << std::endl;
       peak = p;
 
       double sigma = rms;

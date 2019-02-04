@@ -336,7 +336,6 @@ TH1 * getResolutionHistoFromHisto_v2(TString cname, TString title, TH2 * histo_i
 // ------------------------------------------------------------------
 // get mean from histo. Return mean.
 TH1 * getMeanHistoFromHisto(TString cname, TString title, TH2 *off_in, double & miny, double & maxy){
-  // cout<<"\tgetMeanHistoFromHisto"<<endl;
   // make an empty copy to fill and return
   TH1 * histo = 0;
   if(off_in)
@@ -364,32 +363,18 @@ TH1 * getMeanHistoFromHisto(TString cname, TString title, TH2 *off_in, double & 
       fr->SetParameter(1,aux->GetMean());
       fr->SetParameter(2,aux->GetRMS());
 
-      // val = aux->GetMean();
-      // valerr = aux->GetMeanError();
 
       TFitResultPtr ptr = aux->Fit(fr,"qS+R");
-      // TCanvas a;
-      // aux->Draw();
-      // a.Print(Form("%s_%i_delete.C",cname.Data(),nb));
 
-      //cout << cname << "sfsg1\tnb=" << nb << endl;
-      // TF1* fr = HistUtil::fit_gaussian(aux, 1.5, 1.0, 10, false);
-
-      // Skip if fit failed
-      // if (fr){
       if (!val && ptr.Get() && !ptr->Status() && ptr->Chi2()/ptr->Ndf()<100){
-        // cout<<"\t\tEntered if"<<endl;
-        double mean    = ptr->Parameter(1); //cout<<"\t\tMean = "<<mean<<endl;
+
+        double mean    = ptr->Parameter(1);
         double meanerr = ptr->ParError(1);
-        //double rms     = fr->Parameter(2);
-        //double rmserr  = fr->ParError(2);
 
         val = mean;
-        // val = aux->GetMean();
         if (val>maxy && meanerr<0.4) maxy=val;
         if (val<miny && meanerr<0.4) miny=val;
         valerr = meanerr;
-        // valerr = aux->GetRMS();
       }
 
       delete fr;
@@ -398,18 +383,13 @@ TH1 * getMeanHistoFromHisto(TString cname, TString title, TH2 *off_in, double & 
       histo->SetBinContent(nb,val);
       histo->SetBinError(nb,valerr);
 
-    }//aux->GetEntries() > 10
+    }
     // clean up
     delete aux;
 
   }// for x bins
 
-  //histo->GetYaxis()->SetRangeUser(0,maxy);
   histo->GetYaxis()->SetRangeUser(miny,maxy);
-  // TCanvas b;
-  // b.SetLogx();
-  // histo->Draw();
-  // b.Print(Form("%s_Hdelete.C",cname.Data()));
 
   return histo;
 
@@ -449,32 +429,18 @@ TH1 * getMeanOverBinCenterHistoFromHisto(TString cname, TString title, TH2 *off_
        fr->SetParameter(1,aux->GetMean());
        fr->SetParameter(2,aux->GetRMS());
 
-       // val = aux->GetMean()/ptref;
-       // valerr = val*sqrt(pow(aux->GetMeanError()/aux->GetMean(),2)+pow(ptreferr/ptref,2));
 
        TFitResultPtr ptr = aux->Fit(fr,"qS+R");
-       // TCanvas a;
-       // aux->Draw();
-       // a.Print(Form("%s_%i_delete.C",cname.Data(),nb));
 
-       //cout << cname << "sfsg1\tnb=" << nb << endl;
-       // TF1* fr = HistUtil::fit_gaussian(aux, 1.5, 1.0, 10, false);
-
-       // Skip if fit failed
-       // if (fr){
        if (!val && ptr.Get() && !ptr->Status() && ptr->Chi2()/ptr->Ndf()<100){
-         // cout<<"\t\tEntered if"<<endl;
-         double mean    = ptr->Parameter(1); //cout<<"\t\tMean = "<<mean<<endl;
+
+         double mean    = ptr->Parameter(1);
          double meanerr = ptr->ParError(1);
-         //double rms     = fr->Parameter(2);
-         //double rmserr  = fr->ParError(2);
 
          val = mean/ptref;
-         // val = aux->GetMean()/ptref;
          if (val>maxy && meanerr<0.4) maxy=val;
          if (val<miny && meanerr<0.4) miny=val;
          valerr = val*sqrt(pow(meanerr/mean,2)+pow(ptreferr/ptref,2));
-         // valerr = val*sqrt(pow(aux->GetRMS()/aux->GetMean(),2)+pow(ptreferr/ptref,2));
        }
 
        delete fr;
@@ -483,77 +449,17 @@ TH1 * getMeanOverBinCenterHistoFromHisto(TString cname, TString title, TH2 *off_
        histo->SetBinContent(nb,val);
        histo->SetBinError(nb,valerr);
 
-     }//aux->GetEntries() > 20
+     }
      // clean up
      delete aux;
 
    }// for x bins
 
-   //histo->GetYaxis()->SetRangeUser(0,maxy);
    histo->GetYaxis()->SetRangeUser(miny,maxy);
-   // TCanvas b;
-   // b.SetLogx();
-   // histo->Draw();
-   // b.Print(Form("%s_Hdelete.C",cname.Data()));
 
    return histo;
 
 }//getMeanOverBinCenterHistoFromHisto
-
-// TH1 * getMeanOverBinCenterHistoFromHisto(TString cname, TString title, TH2 *off_in, double & maxy){
-//
-//    // make an empty copy to fill and return
-//    TH1 * histo = 0;
-//    if(off_in)
-//       histo = off_in->ProjectionX(cname);
-//    else
-//       return histo;
-//    histo->Reset();
-//    //histo->Clear();
-//    histo->GetYaxis()->SetTitle(title);
-//
-//    // Now loop over the entries of prof and set the histo
-//    for (int nb = 1 ; nb <= histo->GetXaxis()->GetNbins() ; nb++){
-//
-//       double ptref = histo->GetXaxis()->GetBinCenter(nb);
-//       double ptreferr = 0.5*(histo->GetXaxis()->GetBinUpEdge(nb)-histo->GetXaxis()->GetBinLowEdge(nb));
-//       double val = 0;
-//       double valerr = 0;
-//
-//
-//       TH1 * aux= off_in->ProjectionY("_py",nb,nb);
-//       if (aux->GetEntries() > 0) {
-//
-//          TFitResultPtr fr = aux->Fit("gaus","0qS");
-//          //cout <<cname<<"Here1"<<endl;
-//
-//          // Skip if fit failed
-//          if (fr.Get() && !fr->Status()){
-//             double mean    = fr->Parameter(1);
-//             double meanerr = fr->ParError(1);
-//             //double rms     = fr->Parameter(2);
-//             //double rmserr  = fr->ParError(2);
-//
-//             val = mean/ptref ;//cout <<val<<" ";
-//             if (val>maxy) maxy=val;
-//             valerr = val * sqrt( pow(ptreferr/ptref,2) + pow(meanerr/mean,2));
-//          }
-//
-//       }
-//
-//       histo->SetBinContent(nb,val);
-//       histo->SetBinError(nb,valerr);
-//
-//
-//       // clean up
-//       delete aux;
-//
-//    }
-//    histo->GetYaxis()->SetRangeUser(0,maxy);
-//    // return
-//    return histo;
-//
-// }//getMeanOverBinCenterHistoFromHisto
 
 
 // ------------------------------------------------------------------
@@ -900,7 +806,6 @@ TCanvas * getGausMeanOffset(TString cname, TString ctitle, TString algo, vector<
     TString hname = cname;
     hname += Form("_%i",j);
     hh[j] = getMeanHistoFromHisto(hname, ctitle, off[j], miny, maxy);
-    //cout << hh[j] << " Mean for histo: " << hname << " " << ctitle << " " << off[j] << endl;
   }
   if(!hh[0]) {
     cout << "WARNING::getGausMeanOffset histogram hh[0] was not set by getMeanHistoFromHisto." << endl
@@ -1089,7 +994,6 @@ TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo
     TString hname = cname;
     hname += Form("_%i",j);
     hh[j] = getMeanOverBinCenterHistoFromHisto(hname, ctitle, off[j], maxy);
-    //cout << hh[j] << " Mean for histo: " << hname << " " << ctitle << " " << off[j] << endl;
   }
   if(!hh[0]) {
     cout << "WARNING::getMeanOverBinCenterHistoFromHisto histogram hh[0] was not set by getMeanOverBinCenterHistoFromHisto." << endl
@@ -1164,8 +1068,6 @@ TCanvas * getGausMeanOffsetOverPtref(TString cname, TString ctitle, TString algo
   c->Update();
   if(fixedRange) {
     hbin->GetYaxis()->SetRangeUser(-0.20,0.20);
-    // if(NPV_Rho == 3)
-    //    hbin->GetYaxis()->SetRangeUser(-0.6,1.4);
   }
   else {
     //Need to call SetRangeUser eat least once to set the minimum. Otherwise findNonOverlappingYmax will not calculate the maximum correctly.
