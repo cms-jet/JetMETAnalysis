@@ -50,7 +50,7 @@ public:
 
    void   getMaxDeltaR();
    double getMaxDeltaR(string algName);
-   void   SetMaxEvts(int me) {maxEvts = me;}
+   void   SetMaxEvts(unsigned me) {maxEvts = me;}
    void   SetNRefMax(int nrm) {nrefmax = nrm;}
    void   SetDoNotSaveFlag(bool dns) {doNotSaveFlag = dns;}
    void   SetWeightParameters(bool useweight_, bool pThatReweight_, double bias2SelectionRef_, double bias2SelectionPow_);
@@ -59,25 +59,26 @@ public:
    void   MakeMatchedEventsMaps(string treeName, string outputPath);
    void   ConvertEvtMapToVector(const ITS& mapTree, vector<evtid>& vevtid, vector<pair<ull,ull> >& vll);
    void   ConvertEvtMapToTTree(const ITS& mapTree, TTree* treeMap);
-   void   WriteMatchedEventsMaps(ITS mapTree, bool noPU, string outputPath);
+   void   WriteMatchedEventsMap(string outputPath);
+   void   CreateMatchedEventsMap(ITS& mapTreePU, ITS& mapTreeNoPU);
    void   ConvertTTreeToMap(ITS& mapTree, TTree* treeMap);
    void   ReadMatchedEventsMaps(string pathToMaps);
    ITS    fillMap(bool noPU, string treeName, string outputPath);
    void   GetNtuples(string treeName = "t");
    void   OpenOutputFile(string outputPath = "./");
-   void   SetJEC(string JECPar = "parameters_ak5pf.txt");
+   void   SetJEC(string JECPar = "parameters_ak4pf.txt");
    void   SetNpvRhoNpuValues(int NBins, int Width) {NBinsNpvRhoNpu=NBins; npvRhoNpuBinWidth=Width;}
    void   SetVptBins(vector<int> vptb) {vptBins = vptb;}
    void   DeclareHistograms(bool reduceHistograms);
-   void   LoopOverEvents(bool verbose, bool reduceHistograms, string readJetMap);
+   void   LoopOverEvents(bool verbose, bool reduceHistograms, string readJetMap, string outputPath);
    void   FillJetMap();
    void   FillRecToRecThroughGenMap();
    bool   GetJetMap(string readJetMap);
    bool   JetMapTreeFound() {return jetMapTreeFound;}
    void   ReadJetMap(int ientry, string readJetMap);
-   bool   FillHistograms(bool reduceHistograms);
+   bool   FillHistograms(bool reduceHistograms, IT::const_iterator it);
+   void   RemoveHistograms(bool verbose);
    void   WriteOutput(string outputPath, bool writeJetMap);
-   void   Report();
 
 private:
 
@@ -85,6 +86,8 @@ private:
    TFile * fpu;
    TFile * fnopu;
    TFile * fout;
+
+   ofstream eventlist;
 
    //Algorithms
    string algo1;
@@ -104,8 +107,10 @@ private:
    FactorizedJetCorrector*        JetCorrector;
 
    //Maps and items used for looping through jets
-   ITS mapTreePU;
-   ITS mapTreeNoPU;
+   // ITS mapTreePU;
+   // ITS mapTreeNoPU;
+   ITS mapEventMatch;
+
    //A map holding the equivalance of jets in two given events
    map<Int_t, Int_t>        jetMap;
    map<TString, TH1*>       histograms;
@@ -124,7 +129,7 @@ private:
    int                  NBinsNpvRhoNpu;
    int                  npvRhoNpuBinWidth;
    int                  iIT;
-   int                  inpv;  
+   int                  inpv;
    int                  inpv_low;
    int                  inpv_high;
    int                  irho;
@@ -149,7 +154,7 @@ private:
    //Debug
    bool iftest;
    int  noPUNpvGTOneEventCounter;
-   int  maxEvts;
+   unsigned  maxEvts;
 
    double avg_debug;
    int entries_debug;
@@ -160,7 +165,7 @@ private:
 // define class
 ////////////////////////////////////////////////////////////////////////////////
 //______________________________________________________________________________
-MatchEventsAndJets::MatchEventsAndJets() : algo1("ak5pf"), algo2("ak5pf"), iftest(false) {
+MatchEventsAndJets::MatchEventsAndJets() : algo1("ak4pf"), algo2("ak4pf"), iftest(false) {
    JetCorrector = 0;
    nevs = 0;
    NBinsNpvRhoNpu = 6;
@@ -249,8 +254,19 @@ void MatchEventsAndJets::OpenInputFiles(string filenamePU, string filenameNoPU) 
 
 //______________________________________________________________________________
 void MatchEventsAndJets::MakeMatchedEventsMaps(string treeName, string outputPath) {
-   mapTreePU   = fillMap(false, treeName, outputPath);
-   mapTreeNoPU = fillMap(true, treeName, outputPath);
+   ITS mapTreePU   = fillMap(false, treeName, outputPath);
+   ITS mapTreeNoPU = fillMap(true, treeName, outputPath);
+
+   //create map of matched events
+   CreateMatchedEventsMap(mapTreePU,mapTreeNoPU);
+
+   cout << "Event-matching report" << endl
+        << "\t Total number of unique events in first  sample: " << mapTreePU.size() << endl
+        << "\t Total number of unique events in second sample: " << mapTreeNoPU.size() << endl
+        << "\t Number of matched events in both samples: " << mapEventMatch.size() << endl << endl;
+
+   //if required, saving map of matched entries <evtid, NoPU ientry,PU ienrty>
+   if (!doNotSaveFlag) WriteMatchedEventsMap(outputPath);
 }
 
 //______________________________________________________________________________
@@ -285,6 +301,7 @@ ITS MatchEventsAndJets::fillMap(bool noPU, string treeName, string outputPath) {
 
    Long64_t no_ref_events = 0;
    ull nentries = t->fChain->GetEntriesFast();
+
    for (ull jentry=0; jentry<nentries;jentry++) {
       long long ientry = t->LoadTree(jentry);
       if (ientry < 0) break;
@@ -305,13 +322,10 @@ ITS MatchEventsAndJets::fillMap(bool noPU, string treeName, string outputPath) {
 
    cout << endl << "\tRead " << mapTree.size() << " unique signatures" << endl;
    if(no_ref_events>0) {
-      cout << "\tWARNING::There were " << no_ref_events << " events which don't contain any ref jets" << endl
-           << "\t\tThese events will be skipped" << endl;
+      cout << "\tWARNING::There were " << no_ref_events << " events which don't contain any ref jets" << endl //
+           << "\t\tThese events will be skipped" << endl << endl;
    }
    t->fChain->SetBranchStatus("*",1);
-
-   if(!doNotSaveFlag)
-      WriteMatchedEventsMaps(mapTree,noPU,outputPath);
 
    return mapTree;
 }
@@ -340,21 +354,79 @@ void MatchEventsAndJets::ConvertEvtMapToTTree(const ITS& mapTree, TTree* treeMap
 }
 
 //______________________________________________________________________________
-void MatchEventsAndJets::WriteMatchedEventsMaps(map<evtid, pair<ull,ull>, evtid> mapTree, bool noPU, string outputPath) {
+void MatchEventsAndJets::WriteMatchedEventsMap(string outputPath) {
    TDirectory* curDir = gDirectory;
    string outputFilename = "matchedEventsMaps_"+algo1+"_"+algo2+".root";
    if (algo1 == algo2)
       outputFilename = "matchedEventsMaps_"+algo1+".root";
    outputFilename = outputPath+outputFilename;
-   string name = "mapTree";
-   cout << "\tWriting " << name+(noPU ? "NoPU" : "PU") << " to " << outputFilename << " ... " << flush; 
-   string option = (noPU ? "UPDATE" : "RECREATE");
-   TFile* mapFile = TFile::Open(outputFilename.c_str(),option.c_str());
-   mapFile->WriteObject(&mapTree,(name+(noPU ? "NoPU" : "PU")).c_str());
+   cout << "Writing mapTree to " << outputFilename << " ... " << endl << "\tprogress:"<<endl;
+   TFile* mapFile = TFile::Open(outputFilename.c_str(),"RECREATE");
+   TTree* tree = new TTree("eventMapTree","Tree containing matched events map");
+   evtid evtID;
+   // pair <ull,ull> entry;
+   ull PUentry;
+   ull NoPUentry;
+   tree->Branch("evtID",&evtID);
+   tree->Branch("PUentry",&PUentry);
+   tree->Branch("NoPUentry",&NoPUentry);
+
+   if (!mapEventMatch.size()) {
+     cout<<"WARNING::No matched events"<<endl<<endl;
+     return;
+   }
+
+   int counter = 1;
+   // Loop over Events
+   for (IT::const_iterator it = mapEventMatch.begin(); it != mapEventMatch.end(); ++it) {
+
+      loadbar2(counter,mapEventMatch.size(),50,"\t\t");
+
+      //fill the tree
+      evtID = it->first;
+      PUentry = it->second.first;
+      NoPUentry = it->second.second;
+      tree->Fill();
+
+      counter++;
+   }//for
+
    mapFile->Write();
    mapFile->Close();
-   cout << "DONE" << endl;
+   cout << endl;
    curDir->cd();
+}//WriteMatchedEventsMap
+
+//______________________________________________________________________________
+void MatchEventsAndJets::CreateMatchedEventsMap(ITS& mapTreePU, ITS& mapTreeNoPU) {
+
+   cout << "Creating matched events map"<<endl<<"\tprogress:"<<endl;
+
+   int counter = 0;
+   int nentries = mapTreePU.size();
+   // Loop over Events
+   for (IT::const_iterator it = mapTreePU.begin(); it != mapTreePU.end(); ++it) {
+
+      loadbar2(counter+1,nentries,50,"\t\t");
+
+      // if this entry does not exist on the second ntuple just skip this event
+      if (mapTreeNoPU.find(it->first) == mapTreeNoPU.end()) {
+        counter++;
+        continue;
+      }
+
+      mapEventMatch[it->first] = std::make_pair(mapTreePU[it->first].second,mapTreeNoPU[it->first].second);
+
+      counter++;
+
+   }//for
+
+   if (!mapEventMatch.size()) {
+     cout<<endl<<"\tWARNING::No matched events"<<endl<<endl;
+     SetDoNotSaveFlag(true);
+   }
+
+   cout << endl << endl;
 }
 
 //______________________________________________________________________________
@@ -374,36 +446,47 @@ void MatchEventsAndJets::ConvertTTreeToMap(ITS& mapTree, TTree* treeMap) {
 //______________________________________________________________________________
 void MatchEventsAndJets::ReadMatchedEventsMaps(string pathToMaps) {
    cout << "Reading matched event maps:" << endl
-        << "\tfile: " << pathToMaps << endl;
+        << "\tfile: " << pathToMaps << endl
+        << "\tprogress:" << endl;
 
    TDirectory* curDir = gDirectory;
    TFile* mapFile = TFile::Open(pathToMaps.c_str(),"READ");
 
-   auto inMapPointer = (ITS*)mapFile->Get("mapTreePU");
-   if(inMapPointer) {
-      mapTreePU = *inMapPointer;
-      cout << "\tmapTreePU:" << endl
-           << "\t\tunique signatures: " << mapTreePU.size() << endl;
-   }
-   else {
-      cout << "ERROR::MatchEventsAndJets::ReadMatchedEventsMaps Could not retrieve the mapTreePU pointer from " << pathToMaps << endl;
-      std::terminate();
+   if(!mapFile || !mapFile->IsOpen()) {
+     cout<<"ERROR::ReadMatchedEventsMaps File "<<pathToMaps.c_str()<<" did not open successfully. ABORTING"<<endl;
+     return;
    }
 
-   inMapPointer = nullptr;
-   inMapPointer = (ITS*)mapFile->Get("mapTreeNoPU");
-   if(inMapPointer) {
-      mapTreeNoPU = *inMapPointer;
-      cout << "\tmapTreeNoPU:" << endl
-           << "\t\tunique signatures: " << mapTreeNoPU.size() << endl;
+   TTree* tree = (TTree*) mapFile->Get("eventMapTree");
+
+   if(!tree) {
+     cout<<"ERROR::ReadMatchedEventsMaps cannot retrieve tree successfully. ABORTING"<<endl;
+     return;
    }
-   else {
-      cout << "ERROR::MatchEventsAndJets::ReadMatchedEventsMaps Could not retrieve the mapTreeNoPU pointer from " << pathToMaps << endl;
-      std::terminate();
+
+   evtid* evtID = new evtid();
+   ull PUentry;
+   ull NoPUentry;
+   // pair <ull,ull> dummy = make_pair(0,0);
+   // pair <ull,ull> entry = dummy;
+
+   tree->SetBranchAddress("evtID",&evtID);
+   tree->SetBranchAddress("PUentry",&PUentry);
+   tree->SetBranchAddress("NoPUentry",&NoPUentry);
+
+   Long64_t nentries = tree->GetEntries();
+
+   for (int e = 0; e<nentries; e++){
+     loadbar2(e+1,nentries,50,"\t\t");
+     tree->GetEntry(e);
+     mapEventMatch[*evtID]=std::make_pair(PUentry,NoPUentry);
    }
 
    mapFile->Close();
    curDir->cd();
+
+   cout << endl;
+
 }
 
 //______________________________________________________________________________
@@ -444,11 +527,27 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
    //
    // HISTOS OF GENERAL QUANTITIES.General, hence the g_ prefix
    //
+
+   histograms["h_ooavsweight"] = new TH2D("h_ooavsweight","h_ooavsweight;offsetOA;weight",1000,-1000,1000,200,-100,100);
+   histograms["h_onebin"] = new TH1D("h_onebin","h_onebin;offsetOA",2000,-100,100);
+
+   histograms["h_chf"] = new TH2D("h_chf","h_chf;chf*refpt (PU-NoPU) [GeV];refpt [GeV]",500,-500,500,700,0,7000);
+   histograms["h_nhf"] = new TH2D("h_nhf","h_nhf;nhf*refpt (PU-NoPU) [GeV];refpt [GeV]",500,-500,500,700,0,7000);
+   histograms["h_nef"] = new TH2D("h_nef","h_nef;nef*refpt (PU-NoPU) [GeV];refpt [GeV]",500,-500,500,700,0,7000);
+   histograms["h_cef"] = new TH2D("h_cef","h_cef;cef*refpt (PU-NoPU) [GeV];refpt [GeV]",500,-500,500,700,0,7000);
+   histograms["h_muf"] = new TH2D("h_muf","h_muf;muf*refpt (PU-NoPU) [GeV];refpt [GeV]",500,-500,500,700,0,7000);
+
+   histograms["h_chfw"] = new TH2D("h_chfw","h_chfw;chf*refpt (PU-NoPU) [GeV];refpt [GeV]",500,-500,500,700,0,7000);
+   histograms["h_nhfw"] = new TH2D("h_nhfw","h_nhfw;nhf*refpt (PU-NoPU) [GeV];refpt [GeV]",500,-500,500,700,0,7000);
+   histograms["h_nefw"] = new TH2D("h_nefw","h_nefw;nef*refpt (PU-NoPU) [GeV];refpt [GeV]",500,-500,500,700,0,7000);
+   histograms["h_cefw"] = new TH2D("h_cefw","h_cefw;cef*refpt (PU-NoPU) [GeV];refpt [GeV]",500,-500,500,700,0,7000);
+   histograms["h_mufw"] = new TH2D("h_mufw","h_mufw;muf*refpt (PU-NoPU) [GeV];refpt [GeV]",500,-500,500,700,0,7000);
+
    histograms["g_LumiWeight"]  = new TH1D("g_LumiWeight", "g_LumiWeight;LumiWeight;Events", 1000,0,10);
    histograms["g_GenWeight"]   = new TH1D("g_GenWeight", "g_GenWeight;log_{10}(GenWeight);Events", 1000,-48,2);
    histograms["g_pThatWeight"] = new TH1D("g_pThatWeight;log_{10}(pThatWeight);Events","g_pThatWeight", 1000,-48,2);
    histograms["g_weight"]      = new TH1D("g_weight","g_weight;log_{10}(EvtWeight);Events", 1000,-48,2);
-   histograms["g_pthat"]       = new TH1D("g_pthat","g_pthat;#hat{p}_{T}^{PU};Events",(int)vpt[NPtBins]/10.0,vpt[0],vpt[NPtBins]);   
+   histograms["g_pthat"]       = new TH1D("g_pthat","g_pthat;#hat{p}_{T}^{PU};Events",(int)vpt[NPtBins]/10.0,vpt[0],vpt[NPtBins]);
    if(!reduceHistograms) {
       histograms["g_nj"]       = new TH2D("g_nj","g_nj",30,0,30,30,0,30);
       histograms["g_npv"]      = new TH2D("g_npv","g_npv",50,0,50,50,0,50);
@@ -566,6 +665,7 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
    histograms["p_offOverA_etaVsTnpusVsJetPt"] = new TProfile3D("p_offOverA_etaVsTnpusVsJetPt","p_offOverA_etaVsTnpusVsJetPt;#eta_{j};tnpu;p_{T}^{gen};OffsetOverAre",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
    histograms["p_PtAve_etaVsTnpusVsJetPt"]    = new TProfile3D("p_PtAve_etaVsTnpusVsJetPt","p_PtAve_etaVsTnpusVsJetPt;#eta_{j};Tnpus;p_{T}^{gen};PtAve",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
    histograms["p_RhoAve_etaVsTnpusVsJetPt"]   = new TProfile3D("p_RhoAve_etaVsTnpusVsJetPt","p_RhoAve_etaVsTnpusVsJetPt;#eta_{j};Tnpus;p_{T}^{gen};PtAve",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
+   histograms["p_Events_etaVsTnpusVsJetPt"]   = new TH3I("p_Events_etaVsTnpusVsJetPt","p_RhoAve_etaVsTnpusVsJetPt;#eta_{j};Tnpus;p_{T}^{gen};PtAve",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
    //THnSparse with 4 dimensions
    Int_t bins[4] = {NETA, NRHO, NTNPU, NPtBins};
    Double_t min[4] = {veta[0], vrho[0], vtnpu[0], vpt[0]};
@@ -613,6 +713,7 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
    histograms["p_offOverA_etaVsNpusVsJetPt"] = new TProfile3D("p_offOverA_etaVsNpusVsJetPt","p_offOverA_etaVsNpusVsJetPt;#eta_{j};npu;p_{T}^{gen};OffsetOverAre",NETA,veta,NNPU,vnpu,NPtBins,vpt);
    histograms["p_PtAve_etaVsNpusVsJetPt"]    = new TProfile3D("p_PtAve_etaVsNpusVsJetPt","p_PtAve_etaVsNpusVsJetPt;#eta_{j};Npus;p_{T}^{gen};PtAve",NETA,veta,NNPU,vnpu,NPtBins,vpt);
    histograms["p_RhoAve_etaVsNpusVsJetPt"]   = new TProfile3D("p_RhoAve_etaVsNpusVsJetPt","p_RhoAve_etaVsNpusVsJetPt;#eta_{j};Npus;p_{T}^{gen};PtAve",NETA,veta,NNPU,vnpu,NPtBins,vpt);
+   histograms["p_Events_etaVsNpusVsJetPt"]   = new TH3I("p_Events_etaVsNpusVsJetPt","p_RhoAve_etaVsNpusVsJetPt;#eta_{j};Npus;p_{T}^{gen};PtAve",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
 
    if(!reduceHistograms) {
       //NPV+Rho
@@ -791,41 +892,37 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
 }
 
 //______________________________________________________________________________
-void MatchEventsAndJets::LoopOverEvents(bool verbose, bool reduceHistograms, string readJetMap) {
+void MatchEventsAndJets::LoopOverEvents(bool verbose, bool reduceHistograms, string readJetMap, string outputPath) {
    //First just figure out if the jetMapTree exists, assuming readJetMap is set.
    //It might be that the program failed after the event mapping, so the event maps exist, but not the jet maps
    //In this case the event maps should be read, but the jet maps should be recreated.
-   jetMapTreeFound = (readJetMap.empty()) ? false : GetJetMap(readJetMap);
+   jetMapTreeFound = false;// (readJetMap.empty()) ? false : GetJetMap(readJetMap);
+
+   if (!mapEventMatch.size()) {
+     cout<<endl<<"\tWARNING::No matched events"<<endl<<endl;
+     return;
+   }
 
    cout << endl << "Looping over the mapped events:" << endl << "\tprogress:" << endl;
-   ull nentries = mapTreePU.size();
    int jetMapIndex = -1;
-   for (IT::const_iterator it = mapTreePU.begin(); it != mapTreePU.end(); ++it) {
+   nevs = 0;
 
-      if (iftest && nevs >= maxEvts) return;
+   eventlist.open(outputPath + "eventlist.txt");
 
-      //if (nevs%10000==0) cout << "\t"<<nevs << endl;
+   Long64_t nentries = (mapEventMatch.size() > maxEvts && iftest) ? maxEvts : mapEventMatch.size();
+   for (IT::const_iterator it = mapEventMatch.begin(); it != mapEventMatch.end() && nevs < nentries; ++it) {
+
       loadbar2(nevs+1,nentries,50,"\t\t");
 
-      // if this entry does not exist on the second ntuple just skip this event
-      if (mapTreeNoPU.find(it->first) == mapTreeNoPU.end()) {
-         if(verbose) {
-            cout << "\tWARNING::mapTreeNoPU.find(it->first) == mapTreeNoPU.end() failed" << endl
-                 << "\tit->first.run_ == " << it->first.run() << endl
-                 << "\tit->first.ls_ == " << it->first.luminosityBlock() << endl
-                 << "\tit->first.evt_ == " << it->first.event() << endl
-                 << "\tit->first.refpt0_ == " << it->first.pt() << endl;
-         }
-         continue;
-      }
-
       // Load the entries at the proper place.
-      tpu->GetEntry(mapTreePU[it->first].second);
-      tnopu->GetEntry(mapTreeNoPU[it->first].second);
+      tpu->GetEntry(it->second.first);
+      tnopu->GetEntry(it->second.second);
 
       //Skip events without any primary vertex as these make no sense
-      if (tpu->npv == 0 || tnopu->npv == 0) continue;
-
+      if (tpu->npv == 0 || tnopu->npv == 0) {
+        nevs++;
+        continue;
+      }
       // Set the in-time pileup index after the first event only
       if(nevs==0) iIT = tpu->itIndex();
 
@@ -838,11 +935,14 @@ void MatchEventsAndJets::LoopOverEvents(bool verbose, bool reduceHistograms, str
       else {
          jetMapIndex++;
          ReadJetMap(jetMapIndex,readJetMap);
-      }  
+      }
 
-      if(FillHistograms(reduceHistograms)) nevs++;
+      FillHistograms(reduceHistograms,it);
+
+      nevs++;
 
    }//for
+   cout<<endl;
 }
 
 //______________________________________________________________________________
@@ -916,8 +1016,11 @@ void MatchEventsAndJets::FillRecToRecThroughGenMap() {
          }
       }
       if(j1 >= 0 && j2 >= 0 && j1 < tpu->nref && j2 < tnopu->nref &&
-         tpu->refdrjt->at(j1) < maxDeltaR && tnopu->refdrjt->at(j2) < maxDeltaR && 
-         fabs(tpu->refpt->at(j1) - tnopu->refpt->at(j2))<0.0001) {
+         tpu->refdrjt->at(j1) < maxDeltaR && tnopu->refdrjt->at(j2) < maxDeltaR &&
+         fabs(tpu->refpt->at(j1) - tnopu->refpt->at(j2))<0.0001
+         // && (fabs(tpu->refpt->at(j1)-tpu->jtpt->at(j1))/tpu->refpt->at(j1)<0.15) && (fabs(tpu->refpt->at(j2)-tpu->jtpt->at(j2))/tpu->refpt->at(j2)<0.15) && tpu->refpt->at(j1)>30 && tpu->refpt->at(j2)>30
+         // && (!(tpu->refpt->at(j1)>30 && fabs(tpu->refeta->at(j1))<1.3) || tpu->refpt->at(j1)/tpu->jtpt->at(j1)<1.15 || tpu->jtpt->at(j1)/tpu->refpt->at(j1)<1.15)
+         ) {
          jetMap[j1] = j2;
       }
       recoJetIndexPU->push_back(j1);
@@ -939,8 +1042,8 @@ void MatchEventsAndJets::FillRecToRecThroughGenMap() {
 //______________________________________________________________________________
 bool MatchEventsAndJets::GetJetMap(string readJetMap) {
    //Retrieve the tree from a file
-   cout << endl << "\tReading matched jets tree:" << endl
-        << "\t\tfile: " << readJetMap << endl;
+   cout << endl << "Reading matched jets tree:" << endl
+        << "\tfile: " << readJetMap << endl;
 
    TDirectory* curDir = gDirectory;
    TFile* mapFile = TFile::Open(readJetMap.c_str(),"READ");
@@ -948,11 +1051,11 @@ bool MatchEventsAndJets::GetJetMap(string readJetMap) {
    auto inTreePointer = (TTree*)mapFile->Get("jetMapTree");
    if(inTreePointer) {
       jetMapTree = (TTree*)inTreePointer->Clone();
-      cout << "\t\tjetMapTree:" << endl
-           << "\t\t\tnevts: " << jetMapTree->GetEntries() << endl;
+      cout << "\tjetMapTree:" << endl
+           << "\t\tnevts: " << jetMapTree->GetEntries() << endl;
    }
    else {
-      cout << "\t\tWARNING::MatchEventsAndJets::GetJetMap Could not retrieve the jetMapTree pointer from " << readJetMap << endl;
+      cout << "\tWARNING::MatchEventsAndJets::GetJetMap Could not retrieve the jetMapTree pointer from " << readJetMap << endl;
       return false;
    }
    jetMapTree->SetDirectory(0);
@@ -988,7 +1091,7 @@ void MatchEventsAndJets::ReadJetMap(int ientry, string readJetMap) {
 
 
 //______________________________________________________________________________
-bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
+bool MatchEventsAndJets::FillHistograms(bool reduceHistograms, IT::const_iterator it) {
    //=========================================================
    //              FILLING OF HISTOS START HERE
    //=========================================================
@@ -1076,7 +1179,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
          int j1 = j1it->first;
          if(j1 == -1) continue;
 
-         // matching recon-jet with gen-jet
+         // matching reco-jet with gen-jet
          bool ismatchRG = tpu->refdrjt->at(j1)<getMaxDeltaR(algo1);
 
          histograms["m_njet_pt_pu"]->Fill(tpu->jtpt->at(j1));
@@ -1194,8 +1297,8 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
    double avg_offset = 0;
    double avg_offset_det[NDetectorNames] = {0,0,0,0};
    double njet_det[NDetectorNames] = {0,0,0,0};
-   
-   // MATCHING HISTOS. 
+
+   // MATCHING HISTOS.
    // Loop over matched jets
    int jpu   = -1;
    int jnopu = -1;
@@ -1210,6 +1313,8 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
       jpu = itj->first;
       jnopu = itj->second;
       if(jpu == -1 || jnopu == -1) continue;
+
+      if (!tpu->jtarea->at(jpu) || TMath::IsNaN(tpu->jtarea->at(jpu)) || fabs(tpu->jtarea->at(jpu))==TMath::Infinity()) continue;
 
       idet = JetInfo::getDetIndex(tpu->jteta->at(jpu));
       detectorAbbreviation = JetInfo::get_detector_abbreviation(detector_names[idet]);
@@ -1227,6 +1332,8 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
       respNopu      = tnopu->jtpt->at(jnopu) / tnopu->refpt->at(jnopu); // response no pu jet to reference jet
       PUEff         = 0.020*(tpu->sumEOOT())+0.975*(tpu->npus->at(iIT))+0.005*(tpu->sumLOOT()); // effective pu
       GenSumPtOA    = (0.020*(tpu->sumpt_lowpt->at(0))+0.975*(tpu->sumpt_lowpt->at(1))+0.005*(tpu->sumpt_lowpt->at(2)))/tpu->jtarea->at(jpu);
+
+      if (fabs(offsetOA)>300) eventlist<<setw(10)<<it->second.first<<setw(10)<<it->second.second<<setw(10)<<tpu->evt<<setw(10)<<tpu->run<<setw(10)<<jpu<<setw(10)<<jnopu<<setw(10)<<tpu->jtarea->at(jpu)<<setw(10)<<tpu->jtpt->at(jpu)<<setw(10)<<tnopu->jtpt->at(jnopu)<<setw(10)<<offsetOA<<endl;
 
       if(!reduceHistograms) {
          dynamic_cast<TProfile2D*>(histograms["p_off_etaVsNpv"])       ->Fill(tpu->jteta->at(jpu),tpu->npv,offset,weight);
@@ -1248,10 +1355,26 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
          dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNPVVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->npv,tpu->refpt->at(jpu),tpu->jtpt->at(jpu),weight);
       }
 
+      int etabin = 60;
+      int tnpubin = 6;
+      int ptbin = 26;
+
+      bool cond = true;
+      cond &= tpu->jteta->at(jpu)>dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsTnpusVsJetPt"])->GetXaxis()->GetBinLowEdge(etabin);
+      cond &= tpu->jteta->at(jpu)<dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsTnpusVsJetPt"])->GetXaxis()->GetBinUpEdge(etabin);
+      cond &= tpu->tnpus->at(iIT)>dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsTnpusVsJetPt"])->GetYaxis()->GetBinLowEdge(tnpubin);
+      cond &= tpu->tnpus->at(iIT)<dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsTnpusVsJetPt"])->GetYaxis()->GetBinUpEdge(tnpubin);
+      cond &= tpu->refpt->at(jpu)>dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsTnpusVsJetPt"])->GetZaxis()->GetBinLowEdge(ptbin);
+      cond &= tpu->refpt->at(jpu)<dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsTnpusVsJetPt"])->GetZaxis()->GetBinUpEdge(ptbin);
+
+      if (cond) dynamic_cast<TH1D*>(histograms["h_onebin"])->Fill(offsetOA,weight);
       //TNPU
+
       dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsTnpusVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),offsetOA,weight);
       dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsTnpusVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),tpu->jtpt->at(jpu),weight);
       dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsTnpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu),tpu->rho,weight);
+      dynamic_cast<TH3I*>(histograms["p_Events_etaVsTnpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->tnpus->at(iIT),tpu->refpt->at(jpu));
+
       fValue[0] = tpu->jteta->at(jpu);
       fValue[1] = tpu->rho;
       fValue[2] = tpu->tnpus->at(iIT);
@@ -1268,6 +1391,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
       dynamic_cast<TProfile3D*>(histograms["p_offOverA_etaVsNpusVsJetPt"])->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),offsetOA,weight);
       dynamic_cast<TProfile3D*>(histograms["p_PtAve_etaVsNpusVsJetPt"])   ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->jtpt->at(jpu),weight);
       dynamic_cast<TProfile3D*>(histograms["p_RhoAve_etaVsNpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu),tpu->rho,weight);
+      dynamic_cast<TH3I*>(histograms["p_Events_etaVsNpusVsJetPt"])  ->Fill(tpu->jteta->at(jpu),tpu->npus->at(iIT),tpu->refpt->at(jpu));
 
       if(!reduceHistograms) {
          //NPV+Rho
@@ -1364,7 +1488,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
          dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),respNopu,weight);
          hname = Form("p_offAfterOoffBeforeVsrefpt_%s_npv%i_%i",detectorAbbreviation.Data(),inpv_low,inpv_high);
          dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset/offset_raw,weight);
-   
+
          //RHO
          hname = Form("p_resVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
          dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),resp,weight);
@@ -1380,7 +1504,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
          dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),respNopu,weight);
          hname = Form("p_offAfterOoffBeforeVsrefpt_%s_rho%i_%i",detectorAbbreviation.Data(),irho_low,irho_high);
          dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset/offset_raw,weight);
-   
+
          //OTHER
          hname = Form("p_resVsnpu_%s_pt%.1f_%.1f",detectorAbbreviation.Data(),
                       vpt[JetInfo::getBinIndex(tpu->refpt->at(jpu),vpt,NPtBins)],vpt[JetInfo::getBinIndex(tpu->refpt->at(jpu),vpt,NPtBins)+1]);
@@ -1397,7 +1521,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
       avg_offset_det[idet]+=offset;
       njet_det[idet]+=1.;
 
-   } // for matched jets 
+   } // for matched jets
 
    avg_offset /= jetMap.size();
    for (int det=0;det<NDetectorNames;det++) {
@@ -1429,8 +1553,19 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
 }
 
 //______________________________________________________________________________
+void MatchEventsAndJets::RemoveHistograms(bool verbose) {
+  cout<<endl<<endl<<"Removing histograms with no entries"<<endl;
+  for(map<TString, TH1*>::iterator it=histograms.begin(); it!=histograms.end(); ++it) {
+    if (!it->second->GetEntries()) {
+      if (verbose) cout<<"\tRemoving histogram "<<it->first<<endl<<endl;
+      it->second->SetDirectory(0);
+    }
+  }
+}
+
+//______________________________________________________________________________
 void MatchEventsAndJets::WriteOutput(string outputPath, bool writeJetMap){
-   cout << "Writing file " << fout->GetName() << " ... " << flush;
+   cout << endl << "Writing file " << fout->GetName() << " ... " << flush;
    fout->cd();
    for(map<TString, THnSparse*>::const_iterator it=hsparse.begin(); it!=hsparse.end();it++) {
       it->second->Write();
@@ -1452,17 +1587,6 @@ void MatchEventsAndJets::WriteOutput(string outputPath, bool writeJetMap){
    }
 }
 
-//______________________________________________________________________________
-void MatchEventsAndJets::Report() {
-   cout << "Event-matching report" << endl
-        << "\t Number of events skipped because the NoPU sample had more than 1 NPV: " << noPUNpvGTOneEventCounter << endl
-        << "\t Total number of unique events in first  sample: " << mapTreePU.size() << endl
-        << "\t Total number of unique events in second sample: " << mapTreeNoPU.size() << endl
-        << "\t Number of matched events we ran over " << nevs << endl;
-
-   //cout << "THnSparse::Debug::Avg OffsetOverA of bin 8500: " << avg_debug/entries_debug << endl;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // main
 ////////////////////////////////////////////////////////////////////////////////
@@ -1475,10 +1599,10 @@ int main(int argc,char**argv)
    string       samplePU          = cl.getValue<string>  ("samplePU");
    string       sampleNoPU        = cl.getValue<string>  ("sampleNoPU");
    string       basepath          = cl.getValue<string>  ("basepath", "/fdata/hepx/store/user/aperloff/");
-   string       algo1             = cl.getValue<string>  ("algo1",                               "ak5pf");
-   string       algo2             = cl.getValue<string>  ("algo2",                               "ak5pf");
+   string       algo1             = cl.getValue<string>  ("algo1",                               "ak4pf");
+   string       algo2             = cl.getValue<string>  ("algo2",                               "ak4pf");
    bool         iftest            = cl.getValue<bool>    ("iftest",                                false);
-   int          maxEvts           = cl.getValue<int>     ("maxEvts",                               40000);
+   unsigned     maxEvts           = cl.getValue<int>     ("maxEvts",                               40000);
    int          nrefmax           = cl.getValue<int>     ("nrefmax",                                  -1);
    bool         useweight         = cl.getValue<bool>    ("useweight",                             false);
    bool         pThatReweight     = cl.getValue<bool>    ("pThatReweight",                         false);
@@ -1489,12 +1613,12 @@ int main(int argc,char**argv)
    string       DataPUReWeighting = cl.getValue<string>  ("DataPUReWeighting",                        "");
    string       DataPUHistoName   = cl.getValue<string>  ("DataPUHistoName",                    "pileup");
    bool         ApplyJEC          = cl.getValue<bool>    ("ApplyJEC",                              false);
-   string       JECpar            = cl.getValue<string>  ("JECpar",               "parameters_ak5pf.txt");
+   string       JECpar            = cl.getValue<string>  ("JECpar",               "parameters_ak4pf.txt");
    string       outputPath        = cl.getValue<string>  ("outputPath",                             "./");
    string       readEvtMaps       = cl.getValue<string>  ("readEvtMaps",                              "");
    bool         doNotSave         = cl.getValue<bool>    ("doNotSave",                             false);
    string       treeName          = cl.getValue<string>  ("treeName",                                "t");
-   int          npvRhoNpuBinWidth = cl.getValue<int>     ("npvRhoNpuBinWidth",                         5);
+   int          npvRhoNpuBinWidth = cl.getValue<int>     ("npvRhoNpuBinWidth",                         10);
    int          NBinsNpvRhoNpu    = cl.getValue<int>     ("NBinsNpvRhoNpu",                            6);
    vector<int>  vptBins           = cl.getVector<int>    ("vptBins",       "14:::18:::20:::24:::28:::30");
    bool         reduceHistograms  = cl.getValue<bool>    ("reduceHistograms",                       true);
@@ -1515,7 +1639,7 @@ int main(int argc,char**argv)
 
    // Check that if pThatReweight is set then useweight is also set
    if(pThatReweight && !useweight) {
-      cout << "ERROR::jet_synchtest_x Can't reweight the pThat spectrum without first using the existing"
+      cout << "ERROR::jet_match_x Can't reweight the pThat spectrum without first using the existing"
            << " weights to return to an unmodified spectrum. Set the \"useweight\" option to true." << endl;
            return -1;
    }
@@ -1542,19 +1666,19 @@ int main(int argc,char**argv)
       mej->ReadMatchedEventsMaps(readEvtMaps);
    mej->OpenOutputFile(outputPath);
    if (ApplyJEC) {
-      cout << "jet_synchtest_x::Setting the JEC parameter file to " << JECpar << " ... ";
+      cout << "jet_match_x::Setting the JEC parameter file to " << JECpar << " ... ";
       mej->SetJEC(JECpar);
       cout << "DONE" << endl;
    }
    mej->SetNpvRhoNpuValues(NBinsNpvRhoNpu,npvRhoNpuBinWidth);
    mej->SetVptBins(vptBins);
    mej->DeclareHistograms(reduceHistograms);
-   mej->LoopOverEvents(verbose,reduceHistograms,readEvtMaps);
-   mej->WriteOutput(outputPath,readEvtMaps.empty()||!mej->JetMapTreeFound());
-   mej->Report();
+   mej->LoopOverEvents(verbose,reduceHistograms,readEvtMaps,outputPath);
+   // mej->RemoveHistograms(verbose);
+   mej->WriteOutput(outputPath, false && (readEvtMaps.empty()||!mej->JetMapTreeFound()));
 
    m_benchmark->Stop("event");
-   cout << "jet_synchtest_x" << endl
+   cout << "jet_match_x" << endl
         << "\tCPU time = " << m_benchmark->GetCpuTime("event") << " s" << endl
         << "\tReal time = " << m_benchmark->GetRealTime("event") << " s" << endl;
    delete m_benchmark;

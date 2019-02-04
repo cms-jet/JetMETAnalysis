@@ -15,6 +15,7 @@
 #include "TMath.h"
 #include "TH2.h"
 #include "TF1.h"
+#include "TSpectrum.h"
 
 //C++ libraries
 #include <iostream>
@@ -48,12 +49,12 @@ namespace HistUtil{
     //     (2) The mean (mu_f or mpv) and RMS (RMS_f or sigma_f) of a fit to the histogram (i.e. a Gaussian fit)
     //     (3) The median of the histogram
     enum HistogramMetric {none, mu_h, RMS_h, mu_f, mpv, RMS_f, sigma_f, median};
-    static const unsigned int nHistogramMetric = 8; 
+    static const unsigned int nHistogramMetric = 8;
 
     enum AxisDirection {X, Y, Z};
     static const unsigned int nAxisDirections = 3;
 
-    // A routine that returns the string given the HistogramMetric 
+    // A routine that returns the string given the HistogramMetric
     string getHistogramMetricString(HistogramMetric);
 
     // A routine that returns the HistogramMetric type given the string
@@ -64,7 +65,7 @@ namespace HistUtil{
 
     // A routine that returns a given HistogramMetric and its error (if any)
     pair<double,double> getHistogramMetric1D(HistogramMetric, TH1*, double fallback_threshold = 0.05, bool verbose = false);
-    pair<double,double> getHistogramMetric1D(string, TH1*, double fallback_threshold = 0.05, bool verbose = false);    
+    pair<double,double> getHistogramMetric1D(string, TH1*, double fallback_threshold = 0.05, bool verbose = false);
 
     // A routine that returns the median of a given histogram and an error equal to the width of the bin that contains the histogram
     pair<double,double> getHistogramMedian1D(TH1*, bool debug = false);
@@ -91,6 +92,10 @@ namespace HistUtil{
     //      (i.e. if the AxisDirection=Y, then the metric will be plotted along X)
     vector<pair<double,double> > getHistogramMetric2D(HistogramMetric, TH2*, AxisDirection, const vector<string>&);
     vector<pair<double,double> > getHistogramMetric2D(string, TH2*, AxisDirection, const vector<string>&);
+
+    void adjust_fitrange(TH1* h,double& min,double& max);
+    int number_filled_bins(TH1* h, double min, double max);
+    TF1* fit_gaussian(TH1*& hrsp, const double nsigma, const double jtptmin, const int niter, const int verbose);
 }
 
 #endif

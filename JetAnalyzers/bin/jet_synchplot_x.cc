@@ -71,7 +71,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
    TString algo1(calgo1);
    TString algo2(calgo2);
    TString algo12 = algo1+"_"+algo2;
-   if (algo1.EqualTo(algo2)) 
+   if (algo1.EqualTo(algo2))
       algo12 = algo1;
    TString algo(algo12);
    TString filename=Form("%s/output_%s.root",inputDir.Data(),algo.Data());
@@ -114,20 +114,20 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
    return;
    */
 
-   // Event-Matching performance 
+   // Event-Matching performance
    if(histograms.find("m_refpt_diff")!=histograms.end()) {
       c = new TCanvas("RefPtDiff","RefPtDiff");
       c->SetLogy();
       histograms["m_refpt_diff"]->Draw();
    }
-  
-   // Event-Matching performance 
+
+   // Event-Matching performance
    if(histograms.find("m_refpdgid_diff")!=histograms.end()) {
       c = new TCanvas("RefPdgidDiff","RefPdgidDiff");
       c->SetLogy();
       histograms["m_refpdgid_diff"]->Draw();
    }
-  
+
    // Sanity check: g_pthat
    if(histograms.find("m_deltaPthat")!=histograms.end()) {
       c = new TCanvas("PthatDiff","PthatDiff");
@@ -146,7 +146,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       histograms["m_njet_pt_pu"]->GetYaxis()->SetRangeUser(0,4.5e6);
       histograms["m_njet_pt_pu"]->Draw("E");
       histograms["m_njet_pt_nopu"]->Draw("sameE");
-  
+
       leg = new TLegend(0.7,0.4,0.9,0.6);
       leg->SetFillColor(0);
       leg->SetBorderSize(0);
@@ -164,7 +164,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       ratio->GetYaxis()->SetRangeUser(0,10);
       ratio->Divide(histograms["m_njet_pt_nopu"]);
       ratio->Draw("E");
-      
+
       leg = new TLegend(0.7,0.4,0.9,0.6);
       leg->SetFillColor(0);
       leg->SetBorderSize(0);
@@ -181,14 +181,14 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       ratio_GenPtCut->GetYaxis()->SetRangeUser(0,10);
       ratio_GenPtCut->Divide(histograms["m_njet_pthigh_nopu"]);
       ratio_GenPtCut->Draw("E");
-      
+
       leg = new TLegend(0.7,0.4,0.9,0.6);
       leg->SetFillColor(0);
       leg->SetBorderSize(0);
       leg->AddEntry(ratio_GenPtCut, "#frac{PU sample}{NoPU sample}","lep");
       leg->Draw();
    }
-  
+
    // njet vs npv
    if(histograms.find("m_all_nj_npv")!=histograms.end() &&
       histograms.find("m_matched_nj_npv")!=histograms.end() &&
@@ -201,7 +201,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       histograms["m_all_nj_npv"]->Draw("E");
       histograms["m_matched_nj_npv"]->Draw("sameE");
       histograms["m_unmatched_nj_npv"]->Draw("sameE");
-      
+
       leg = new TLegend(0.7,0.75,0.9,0.95);
       leg->SetFillColor(0);
       leg->SetBorderSize(0);
@@ -223,7 +223,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       histograms["m_all_jtpt_npv"]->Draw("E");
       histograms["m_matched_jtpt_npv"]->Draw("sameE");
       histograms["m_unmatched_jtpt_npv"]->Draw("sameE");
-      
+
       leg = new TLegend(0.7,0.75,0.9,0.95);
       leg->SetFillColor(0);
       leg->SetBorderSize(0);
@@ -232,7 +232,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       leg->AddEntry(histograms["m_unmatched_jtpt_npv"], "UnMatched jets","lep");
       leg->Draw();
    }
-  
+
 
    // Fraction of Matched Jets
    c = new TCanvas("FractionMatchedJetsNoPU","FractionMatchedJets NoPU Sample");
@@ -279,7 +279,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
    }
    leg->Draw();
 
-    
+
    // Fraction of RG-Matched Jets
    c = new TCanvas("FractionRGMatchedJetsNoPU","FractionRGMatchedJets NoPU Sample");
    c->SetLogx();
@@ -300,8 +300,8 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       histograms[hname]->GetYaxis()->SetRangeUser(0.5,1.1);
       leg->AddEntry(histograms[hname],detector_regions[det],"lep");
    }
-   leg->Draw();      
-  
+   leg->Draw();
+
    // Fraction of RG-Matched Jets
    c = new TCanvas("FractionRGMatchedJetsPU","FractionRGMatchedJets PU Sample");
    c->SetLogx();
@@ -326,9 +326,9 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
    leg->Draw();
 
    // Fraction of Matched Jets-PU-NPV
-   if(histograms.find("m_frac_nj_pt_b_match_pu_npv10")!=histograms.end() && 
-      histograms.find("m_frac_nj_pt_b_match_pu_npv20")!=histograms.end() && 
-      histograms.find("m_frac_nj_pt_b_match_pu_npv30")!=histograms.end() && 
+   if(histograms.find("m_frac_nj_pt_b_match_pu_npv10")!=histograms.end() &&
+      histograms.find("m_frac_nj_pt_b_match_pu_npv20")!=histograms.end() &&
+      histograms.find("m_frac_nj_pt_b_match_pu_npv30")!=histograms.end() &&
       histograms.find("m_frac_nj_pt_b_match_pu_npvO")!=histograms.end()) {
       c = new TCanvas("FractionMatchedJetsPU_NPV","FractionMatchedJets vs. npv PU Sample");
       c->SetLogx();
@@ -342,7 +342,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       histograms["m_frac_nj_pt_b_match_pu_npv20"]->Draw("same");
       histograms["m_frac_nj_pt_b_match_pu_npv30"]->Draw("same");
       histograms["m_frac_nj_pt_b_match_pu_npvO"]->Draw("same");
-      
+
       leg = new TLegend(0.7,0.4,0.9,0.6);
       leg->SetFillColor(0);
       leg->SetBorderSize(0);
@@ -369,7 +369,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       histograms["m_frac_nj_pt_b_match_RG_pu_npv20"]->Draw("same");
       histograms["m_frac_nj_pt_b_match_RG_pu_npv30"]->Draw("same");
       histograms["m_frac_nj_pt_b_match_RG_pu_npvO"]->Draw("same");
-      
+
       leg = new TLegend(0.7,0.4,0.9,0.6);
       leg->SetFillColor(0);
       leg->SetBorderSize(0);
@@ -396,7 +396,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       histograms["m_frac_nj_pt_b_match_nopu_npv2"]->Draw("same");
       histograms["m_frac_nj_pt_b_match_nopu_npv3"]->Draw("same");
       histograms["m_frac_nj_pt_b_match_nopu_npvO"]->Draw("same");
-      
+
       leg = new TLegend(0.7,0.4,0.9,0.6);
       leg->SetFillColor(0);
       leg->SetBorderSize(0);
@@ -434,7 +434,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
 
    // INTEGRAL of PU distribution of jets per event per NPV
    // Number of unmatched jets in pu sample minus #of unmatch jets in nopu sample
-  
+
    vector<TProfile*> pnJetPt(npvRhoNpuBins.size(),(TProfile*)0);
    for(unsigned int ibin=0; ibin<npvRhoNpuBins.size(); ibin++) {
       hname = Form("m_njet_pt_npv%i_%i_unmatch",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
@@ -443,19 +443,19 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
    c = getCanvasIntegral("IntePUJetDistribution",algo,"Integral # PU Jets /event",pnJetPt,npvRhoNpuBins);
    c->SetLogx();
    c->Draw();
-  
+
    c = getCanvasAverage("AvgPUJetEneDistribution",algo,"Avg. Jet Ene (GeV)",pnJetPt,npvRhoNpuBins);
    c->SetLogx();
    c->Draw();
-  
+
    //
-   //	2D histogram of jtarea diff. vs. refpt	
+   //	2D histogram of jtarea diff. vs. refpt
    //
    if(histograms.find("p_areaVsrefpt")!=histograms.end()) {
       c = new TCanvas("areaVsrefpt","areaVsrefpt");
       histograms["p_areaVsrefpt"]->Draw("colZ");
-      c->SetLogx();  
-      
+      c->SetLogx();
+
       TProfile *p_areaVsrefpt_prof = dynamic_cast<TH2F*>(histograms["p_areaVsrefpt"])->ProfileX();
       c = new TCanvas("areaVsrefptProf","areaVsrefptProf");
       p_areaVsrefpt_prof->GetYaxis()->SetTitle("<jtarea^{PU}-jtarea^{noPU}>");
@@ -466,7 +466,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
    }
 
    //
-   //	2D histogram of jtarea diff. vs. refpt	
+   //	2D histogram of jtarea diff. vs. refpt
    //
    if(histograms.find("p_areaVsoffset_1000")!=histograms.end()) {
       c = new TCanvas("areaVsOffset_1000","areaVsOffset_1000");
@@ -479,10 +479,10 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       p_areaVsoffset_1000_prof->GetYaxis()->SetRangeUser(-0.3,0.3);
       p_areaVsoffset_1000_prof->Draw("");
    }
-  
-  
+
+
    //
-   //	2D histogram of jtarea diff. vs. refpt	
+   //	2D histogram of jtarea diff. vs. refpt
    //
    if(histograms.find("p_areaVsoffset_30_50")!=histograms.end()) {
       c = new TCanvas("areaVsOffset_30_50","areaVsOffset_30_50");
@@ -496,22 +496,22 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       p_areaVsoffset_30_50_prof->Draw("");
    }
 
-  
-   //	
+
+   //
    //	2D histogram of NPV vs Rho with 15<offset<20 PU
    //
    if(histograms.find("p_npvVsRho_offset_15_15h")!=histograms.end()) {
-      c = new TCanvas("npvVsRhoOffset1515h","npvVsRhoOffset1515h"); 
-      histograms["p_npvVsRho_offset_15_15h"]->Draw("COLZ"); 
+      c = new TCanvas("npvVsRhoOffset1515h","npvVsRhoOffset1515h");
+      histograms["p_npvVsRho_offset_15_15h"]->Draw("COLZ");
    }
-  
-  
-   //	
+
+
+   //
    //	2D histogram of NPV vs Rho with 15<offset<20 PU
    //
    if(histograms.find("p_npvVsRho_offset_15_15h")!=histograms.end()) {
-      c = new TCanvas("npvVsRhoOffset1515hPeak","npvVsRhoOffset1515hPeak"); 
-      histograms["p_npvVsRho_offset_15_15h"]->Draw("COLZ"); 
+      c = new TCanvas("npvVsRhoOffset1515hPeak","npvVsRhoOffset1515hPeak");
+      histograms["p_npvVsRho_offset_15_15h"]->Draw("COLZ");
       //p_npvVsRho_offset_15_15h->ShowPeaks(2,"nodraw",0.2);
       //TList *functions = p_npvVsRho_offset_15_15h->GetListOfFunctions();
       //TPolyMarker *pm = (TPolyMarker*)functions->FindObject("TPolyMarker");
@@ -529,26 +529,26 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       {
          p_npvVsRho_offset_15_15h_y->SetBinContent(it,histograms["p_npvVsRho_offset_15_15h"]->GetBinContent((int)peakX,it));
       }
-      c = new TCanvas("npvVsRhoOffset1515hX","npvVsRhoOffset1515hX"); 
+      c = new TCanvas("npvVsRhoOffset1515hX","npvVsRhoOffset1515hX");
       p_npvVsRho_offset_15_15h_x->Draw();
       p_npvVsRho_offset_15_15h_x->Fit("gaus");
-      c = new TCanvas("npvVsRhoOffset1515hY","npvVsRhoOffset1515hY"); 
+      c = new TCanvas("npvVsRhoOffset1515hY","npvVsRhoOffset1515hY");
       p_npvVsRho_offset_15_15h_y->Draw();
       p_npvVsRho_offset_15_15h_y->Fit("gaus");
    }
-  
+
    //
-   //	Profile of dr vs. refpt for the matched jets 
+   //	Profile of dr vs. refpt for the matched jets
    //
    if(histograms.find("p_drVsrefpt")!=histograms.end()) {
-      c = new TCanvas("drVsrefptMatchedJets","drVsrefptMatchedJets"); 
+      c = new TCanvas("drVsrefptMatchedJets","drVsrefptMatchedJets");
       dynamic_cast<TProfile*>(histograms["p_drVsrefpt"])->SetErrorOption("s");
       c->SetLogx();
       histograms["p_drVsrefpt"]->Draw();
       histograms["p_drVsrefpt"]->GetYaxis()->SetRangeUser(0,0.3);
       histograms["p_drVsrefpt"]->GetYaxis()->SetTitle("<#DeltaR> #pm #sigma(#DeltaR)");
    }
-  
+
    //
    //	Profile of npv and rho vs offset PU
    //
@@ -556,15 +556,15 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       c = new TCanvas("npvrhoVsOffset","npvrhoVsOffset");
       TProfile *p_npvVsOff_prof = dynamic_cast<TH2F*>(histograms["p_npvVsOff"])->ProfileX();
       TProfile *p_rhoVsOff_prof = dynamic_cast<TH2F*>(histograms["p_rhoVsOff"])->ProfileX();
-      p_npvVsOff_prof->SetErrorOption("s");  
+      p_npvVsOff_prof->SetErrorOption("s");
       setHistoColor(p_npvVsOff_prof,colPU);
       p_npvVsOff_prof->Draw("E1");
       p_npvVsOff_prof->GetYaxis()->SetRangeUser(0,45);
       p_npvVsOff_prof->GetYaxis()->SetTitle("<X> #pm #sigma(X)");
       setHistoColor(p_rhoVsOff_prof,colNoPU);
-      p_rhoVsOff_prof->SetErrorOption("s");  
+      p_rhoVsOff_prof->SetErrorOption("s");
       p_rhoVsOff_prof->Draw("sameE1");
-      
+
       leg = new TLegend(0.2,0.72,0.4,0.92);
       leg->SetFillColor(0);
       leg->SetBorderSize(0);
@@ -572,7 +572,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       leg->AddEntry(p_rhoVsOff_prof," Rho ","lep");
       leg->Draw();
    }
-  
+
    // Profiles of npv, rho, tnpu vs themselves
    if(histograms.find("p_npvVsNpv")!=histograms.end() &&
       histograms.find("p_rhoVsRho")!=histograms.end() &&
@@ -630,7 +630,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
    //	2D plot of npv vs offset PU
    //
    if(histograms.find("p_npvVsOff")!=histograms.end()) {
-      c = new TCanvas("npvVsOffset2D","npvVsOffset2D"); 
+      c = new TCanvas("npvVsOffset2D","npvVsOffset2D");
       histograms["p_npvVsOff"]->SetTitle("2D Histogram of N_{PV} and <p_{T} Offset>_{jets}, LogZ");
       histograms["p_npvVsOff"]->GetYaxis()->SetRangeUser(0,45);
      //p_npvVsOff->GetXaxis()->SetRangeUser(0,45);
@@ -639,12 +639,12 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       histograms["p_npvVsOff"]->Draw("CONTZ");
       c->SetLogz();
    }
-  
+
    //
    //	2D plot of rho vs offset PU
    //
    if(histograms.find("p_rhoVsOff")!=histograms.end()) {
-      c = new TCanvas("rhoVsOffset2D","rhoVsOffset2D"); 
+      c = new TCanvas("rhoVsOffset2D","rhoVsOffset2D");
       histograms["p_rhoVsOff"]->SetTitle("2D Histogram of N_{PV} and <p_{T} Offset>_{jets}, LogZ");
       histograms["p_rhoVsOff"]->GetYaxis()->SetRangeUser(0,45);
       //p_rhoVsOff->GetXaxis()->SetRangeUser(0,45);
@@ -653,11 +653,11 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       histograms["p_rhoVsOff"]->Draw("CONTZ");
       c->SetLogz();
    }
-  
+
    //
    //	Profile of npv vs offset PU  breakdown into detector parts
    //
-   c = new TCanvas("npvVsOffset","npvVsOffset"); 
+   c = new TCanvas("npvVsOffset","npvVsOffset");
    TProfile * hnpvOff_prof[NDetectorNames];
    for (int det=0;det<NDetectorNames;det++)
    {
@@ -665,7 +665,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       detectorAbbreviation.ToLower();
       hname = Form("p_npvVsOff_%s",detectorAbbreviation.Data());
       hnpvOff_prof[det] = dynamic_cast<TH2D*>(histograms[hname])->ProfileX();
-      hnpvOff_prof[det]->SetErrorOption("s"); 
+      hnpvOff_prof[det]->SetErrorOption("s");
       setHistoColor(hnpvOff_prof[det],colDet[det]);
       hnpvOff_prof[det]->GetYaxis()->SetRangeUser(0,45);
    }
@@ -688,7 +688,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
    //
    //	Profile of rho vs offset PU  breakdown into detector parts
    //
-   c = new TCanvas("rhoVsOffset","rhoVsOffset"); 
+   c = new TCanvas("rhoVsOffset","rhoVsOffset");
    TProfile * hrhoOff_prof[4];
    for (int det=0;det<NDetectorNames;det++)
    {
@@ -696,7 +696,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       detectorAbbreviation.ToLower();
       hname = Form("p_rhoVsOff_%s",detectorAbbreviation.Data());
       hrhoOff_prof[det] = dynamic_cast<TH2D*>(histograms[hname])->ProfileX();
-      hrhoOff_prof[det]->SetErrorOption("s"); 
+      hrhoOff_prof[det]->SetErrorOption("s");
       setHistoColor(hrhoOff_prof[det],colDet[det]);
       hrhoOff_prof[det]->GetYaxis()->SetRangeUser(0,45);
    }
@@ -714,7 +714,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       leg->AddEntry(hrhoOff_prof[det],detector_names[det],"lep");
    }
    leg->Draw();
-  
+
    //
    //	Jet Energy Resolution (sigma(pt/ptref)/mean(pt/ptref) vs. ptref) PU  breakdown into detector parts
    //
@@ -727,32 +727,32 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
    }
    c = getCanvasResponseResolution("PUresponseResolutionVsptref",algo, "#sigma(p_{T}^{PU}/p_{T}^{GEN})/<p_{T}^{PU}/p_{T}^{GEN}>",hresResPt);
    c->Draw();
-  
+
 
    for(int det=0; det<NDetectorNames; det++) {
       detectorAbbreviation = JetInfo::get_detector_abbreviation(detector_names[det]);
       detectorAbbreviation.ToLower();
       hname = Form("np_resVsrefpt_%s",detectorAbbreviation.Data());
       hresResPt[det] = dynamic_cast<TH2D*>(histograms[hname]);
-   }  
+   }
    c = getCanvasResponseResolution("NoPUresponseResolutionVsptref",algo, "#sigma(p_{T}^{noPU}/p_{T}^{GEN})/<p_{T}^{noPU}/p_{T}^{GEN}>",hresResPt);
    c->Draw();
-  
-  
+
+
 
    //
    //	profile # of matchedjet vs offset
    //
-   if(histograms.find("p_matchedjet_off")!=histograms.end()) { 
-      c = new TCanvas("MatchedJetOffset","MatchedJetOffset"); 
-      dynamic_cast<TProfile*>(histograms["p_matchedjet_off"])->SetErrorOption("s"); 
+   if(histograms.find("p_matchedjet_off")!=histograms.end()) {
+      c = new TCanvas("MatchedJetOffset","MatchedJetOffset");
+      dynamic_cast<TProfile*>(histograms["p_matchedjet_off"])->SetErrorOption("s");
       histograms["p_matchedjet_off"]->Draw();
    }
 
 
 
    // Offset PT energy distribution, constructed from  pt(pu)-pt(nopu) VS NPV
-   if(histograms.find("p_off_etaVsNpv")!=histograms.end()) { 
+   if(histograms.find("p_off_etaVsNpv")!=histograms.end()) {
       c = new TCanvas("OffsetDistributionVsNPV","OffsetDistributionVsNPV");
       histograms["p_off_etaVsNpv"]->GetYaxis()->SetNdivisions(6);
       histograms["p_off_etaVsNpv"]->Draw("lego2");
@@ -760,22 +760,22 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
    }
 
    // Offset PT energy distribution, constructed from  pt(pu)-pt(nopu) VS Rho
-   if(histograms.find("p_off_etaVsRho")!=histograms.end()) { 
+   if(histograms.find("p_off_etaVsRho")!=histograms.end()) {
       c = new TCanvas("OffsetDistributionVsRho","OffsetDistributionVsRho");
       histograms["p_off_etaVsRho"]->GetYaxis()->SetNdivisions(6);
       histograms["p_off_etaVsRho"]->Draw("lego2");
       histograms["p_off_etaVsRho"]->GetZaxis()->SetRangeUser(-10,50);
    }
-  
+
    // Offset PT energy distribution, constructed from  pt(pu)-pt(nopu) VS PUEff
-   if(histograms.find("p_off_etaVsPUEff")!=histograms.end()) { 
+   if(histograms.find("p_off_etaVsPUEff")!=histograms.end()) {
       c = new TCanvas("OffsetDistributionVsPUEff","OffsetDistributionVsPUEff");
       histograms["p_off_etaVsPUEff"]->Draw("lego2");
       histograms["p_off_etaVsPUEff"]->GetZaxis()->SetRangeUser(-10,50);
    }
 
    // Offset PT energy distribution, constructed from  pt(pu)-pt(nopu) VS GenSumPtOA
-   if(histograms.find("p_off_etaVsGenSumPtOA")!=histograms.end()) { 
+   if(histograms.find("p_off_etaVsGenSumPtOA")!=histograms.end()) {
       c = new TCanvas("OffsetDistributionVsGenSumPtOA","OffsetDistributionVsGenSumPtOA");
       histograms["p_off_etaVsGenSumPtOA"]->GetYaxis()->SetTitle("SumPt/jetArea");
       histograms["p_off_etaVsGenSumPtOA"]->GetYaxis()->SetNdivisions(6);
@@ -785,7 +785,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
    }
 
    // Offset PT energy distribution, constructed from  pt(pu)-pt(nopu) VS JetPt
-   if(histograms.find("p_off_etaVsJetPt")!=histograms.end()) { 
+   if(histograms.find("p_off_etaVsJetPt")!=histograms.end()) {
       c = new TCanvas("OffsetDistributionVsJetPt","OffsetDistributionVsJetPt");
       histograms["p_off_etaVsJetPt"]->Draw("lego2");
       c->SetLogy();
@@ -793,14 +793,14 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
    }
 
    // OffsetOverArea PT energy distribution, constructed from  (pt(pu)-pt(nopu))/area(pu) VS JetPt
-   if(histograms.find("p_offOverA_etaVsJetPt")!=histograms.end()) { 
+   if(histograms.find("p_offOverA_etaVsJetPt")!=histograms.end()) {
       c = new TCanvas("OffsetOverAreaDistributionVsJetPt","OffsetOverAreaDistributionVsJetPt");
       histograms["p_offOverA_etaVsJetPt"]->Draw("lego2");
       c->SetLogy();
       histograms["p_offOverA_etaVsJetPt"]->GetZaxis()->SetRangeUser(-40,100);
    }
 
-   // do the fitting in each eta range and return the parameters. 
+   // do the fitting in each eta range and return the parameters.
    // the last parameter is the name of the file name with which all functions are saved to.
    c = getCanvasFromFittingProcedure("ParametersVsNpv",dynamic_cast<TProfile2D*>(histograms["p_off_etaVsNpv"]),"fittingFunctionsNpv_"+algo+".root");
    if(c)
@@ -812,23 +812,23 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
    if(c)
       c->Draw();
    fin->cd();
-  
-   // do the fitting in each eta range and return the parameters. 
+
+   // do the fitting in each eta range and return the parameters.
    // the last parameter is the name of the file name with which all functions are saved to.
    c = getCanvasFromFittingProcedure("ParametersVsPUEff",dynamic_cast<TProfile2D*>(histograms["p_off_etaVsPUEff"]),"fittingFunctionsPUEff_"+algo+".root");
    if(c)
       c->Draw();
    fin->cd();
-  
-  
-   // do the fitting in each eta range and return the parameters. 
+
+
+   // do the fitting in each eta range and return the parameters.
    // the last parameter is the name of the file name with which all functions are saved to.
    c = getCanvasFromFittingProcedure("ParametersVsGenSumPtOA",dynamic_cast<TProfile2D*>(histograms["p_off_etaVsGenSumPtOA"]),"fittingFunctionsGenSumPtOA_"+algo+".root");
    if(c)
       c->Draw();
    fin->cd();
 
-   // do the fitting in each eta range and return the parameters. 
+   // do the fitting in each eta range and return the parameters.
    // the last parameter is the name of the file name with which all functions are saved to.
    c = getCanvasFromFittingProcedure("ParametersOffOverAVsJetPt",dynamic_cast<TProfile2D*>(histograms["p_offOverA_etaVsJetPt"]),"fittingFunctionsOffOverAJetPt_"+algo+".root");
 //  c->SetLogy();
@@ -1036,7 +1036,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       pOffPF[ipf] = dynamic_cast<TProfile*>(histograms[hname]);
    }
    c = getCanvasResolution("ResolutionOffRefPF_BB",algo,"#sigma(p_{T}^{PU}-p_{T}^{noPU})",hResRho,1,npvRhoNpuBins);
-   c->Draw();  
+   c->Draw();
    c = getGausMeanOffset("MeanOffRefPF_BB","<p_{T}^{PU}-p_{T}^{noPU}>",algo,hResRho,fixedRange,npvRhoNpuBins);
    c->Draw();
    c = getGausMeanOffsetWithSum("MeanOffRefPFWithSum_BB","<p_{T}^{PU}-p_{T}^{noPU}>",algo,hResRho,dynamic_cast<TH2D*>(histograms["p_offResVsrefpt_bb_all"]),fixedRange,npvRhoNpuBins,make_pair(minNpvRhoNpu,maxNpvRhoNpu));
@@ -1196,7 +1196,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
    c = getGausMeanOffsetOverPtref("OffMeanOverPttnpuRef_EI","<offset>/p_{T}^{GEN}",algo,hOffRho,fixedRange,npvRhoNpuBins);
    c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,pOffPF,npvRhoNpuBins.size());
-  
+
    for(unsigned int ibin=0; ibin<npvRhoNpuBins.size(); ibin++) {
       hname = Form("p_resVsrefpt_eo_rho%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
@@ -1209,8 +1209,8 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
    c->Draw();
    c = getGausMeanOffsetWithSum("OffMeanrhoRefWithSum_EO","<offset> (GeV)",algo,hOffRho,dynamic_cast<TH2D*>(histograms[Form("p_offresVsrefpt_eo_rho%i_%i",minNpvRhoNpu,maxNpvRhoNpu)]),fixedRange,npvRhoNpuBins,make_pair(minNpvRhoNpu,maxNpvRhoNpu));
    c->Draw();
-	clearHistograms(hResRho,hOffRho,hOffPdgid,pOffPF,npvRhoNpuBins.size());  
-  
+	clearHistograms(hResRho,hOffRho,hOffPdgid,pOffPF,npvRhoNpuBins.size());
+
    for(unsigned int ibin=0; ibin<npvRhoNpuBins.size(); ibin++) {
       hname = Form("p_offresVsrefpt_eo_tnpu%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hOffRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
@@ -1230,7 +1230,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       hOffRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
    c = getCanvasResolution_v2("OffResolutionRhoRef_FF",algo,"#sigma(p_{T}^{PU}-p_{T}^{noPU})/<p_{T}^{noPU}/p_{T}^{GEN}>",hResRho,hOffRho,npvRhoNpuBins);
-   c->Draw(); 
+   c->Draw();
    c = getGausMeanOffset("OffMeanrhoRef_FF","<offset> (GeV)",algo,hOffRho,fixedRange,npvRhoNpuBins);
    c->Draw();
    c = getGausMeanOffsetWithSum("OffMeanrhoRefWithSum_FF","<offset> (GeV)",algo,hOffRho,dynamic_cast<TH2D*>(histograms[Form("p_offresVsrefpt_ff_rho%i_%i",minNpvRhoNpu,maxNpvRhoNpu)]),fixedRange,npvRhoNpuBins,make_pair(minNpvRhoNpu,maxNpvRhoNpu));
@@ -1248,7 +1248,6 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
    c = getGausMeanOffsetOverPtref("OffMeanOverPttnpuRef_FF","<offset>/p_{T}^{GEN}",algo,hOffRho,fixedRange,npvRhoNpuBins);
    c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,pOffPF,npvRhoNpuBins.size());
- 
 
    //Resolution of response for PU
    // get the canvas from the resolution for bb
@@ -1306,30 +1305,30 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
 
    c = getGausMeanOffsetScale("OffMeannpvRef_BB_3035","<offset>/<offset(30<pt<35)>",algo,hOffRho,binNum3035,fixedRange,npvRhoNpuBins);
    c->Draw();
-  
+
    c = getGausMeanOffsetScale("OffMeannpvRef_BB_2023","<offset>/<offset(20<pt<23)>",algo,hOffRho,binNum2023,fixedRange,npvRhoNpuBins);
    c->Draw();
 	clearHistograms(hResRho,hOffRho,hOffPdgid,pOffPF,npvRhoNpuBins.size());
-  
+
    for(unsigned int ibin=0; ibin<npvRhoNpuBins.size(); ibin++) {
       hname = Form("p_resVsrefpt_ei_npv%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hResRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
       hname = Form("p_offresVsrefpt_ei_npv%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hOffRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-  
+
    c = getCanvasResolution_v2("OffResolutionnpvRef_EI",algo,"#sigma(p_{T}^{PU}-p_{T}^{noPU})/<p_{T}^{noPU}/p_{T}^{GEN}>",hResRho,hOffRho,npvRhoNpuBins);
    c->Draw();
-  
+
    c = getGausMeanOffset("OffMeannpvRef_EI","<offset> (GeV)",algo,hOffRho,fixedRange,npvRhoNpuBins);
    c->Draw();
-  
+
    c = getGausMeanOffsetScale("OffMeannpvRef_EI_3035","<offset>/<offset(30<pt<35)>",algo,hOffRho,binNum3035,fixedRange,npvRhoNpuBins);
    c->Draw();
-  
+
    c = getGausMeanOffsetScale("OffMeannpvRef_EI_2023","<offset>/<offset(20<pt<23)>",algo,hOffRho,binNum2023,fixedRange,npvRhoNpuBins);
    c->Draw();
-	clearHistograms(hResRho,hOffRho,hOffPdgid,pOffPF,npvRhoNpuBins.size());  
+	clearHistograms(hResRho,hOffRho,hOffPdgid,pOffPF,npvRhoNpuBins.size());
 
    for(unsigned int ibin=0; ibin<npvRhoNpuBins.size(); ibin++) {
       hname = Form("p_resVsrefpt_eo_npv%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
@@ -1337,19 +1336,19 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       hname = Form("p_offresVsrefpt_eo_npv%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
       hOffRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
-  
+
    c = getCanvasResolution_v2("OffResolutionnpvRef_EO",algo,"#sigma(p_{T}^{PU}-p_{T}^{noPU})/<p_{T}^{noPU}/p_{T}^{GEN}>",hResRho,hOffRho,npvRhoNpuBins);
    c->Draw();
    c = getGausMeanOffset("OffMeannpvRef_EO","<offset> (GeV)",algo,hOffRho,fixedRange,npvRhoNpuBins);
-   c->Draw();  
-  
+   c->Draw();
+
    c = getGausMeanOffsetScale("OffMeannpvRef_EO_3035","<offset>/<offset(30<pt<35)>",algo,hOffRho,binNum3035,fixedRange,npvRhoNpuBins);
    c->Draw();
-  
+
    c = getGausMeanOffsetScale("OffMeannpvRef_EO_2023","<offset>/<offset(20<pt<23)>",algo,hOffRho,binNum2023,fixedRange,npvRhoNpuBins);
    c->Draw();
-	clearHistograms(hResRho,hOffRho,hOffPdgid,pOffPF,npvRhoNpuBins.size());  
-  
+	clearHistograms(hResRho,hOffRho,hOffPdgid,pOffPF,npvRhoNpuBins.size());
+
 
    for(unsigned int ibin=0; ibin<npvRhoNpuBins.size(); ibin++) {
       hname = Form("p_resVsrefpt_ff_npv%i_%i",npvRhoNpuBins[ibin].first,npvRhoNpuBins[ibin].second);
@@ -1358,16 +1357,16 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
       hOffRho[ibin] = dynamic_cast<TH2D*>(histograms[hname]);
    }
    c = getCanvasResolution_v2("OffResolutionnpvRef_FF",algo,"#sigma(p_{T}^{PU}-p_{T}^{noPU})/<p_{T}^{noPU}/p_{T}^{GEN}>",hResRho,hOffRho,npvRhoNpuBins);
-   c->Draw(); 
+   c->Draw();
    c = getGausMeanOffset("OffMeannpvRef_FF","<offset> (GeV)",algo,hOffRho,fixedRange,npvRhoNpuBins);
    c->Draw();
-  
+
    c = getGausMeanOffsetScale("OffMeannpvRef_FF_3035","<offset>/<offset(30<pt<35)>",algo,hOffRho,binNum3035,fixedRange,npvRhoNpuBins);
    c->Draw();
-  
+
    c = getGausMeanOffsetScale("OffMeannpvRef_FF_2023","<offset>/<offset(20<pt<23)>",algo,hOffRho,binNum2023,fixedRange,npvRhoNpuBins);
    c->Draw();
-	clearHistograms(hResRho,hOffRho,hOffPdgid,pOffPF,NPDGIDcat);  
+	clearHistograms(hResRho,hOffRho,hOffPdgid,pOffPF,NPDGIDcat);
 
    for(int ibin=0; ibin<NPDGIDcat; ibin++) {
       hname = Form("p_offresVsrefpt_bb_pdgid_%s",pdgidstr[ibin].Data());
@@ -1377,7 +1376,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
    c->Draw();
    clearHistograms(hResRho,hOffRho,hOffPdgid,pOffPF,npvRhoNpuBins.size());
 
-  
+
    if (writeFlag == true)
    {
       TFile* ofile = new TFile(outDir+"/canvases_synchplot_"+algo+".root","RECREATE");
@@ -1391,7 +1390,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
          if (can){
             TString canname = outDir+"/"+can->GetName()+ "_"+algo;
             for(unsigned int f=0; f<outputFormat.size(); f++) {
-               can->Print(canname+outputFormat[f]);
+               can->Print(Form("%s%s",canname.Data(),outputFormat[f].Data()));
             }
             ofile->cd();
             can->Write();
@@ -1433,7 +1432,7 @@ int main(int argc,char**argv)
                   outputFormat      = cl.getVector<TString> ("outputFormat", ".eps");
    bool           fixedRange        = cl.getValue<bool>     ("fixedRange",     true);
    bool           tdr               = cl.getValue<bool>     ("tdr",           false);
-   int            npvRhoNpuBinWidth = cl.getValue<int>      ("npvRhoNpuBinWidth", 5);
+   int            npvRhoNpuBinWidth = cl.getValue<int>      ("npvRhoNpuBinWidth",10);
    int            NBinsNpvRhoNpu    = cl.getValue<int>      ("NBinsNpvRhoNpu",    6);
    int            binOffset         = cl.getValue<int>      ("binOffset",         0);
                   minNpvRhoNpu      = cl.getValue<int>      ("minNpvRhoNpu",      0);
