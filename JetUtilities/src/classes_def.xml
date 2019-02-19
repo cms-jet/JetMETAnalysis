@@ -49,6 +49,7 @@
   <class name="std::vector<std::pair<ULong64_t,ULong64_t> >"/>
   <class name="edm::Wrapper<std::vector<std::pair<ULong64_t,ULong64_t> > >"/>
   <class name="TProfileMDF" ClassVersion="1">
+   <version ClassVersion="1" checksum="538640849"/>
 	<version ClassVersion="1" checksum="329505606"/>
   </class>
   <class name="PUNtuple" ClassVersion="1">
@@ -59,7 +60,7 @@
     <version ClassVersion="2" checksum="3528706086"/>
   </class>
   <class name="TSplinePolySteffen" ClassVersion="1">
-	  <version ClassVersion="1" checksum="1968756199"/>	
+	  <version ClassVersion="1" checksum="1968756199"/>
   </class>
   <class name="TSplineSteffen" ClassVersion="1">
     <version ClassVersion="1" checksum="995403083"/>
