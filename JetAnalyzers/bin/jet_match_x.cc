@@ -53,6 +53,7 @@ public:
    void   SetMaxEvts(unsigned me) {maxEvts = me;}
    void   SetNRefMax(int nrm) {nrefmax = nrm;}
    void   SetDoNotSaveFlag(bool dns) {doNotSaveFlag = dns;}
+   void   SetPhiRange(double minPhi_, double maxPhi_) {minPhi=minPhi_; maxPhi=maxPhi_;}
    void   SetWeightParameters(bool useweight_, bool pThatReweight_, double bias2SelectionRef_, double bias2SelectionPow_);
    void   SetupLumiWeights(string dataFile, string mcFile, string dataHist, string mcHist);
    void   OpenInputFiles(string filenamePU, string filenameNoPU);
@@ -150,6 +151,8 @@ private:
    bool                 LumiWeightsSet_;
    bool                 jetMapTreeFound;
    bool                 doNotSaveFlag;
+   double               minPhi;
+   double               maxPhi;
 
    //Debug
    bool iftest;
@@ -660,7 +663,7 @@ void MatchEventsAndJets::DeclareHistograms(bool reduceHistograms) {
    }
 
    //TNPU
-   histograms["p_offOverA_etaVsTnpusVsJetPt"] = new TProfile3D("p_offOverA_etaVsTnpusVsJetPt","p_offOverA_etaVsTnpusVsJetPt;#eta_{j};tnpu;p_{T}^{gen};OffsetOverAre",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
+   histograms["p_offOverA_etaVsTnpusVsJetPt"] = new TProfile3D("p_offOverA_etaVsTnpusVsJetPt","p_offOverA_etaVsTnpusVsJetPt;#eta_{j};tnpu;p_{T}^{gen};OffsetOverArea",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
    histograms["p_PtAve_etaVsTnpusVsJetPt"]    = new TProfile3D("p_PtAve_etaVsTnpusVsJetPt","p_PtAve_etaVsTnpusVsJetPt;#eta_{j};Tnpus;p_{T}^{gen};PtAve",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
    histograms["p_RhoAve_etaVsTnpusVsJetPt"]   = new TProfile3D("p_RhoAve_etaVsTnpusVsJetPt","p_RhoAve_etaVsTnpusVsJetPt;#eta_{j};Tnpus;p_{T}^{gen};PtAve",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
    histograms["p_Events_etaVsTnpusVsJetPt"]   = new TH3I("p_Events_etaVsTnpusVsJetPt","p_RhoAve_etaVsTnpusVsJetPt;#eta_{j};Tnpus;p_{T}^{gen};PtAve",NETA,veta,NTNPU,vtnpu,NPtBins,vpt);
@@ -1303,7 +1306,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms, IT::const_iterato
       jnopu = itj->second;
       if(jpu == -1 || jnopu == -1) continue;
 
-      if (!tpu->jtarea->at(jpu) || TMath::IsNaN(tpu->jtarea->at(jpu)) || fabs(tpu->jtarea->at(jpu))==TMath::Infinity()) continue;
+      if (!tpu->jtarea->at(jpu) || TMath::IsNaN(tpu->jtarea->at(jpu)) || fabs(tpu->jtarea->at(jpu))==TMath::Infinity() || ((minPhi || maxPhi) && (tpu->jtphi->at(jpu)<minPhi || tpu->jtphi->at(jpu)>maxPhi))) continue;
 
       idet = JetInfo::getDetIndex(tpu->jteta->at(jpu));
       detectorAbbreviation = JetInfo::get_detector_abbreviation(detector_names[idet]);
@@ -1592,6 +1595,8 @@ int main(int argc,char**argv)
    string       algo2             = cl.getValue<string>  ("algo2",                               "ak4pf");
    bool         iftest            = cl.getValue<bool>    ("iftest",                                false);
    unsigned     maxEvts           = cl.getValue<int>     ("maxEvts",                               40000);
+   double       minPhi            = cl.getValue<double>  ("minPhi",                                  0.0);
+   double       maxPhi            = cl.getValue<double>  ("maxPhi",                                  0.0);
    int          nrefmax           = cl.getValue<int>     ("nrefmax",                                  -1);
    bool         useweight         = cl.getValue<bool>    ("useweight",                             false);
    bool         pThatReweight     = cl.getValue<bool>    ("pThatReweight",                         false);
@@ -1642,6 +1647,7 @@ int main(int argc,char**argv)
    MatchEventsAndJets* mej = new MatchEventsAndJets(algo1,algo2,iftest);
    mej->SetDoNotSaveFlag(doNotSave);
    mej->SetMaxEvts(maxEvts);
+   mej->SetPhiRange(minPhi,maxPhi);
    mej->SetNRefMax(nrefmax);
    mej->SetWeightParameters(useweight,pThatReweight,bias2SelectionRef,bias2SelectionPow);
    mej->SetupLumiWeights((DataPUReWeighting.empty())? "" : basepath+DataPUReWeighting,
