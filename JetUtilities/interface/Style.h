@@ -137,9 +137,9 @@ inline void CMS_lumi( TPad* pad, int iPeriod=3, int iPosX=10, bool verbose=false
 
 //#include "CMS_lumi.h"
 
-inline void 
+inline void
 CMS_lumi( TPad* pad, int iPeriod, int iPosX, bool verbose )
-{            
+{
 
   //
   // Settings
@@ -182,7 +182,7 @@ CMS_lumi( TPad* pad, int iPeriod, int iPosX, bool verbose )
 
 
   bool outOfFrame    = false;
-  if( iPosX/10==0 ) 
+  if( iPosX/10==0 )
     {
       outOfFrame = true;
     }
@@ -219,9 +219,9 @@ CMS_lumi( TPad* pad, int iPeriod, int iPosX, bool verbose )
       lumiText += lumi_8TeV;
       lumiText += " (8 TeV)";
     }
-  else if( iPeriod==3 ) 
+  else if( iPeriod==3 )
     {
-      lumiText = lumi_8TeV; 
+      lumiText = lumi_8TeV;
       lumiText += " (8 TeV)";
       lumiText += " + ";
       lumiText += lumi_7TeV;
@@ -233,12 +233,12 @@ CMS_lumi( TPad* pad, int iPeriod, int iPosX, bool verbose )
       lumiText += " (13 TeV)";
     }
   else if ( iPeriod==7 )
-    { 
+    {
       if( outOfFrame ) lumiText += "#scale[0.85]{";
-      lumiText += lumi_13TeV; 
+      lumiText += lumi_13TeV;
       lumiText += " (13 TeV)";
       lumiText += " + ";
-      lumiText += lumi_8TeV; 
+      lumiText += lumi_8TeV;
       lumiText += " (8 TeV)";
       lumiText += " + ";
       lumiText += lumi_7TeV;
@@ -265,29 +265,29 @@ CMS_lumi( TPad* pad, int iPeriod, int iPosX, bool verbose )
     {
       lumiText += "14 TeV";
     }
-   
+
   if(verbose) cout << lumiText << endl;
 
   TLatex latex;
   latex.SetNDC();
   latex.SetTextAngle(0);
-  latex.SetTextColor(kBlack);    
+  latex.SetTextColor(kBlack);
 
   float extraTextSize = extraOverCmsTextSize*cmsTextSize;
 
   latex.SetTextFont(42);
-  latex.SetTextAlign(31); 
-  latex.SetTextSize(lumiTextSize*t);    
+  latex.SetTextAlign(31);
+  latex.SetTextSize(lumiTextSize*t);
   latex.DrawLatex(1-r,1-t+lumiTextOffset*t,lumiText);
 
   if( outOfFrame )
     {
       latex.SetTextFont(cmsTextFont);
-      latex.SetTextAlign(11); 
-      latex.SetTextSize(cmsTextSize*t);    
+      latex.SetTextAlign(11);
+      latex.SetTextSize(cmsTextSize*t);
       latex.DrawLatex(l,1-t+lumiTextOffset*t,cmsText);
     }
-  
+
   pad->cd();
 
   float posX_=0;
@@ -328,7 +328,7 @@ CMS_lumi( TPad* pad, int iPeriod, int iPosX, bool verbose )
         latex.SetTextSize(cmsTextSize*t);
         latex.SetTextAlign(align_);
         latex.DrawLatex(posX_, posY_, cmsText);
-        if( writeExtraText ) 
+        if( writeExtraText )
         {
           latex.SetTextFont(extraTextFont);
           latex.SetTextAlign(align_);
@@ -345,7 +345,7 @@ CMS_lumi( TPad* pad, int iPeriod, int iPosX, bool verbose )
   }
   else if( writeExtraText )
   {
-     if( iPosX==0) 
+     if( iPosX==0)
      {
         posX_ =   l +  relPosX*(1-l-r);
         posY_ =   1-t+lumiTextOffset*t;
@@ -381,15 +381,15 @@ inline TCanvas* tdrCanvas(const char* canvName, TH1D *h,
   //extraText  = "Preliminary";  // default extra text is "Preliminary"
   //lumi_8TeV  = "19.5 fb^{-1}"; // default is "19.7 fb^{-1}"
   //lumi_7TeV  = "5.0 fb^{-1}";  // default is "5.1 fb^{-1}"
-  
-  //int iPeriod = 3;    // 1=7TeV, 2=8TeV, 3=7+8TeV, 7=7+8+13TeV 
+
+  //int iPeriod = 3;    // 1=7TeV, 2=8TeV, 3=7+8TeV, 7=7+8+13TeV
 
   // second parameter in example_plot is iPos, which drives the position of the CMS logo in the plot
   // iPos=11 : top-left, left-aligned
   // iPos=33 : top-right, right-aligned
   // iPos=22 : center, centered
   // iPos=0  : out of frame (in exceptional cases)
-  // mode generally : 
+  // mode generally :
   //   iPos = 10*(alignement 1/2/3) + position (1/2/3 = left/center/right)
 
 
@@ -398,21 +398,21 @@ inline TCanvas* tdrCanvas(const char* canvName, TH1D *h,
   int W = (square ? 600 : 800);
   int H = (square ? 600 : 600);
 
-  // 
+  //
   // Simple example of macro: plot with CMS name and lumi text
   //  (this script does not pretend to work in all configurations)
-  // iPeriod = 1*(0/1 7 TeV) + 2*(0/1 8 TeV)  + 4*(0/1 13 TeV) 
-  // For instance: 
+  // iPeriod = 1*(0/1 7 TeV) + 2*(0/1 8 TeV)  + 4*(0/1 13 TeV)
+  // For instance:
   //               iPeriod = 3 means: 7 TeV + 8 TeV
-  //               iPeriod = 7 means: 7 TeV + 8 TeV + 13 TeV 
+  //               iPeriod = 7 means: 7 TeV + 8 TeV + 13 TeV
   // Initiated by: Gautier Hamel de Monchenault (Saclay)
   //
-  int W_ref = (square ? 600 : 800); 
-  int H_ref = (square ? 600 : 600); 
+  int W_ref = (square ? 600 : 800);
+  int H_ref = (square ? 600 : 600);
 
   // references for T, B, L, R
   float T = (square ? 0.07*H_ref : 0.08*H_ref);
-  float B = (square ? 0.13*H_ref : 0.12*H_ref); 
+  float B = (square ? 0.13*H_ref : 0.12*H_ref);
   float L = (square ? 0.15*W_ref : 0.12*W_ref);
   float R = (square ? 0.05*W_ref : 0.04*W_ref);
 
@@ -433,14 +433,14 @@ inline TCanvas* tdrCanvas(const char* canvName, TH1D *h,
   h->GetYaxis()->SetTitleOffset(square ? 1.25 : 1); //original values were 1.25 and 1 respectively
   h->GetXaxis()->SetTitleOffset(square ? 0.9 : 0.9); //original values were 1.0 and 0.9 respectively
   h->Draw("AXIS");
-
+  
   // writing the lumi information and the CMS "logo"
   CMS_lumi( canv, iPeriod, iPos, verbose );
-  
+
   canv->Update();
   canv->RedrawAxis();
   canv->GetFrame()->Draw();
-  
+
   return canv;
 }
 
@@ -503,7 +503,7 @@ inline TCanvas* tdrDiCanvas(const char* canvName, TH1D *hup, TH1D *hdw,
   gPad->SetBottomMargin( Bup );
 
   assert(hup);
-  
+
   // Scale text sizes and margins to match normal size
   hup->GetYaxis()->SetTitleOffset(1.15 * Hup / H_ref); //original value was 1.25
   hup->GetXaxis()->SetTitleOffset(1.0);
@@ -552,7 +552,7 @@ inline TCanvas* tdrDiCanvas(const char* canvName, TH1D *hup, TH1D *hdw,
   canv->Update();
   canv->RedrawAxis();
   canv->GetFrame()->Draw();
-  
+
   return canv;
 }
 
@@ -561,7 +561,7 @@ inline void cmsPrel(int energy = 8, double intLumi=-1, bool wide = false) {
   TLatex *latex = new TLatex();
   latex->SetNDC();
   latex->SetTextSize(0.045);
-  
+
   latex->SetTextAlign(31); // align right
   latex->DrawLatex(wide ? 0.98 : 0.95, 0.96, Form("#sqrt{s} = %i TeV",energy));
   if (intLumi > 0.) {
@@ -598,7 +598,7 @@ inline void cmsFinal(double intLumi=-1, bool wide = false) {
   TLatex *latex = new TLatex();
   latex->SetNDC();
   latex->SetTextSize(0.045);
-  
+
   latex->SetTextAlign(31); // align right
   latex->DrawLatex(wide ? 0.98 : 0.95, 0.96, "#sqrt{s} = 8 TeV");
   if (intLumi > 0.) {
