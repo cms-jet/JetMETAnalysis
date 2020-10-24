@@ -190,7 +190,7 @@ int main(int argc,char**argv)
   int            totaloothigh      = cl.getValue<int>    ("totaloothigh",           100000);
   TString        weightfile        = cl.getValue<TString>("weightfile",                 "");
   TString        MCPUReWeighting   = cl.getValue<TString>("MCPUReWeighting",            "");
-  TString        MCPUHistoName     = cl.getValue<TString>("MCPUHistoName",        "pileup");
+  TString        MCPUHistoName     = cl.getValue<TString>("MCPUHistoName",        "h_pileup");
   TString        DataPUReWeighting = cl.getValue<TString>("DataPUReWeighting",          "");
   TString        DataPUHistoName   = cl.getValue<TString>("DataPUHistoName","pileup_jt400");
   bool           verbose           = cl.getValue<bool>   ("verbose",                 false);
@@ -1478,6 +1478,12 @@ int main(int argc,char**argv)
 
         if (nrefmax>0) JRAEvt->nref = std::min((int)JRAEvt->nref,nrefmax);
         for (unsigned char iref=0;iref<JRAEvt->nref;iref++) {
+	  /*      
+         //=== veto region for UL2017 =======
+        //if((JRAEvt->jtphi->at(iref)<-0.5236 && JRAEvt->jtphi->at(iref)>-0.8727 && JRAEvt->jteta->at(iref) >1.31 && JRAEvt->jteta->at(iref)<2.96) || (JRAEvt->jtphi->at(iref)>2.705 && JRAEvt->jtphi->at(iref)<3.1416 && JRAEvt->jteta->at(iref) >0 && JRAEvt->jteta->at(iref)<1.4835) )continue;
+        //=== veto region for UL2018 =======
+       //if((JRAEvt->jtphi->at(iref)<-0.8727 && JRAEvt->jtphi->at(iref)>-1.5708 && JRAEvt->jteta->at(iref) < -1.31 && JRAEvt->jteta->at(iref)> -2.96) || (JRAEvt->jtphi->at(iref)>0.4363 && JRAEvt->jtphi->at(iref)<0.7854 && JRAEvt->jteta->at(iref) >0 && JRAEvt->jteta->at(iref)<1.31) )continue;
+*/
           if(ievt%10000==0 && iref<JRAEvt->nref-1)
             cout << ".";
           else if(ievt%10000==0 && iref==JRAEvt->nref-1)
