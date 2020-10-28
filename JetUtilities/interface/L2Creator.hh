@@ -98,8 +98,8 @@ private:
     string                    input, era, l3input, histMet;
     TString                   output, outputDir, l2calofit, l2pffit;
     vector<string>            formats, algs;
-    bool                      l2l3, delphes;
-    int                       maxFitIter;
+    bool                      l2l3, delphes, ptclipfit;
+    int                       maxFitIter, statTh;
     HistUtil::HistogramMetric histogramMetric;
     TFile*                    ofile;
     TFile*                    ifile;
@@ -116,6 +116,7 @@ private:
     vector<TGraphErrors*>     vabscor_eta;
     vector<TGraph*>           vrelcor_eta;
     vector<PiecewiseSpline*>  vabscor_eta_spline;
+    float                     ptclip;
 };
 
 #endif
