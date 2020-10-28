@@ -84,8 +84,8 @@ void JRAEvent::MakeTree(TTree* tree)
    fChain->Branch("evt", &evt, "evt/L");
    fChain->Branch("nref", &nref, "nref/b");
    fChain->Branch("refrank", "vector<UChar_t>", &refrank);
+   fChain->Branch("refpdgid", "vector<Int_t>", &refpdgid);
    if(!flags.test(0) || (flags.test(0) && flags.test(2))) {
-      fChain->Branch("refpdgid", "vector<Int_t>", &refpdgid);
       fChain->Branch("refpdgid_algorithmicDef", "vector<Int_t>", &refpdgid_algorithmicDef);
       fChain->Branch("refpdgid_physicsDef", "vector<Int_t>", &refpdgid_physicsDef);
    }
@@ -120,6 +120,11 @@ void JRAEvent::MakeTree(TTree* tree)
          fChain->Branch("jtmuf", "vector<Float_t>", &jtmuf);
          fChain->Branch("jthfhf", "vector<Float_t>", &jthfhf);
          fChain->Branch("jthfef", "vector<Float_t>", &jthfef);
+
+         fChain->Branch("refnMult", "vector<Int_t>", &refnMult);
+         fChain->Branch("refchMult", "vector<Int_t>", &refchMult);
+         fChain->Branch("jtnMult", "vector<Int_t>", &jtnMult);
+         fChain->Branch("jtchMult", "vector<Int_t>", &jtchMult);
       }
    }
    if (!flags.test(0) || (flags.test(0) && flags.test(6) && flags.test(7))) {
@@ -184,8 +189,8 @@ void JRAEvent::Init(TTree *tree)
    fChain->SetBranchAddress("evt", &evt, &b_evt);
    fChain->SetBranchAddress("nref", &nref, &b_nref);
    fChain->SetBranchAddress("refrank", &refrank, &b_refrank);
+   fChain->SetBranchAddress("refpdgid", &refpdgid, &b_refpdgid);
    if(!flags.test(0) || (flags.test(0) && flags.test(2))) {
-      fChain->SetBranchAddress("refpdgid", &refpdgid, &b_refpdgid);
       fChain->SetBranchAddress("refpdgid_algorithmicDef", &refpdgid_algorithmicDef, &b_refpdgid_algorithmicDef);
       fChain->SetBranchAddress("refpdgid_physicsDef", &refpdgid_physicsDef, &b_refpdgid_physicsDef);
    }
@@ -220,6 +225,11 @@ void JRAEvent::Init(TTree *tree)
          fChain->SetBranchAddress("jtmuf", &jtmuf, &b_jtmuf);
          fChain->SetBranchAddress("jthfhf", &jthfhf, &b_jthfhf);
          fChain->SetBranchAddress("jthfef", &jthfef, &b_jthfef);
+
+         fChain->SetBranchAddress("refnMult", &refnMult, &b_refnMult);
+         fChain->SetBranchAddress("refchMult", &refchMult, &b_refchMult);
+         fChain->SetBranchAddress("jtnMult", &jtnMult, &b_jtnMult);
+         fChain->SetBranchAddress("jtchMult", &jtchMult, &b_jtchMult);
       }
    }
    if (!flags.test(0) || (flags.test(0) && flags.test(6) && flags.test(7))) {
@@ -274,8 +284,8 @@ void JRAEvent::MakeVectors()
    ntrks_highpt            = new vector<int>;
    rhos                    = new vector<float>;
    refrank                 = new vector<UChar_t>;
+   refpdgid                = new vector<int>;
    if(!flags.test(0) || (flags.test(0) && flags.test(2))) {
-      refpdgid                = new vector<int>;
       refpdgid_algorithmicDef = new vector<int>;
       refpdgid_physicsDef     = new vector<int>;
    }
@@ -310,6 +320,11 @@ void JRAEvent::MakeVectors()
          jtmuf                   = new vector<float>;
          jthfhf                  = new vector<float>;
          jthfef                  = new vector<float>;
+
+         refnMult                = new vector<int>;
+         refchMult               = new vector<int>;
+         jtnMult                 = new vector<int>;
+         jtchMult                = new vector<int>;
       }
    }
    if (!flags.test(0) || (flags.test(0) && flags.test(6) && flags.test(7))) {
@@ -336,8 +351,8 @@ void JRAEvent::clear()
    ntrks_highpt->clear();
    rhos->clear();
    refrank->clear();
+   refpdgid->clear();
    if(!flags.test(0) || (flags.test(0) && flags.test(2))) {
-      refpdgid->clear();
       refpdgid_algorithmicDef->clear();
       refpdgid_physicsDef->clear();
    }
@@ -372,6 +387,11 @@ void JRAEvent::clear()
          jtmuf->clear();
          jthfhf->clear();
          jthfef->clear();
+
+         refnMult->clear();
+         refchMult->clear();
+         jtnMult->clear();
+         jtchMult->clear();
       }
    }
    if (!flags.test(0) || (flags.test(0) && flags.test(6) && flags.test(7))) {
