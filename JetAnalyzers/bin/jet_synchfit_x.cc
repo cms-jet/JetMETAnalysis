@@ -440,7 +440,7 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, string functionType, i
       pari = {15,1,-1};
       pari_set = true;
     }
-//  function = "[0]+[1]*(x-20.0)+[2]*log(y/90.0)+[3]*pow(log(y/90.0),2)+[4]*(x-20.0)*log(y/90.0)+[5]*(x-20.0)*pow(log(y/90.0),2)"; 
+//  function = "[0]+[1]*(x-20.0)+[2]*log(y/90.0)+[3]*pow(log(y/90.0),2)+[4]*(x-20.0)*log(y/90.0)+[5]*(x-20.0)*pow(log(y/90.0),2)"; //complex parametrization
     function = "[1]*(x-[0])*(1.+[2]*log(y/15.))";	//semi simple parametrization 
   }
 
