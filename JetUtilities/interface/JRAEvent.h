@@ -80,6 +80,8 @@ public :
    vector<Int_t>*   refpdgid_physicsDef;
    vector<Float_t>* refe;
    vector<Float_t>* refpt;
+   vector<Int_t>* refnMult;
+   vector<Int_t>* refchMult;
    vector<Float_t>* refeta;
    vector<Float_t>* refphi;
    vector<Float_t>* refy;
@@ -88,6 +90,8 @@ public :
    vector<Float_t>* refarea;
    vector<Float_t>* jte;
    vector<Float_t>* jtpt;
+   vector<Int_t>* jtnMult;
+   vector<Int_t>* jtchMult;
    vector<Float_t>* jteta;
    vector<Float_t>* jtphi;
    vector<Float_t>* jty;
@@ -140,6 +144,8 @@ public :
    TBranch        *b_refpdgid_physicsDef;   //!
    TBranch        *b_refe;   //!
    TBranch        *b_refpt;   //!
+   TBranch        *b_refnMult;   //!
+   TBranch        *b_refchMult;   //!
    TBranch        *b_refeta;   //!
    TBranch        *b_refphi;   //!
    TBranch        *b_refy;   //!
@@ -148,6 +154,8 @@ public :
    TBranch        *b_refarea;   //!
    TBranch        *b_jte;   //!
    TBranch        *b_jtpt;   //!
+   TBranch        *b_jtnMult;   //!
+   TBranch        *b_jtchMult;   //!
    TBranch        *b_jteta;   //!
    TBranch        *b_jtphi;   //!
    TBranch        *b_jty;   //!
