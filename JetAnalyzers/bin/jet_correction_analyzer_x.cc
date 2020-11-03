@@ -19,7 +19,7 @@
 #include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
 #if __has_include("xrootd/XrdCl/XrdClFileSystem.hh")
 //#include "xrootd/XrdCl/XrdClFileSystem.hh"
-#include "condor/XrdClFileSystem_v2.hh"
+#include "JetMETAnalysis/JetAnalyzers/XrdClFileSystem_v2.hh"
 #define has_xrdcl 1
 #else
 #define has_xrdcl 0
