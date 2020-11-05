@@ -49,7 +49,7 @@ L2Creator::L2Creator(CommandLine& cl) {
 
     ptclip     = cl.getValue<float>   ("ptclip",            0.);
     statTh     = cl.getValue<int>     ("statTh",             4);
-    ptclipfit = cl.getValue<bool> ("ptclipfit", false);
+    ptclipfit  = cl.getValue<bool>    ("ptclipfit",      false);
 
     if (!cl.partialCheck()) return;
     cl.print();
@@ -221,7 +221,7 @@ void L2Creator::loopOverEtaBins() {
     ofstream FitResults(txtFitResultsFilename);
     FitResults.setf(ios::right);
 
-    //edw gia draw prob,chi2 vs eta
+    //Draw prob,chi2 vs eta
     double etabin[82], Chi2NDF[82], Prob[82], Prob_0p009[82];
 
     while ((hrsp=hl_rsp.next_object(indices))) {
@@ -245,7 +245,7 @@ void L2Creator::loopOverEtaBins() {
         // only add points to the graphs if the current histo is not empty
         // the current setting might be a little high
         //
-        if (hrsp->GetEntries() > 30) {//hrsp->Integral()!=0) {//EDW 4
+        if (hrsp->GetEntries() > 30) {//hrsp->Integral()!=0)
 
             //TF1*  frsp    = (TF1*)hrsp->GetListOfFunctions()->Last();
             //std::cout << "hrspName = " << hrsp->GetName() << ": frsp = " << frsp << std::endl;
@@ -290,13 +290,11 @@ void L2Creator::loopOverEtaBins() {
             double eabsrsp = epeak;
             double abscor = 0.0;
             double eabscor = 0.0;
-//cout << "EDW 1 " << "eta" << vabscor_eta.back()->GetName() << "absrsp " << absrsp << " and eabsrsp " << eabsrsp << " and abscor " << abscor << " and eabscor " << eabscor << endl;
-            if (absrsp > 0 ) {//edw test
+            if (absrsp > 0 ) {
                 abscor  =1.0/absrsp;
                 eabscor = abscor*abscor*epeak;
 
 
-//cout << "EDW 2 " << "eta" << vabscor_eta.back()->GetName() << endl;
             }
             if ((abscor>0)  && (absrsp>0) && (eabscor>1e-5) && (eabscor/abscor<0.5) && (eabsrsp>1e-4) && (eabsrsp/absrsp<0.5)) {
                 int n = vabsrsp_eta.back()->GetN();
@@ -304,9 +302,7 @@ void L2Creator::loopOverEtaBins() {
                 vabsrsp_eta.back()->SetPointError(n,erefpt,eabsrsp);
                 vabscor_eta.back()->SetPoint     (n,jetpt, abscor);
                 vabscor_eta.back()->SetPointError(n,ejetpt,eabscor);
-            //    cout << "EDW 3" << "eta" << vabscor_eta.back()->GetName() << "refpt" << refpt << "jetpt" << jetpt << "absrsp " << absrsp << " and eabsrsp " << eabsrsp << " and abscor " << abscor << " and eabscor " << eabscor << endl;
-            }
-            //else cout << "EDW 4" << "absrsp " << absrsp << " and eabsrsp " << eabsrsp << " and abscor " << abscor << " and eabscor " << eabscor << endl;
+            }    
         }
 
         //
@@ -396,7 +392,7 @@ void L2Creator::loopOverEtaBins() {
 			std::cout<<"ieta = "<<ieta<<std::endl;
 //			if(ieta==14 || ieta==67) std::cout<<"eta bin = "<<vabscor_eta.back()->GetName()<<std::endl;
 
-/*			if(ieta<=14 || ieta>=67) //EDW Mikko's fit function, fix parameters 3,4,5 to 0 for |eta|>=2.5
+/*			if(ieta<=14 || ieta>=67) //Mikko's fit function, fix parameters 3,4,5 to 0 for |eta|>=2.5
 			{ 
 //				fabscor->SetRange(12.,3500.);	//for mixed fit range
 				fabscor->FixParameter(3,0.);
@@ -574,7 +570,7 @@ void L2Creator::loopOverEtaBins() {
             }
 
 
-	    //edw ptclipfit 
+	    //ptclipfit 
 	    if (ptclipfit) 
 	    {    
                 if (xmin > 0.0001) 
@@ -600,7 +596,7 @@ void L2Creator::loopOverEtaBins() {
 		}
 	    }
 
-	    //EDW print chi2 and prob for each fit in every eta bin
+	    //Print chi2 and prob for each fit in every eta bin
 	    std::cout<<"Chi2/NDF = "<<fabscor->GetChisquare()/fabscor->GetNDF()<<std::endl;
 	    std::cout<<"Prob = "<<fabscor->GetProb()<<std::endl;
 	
@@ -918,7 +914,7 @@ void L2Creator::makeCanvas(string makeCanvasVariable) {
                 spline_func->SetRange(bounds.first,bounds.second);
                 spline_func->SetLineColor(igraph%nperpad+1);
                 spline_func->SetLineStyle(kDotted);
-//              spline_func->Draw("same");
+                spline_func->Draw("same");
             }
         }
 
