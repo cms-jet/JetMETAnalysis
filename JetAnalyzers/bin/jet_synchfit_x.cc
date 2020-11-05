@@ -36,11 +36,7 @@ struct FitRes {
 
 //===========================================================================
 // This method returns the graph from all the TProfile3D's
-TGraph2DErrors * getGraph2D(int iEta, TProfile3D * prof,
-  const TProfile3D * profPt,
-  const TProfile3D * profRho,
-  TH3I * hist){
-
+TGraph2DErrors * getGraph2D(int iEta, TProfile3D * prof, const TProfile3D * profPt, const TProfile3D * profRho, TH3I * hist){
     // The returning graph, with its name and title
     TGraph2DErrors *graph  = new TGraph2DErrors();
     graph->SetName(Form("p_offOverA_RhoVsJetPt_%d",iEta));
@@ -358,12 +354,7 @@ void fitClosurePlots(TProfile3D * prof,
 //===========================================================================
 // This method tries to obtain all the relevant TProfiles from the inputFilename
 // It returns true if successfull
-bool getInputProfiles(TString inputFilename, TProfile3D *& prof,
-  TProfile3D *& profPt,
-  TProfile3D *& profRho,
-  TH3I *& hist,
-  bool useNPU){
-
+bool getInputProfiles(TString inputFilename, TProfile3D *& prof, TProfile3D *& profPt, TProfile3D *& profRho, TH3I *& hist, bool useNPU){
     // Open the input file
     TFile *fin= new TFile(inputFilename);
     if(!fin->IsOpen()) {
