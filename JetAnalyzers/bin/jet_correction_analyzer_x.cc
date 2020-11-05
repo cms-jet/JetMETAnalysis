@@ -604,13 +604,6 @@ int main(int argc,char**argv)
 
          if(nrefmax>0 && JRAEvt->nref>nrefmax) JRAEvt->nref = nrefmax;
          for (unsigned char iref=0;iref<JRAEvt->nref;iref++) {
-	    /*      
-         //=== veto region for UL2017 =======
-        //if((JRAEvt->jtphi->at(iref)<-0.5236 && JRAEvt->jtphi->at(iref)>-0.8727 && JRAEvt->jteta->at(iref) >1.31 && JRAEvt->jteta->at(iref)<2.96) || (JRAEvt->jtphi->at(iref)>2.705 && JRAEvt->jtphi->at(iref)<3.1416 && JRAEvt->jteta->at(iref) >0 && JRAEvt->jteta->at(iref)<1.4835) )continue;
-        //=== veto region for UL2018 =======
-       //if((JRAEvt->jtphi->at(iref)<-0.8727 && JRAEvt->jtphi->at(iref)>-1.5708 && JRAEvt->jteta->at(iref) < -1.31 && JRAEvt->jteta->at(iref)> -2.96) || (JRAEvt->jtphi->at(iref)>0.4363 && JRAEvt->jtphi->at(iref)<0.7854 && JRAEvt->jteta->at(iref) >0 && JRAEvt->jteta->at(iref)<1.31) )continue;
-*/
-//	    if(JRAEvt->npv>0 && JRAEvt->npv<10){  //nVtx cut starts here
             float rho = JRAEvt->rho;
             float rho_hlt = (0!=chain->GetBranch("rho_hlt")) ? JRAEvt->rho_hlt : 0;
             float ptgen  = JRAEvt->refpt->at(iref);
@@ -866,7 +859,6 @@ int main(int argc,char**argv)
                ThetaDistribution ->Fill(theta);
                SolidAngleDist ->Fill(2*TMath::Pi()*cos(theta));
             }
-//	    }//nVtx ends here
          }//for (unsigned char iref=0;iref<nrefmax;iref++) 
       }//for (unsigned int ievt=0;ievt<nevt;ievt++)
 
