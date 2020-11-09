@@ -18,6 +18,7 @@
 #include "CondFormats/JetMETObjects/interface/FactorizedJetCorrector.h"
 #include "PhysicsTools/Utilities/interface/LumiReWeighting.h"
 #if __has_include("xrootd/XrdCl/XrdClFileSystem.hh")
+#include "xrootd/XProtocol/XProtocol.hh"
 #include "xrootd/XrdCl/XrdClFileSystem.hh"
 #define has_xrdcl 1
 #else
@@ -215,7 +216,7 @@ int main(int argc,char**argv)
 
    edm::LumiReWeighting LumiWeights_;
    if(!MCPUReWeighting.IsNull() && !DataPUReWeighting.IsNull()) {
-      LumiWeights_ = edm::LumiReWeighting(string(MCPUReWeighting),string(DataPUReWeighting),"pileup","pileup");
+      LumiWeights_ = edm::LumiReWeighting(string(MCPUReWeighting),string(DataPUReWeighting),"h_pileup","pileup");
    }
 
    if(!outputDir.IsNull() && !outputDir.EndsWith("/")) outputDir += "/";

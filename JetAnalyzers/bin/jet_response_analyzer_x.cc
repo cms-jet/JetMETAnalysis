@@ -190,7 +190,7 @@ int main(int argc,char**argv)
   int            totaloothigh      = cl.getValue<int>    ("totaloothigh",           100000);
   TString        weightfile        = cl.getValue<TString>("weightfile",                 "");
   TString        MCPUReWeighting   = cl.getValue<TString>("MCPUReWeighting",            "");
-  TString        MCPUHistoName     = cl.getValue<TString>("MCPUHistoName",        "pileup");
+  TString        MCPUHistoName     = cl.getValue<TString>("MCPUHistoName",        "h_pileup");
   TString        DataPUReWeighting = cl.getValue<TString>("DataPUReWeighting",          "");
   TString        DataPUHistoName   = cl.getValue<TString>("DataPUHistoName","pileup_jt400");
   bool           verbose           = cl.getValue<bool>   ("verbose",                 false);
