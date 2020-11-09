@@ -26,12 +26,13 @@
 #include "JetMETAnalysis/JetUtilities/interface/JetInfo.hh"
 #include "JetMETAnalysis/JetAnalyzers/interface/REStyle.h"
 
+
 using namespace std;
 
 struct FitRes {
-  double etalowedge;
-  double etaupedge;
-  TF2 * fit;
+      double etalowedge;
+      double etaupedge;
+      TF2 * fit;
 };
 
 //===========================================================================
@@ -91,7 +92,6 @@ TGraph2DErrors * getGraph2D(int iEta, TProfile3D * prof, const TProfile3D * prof
 } // getGraph2D
 
 //===========================================================================
-//
 void fitClosurePlots(TProfile3D * prof,
   const TProfile3D * profPt,
   const TProfile3D * profRho,
@@ -521,8 +521,8 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, string functionType, i
 
       function = "[0]+([1]*pow(log10(y-[2]),3))+([4]*log10(y-[2])*pow(x-[3],2))+([5]*(pow(log10(y-[2]),2)-pow(x-[3],2)))";
       //x(u,v)=u y(u,v)=v z(u,v)=1/3u^3+uv^2+2(u^2-v^2)// Handkerchief Surface http://mathworld.wolfram.com/HandkerchiefSurface.html
-    }
-    else if(functionType=="modifiedHandkerchief+rho") {
+   }
+   else if(functionType=="modifiedHandkerchief+rho") {
       if(41-abs(iEta-41)+(iEta>41)==41) pari = {-76.8447, 2.43371, -529.969, -120.342, -0.003042, -0.0101412, 0.5};
       if(41-abs(iEta-41)+(iEta>41)==40) pari = {-51.3274, 1.56577, -791.884, -63.0554, -0.00656194, -0.022223, 0.5};
       if(41-abs(iEta-41)+(iEta>41)==39) pari = {-44.4371, 1.29876, -408.899, -96.5217, -0.00222077, -0.0080116, 0.5};
@@ -610,17 +610,17 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, string functionType, i
         function = "[0]+([1]*(x-11))*(1+[2]*(log(y)-1.47))";
       }
 
-      cout << "\tInitial Parameters: (" << flush;
-      for(unsigned int ipar=0; ipar<pari.size(); ipar++) {
-        cout << pari[ipar];
-        if(ipar!=pari.size()-1) cout << ", ";
-        else cout << ")" << endl;
-      }
+   cout << "\tInitial Parameters: (" << flush;
+   for(unsigned int ipar=0; ipar<pari.size(); ipar++) {
+      cout << pari[ipar];
+      if(ipar!=pari.size()-1) cout << ", ";
+      else cout << ")" << endl;
+   }
 
-      if(highPU)
+   if(highPU)
       f4 = new TF2(Form("f_offOverA_RhoVsJetPt_%d",iEta),function, 0,200,1,3000);
       //f4 = new TF2("f4",function, 5,200,10,3000);
-      else
+   else
       f4 = new TF2(Form("f_offOverA_RhoVsJetPt_%d",iEta),function, 0,70,1,3000);
       //f4 = new TF2("f4",function, 5,50,10,3000);
 
@@ -663,17 +663,17 @@ TF2 * doGraphFitting(TGraph2DErrors * graph, bool highPU, string functionType, i
       rchi2 = f4->GetChisquare()/ f4->GetNDF();
       counter++;
       if ((rchi2>9 || rchi2==0) && counter==nfits-2) {
-        //Reset initial parameters
-        cout << "\tResetting initial parameters" << endl;
-        for(unsigned int ipar=0; ipar<pari.size(); ipar++) {
-          f4->SetParameter(ipar,pari[ipar]);
+         //Reset initial parameters
+         cout << "\tResetting initial parameters" << endl;
+         for(unsigned int ipar=0; ipar<pari.size(); ipar++) {
+            f4->SetParameter(ipar,pari[ipar]);
         }
       }
-    } while ((rchi2>9 || rchi2==0.0) && counter < nfits);
-    cout <<"N. of fits: " << counter << endl;
-
-    cout << "\tFinal Parameters: (";
-    for(unsigned int ipar=0; ipar<pari.size(); ipar++) {
+   } while ((rchi2>9 || rchi2==0.0) && counter < nfits);
+   cout <<"N. of fits: " << counter << endl;
+    
+   cout << "\tFinal Parameters: (";
+   for(unsigned int ipar=0; ipar<pari.size(); ipar++) {
       cout << f4->GetParameter(ipar) << "\u00b1" << f4->GetParError(ipar);
       if(ipar!=pari.size()-1) cout << ", ";
       else cout << ")" << endl;
