@@ -115,10 +115,6 @@ void JetResponseAnalyzer::beginJob()
 }
 
 
-
-
-
-
 void getMult( vector<reco::CandidatePtr> const & particles, int* nMult, int* chMult ) {
 
   vector<reco::CandidatePtr>::const_iterator itParticle;
@@ -301,7 +297,7 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
        JRAEvt_->refdphijt->push_back(reco::deltaPhi(jet->phi(),ref->phi()));
      else
        JRAEvt_->refdrjt->push_back(reco::deltaR(jet->eta(),jet->phi(),ref->eta(),ref->phi()));
-
+ 
      if ((!doBalancing_&&JRAEvt_->refdrjt->at(JRAEvt_->nref)>deltaRMax_)||
          (doBalancing_&&std::abs(JRAEvt_->refdphijt->at(JRAEvt_->nref))<deltaPhiMin_)) {
         if(doBalancing_) JRAEvt_->refdphijt->pop_back();
@@ -309,11 +305,9 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
         continue;
      }
      JRAEvt_->refpdgid->push_back(0);
-
      if (getFlavorFromMap_) {
         JRAEvt_->refpdgid_algorithmicDef->push_back(0);
         JRAEvt_->refpdgid_physicsDef->push_back(0);
-
         reco::JetMatchedPartonsCollection::const_iterator itPartonMatch;
         itPartonMatch=refToPartonMap->begin();
         for (;itPartonMatch!=refToPartonMap->end();++itPartonMatch) {
@@ -322,7 +316,7 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
            const reco::Candidate* cand = &(*jetRef);
            if (cand==&(*ref)) break;
         }
-
+        
         if (itPartonMatch!=refToPartonMap->end()&&
             itPartonMatch->second.algoDefinitionParton().get()!=0&&
             itPartonMatch->second.physicsDefinitionParton().get()!=0) {
@@ -480,7 +474,7 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
            JRAEvt_->jtmuf ->push_back(pfJetRef->muonEnergyFraction()         *JRAEvt_->jtjec->at(JRAEvt_->nref));
            JRAEvt_->jthfhf->push_back(pfJetRef->HFHadronEnergyFraction()     *JRAEvt_->jtjec->at(JRAEvt_->nref));
            JRAEvt_->jthfef->push_back(pfJetRef->HFEMEnergyFraction()         *JRAEvt_->jtjec->at(JRAEvt_->nref));
-int chMult=0, nMult=0;
+	   int chMult=0, nMult=0;
            getMult( ref.castTo<reco::GenJetRef>()->getJetConstituents(), &nMult, &chMult );
            JRAEvt_->refnMult ->push_back( nMult );
            JRAEvt_->refchMult->push_back( chMult );
@@ -534,7 +528,7 @@ int chMult=0, nMult=0;
       }
   }
   tree_->Fill();
-
+  
   return;
   }
 
