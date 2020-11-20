@@ -87,8 +87,6 @@ ak10PFJets      = ak4PFJets.clone   ( rParam=1.0 )
 #!
 #! PF JETS CHS
 #!
-
-
 ak1PFCHSJets    = ak1PFJets.clone( src = 'pfCHS' )
 ak2PFCHSJets    = ak1PFCHSJets.clone( rParam=0.2 )
 ak3PFCHSJets    = ak1PFCHSJets.clone( rParam=0.3 )
