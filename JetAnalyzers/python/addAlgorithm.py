@@ -22,8 +22,6 @@ from RecoTauTag.TauTagTools.tauDecayModes_cfi          import *
 from CommonTools.PileupAlgos.Puppi_cff import *
 from JetMETAnalysis.JetAnalyzers.customizePuppiTune_cff import *
 
-
-
 genParticlesForJetsNoNu.src = cms.InputTag("packedGenParticles")
 
 stdClusteringAlgorithms = ['ak'] #Options: {ak,kt}
@@ -106,7 +104,6 @@ stdGenJetsDict['ak5tauHPSall'] = 'tauGenJetsSelectorAllHadrons'
 genJetsDict['ak5tauHPSall']    = ('tauGenJetsSelectorAllHadrons', tauGenJetsSelectorAllHadrons)
 stdRecJetsDict['ak5tauHPSall'] = 'hpsPFTauProducer'
 recJetsDict['ak5tauHPSall']    = ('hpsPFTauProducer',   hpsPFTauProducer)
-
 
 tauDiscriminatorDict = {
     "ak5tauHPSlooseCombDBcorr"  : "hpsPFTauDiscriminationByLooseCombinedIsolationDBSumPtCorr3Hits",
@@ -394,20 +391,7 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
             puppiCentral[0].applyLowPUCorr = cms.bool(False)
             puppiForward[0].applyLowPUCorr = cms.bool(False)
             puppi.vertexName = "offlineSlimmedPrimaryVertices"
-            
-            #UpdatePuppiTuneV14(process)
-
-
-            
-            #puppi.UseFromPVLooseTight = cms.bool(False)
-            #puppi.UseDeltaZCut = cms.bool(False)
-  	    #puppi.PtMaxCharged = cms.double(20.)
-  	    #puppi.EtaMaxCharged = cms.double(2.5)
-  	    #puppi.PtMaxNeutralsStartSlope = cms.double(20.)
-
             sequence = cms.Sequence(puppi * sequence)
-
-            #sequence = cms.Sequence(process.puppiMETSequence * process.fullPatMetSequencePuppi * process.patPuppiJetSpecificProducer * process.slimmedJetsPuppi * sequence)
         if type == 'Track':
             process.load('JetMETAnalysis.JetAnalyzers.TrackJetReconstruction_cff')
             sequence = cms.Sequence(trackJetSequence * sequence)
@@ -601,11 +585,8 @@ def addAlgorithm(process, alg_size_type_corr, Defaults, reco, doProducer):
 
     setattr(process,alg_size_type_corr,jra)
     sequence = cms.Sequence(sequence * jra)
-
-    
     sequence = cms.Sequence(sequence)
     setattr(process, alg_size_type_corr + 'Sequence', sequence)
     path = cms.Path( sequence )
-    setattr(process, alg_size_type_corr + 'Path', path)
-    
+    setattr(process, alg_size_type_corr + 'Path', path)  
     print alg_size_type_corr
