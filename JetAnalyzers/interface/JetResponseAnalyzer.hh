@@ -38,6 +38,7 @@
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "DataFormats/VertexReco/interface/VertexFwd.h"
 #include "DataFormats/TrackReco/interface/TrackFwd.h"
+#include "DataFormats/PatCandidates/interface/PackedGenParticle.h"
 
 #include "JetMETCorrections/Objects/interface/JetCorrector.h"
 
@@ -101,10 +102,9 @@ private:
   edm::EDGetTokenT<reco::VertexCollection> srcVtx_;
   edm::EDGetTokenT<GenEventInfoProduct> srcGenInfo_;
   edm::EDGetTokenT<vector<PileupSummaryInfo> > srcPileupInfo_;
-  //edm::EDGetTokenT<vector<reco::PFCandidate> > srcPFCandidates_;
   edm::EDGetTokenT<PFCandidateView> srcPFCandidates_;
   edm::EDGetTokenT<std::vector<edm::FwdPtr<reco::PFCandidate> > > srcPFCandidatesAsFwdPtr_;
-  edm::EDGetTokenT<vector<reco::GenParticle> > srcGenParticles_;
+  edm::EDGetTokenT<vector<pat::PackedGenParticle> > srcGenParticles_;
 
   std::string   jecLabel_;
   
