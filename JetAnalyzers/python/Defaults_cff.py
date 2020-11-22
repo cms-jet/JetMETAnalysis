@@ -30,9 +30,9 @@ JetResponseParameters = cms.PSet(
     doJetPt         = cms.bool(True),
     saveCandidates  = cms.bool(False),
     # MATCHING MODE: deltaR(ref,jet)
-    deltaRMax       = cms.double(0.4),
+    deltaRMax       = cms.double(0.25),
     # deltaR(ref,parton) IF doFlavor is True
-    deltaRPartonMax = cms.double(0.4),
+    deltaRPartonMax = cms.double(0.25),
     # consider all matched references
     nRefMax         = cms.uint32(0),
     # is the sample an HLT sample
@@ -76,7 +76,7 @@ jet_response_parameters = cms.PSet(
     dobalance         = cms.bool(False),
     doflavor          = cms.bool(False),
     noabsflavors      = cms.bool(False),
-    drmax             = cms.double(0.4),
+    drmax             = cms.double(0.3),
     dphimin           = cms.double(2.7),
     dojetpt           = cms.bool(False),
     dorefpt           = cms.bool(True),
