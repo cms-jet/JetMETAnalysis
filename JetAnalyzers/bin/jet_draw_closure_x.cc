@@ -34,18 +34,18 @@ int main(int argc,char**argv)
 
    	gSystem->Load("libFWCoreFWLite.so");
 
-    //
+        //
    	// evaluate command-line / configuration file options
    	// 
    	CommandLine cl;
    	if (!cl.parse(argc,argv)) return 0;
-  
-   	bool doPt       		= cl.getValue<bool> ("doPt", 	   		   false);
-   	bool doEta      		= cl.getValue<bool> ("doEta",	   		   false);
-   	bool doRatioPt  		= cl.getValue<bool> ("doRatioPt",  		   false);
-   	bool doRatioEta 		= cl.getValue<bool> ("doRatioEta", 		   false);
+
+   	bool doPt       	= cl.getValue<bool> ("doPt", 	  	   false);
+   	bool doEta      	= cl.getValue<bool> ("doEta",	  	   false);
+   	bool doRatioPt  	= cl.getValue<bool> ("doRatioPt", 	   false);
+   	bool doRatioEta 	= cl.getValue<bool> ("doRatioEta",	   false);
    	bool doFlavorDifference = cl.getValue<bool> ("doFlavorDifference", false);
-    bool ptcl               = cl.getValue<bool> ("ptcl",               false);
+        bool ptcl               = cl.getValue<bool> ("ptcl",               false);
 
    	if (!cl.partialCheck()) return 0;
    	cl.print();
