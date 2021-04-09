@@ -1041,7 +1041,7 @@ void SynchPlots(TString inputDir="./",TString calgo1="ak5pf",TString calgo2="ak5
    c->Draw();
    c = getGausMeanOffsetWithSum("MeanOffRefPFWithSum_BB","<p_{T}^{PU}-p_{T}^{noPU}>",algo,hResRho,dynamic_cast<TH2D*>(histograms["p_offResVsrefpt_bb_all"]),fixedRange,npvRhoNpuBins,make_pair(minNpvRhoNpu,maxNpvRhoNpu));
    c->Draw();
-   TString unassociatedCHF = inputDir+"/output_ak5pf.root";
+   TString unassociatedCHF = filename;
    if(!unassociatedCHF.IsNull()) {
       pOffPF.back()->SetNameTitle("prof_offResVsrefpt_bb_unassociatedchf","prof_offResVsrefpt_bb_unassociatedchf");
       TDirectory* cdir = gDirectory;
