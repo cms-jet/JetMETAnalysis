@@ -24,6 +24,7 @@ L2Creator::L2Creator() {
     histogramMetric = HistUtil::getHistogramMetricType(histMet);
     delphes = false;
     maxFitIter = 30;
+    useOfflinePFFunctions = false;
 }
 
 //______________________________________________________________________________
@@ -45,6 +46,7 @@ L2Creator::L2Creator(CommandLine& cl) {
     maxFitIter = cl.getValue<int>     ("maxFitIter",        30);
     histMet    = cl.getValue<string>  ("histMet",       "mu_h");
     histogramMetric = HistUtil::getHistogramMetricType(histMet);
+    useOfflinePFFunctions = cl.getValue<bool>("useOfflinePFFunctions", false);
 
     if (!cl.partialCheck()) return;
     cl.print();
@@ -177,7 +179,6 @@ void L2Creator::loopOverAlgorithms(string makeCanvasVariable) {
             //
             doRelCorFits();
         }
-
         //
         // Write the L2 correction text file for the current algorithm
         // Don't need splines for the separated L2/L3 file because no splines are implemented for thos fits
@@ -186,20 +187,17 @@ void L2Creator::loopOverAlgorithms(string makeCanvasVariable) {
             writeTextFileForCurrentAlgorithm_spline();
         else
             writeTextFileForCurrentAlgorithm();
-
         //
         // Check that the FormulaEvaluator returns the same value as the TF1 used to create the fit
         // This is necessary because several times in the past the FormulaEvaluator has returned strange values
         //
         assert(checkFormulaEvaluator());
-
         //
         // Draw several canvases of the graphs and associated fits
         //
         if(!makeCanvasVariable.empty()) {
             makeCanvas(makeCanvasVariable);
         }
-
         cout<<alg<<" is DONE."<<endl;
     }
 }
@@ -231,8 +229,8 @@ void L2Creator::loopOverEtaBins() {
         //
         // only add points to the graphs if the current histo is not empty
         // the current setting might be a little high
-        //
-        if (hrsp->GetEntries() > 4) {//hrsp->Integral()!=0) {
+        // 
+        if (hrsp->GetEntries() > 4) {//hrsp->Integral()!=0) {//EDW 4
 
             //TF1*  frsp    = (TF1*)hrsp->GetListOfFunctions()->Last();
             //std::cout << "hrspName = " << hrsp->GetName() << ": frsp = " << frsp << std::endl;
@@ -330,7 +328,7 @@ void L2Creator::loopOverEtaBins() {
                 fabscor->SetParameter(2,0.0);
             }
             else {
-                if (alg.find("pf")!=string::npos || alg.find("puppi")!=string::npos) {
+                if (useOfflinePFFunctions or alg.find("pf")!=string::npos or alg.find("puppi")!=string::npos) {
                     //
                     // Delphes
                     //
@@ -340,18 +338,6 @@ void L2Creator::loopOverEtaBins() {
                         fabscor=new TF1("fit",fcn.Data(),xmin,xmax);
                     }
 
-                    //
-                    // online (HLT)
-                    //
-                    if(alg.find("HLT")!=string::npos){
-                        fabscor=new TF1("fit","(x>=[6])*([0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5])))+(x<[6])*[7]",xmin,xmax);
-                        fabscor->FixParameter(6,xmin);
-                        fabscor->FixParameter(7,0.0);
-                    }
-                    //
-                    // offline
-                    //
-                    else {
                         TString fcn = getOfflinePFFunction();
 
                         if(l2pffit.Contains("ErrorFunction",TString::kIgnoreCase))
@@ -379,7 +365,6 @@ void L2Creator::loopOverEtaBins() {
                         if(l2pffit.Contains("spline",TString::kIgnoreCase)) {
                             vabscor_eta_spline.back()->setPartialFunction(fabscor);
                         }
-                    }
                 }
                 else if (alg.find("trk")!=string::npos) {
                     fabscor=new TF1("fit","[0]+[1]*pow(x/500.0,[2])+[3]/log10(x)+[4]*log10(x)",xmin,xmax);
@@ -530,12 +515,10 @@ void L2Creator::loopOverEtaBins() {
             perform_smart_fit(gabscor,fabscor,maxFitIter);
             gErrorIgnoreLevel = origIgnoreLevel;
 
-            if (alg.find("pf")!=string::npos) {
-                if (alg.find("HLT")!=string::npos) {
-                    ((TF1*)gabscor->GetListOfFunctions()->First())->FixParameter(7,fabscor->Eval(fabscor->GetParameter(6)));
-                    fabscor->FixParameter(7,fabscor->Eval(fabscor->GetParameter(6)));
-                }
-            }
+            //EDW print chi2 and prob for each fit in every eta bin
+            std::cout<<"Eta bin : "<<vabscor_eta.back()->GetName()<<"\n";
+            std::cout<<"Chi2/NDF = "<<fabscor->GetChisquare()<<"/"<<fabscor->GetNDF()<<" = "<<fabscor->GetChisquare()/fabscor->GetNDF()<<"\n";
+            std::cout<<"Prob = "<<fabscor->GetProb()<<"\n\n\n";
 
             //
             // format the graphs
@@ -687,16 +670,11 @@ bool L2Creator::checkFormulaEvaluator() {
 
     return true;
 
-
-
     /*
 
-TF1* f = new TF1("f","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",3.70269,3499.16)
-f->SetParameters( 0.7111,9.24906,16.3009,-0.127602,0.96894,1.57828)
-f->Eval(10.0)
-
-
-
+TF1* f = new TF1("f","[0]+[1]/(pow(log10(x),2)+[2])+[3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5]))",3.70269,3499.16);
+f->SetParameters( 0.7111,9.24906,16.3009,-0.127602,0.96894,1.57828);
+f->Eval(10.0);
 
     */
 }
@@ -870,7 +848,7 @@ void L2Creator::setAndFitFLogAndFGaus(TGraphErrors* gabscor, TF1* flog, TF1* fga
 
 //______________________________________________________________________________
 TString L2Creator::getOfflinePFFunction() {
-    if(l2pffit.EqualTo("standard",TString::kIgnoreCase) || (l2pffit.Contains("standard",TString::kIgnoreCase)&&l2pffit.Contains("spline",TString::kIgnoreCase)) ) {
+    if(l2pffit.EqualTo("standard",TString::kIgnoreCase) || (l2pffit.Contains("standard",TString::kIgnoreCase) && l2pffit.Contains("spline",TString::kIgnoreCase)) ) {
         return "[0]+([1]/(pow(log10(x),2)+[2]))+([3]*exp(-[4]*(log10(x)-[5])*(log10(x)-[5])))";
     }
     else if(l2pffit.EqualTo("standard+Gaussian",TString::kIgnoreCase)) {
