@@ -79,7 +79,7 @@ protected :
    Float_t * GetB() {return &fBinEntries.fArray[0];}
    Float_t * GetB2() {return (fBinSumw2.fN ? &fBinSumw2.fArray[0] : 0 ); }
 
-   ClassDef(TProfileMDF,1)  //class definition
+   ClassDef(TProfileMDF,2)  //class definition
 
 };
 
