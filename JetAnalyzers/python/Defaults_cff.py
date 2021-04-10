@@ -36,7 +36,9 @@ JetResponseParameters = cms.PSet(
     # consider all matched references
     nRefMax         = cms.uint32(0),
     # is the sample an HLT sample
-    doHLT           = cms.bool(False)
+    doHLT           = cms.bool(False),
+    # apply PV-quality cuts (to compute NPV)
+    applyVtxCuts = cms.bool(True),
 )
 
 #!
