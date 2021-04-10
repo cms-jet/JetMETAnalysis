@@ -317,12 +317,10 @@ int main(int argc,char**argv)
     //
     float weight(1.0);
     float flavorWeight(1.0);
-    // SPS why is 85 hardcoded here? shouldn't this 
-    //     change according to the bitset explained in JRAEvent.h ?
-    //
-    JRAEvent* JRAEvt = new JRAEvent(tree, 85);
-    tree->SetBranchStatus("*",0);
-    vector<string> branch_names = {"nref","weight","rho","rho_hlt","refpdgid","refpt",
+
+    JRAEvent* JRAEvt = new JRAEvent(tree, 1+doflavor*4+dobalance*8);
+    tree->SetBranchStatus("*", 0);
+    vector<string> branch_names = {"nref","weight","rho","refpdgid","refpt",
                                    "refeta","refphi","jtpt","jteta","jtphi","jtarea",
                                    "jty","refdxjt","bxns","npus","tnpus",
                                    "pthat","pudensity","gpudensity"};
@@ -1581,16 +1579,13 @@ int main(int argc,char**argv)
                 JetCorrector->setJetA(TMath::Pi()*TMath::Power(0.4, 2));
               }
 
-              if (jetInfo.isHLT())
-                JetCorrector->setRho(JRAEvt->rho_hlt);
-              else
-                JetCorrector->setRho(JRAEvt->rho);
+              JetCorrector->setRho(JRAEvt->rho);
             }
 
             if(!L1FastJet) JetCorrector->setNPV(JRAEvt->npv);
           }
 
-          float const scale = (JetCorrector) ? JetCorrector->getCorrection() : 1.0;
+          float const scale = JetCorrector ? JetCorrector->getCorrection() : 1.0;
           pt *= scale;
 
           float absrsp = pt-refpt;
