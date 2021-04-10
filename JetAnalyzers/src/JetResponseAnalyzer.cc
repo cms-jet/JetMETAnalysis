@@ -24,8 +24,9 @@ JetResponseAnalyzer::JetResponseAnalyzer(const edm::ParameterSet& iConfig)
   , srcRho_                 (consumes<double>(iConfig.getParameter<edm::InputTag>                             ("srcRho")))
   , srcRhoHLT_              (consumes<double>(iConfig.getParameter<edm::InputTag>                          ("srcRhoHLT")))
   , srcVtx_                 (consumes<reco::VertexCollection>(iConfig.getParameter<edm::InputTag>             ("srcVtx")))
+  , applyVtxCuts_           (iConfig.getParameter<bool>("applyVtxCuts"))
   , srcGenInfo_             (consumes<GenEventInfoProduct>(edm::InputTag("generator"))                                   )
-  , srcPileupInfo_          (consumes<vector<PileupSummaryInfo> >(edm::InputTag("addPileupInfo"))                        )
+  , srcPileupInfo_          (consumes<vector<PileupSummaryInfo> >(edm::InputTag("addPileupInfo")))
   //, srcPFCandidates_      (consumes<vector<reco::PFCandidate> >(iConfig.getParameter<edm::InputTag>("srcPFCandidates")))
   , srcPFCandidates_        (consumes<PFCandidateView>(iConfig.getParameter<edm::InputTag>("srcPFCandidates")))
   , srcPFCandidatesAsFwdPtr_(consumes<std::vector<edm::FwdPtr<reco::PFCandidate> > >(iConfig.getParameter<edm::InputTag>("srcPFCandidates")))
@@ -54,22 +55,22 @@ JetResponseAnalyzer::JetResponseAnalyzer(const edm::ParameterSet& iConfig)
     deltaPhiMin_=iConfig.getParameter<double>("deltaPhiMin");
   }
   else
-    throw cms::Exception("MissingParameter")<<"Set *either* deltaRMax (matching)"
-					    <<" *or* deltaPhiMin (balancing)";
-  
+    throw cms::Exception("MissingParameter")<<"Set *either* deltaRMax (matching) *or* deltaPhiMin (balancing)";
+
   if (doFlavor_&&iConfig.exists("srcRefToPartonMap")) {
      srcRefToPartonMap_=consumes<reco::JetMatchedPartonsCollection>(iConfig.getParameter<edm::InputTag>("srcRefToPartonMap"));
     deltaRPartonMax_  =iConfig.getParameter<double>       ("deltaRPartonMax");
     getFlavorFromMap_=true;
   }
-  
+
   isCaloJet_  = (moduleLabel_.find("calo")!=string::npos);
+  isPFClusterJet_ = (moduleLabel_.find("pfcluster") != string::npos);
   isJPTJet_   = (moduleLabel_.find("jpt") !=string::npos);
-  isPFJet_    = (moduleLabel_.find("pf")  !=string::npos || moduleLabel_.find("puppi")  !=string::npos);
+  isPFJet_    = (moduleLabel_.find("pf")  !=string::npos || moduleLabel_.find("puppi")  !=string::npos) and (moduleLabel_.find("pfcluster") == string::npos);
   isTrackJet_ = (moduleLabel_.find("trk") !=string::npos);
   isTauJet_   = (moduleLabel_.find("tau") !=string::npos);
 
-  int check = isCaloJet_+isJPTJet_+isPFJet_+isTrackJet_+isTauJet_;
+  int check = isCaloJet_+isPFClusterJet_+isJPTJet_+isPFJet_+isTrackJet_+isTauJet_;
   assert(check<2);
 
   //if (isCaloJet_)  cout<<"These are CaloJets  ("<<moduleLabel_<<")"<<endl;
@@ -101,9 +102,8 @@ void JetResponseAnalyzer::beginJob()
 //void JetResponseAnalyzer::setupTree()
 {
   edm::Service<TFileService> fs;
-  if (!fs) throw edm::Exception(edm::errors::Configuration,
-				"TFileService missing from configuration!");
-  
+  if (!fs) throw edm::Exception(edm::errors::Configuration, "TFileService missing from configuration!");
+
   // Configuration flags: Mapping in JRAEvent.h
   int flag_int = (saveCandidates_*pow(2,7)) + (isPFJet_*pow(2,6)) +
                  (isCaloJet_*pow(2,5)) + (doComposition_*pow(2,4)) +
@@ -173,7 +173,7 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
   if (iEvent.getByToken(srcVtx_,vtx)) {
      const reco::VertexCollection::const_iterator vtxEnd = vtx->end();
      for (reco::VertexCollection::const_iterator vtxIter = vtx->begin(); vtxEnd != vtxIter; ++vtxIter) {
-        if (!vtxIter->isFake() && vtxIter->ndof()>=4 && fabs(vtxIter->z())<=24) {
+        if (!applyVtxCuts_ or (!vtxIter->isFake() && vtxIter->ndof()>=4 && fabs(vtxIter->z())<=24)) {
            ++(JRAEvt_->npv);
            JRAEvt_->refdzvtx->push_back(0);//fabs(vtxIter->z()-);
         }
@@ -245,6 +245,7 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
   if (doBalancing_&&refToJetMap->size()!=1) return;
   JRAEvt_->nref = 0;
   size_t nRef=(nRefMax_==0) ? refs->size() : std::min(nRefMax_,refs->size());
+
   for (size_t iRef=0;iRef<nRef;iRef++) {
      
      reco::CandidateBaseRef ref=refs->refAt(iRef);
@@ -264,10 +265,13 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
         else JRAEvt_->refdrjt->pop_back();
         continue;
      }
-     
-     JRAEvt_->refpdgid->push_back(0);
-     JRAEvt_->refpdgid_algorithmicDef->push_back(0);
-     JRAEvt_->refpdgid_physicsDef->push_back(0);
+
+     if (doFlavor_) {
+       JRAEvt_->refpdgid->push_back(0);
+       JRAEvt_->refpdgid_algorithmicDef->push_back(0);
+       JRAEvt_->refpdgid_physicsDef->push_back(0);
+     }
+
      if (getFlavorFromMap_) {
         reco::JetMatchedPartonsCollection::const_iterator itPartonMatch;
         itPartonMatch=refToPartonMap->begin();
@@ -301,6 +305,7 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
                  }
               }
            }
+
            if (refdrparton_physics<deltaRPartonMax_) {
               JRAEvt_->refpdgid_physicsDef->at(JRAEvt_->nref)=itPartonMatch->second.physicsDefinitionParton().get()->pdgId();
               int absid = std::abs(JRAEvt_->refpdgid_physicsDef->at(JRAEvt_->nref));
@@ -314,12 +319,11 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
               }
            }
         }
+     }  
+
+     if (doFlavor_) {
+        JRAEvt_->refpdgid->at(JRAEvt_->nref)=ref->pdgId();
      }
-     else {
-        JRAEvt_->refpdgid_algorithmicDef->at(JRAEvt_->nref)=0;
-        JRAEvt_->refpdgid_physicsDef->at(JRAEvt_->nref)=0;
-     }
-     JRAEvt_->refpdgid->at(JRAEvt_->nref)=ref->pdgId();
 
      // Beta/Beta Star Calculation
      JRAEvt_->beta = 0.0;
@@ -388,6 +392,9 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
         reco::CaloJet const * rawcalojet = dynamic_cast<reco::CaloJet const *>( &* jptjetRef);
         JRAEvt_->jtarea->at(JRAEvt_->nref) = rawcalojet->jetArea();
      }
+     else if (isPFClusterJet_) {
+        JRAEvt_->jtarea->at(JRAEvt_->nref) = jet.castTo<reco::PFClusterJetRef>()->jetArea();
+     }
      else if (isPFJet_) {
         JRAEvt_->jtarea->at(JRAEvt_->nref) = jet.castTo<reco::PFJetRef>()->jetArea();
      }
@@ -420,7 +427,7 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
            }
         }
      }
-     
+
      if (doComposition_) {
         
         if (isCaloJet_) {
@@ -439,6 +446,21 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
            JRAEvt_->jtmuf ->push_back(pfJetRef->muonEnergyFraction()         *JRAEvt_->jtjec->at(JRAEvt_->nref));
            JRAEvt_->jthfhf->push_back(pfJetRef->HFHadronEnergyFraction()     *JRAEvt_->jtjec->at(JRAEvt_->nref));
            JRAEvt_->jthfef->push_back(pfJetRef->HFEMEnergyFraction()         *JRAEvt_->jtjec->at(JRAEvt_->nref));
+           // SPS do we need these: jtnMult, jtchMult, refnMult, refchMult? 
+           //     these branches aren't declared in JetUtilites/src/JRAEvent.cc !
+           //     and cause the program to crash... 
+           //
+           //int chMult=0, nMult=0;
+           //getMult( ref.castTo<reco::GenJetRef>()->getJetConstituents(), &nMult, &chMult );
+           //JRAEvt_->refnMult ->push_back( nMult );
+           //JRAEvt_->refchMult->push_back( chMult );
+
+           ////this method exists for pfjets (neutralMultiplicity()), but not for genjets
+           ////original i thought since genjet didn't have it i should make this method
+           //chMult=0; nMult=0;
+           //getMult( jet.castTo<reco::PFJetRef>()->getJetConstituents(), &nMult, &chMult );
+           //JRAEvt_->jtnMult ->push_back( nMult );
+           //JRAEvt_->jtchMult->push_back( chMult );
         } 
      }
      
@@ -466,6 +488,7 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
           }
       }
       else {
+
           bool isPF = iEvent.getByToken(srcPFCandidatesAsFwdPtr_, pfCandidatesAsFwdPtr);
           if ( isPF ) {
               for (auto i_pf=pfCandidatesAsFwdPtr->begin(); i_pf != pfCandidatesAsFwdPtr->end(); ++i_pf) {
@@ -488,7 +511,7 @@ void JetResponseAnalyzer::analyze(const edm::Event& iEvent,
   tree_->Fill();
   
   return;
-  }
+}
 
 //______________________________________________________________________________
 JRAEvent::Flavor JetResponseAnalyzer::getFlavor(reco::PFCandidate::ParticleType id) {

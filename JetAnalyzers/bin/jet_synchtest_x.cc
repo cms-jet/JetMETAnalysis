@@ -37,6 +37,9 @@ using namespace std;
 
 typedef map<double, pair<Int_t, Int_t> > ITJ;
 
+bool ignoreNPV = false;
+bool overwriteNPVwithNPUInTime = false;
+
 ////////////////////////////////////////////////////////////////////////////////
 // declare class
 ////////////////////////////////////////////////////////////////////////////////
@@ -213,8 +216,8 @@ void MatchEventsAndJets::SetupLumiWeights(string dataFile, string mcFile, string
       cout << endl;
    }
    else {
-      cout << "WARNING::MatchEventsAndJets::SetupLumiWeights LumiWeights not set." << std::endl
-           << "\tOne or both of the input files was not set." << endl << endl;
+     cout << endl << "WARNING::MatchEventsAndJets::SetupLumiWeights LumiWeights not set." << std::endl
+          << "\tOne or both of the input files was not set." << endl;
    }
 }
 
@@ -233,7 +236,7 @@ void MatchEventsAndJets::getMaxDeltaR() {
         << setw(13) << algo2JetInfo.alias << endl;
    cout << std::setfill ('-') << setw(34) << " " << std::setfill (' ') << endl;
    cout << setw(18) << "0.5 * minConeSize:" << setw(4) << minConeSize << endl;
-   cout << setw(18) << "maxDeltaR:" << setw(4) << maxDeltaR << endl << endl;
+   cout << setw(18) << "maxDeltaR:" << setw(4) << maxDeltaR << endl;
 }
 
 //______________________________________________________________________________
@@ -277,6 +280,7 @@ ITS MatchEventsAndJets::fillMap(bool noPU, string treeName, string outputPath) {
    t->fChain->SetBranchStatus("refpt",1);
    Int_t lumi = 0;
 
+   cout << endl;
    cout << "Filling map with event signatures from: "<<endl;
    cout << "\tfile: "<<f->GetName()<< endl;
    cout << "\talgo: "<<algo<< endl;
@@ -408,11 +412,11 @@ void MatchEventsAndJets::ReadMatchedEventsMaps(string pathToMaps) {
 
 //______________________________________________________________________________
 void MatchEventsAndJets::GetNtuples(string treeName) {
-   int algo1_bit_number = (algo1JetInfo.jetType.Contains("calo",TString::kIgnoreCase)) ? 53 : 85;
-   int algo2_bit_number = (algo2JetInfo.jetType.Contains("calo",TString::kIgnoreCase)) ? 53 : 85;
+   int algo1_bit_number = 1;//!! (algo1JetInfo.jetType.Contains("calo",TString::kIgnoreCase)) ? 53 : 85;
+   int algo2_bit_number = 1;//!! (algo2JetInfo.jetType.Contains("calo",TString::kIgnoreCase)) ? 53 : 85;
 
    fpu->cd(algo1.c_str());
-   tpu   = new JRAEvent((TTree*) fpu->Get((algo1+"/"+treeName).c_str()),algo1_bit_number);
+   tpu = new JRAEvent((TTree*) fpu->Get((algo1+"/"+treeName).c_str()),algo1_bit_number);
 
    fnopu->cd(algo2.c_str());
    tnopu = new JRAEvent((TTree*) fnopu->Get((algo2+"/"+treeName).c_str()),algo2_bit_number);
@@ -800,12 +804,15 @@ void MatchEventsAndJets::LoopOverEvents(bool verbose, bool reduceHistograms, str
    cout << endl << "Looping over the mapped events:" << endl << "\tprogress:" << endl;
    ull nentries = mapTreePU.size();
    int jetMapIndex = -1;
+
    for (IT::const_iterator it = mapTreePU.begin(); it != mapTreePU.end(); ++it) {
 
-      if (iftest && nevs >= maxEvts) return;
-
-      //if (nevs%10000==0) cout << "\t"<<nevs << endl;
-      loadbar2(nevs+1,nentries,50,"\t\t");
+      if(iftest and maxEvts >= 0){
+        if (nevs >= maxEvts) return;
+        loadbar2(nevs+1, maxEvts, 50, "\t\t");
+      }
+      else
+        loadbar2(nevs+1, nentries, 50, "\t\t");
 
       // if this entry does not exist on the second ntuple just skip this event
       if (mapTreeNoPU.find(it->first) == mapTreeNoPU.end()) {
@@ -823,8 +830,26 @@ void MatchEventsAndJets::LoopOverEvents(bool verbose, bool reduceHistograms, str
       tpu->GetEntry(mapTreePU[it->first].second);
       tnopu->GetEntry(mapTreeNoPU[it->first].second);
 
+      // overwrite npv with npus
+      if(overwriteNPVwithNPUInTime){
+
+        for(size_t idx=0; idx<tpu->bxns->size(); ++idx){
+          if(tpu->bxns->at(idx) == 0){
+            tpu->npv = tpu->npus->at(idx);
+            break;
+          }
+        }
+
+        for(size_t idx=0; idx<tnopu->bxns->size(); ++idx){
+          if(tnopu->bxns->at(idx) == 0){
+            tnopu->npv = tnopu->npus->at(idx);
+            break;
+          }
+        }
+      }
+
       //Skip events without any primary vertex as these make no sense
-      if (tpu->npv == 0 || tnopu->npv == 0) continue;
+      if (!ignoreNPV and (tpu->npv == 0 or tnopu->npv == 0)) continue;
 
       // Set the in-time pileup index after the first event only
       if(nevs==0) iIT = tpu->itIndex();
@@ -841,8 +866,7 @@ void MatchEventsAndJets::LoopOverEvents(bool verbose, bool reduceHistograms, str
       }  
 
       if(FillHistograms(reduceHistograms)) nevs++;
-
-   }//for
+   }
 }
 
 //______________________________________________________________________________
@@ -1022,7 +1046,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
    }
 
    //Skip events where the noPU sample has more than one vertex
-   if (tnopu->npv!=1) {
+   if (!ignoreNPV and tnopu->npv!=1) {
       noPUNpvGTOneEventCounter++;
       if(noPUNpvGTOneEventCounter==0) {
          cout << "\tWARNING::The NoPU sample has more than 1 PV." << endl
@@ -1120,6 +1144,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
             histograms["m_frac_nj_pt_f_match_pu"]   ->Fill(tpu->jtpt->at(j1),ismatch);
             histograms["m_frac_nj_pt_f_match_RG_pu"]->Fill(tpu->jtpt->at(j1),ismatchRG);
          }
+
          if (!ismatch) {
             hname = Form("m_njet_pt_npv%i_%i_unmatch",inpv*npvRhoNpuBinWidth,inpv*npvRhoNpuBinWidth+npvRhoNpuBinWidth-1);
             histograms[hname]->Fill(tpu->jtpt->at(j1),+1);
@@ -1214,9 +1239,14 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
       idet = JetInfo::getDetIndex(tpu->jteta->at(jpu));
       detectorAbbreviation = JetInfo::get_detector_abbreviation(detector_names[idet]);
       detectorAbbreviation.ToLower();
-      vector<int> pdgid_indecies = JetInfo::getPDGIDIndecies(tpu->refpdgid->at(jpu));
 
-      diff_pdgid    = tpu->refpdgid->at(jpu) - tnopu->refpdgid->at(jnopu);
+      vector<int> pdgid_indecies;
+      if(tpu->refpdgid){
+        pdgid_indecies = JetInfo::getPDGIDIndecies(tpu->refpdgid->at(jpu));
+        if(tnopu->refpdgid)
+          diff_pdgid = tpu->refpdgid->at(jpu) - tnopu->refpdgid->at(jnopu);
+      }
+
       offset        = tpu->jtpt->at(jpu) - tnopu->jtpt->at(jnopu);
       offset_raw    = (tpu_jtpt_raw.size()>0) ? tpu_jtpt_raw[jpu] - tnopu->jtpt->at(jnopu) : -1.0;
       offsetOA      = offset / tpu->jtarea->at(jpu);
@@ -1387,6 +1417,7 @@ bool MatchEventsAndJets::FillHistograms(bool reduceHistograms) {
          if(tpu->refpt->at(jpu)>10.0) {
             dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->npus->at(iIT),resp,weight);
          }
+
          for (unsigned int ipdgid=0; ipdgid<pdgid_indecies.size(); ipdgid++) {
             hname = Form("p_offresVsrefpt_%s_pdgid_%s",detectorAbbreviation.Data(),pdgidstr[ipdgid].Data());
             dynamic_cast<TH2D*>(histograms[hname])->Fill(tpu->refpt->at(jpu),offset,weight);
@@ -1474,7 +1505,7 @@ int main(int argc,char**argv)
    if (!cl.parse(argc,argv)) return 0;
    string       samplePU          = cl.getValue<string>  ("samplePU");
    string       sampleNoPU        = cl.getValue<string>  ("sampleNoPU");
-   string       basepath          = cl.getValue<string>  ("basepath", "/fdata/hepx/store/user/aperloff/");
+   string       basepath          = cl.getValue<string>  ("basepath", "");
    string       algo1             = cl.getValue<string>  ("algo1",                               "ak5pf");
    string       algo2             = cl.getValue<string>  ("algo2",                               "ak5pf");
    bool         iftest            = cl.getValue<bool>    ("iftest",                                false);
@@ -1499,6 +1530,10 @@ int main(int argc,char**argv)
    vector<int>  vptBins           = cl.getVector<int>    ("vptBins",       "14:::18:::20:::24:::28:::30");
    bool         reduceHistograms  = cl.getValue<bool>    ("reduceHistograms",                       true);
    bool         verbose           = cl.getValue<bool>    ("verbose",                               false);
+
+   ignoreNPV = cl.getValue<bool>("ignoreNPV", false);
+   overwriteNPVwithNPUInTime = cl.getValue<bool>("overwriteNPVwithNPUInTime", false);
+
    bool         help              = cl.getValue<bool>    ("help",                                  false);
 
    if (help) {cl.print(); return 0;}
@@ -1524,7 +1559,7 @@ int main(int argc,char**argv)
 
    if(outputPath.empty()) outputPath = string(gSystem->pwd())+"/";
    if(outputPath.back() != '/') outputPath+='/';
-   if(basepath.back() != '/') basepath+='/';
+   if(!basepath.empty() and basepath.back() != '/') basepath+='/';
 
    MatchEventsAndJets* mej = new MatchEventsAndJets(algo1,algo2,iftest);
    mej->SetDoNotSaveFlag(doNotSave);
@@ -1534,18 +1569,17 @@ int main(int argc,char**argv)
    mej->SetupLumiWeights((DataPUReWeighting.empty())? "" : basepath+DataPUReWeighting,
                          (MCPUReWeighting.empty()) ? "" : basepath+MCPUReWeighting,
                          DataPUHistoName,MCPUHistoName);
+
    mej->OpenInputFiles(basepath+samplePU,basepath+sampleNoPU);
    mej->GetNtuples(treeName);
-   if(readEvtMaps.empty())
-      mej->MakeMatchedEventsMaps(treeName,outputPath);
-   else
-      mej->ReadMatchedEventsMaps(readEvtMaps);
+
+   if(readEvtMaps.empty()) mej->MakeMatchedEventsMaps(treeName,outputPath);
+   else mej->ReadMatchedEventsMaps(readEvtMaps);
+
    mej->OpenOutputFile(outputPath);
-   if (ApplyJEC) {
-      cout << "jet_synchtest_x::Setting the JEC parameter file to " << JECpar << " ... ";
-      mej->SetJEC(JECpar);
-      cout << "DONE" << endl;
-   }
+
+   if (ApplyJEC) mej->SetJEC(JECpar);
+
    mej->SetNpvRhoNpuValues(NBinsNpvRhoNpu,npvRhoNpuBinWidth);
    mej->SetVptBins(vptBins);
    mej->DeclareHistograms(reduceHistograms);

@@ -385,24 +385,22 @@ int main(int argc,char**argv)
 
       cout << "Setting up the FactorizedJetCorrector ... " << flush;
       FactorizedJetCorrector *JetCorrector;
-      if(levels.size()>0 && useTags) {
-         JetCorrector = new FactorizedJetCorrector(JetInfo::get_correction_levels(levels,L1FastJet),
-                                                   JetInfo::get_correction_tags(era,algs[a],levels,path,L1FastJet));
+      if(levels.size() > 0 and useTags) {
+        JetCorrector = new FactorizedJetCorrector(JetInfo::get_correction_levels(levels, L1FastJet), JetInfo::get_correction_tags(era, algs[a], levels, path, L1FastJet));
       }
-      else if(levels.size()>0) {
-         //
-         // Make sure the levels are in the correct order (lowest level to highest)
-         //
-         sort (levels.begin(),levels.end());
-         vector<JetCorrectorParameters> vPar;
-         for(unsigned int ilevel=0; ilevel<levels.size(); ilevel++) {
-            vPar.push_back(JetCorrectorParameters(string(path + era + JetInfo::get_level_tag(levels[ilevel],L1FastJet) + 
-                                                         jetInfo.getAlias() + getPostfix(postfix,algs[a],levels[ilevel]) + ".txt")));
-         }
-         JetCorrector = new FactorizedJetCorrector(vPar);
+      else if(levels.size() > 0) {
+        //
+        // Make sure the levels are in the correct order (lowest level to highest)
+        //
+        sort(levels.begin(), levels.end());
+        vector<JetCorrectorParameters> vPar;
+        for(unsigned int ilevel=0; ilevel<levels.size(); ilevel++) {
+          vPar.push_back(JetCorrectorParameters(string(path+era+JetInfo::get_level_tag(levels[ilevel], L1FastJet)+jetInfo.getAlias()+getPostfix(postfix, algs[a], levels[ilevel]) + ".txt")));
+        }
+        JetCorrector = new FactorizedJetCorrector(vPar);
       }
       else {
-         JetCorrector = nullptr;
+        JetCorrector = nullptr;
       }
       cout << "DONE" << endl;
 
@@ -484,7 +482,7 @@ int main(int argc,char**argv)
          RespVsPileup->Sumw2();
          coord.assign(RespVsPileup->GetNaxis(),0);
 
-         RespVsRho = new TProfile3D("RespVsRhoVsEtaVsPt","RespVsRhoVsEtaVsPt",NPtBins,vpt,NETA_HLT,veta_HLT,NRhoBins,vrho);
+         RespVsRho = new TProfile3D("RespVsRhoVsEtaVsPt","RespVsRhoVsEtaVsPt",NPtBins,vpt,NETA,veta,NRhoBins,vrho);
          RespVsRho->Sumw2();
 
          RhoVsPileupVsEta = new TProfileMDF("RhoVsPileupVsEta","RhoVsPileupVsEta");

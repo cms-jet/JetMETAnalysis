@@ -15,12 +15,12 @@ string JetInfo::get_legend_title(const string& alg, bool withSize, bool withAlg,
   else if (alg.find("ca")==0) { title = "Cam/Aachen R="; tmp = tmp.substr(2); }
   else if (alg.find("ak")==0) { title = "Anti-k_{T} R="; tmp = tmp.substr(2); }
   else return alg;
-  
-  string reco[11] = { "gen", "caloHLT", "calo", "pfHLT", "pfchsHLT", "pfpuppi", "pfchs", "pf", "trk", "jpt", "puppi" };
-  string RECO[11] = { "Gen", "Calo@HLT", "Calo", "PF@HLT", "PF+CHS@HLT", "PF+PUPPI", "PF+CHS", "PF", "Tracks", "JPT", "PF+PUPPI" };
+
+  string reco[13] = { "gen", "caloHLT", "calo", "pfHLT", "pfchsHLT", "pfpuppi", "pfchs", "pf", "trk", "jpt", "puppi", "pfclusterHLT", "puppiHLT" };
+  string RECO[13] = { "Gen", "Calo@HLT", "Calo", "PF@HLT", "PF+CHS@HLT", "PF+PUPPI", "PF+CHS", "PF", "Tracks", "JPT", "PF+PUPPI" , "PFCluster@HLT", "PF+Puppi@HLT" };
 
   string::size_type pos=string::npos; int ireco=-1;
-  while (pos==string::npos&&ireco<11) { pos = tmp.find(reco[++ireco]); }
+  while (pos==string::npos&&ireco<13) { pos = tmp.find(reco[++ireco]); }
   if (pos==string::npos) return alg;
   
   double jet_size; stringstream ss1; ss1<<tmp.substr(0,pos); ss1>>jet_size;
@@ -200,7 +200,7 @@ TString JetInfo::getJetType(TString s) {
   }
   TString jtype = s(posSizeEnd,posFirstCorr-posSizeEnd);
 
-  int itype = vfind(jet_types,NJetTypes,jtype);
+  int itype = vfind(jet_types, NJetTypes, jtype);
   if(itype>-1) {
     return jet_types[itype];
   }
@@ -277,7 +277,7 @@ string JetInfo::get_correction_levels(const vector<int>& levels, bool L1FastJet)
                (string)"invalid correction level").c_str());
     }
   }
-    return ssresult.str();
+  return ssresult.str();
 }
 
 //______________________________________________________________________________
@@ -358,7 +358,7 @@ TString JetInfo::get_detector_abbreviation(TString dn) {
   }
   else {
     cout << "ERROR::get_detector_abbreviation The number of words in the detector name is less than 1." << endl;
-    assert(words>0);
+    assert(words->GetEntries() > 0);
   }
   words->Delete();
   delete words;

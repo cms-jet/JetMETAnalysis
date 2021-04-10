@@ -31,6 +31,7 @@
 #include "DataFormats/ParticleFlowCandidate/interface/PFCandidate.h"
 #include "DataFormats/JetReco/interface/JPTJet.h"
 #include "DataFormats/JetReco/interface/CaloJet.h"
+#include "DataFormats/JetReco/interface/PFClusterJetCollection.h"
 #include "DataFormats/JetReco/interface/PFJet.h"
 #include "DataFormats/JetReco/interface/GenJet.h"
 #include "DataFormats/Math/interface/deltaR.h"
@@ -99,6 +100,7 @@ private:
   edm::EDGetTokenT<double> srcRho_;
   edm::EDGetTokenT<double> srcRhoHLT_;
   edm::EDGetTokenT<reco::VertexCollection> srcVtx_;
+  bool const applyVtxCuts_;
   edm::EDGetTokenT<GenEventInfoProduct> srcGenInfo_;
   edm::EDGetTokenT<vector<PileupSummaryInfo> > srcPileupInfo_;
   //edm::EDGetTokenT<vector<reco::PFCandidate> > srcPFCandidates_;
@@ -107,7 +109,7 @@ private:
   edm::EDGetTokenT<vector<reco::GenParticle> > srcGenParticles_;
 
   std::string   jecLabel_;
-  
+
   bool          doComposition_;
   bool          doFlavor_;
   bool          doJetPt_;
@@ -123,6 +125,7 @@ private:
   bool          doBalancing_;
   bool          getFlavorFromMap_;
   bool          isCaloJet_;
+  bool          isPFClusterJet_;
   bool          isJPTJet_;
   bool          isPFJet_;
   bool          isTrackJet_;

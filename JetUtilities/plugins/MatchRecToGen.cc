@@ -125,10 +125,10 @@ void MatchRecToGen::produce(edm::Event& iEvent,const edm::EventSetup& iSetup)
   
   iEvent.getByToken(srcRec_,rec_);
   iEvent.getByToken(srcGen_,gen_);
-  
-  nRec = std::min((size_t)rec_->size(),(size_t)100);
-  nGen = std::min((size_t)gen_->size(),(size_t)100);
-  
+
+  nRec = rec_->size();
+  nGen = gen_->size();
+
   IndexSet_t iRecSet;
   IndexSet_t iGenSet;
   MatchSet_t matchSet;

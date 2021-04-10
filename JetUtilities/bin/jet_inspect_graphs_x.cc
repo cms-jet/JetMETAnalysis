@@ -380,11 +380,12 @@ int main(int argc,char** argv)
       else if(leg2)
         leg2->AddEntry(g," ","lp");
     }
-    else if(doFlavor && (ivar==0||ivar==variables.size()-1))
+    else if(doFlavor && (ivar==0||ivar==variables.size()-1)){
       continue;
-    else
+    }
+    else {
   	  leg->AddEntry(g,label.c_str(),"lp");
-
+    }
 	  // print fit parameters
 	  TF1* fitfnc = (TF1*)g->GetFunction("fit");
 	  if (0!=fitfnc) {

@@ -54,7 +54,7 @@ public:
    void setRefPt(Float_t pt) { refpt0_ = pt; }
    void setRun(RunNumber_t r) { run_ = r; }
 
-   bool operator()(evtid const& a, evtid const& b) {
+   bool operator()(evtid const& a, evtid const& b) const {
       if (a.run_ < b.run_) return true;
       if (a.run_ > b.run_) return false;
       if (a.ls_ < b.ls_) return true;
