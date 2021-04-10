@@ -763,12 +763,12 @@ TCanvas * getCorrectionVsPtCanvas(TString algo, FactorizedJetCorrector * jetCorr
 
       //Create and fill the histo
       TString hstr; hstr.Form("PtSF_%d",c);
-      TH1F * cc = new TH1F(hstr,hstr,NPtBinsHLT,vpt_HLT);
+      TH1F * cc = new TH1F(hstr,hstr,NPtBins,vpt);
       for (int b = 1; b <= cc->GetNbinsX(); b++){
 	jetCorr->setJetPt(cc->GetBinCenter(b));
 	jetCorr->setJetEta(EtaVals[c]);
-    jetCorr->setRho(fixedRho);
-    jetCorr->setJetA(TMath::Pi()*TMath::Power(JetInfo(algo).coneSize/10.0,2));
+        jetCorr->setRho(fixedRho);
+        jetCorr->setJetA(TMath::Pi()*TMath::Power(JetInfo(algo).coneSize/10.0,2));
 	double cor = jetCorr->getCorrection();
 	if (std::isnan((double)cor) ||  std::isinf((double)cor) ){
 	  cout<<" *** ERROR *** getCorrectionVsPtCanvas(). For eta="<<EtaVals[c]
@@ -860,7 +860,7 @@ TCanvas * getCorrectionVsPtComparisonCanvasTDR(vector<TString>& algs, vector<pai
     for (unsigned int ialg=0; ialg<algs.size(); ialg++) {
       //Create and fill the histo
       TString hstr; hstr.Form("PtSF_TDR_%d_%s",c,algs[ialg].Data());
-      TH1F * cc = new TH1F(hstr,hstr,NPtBinsHLT,vpt_HLT);;
+      TH1F * cc = new TH1F(hstr,hstr,NPtBins, vpt);
       for (int b = 1; b <= cc->GetNbinsX(); b++){
          allJetCorrs[ialg].first->setJetEta(EtaVals[c]);
          allJetCorrs[ialg].first->setJetPt(cc->GetBinCenter(b));

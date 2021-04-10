@@ -482,7 +482,7 @@ int main(int argc,char**argv)
          RespVsPileup->Sumw2();
          coord.assign(RespVsPileup->GetNaxis(),0);
 
-         RespVsRho = new TProfile3D("RespVsRhoVsEtaVsPt","RespVsRhoVsEtaVsPt",NPtBins,vpt,NETA_HLT,veta_HLT,NRhoBins,vrho);
+         RespVsRho = new TProfile3D("RespVsRhoVsEtaVsPt","RespVsRhoVsEtaVsPt",NPtBins,vpt,NETA,veta,NRhoBins,vrho);
          RespVsRho->Sumw2();
 
          RhoVsPileupVsEta = new TProfileMDF("RhoVsPileupVsEta","RhoVsPileupVsEta");
