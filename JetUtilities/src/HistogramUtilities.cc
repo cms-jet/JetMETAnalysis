@@ -117,7 +117,7 @@ namespace HistUtil {
             b[i] = hist->GetBinLowEdge(i+1);
         }
         Double_t median = Median(nbins,x,y,b,0,debug);
-        // Set the error equal to the difference between the median and the bin boundary
+/*        // Set the error equal to the difference between the median and the bin boundary
         // Choose the difference which is biggest
         // We cannot determine the exact median from binned values
         // The best we can do is a linear approximation of where inside the bin the median resides
@@ -126,14 +126,27 @@ namespace HistUtil {
         Double_t width = hist->GetBinWidth(hist->FindBin(median));
         Double_t high_edge = hist->GetBinLowEdge(hist->FindBin(median)) + width;
         Double_t error = std::max(std::abs(median-low_edge),std::abs(high_edge-median));
+*/
+
+	// The error on the median is non-trivial
+        // We use the "standard" relationship http://davidmlane.com/hyperstat/A106993.html
+        // for the error. But this only works if your distribution is ~normal.
+        // Fine binning is better to more precisely calculate the median & RMS
+        // EffectiveEntries is used to account for weights
+        Double_t error = 1.253 * hist->GetRMS() / TMath::Sqrt(hist->GetEffectiveEntries());	
+
         if (debug) {
-            cout << "\tlow_dege: " << low_edge << endl << "\thigh_edge: " << high_edge << endl
+ /*           cout << "\tlow_dege: " << low_edge << endl << "\thigh_edge: " << high_edge << endl
                  << "\twidth: " << width << endl << "\terror: " << error << endl;
             cout << "\tdouble check error: " << std::max(std::abs(median-low_edge),std::abs(high_edge-median)) << endl
                  << "\tabs(median-low_edge): " << std::abs(median-low_edge) << endl
                  << "\tabs(high_edge-median): " << std::abs(high_edge-median) << endl
                  << "\tmedian-low_edge: " << median-low_edge << endl
                  << "\thigh_edge-median: " << high_edge-median << endl;
+*/
+		cout << "\terror: " << error << endl;
+            	cout << "\tRMS: " << hist->GetRMS() << endl
+                << "\tentries: " << hist->GetEffectiveEntries() << endl;	
         } 
         delete [] x;
         delete [] y;
